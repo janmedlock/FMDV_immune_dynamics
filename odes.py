@@ -1,7 +1,7 @@
 #!/usr/bin/python
 
 import numpy
-import scipy.integrate
+from scipy import integrate
 import parameters
 
 
@@ -36,7 +36,7 @@ def solve(tMax):
     
     t = numpy.linspace(0., tMax, 1001)
 
-    Y = scipy.integrate.odeint(rhs, (M0, S0, I0, R0), t)
+    Y = integrate.odeint(rhs, (M0, S0, I0, R0), t)
 
     (M, S, I, R) = numpy.hsplit(Y, 4)
 

@@ -1,10 +1,9 @@
 import numpy
-import scipy.integrate
-import scipy.stats
+from scipy import stats, integrate, optimize
 import utility
 
 
-class mortality_gen(scipy.stats.rv_continuous):
+class mortality_gen(stats.rv_continuous):
     def annualSurvival(self, age):
         return numpy.where(
             age < 1., 0.7, numpy.where(
@@ -35,7 +34,7 @@ mortality = mortality_gen(name = 'mortality', a = 0.)
 
 growthRate = 0.
 
-class ageStructure_gen(scipy.stats.rv_continuous):
+class ageStructure_gen(stats.rv_continuous):
     def _argcheck(self, r):
         return True
         
@@ -111,12 +110,12 @@ ageStructure = ageStructure_gen(name = 'ageStructure', a = 0., shapes = 'r')(
 
 probabilityOfMaleBirth = 0.5
 
-male = scipy.stats.bernoulli(probabilityOfMaleBirth)
+male = stats.bernoulli(probabilityOfMaleBirth)
 
 
 _birthScaling = 1.
 
-class birth_gen(scipy.stats.rv_continuous):
+class birth_gen(stats.rv_continuous):
     def _argcheck(self, time0, age0):
         return (age0 >= 0.)
         
@@ -126,7 +125,7 @@ class birth_gen(scipy.stats.rv_continuous):
                         (1. + numpy.cos(2 * numpy.pi * (time + time0))) / 2.)
 
     def _cdf(self, time, time0, age0):
-        lb = max(0., 4 - age0)
+        lb = numpy.max(numpy.hstack((0., 4 - age0)))
         I = numpy.where(
             time < 4 - age0,
             0.,
@@ -141,7 +140,7 @@ class birth_gen(scipy.stats.rv_continuous):
     def _ppf(self, q, *args, **kwds):
         'Trap errors for _ppf'
         try:
-            result = scipy.stats.rv_continuous._ppf(self, q, *args, **kwds)
+            result = stats.rv_continuous._ppf(self, q, *args, **kwds)
         except ValueError:
             # Assume the error is near q = 1,
             # so return the right-hand endpoint
@@ -150,8 +149,7 @@ class birth_gen(scipy.stats.rv_continuous):
             result = self.b
         return result
 
-birth = birth_gen(name = 'birth', a = 0., shapes = 'time0, age0',
-                  xa = 0., xb = 50.)
+birth = birth_gen(name = 'birth', a = 0., shapes = 'time0, age0')
 
 
 def findBirthScaling(mortality, birth, male, growthRate,
@@ -169,19 +167,19 @@ def findBirthScaling(mortality, birth, male, growthRate,
     # of the birth rates times the probability of female birth.
     for j in xrange(len(ages)):
         bj = lambda t: (1. - male.mean()) * birth.hazard(t, 0., ages[j])
-        result = scipy.integrate.quad(bj, 0., 1., limit = 100)
+        result = integrate.quad(bj, 0., 1., limit = 100)
         F[0, j] = result[0]
 
     def objective(z):
         G = z * F + A - M
         return utility.findDominantEigenvalue(G) - growthRate
 
-    return numpy.asscalar(scipy.optimize.fsolve(objective, 1.))
+    return numpy.asscalar(optimize.fsolve(objective, 1.))
 
 _birthScaling = findBirthScaling(mortality, birth, male, growthRate)
 
 
-class deterministic_gen(scipy.stats.rv_continuous):
+class deterministic_gen(stats.rv_continuous):
     def _cdf(self, age):
         return numpy.where(age < 1., 0., 1.)
 
