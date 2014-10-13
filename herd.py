@@ -1,0 +1,244 @@
+#!/usr/bin/python
+
+import numpy
+import scipy.stats
+import parameters
+
+
+class Event:
+    def __init__(self, time, func, label):
+        self.time = time
+        self.func = func
+        self.label = label
+
+    def __cmp__(self, other):
+        return cmp(self.time, other.time)
+
+    def __call__(self):
+        return self.func()
+
+
+class Buffalo:
+    def __init__(self, herd, age = 0., identifier = None):
+        self.herd = herd
+        self.birthDate = self.herd.time - age
+        self.identifier = identifier
+        self.sex = 'male' if (parameters.male.rvs() == 1) \
+          else 'female'
+
+        self.events = {}
+
+        maternalImmunityWaningAge \
+          = parameters.maternalImmunityWaning.rvs()
+        if age < maternalImmunityWaningAge:
+            self.immuneStatus = 'maternal immunity'
+
+            self.events['maternalImmunityWaning'] \
+            = Event(self.herd.time + maternalImmunityWaningAge - age,
+                    self.maternalImmunityWaning,
+                    'maternal immunity waning for #{}'.format(self.identifier))
+        else:
+            if age < 2.:
+                self.immuneStatus = 'susceptible'
+            else:
+                self.immuneStatus = 'recovered'
+
+        while True:
+            deathDate = self.birthDate + parameters.mortality.rvs()
+            if deathDate > self.herd.time:
+                break
+        self.events['mortality'] = Event(deathDate, self.mortality,
+                                         'mortality for #{}'.format(
+                                             self.identifier))
+
+        if self.sex == 'female':
+            self.events['giveBirth'] \
+              = Event(self.herd.time
+                      + parameters.birth(self.herd.time, age).rvs(),
+                      self.giveBirth,
+                      'give birth for #{}'.format(self.identifier))
+
+    def age(self):
+        return self.herd.time - self.birthDate
+
+    def mortality(self):
+        self.herd.mortality(self)
+
+    def giveBirth(self):
+        self.herd.birth()
+        self.events['giveBirth'] \
+          = Event(
+              self.herd.time
+              + parameters.birth(self.herd.time, self.age()).rvs(),
+              self.giveBirth,
+              'give birth for #{}'.format(self.identifier))
+
+    def maternalImmunityWaning(self):
+        assert self.immuneStatus == 'maternal immunity'
+        self.immuneStatus = 'susceptible'
+        try:
+            del self.events['maternalImmunityWaning']
+        except KeyError:
+            pass
+
+    def infection(self):
+        assert self.immuneStatus == 'susceptible'
+        self.immuneStatus = 'infectious'
+        try:
+            del self.events['infection']
+        except KeyError:
+            pass
+        
+        self.events['recovery'] \
+          = Event(self.herd.time
+                  + parameters.recovery.rvs(),
+                  self.recovery,
+                  'recovery for #{}'.format(self.identifier))
+    
+    def recovery(self):
+        assert self.immuneStatus == 'infectious'
+        self.immuneStatus = 'recovered'
+        try:
+            del self.events['recovery']
+        except KeyError:
+            pass
+    
+    def getNextEvent(self):
+        return min(self.events.itervalues())
+
+    def isSusceptible(self):
+        return self.immuneStatus == 'susceptible'
+
+    def isInfectious(self):
+        return self.immuneStatus == 'infectious'
+
+    ## Fix me! ##
+    def updateInfectionTime(self, forceOfInfection):
+        if self.isSusceptible():
+            if (forceOfInfection > 0.):
+                infectionTime \
+                  = scipy.stats.expon(scale = 1. / forceOfInfection).rvs()
+            else:
+                infectionTime = numpy.inf
+            
+            self.events['infection'] \
+              = Event(self.herd.time + infectionTime,
+                      self.infection,
+                      'infection for #{}'.format(self.identifier))
+
+
+class Herd(list):
+    def __init__(self, debug = False):
+        self.debug = debug
+
+        self.time = 0.
+        self.identifier = 0
+
+        ages = parameters.ageStructure.rvs(
+            size = parameters.populationSize)
+        for a in ages:
+            self.birth(a)
+
+        self.addInfections(parameters.initialInfections)
+
+    def addInfections(self, numberOfInfections):
+        i = 0
+        for b in self:
+            if b.isSusceptible():
+                b.infection()
+                i += 1
+            if i >= numberOfInfections:
+                break
+        if i != numberOfInfections:
+            raise RuntimeError('Could only make {} infections!'.format(i))
+
+    def mortality(self, buffalo):
+        self.remove(buffalo)
+
+    def birth(self, age = 0.):
+        if self.debug:
+            if age > 0:
+                print 't = {}: arrival of #{} at age {}'.format(self.time,
+                                                                self.identifier,
+                                                                age)
+            else:
+                print 't = {}: birth of #{}'.format(self.time,
+                                                    self.identifier)
+
+        self.append(Buffalo(self, age, identifier = self.identifier))
+        self.identifier += 1
+
+    def updateInfectionTimes(self):
+        self.numberInfectious = sum(buffalo.isInfectious() for buffalo in self)
+        self.forceOfInfection \
+          = parameters.transmissionRate * self.numberInfectious
+        for buffalo in self:
+            buffalo.updateInfectionTime(self.forceOfInfection)
+
+    def getNextEvent(self):
+        if len(self) > 0:
+            return min([b.getNextEvent() for b in self])
+        else:
+            return None
+
+    def stop(self):
+        return (self.numberInfectious == 0)
+
+    def step(self, tMax = numpy.inf):
+        event = self.getNextEvent()
+
+        if (event is not None) and (event.time < tMax):
+            if self.debug:
+                print 't = {}: {}'.format(event.time, event.label)
+            self.time = event.time
+            event()
+        else:
+            self.time = tMax
+
+        self.updateInfectionTimes()
+
+    def run(self, tMax):
+        self.updateInfectionTimes()
+        result = [(self.time, self.numberInfectious)]
+
+        while (self.time < tMax) and (not self.stop()):
+            self.step(tMax)
+            result.append((self.time, self.numberInfectious))
+
+        return result
+
+    def findExtinctionTime(self, tMax):
+        result = self.run(tMax)
+        return result[-1][0]
+
+
+if __name__ == '__main__':
+    import pylab
+    import odes
+    
+    tMax = 1.
+    nRuns = 10
+    debug = False
+    
+    numpy.random.seed(1)
+
+    extinctionTimes = []
+    for r in xrange(nRuns):
+        h = Herd(debug = debug)
+        result = h.run(tMax)
+        (t, I) = zip(*result)
+
+        eT = t[-1]
+        extinctionTimes.append(eT)
+        print 'Run #{}: Extinct after {} days'.format(r + 1, 365. * eT)
+
+        pylab.step(365. * numpy.asarray(t), I, where = 'post')
+
+    (to, Mo, So, Io, Ro) = odes.solve(max(extinctionTimes))
+    pylab.plot(365. * to, Io, linestyle = ':')
+
+    pylab.xlabel('time (days)')
+    pylab.ylabel('number infected')
+    pylab.ylim(ymin = 0.)
+
+    pylab.show()
