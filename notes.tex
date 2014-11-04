@@ -1,0 +1,500 @@
+\documentclass{jpmarticle}
+
+\usepackage{units}
+\usepackage{tikz}
+\usepackage{natbib}
+\usepackage{hypernat}
+
+
+\title{FMDV notes}
+\author{Jan Medlock}
+
+
+\newcommand{\comment}[1]{\textbf{[#1]}}
+
+
+\begin{document}
+
+\maketitle
+
+\section{Model}
+
+We built a stochastic individual-based model to capture the dynamics
+of FMDV in African buffalo.  The age and sex of each buffalo is
+tracked along with its immune state (\autoref{fig:diagram}): either
+immune due to maternal antibodies ($M$), susceptible to infection
+($S$), infectious ($I$), or recovered ($R$).  There are 5 events that
+can occur to each buffalo: death, birth, waning of maternal
+antibodies, infection, and recovery.
+
+\begin{figure}
+  \centering
+  \begin{tikzpicture}[
+    thick,
+    compartment/.style = {circle,
+      draw,
+      minimum width = {width("$M$") + 10pt}}
+    ]
+
+    \node at (0, 0) [compartment, name = M] {$M$};
+    \node at (3, 0) [compartment, name = S] {$S$};
+    \node at (6, 0) [compartment, name = I] {$I$};
+    \node at (9, 0) [compartment, name = R] {$R$};
+
+    \draw [->] (M) to node [above] {waning} (S);
+    \draw [->] (S) to node [above] {infection} (I);
+    \draw [->] (I) to node [above] {recovery} (R);
+
+    \draw [->] (S) to [out = 135, in = 45]
+    node [sloped, above, pos = 0.2] {birth} (M);
+    \draw [->] (I) to [out = 135, in = 45]
+    node [sloped, above, pos = 0.2] {birth} (M);
+    \draw [->] (R) to [out = 135, in = 45]
+    node [sloped, above, pos = 0.2] {birth} (M);
+    
+    \draw [->] (M) to node [right] {death} +(0, -1.5);
+    \draw [->] (S) to node [right] {death} +(0, -1.5);
+    \draw [->] (I) to node [right] {death} +(0, -1.5);
+    \draw [->] (R) to node [right] {death} +(0, -1.5);
+  \end{tikzpicture}
+  \caption{Model diagram.}
+  \label{fig:diagram}
+\end{figure}
+
+The simulations follow a Gillespie algorithm \citep{gillespie_1977}.
+\begin{description}
+\item[Death] On the birth of new buffalo calf, the age at death of
+  that calf is sampled from the mortality distribution.
+
+\item[Birth] For each female buffalo, the time until she gives birth
+  to a calf is sampled from its distribution.  This is done when the
+  female is herself born, to find the time until she to her first
+  calf, and after a birth, to find the time until she gives birth to
+  her next calf.  A simple Bernoulli sample determines the sex of each
+  calf.
+
+\item[Waning] Each new buffalo calf is assumed to be immune to
+  infection due to maternal antibodies: at birth, the duration of
+  maternal immunity is sampled from its distribution.
+
+\item[Infection] For each susceptible buffalo, the time to infection
+  is sampled from its distribution, which depends on the current
+  number of infected buffalo in the population.
+
+\item[Recovery] On infection, the time to recovery is sampled from its
+  distribution.
+\end{description}
+The distributions are detailed below.
+
+For each buffalo, a list of events and the times they occur is stored.
+The next event over the whole population is found and the population
+is updated.  The hazards for infection depend on the number of
+infectious buffalo in the population and so the times to infection are
+updated after each change in the population.  The hazards of the other
+events are independent of the state of the population and so the times
+to these events are not updated.
+
+This process was repeated from $t = 0$ to $t = t_{\text{max}}$ or
+until there were $0$ infectious buffalo.
+
+When sampling from simple distributions, standard algorithms were used
+\citep{scipy}.  For complex distributions, the event times were
+sampled using the inverse transform method \citep{rubinstein_1981}.
+
+The variables $t$ and $a$ denote time and age, respectively, and are
+both in units of years.
+
+\subsection{Death}
+
+We took the annual survival to be
+\begin{equation}
+  \Prob\{\text{Survival for $\unit[1]{yr}$}\}
+  =
+  \begin{cases}
+    0.7 & \text{if $a < 1$},
+    \\
+    0.95 & \text{if $1 \leq a < 12$},
+    \\
+    0.5 & \text{if $a \geq 12$}.
+  \end{cases}
+\end{equation}
+Assuming that the mortality hazard is constant throughout a year gives
+the survival function for mortality
+\begin{equation}
+  S_{\text{mortality}}(a) =
+  \begin{cases}
+    0.7^a & \text{if $a < 1$},
+    \\
+    0.7 \cdot 0.95^a & \text{if $1 \leq a < 12$},
+    \\
+    0.7 \cdot 0.95^{11} \cdot 0.5^a & \text{if $a \geq 12$}.
+  \end{cases}
+\end{equation}
+This has inverse
+\begin{equation}
+  Z_{\text{mortality}}(q) =
+  \begin{cases}
+    \unit[\frac{\log(q)}{\log(0.7)}]{yr} & \text{if $q > 0.7$},
+    \\
+    \unit[1 + \frac{\log(q) - \log(0.7)}{\log(0.95)}]{yr}
+    & \text{if $0.7 \cdot 0.95^{11} \leq q < 0.7$},
+    \\
+    \unit[12 + \frac{\log(q) - \log(0.7) - 11 \log(0.95)}{\log(0.5)}]{yr}
+    & \text{if $q \leq 0.7 \cdot 0.95^{11}$}.
+  \end{cases}
+\end{equation}
+
+
+\subsection{Birth}
+
+We assumed that females reach reproductive maturity at age $4$ and
+that the birth hazard varies sinusoidally in time:
+\begin{equation}
+  h_{\text{birth}}(t, a) =
+  \begin{cases}
+    0 & \text{if $a < 4$},
+    \\
+    \alpha \left[1
+      + \sigma \cos\left(2 \pi t\right)\right]
+    & \text{if $a \geq 4$}.
+  \end{cases}
+\end{equation}
+The seasonal variation is captured by $\sigma \in [0, 1]$, which we
+took to be $1$ by default.  The annual mean $\alpha$ was chosen so
+that the population achieves the mean growth rate $r = 0$ in the
+absence of infection.  (See \autoref{no_infection}.)
+
+The survival function is then
+\begin{equation}
+  \begin{split}
+    S_{\text{birth}}(t, a, t_0) &=
+    \exp\left(- \int_0^t h_{\text{birth}}(t_0 + \tau, a + \tau) \md
+      \tau\right)
+    \\
+    &=
+    \begin{cases}
+      1 & \text{if $a < 4 - t$},
+      \\
+      \exp\left(- \alpha \left[
+          (t - \ell)
+          + \frac{\sigma}{2 \pi}
+          \left[\sin\left(2 \pi (t + t_0)\right)
+            - \sin\left(2 \pi (t_0 + \ell)\right)\right]
+        \right]
+      \right)
+      & \text{if $a \geq 4 - t$},
+    \end{cases}
+  \end{split}
+\end{equation}
+with $\ell = \max\{0, 4 - a\}$.  There is no explicit inverse survival
+function.  Instead, the inverse was found numerically using a
+root-finding algorithm \citep{scipy}.
+
+The fraction of newborns that are male was taken to be
+\begin{equation}
+  p_{\text{male birth}} = 0.5.
+\end{equation}
+
+
+\subsection{Waning of maternal antibodies}
+
+Immunity from maternal antibodies was assumed to last
+\begin{equation}
+  T_{\text{maternal immunity}} = \unit[0.5]{yr}
+\end{equation}
+in all buffaloes.  That is, the survival function is
+\begin{equation}
+  S_{\text{maternal immunity}}(t) =
+  \begin{cases}
+    1 & \text{if $t < 0.5$},
+    \\
+    0 & \text{if $t \geq 0.5$},
+  \end{cases}
+\end{equation}
+and the inverse survival function is constant,
+\begin{equation}
+  Z_{\text{maternal immunity}}(q) = \unit[0.5]{yr}.
+\end{equation}
+
+
+\subsection{Infection}
+
+The infection hazard was taken to be
+\begin{equation}
+  h_{\text{infection}}(t) = \beta I(t),
+\end{equation}
+where $I(t)$ is the total number of infectious buffalo in the herd at
+time $t$.  Over periods where $I(t)$ is constant, the hazard is
+constant, which gives an exponential random variable.
+
+The transmission rate, $\beta$, is chosen to give the desired value of
+$R_0$.  For the model,
+\begin{equation}
+  R_0 = \frac{\beta N}{\frac{1}{\mu_{\text{infection}}}
+    + \frac{1}{\mu_{\text{mortality}}}},
+\end{equation}
+where $N$ is the population size,
+$\mu_{\text{infection}} = \unit[1.6]{d}$ is the mean time to recovery
+(see next section), and $\mu_{\text{mortality}}$ is the mean time to
+death.  Thus,
+\begin{equation}
+  \beta = \frac{R_0}{N}
+  \left(\frac{1}{\mu_{\text{infection}}} +
+    \frac{1}{\mu_{\text{mortality}}}\right)
+  \approx \frac{R_0}{N \mu_{\text{infection}}},
+\end{equation}
+because $\mu_{\text{infection}} \ll \mu_{\text{mortality}}$.
+
+\subsection{Recovery}
+
+The duration of infection was taken to be
+\begin{equation}
+  T_{\text{recovery}} = \unit[1.6]{d}
+\end{equation}
+in all buffaloes.  That is, the survival function is
+\begin{equation}
+  S_{\text{recovery}}(t) =
+  \begin{cases}
+    1 & \text{if $t < \frac{1.6}{365}$},
+    \\
+    0 & \text{if $t \geq \frac{1.6}{365}$},
+  \end{cases}
+\end{equation}
+and the inverse survival function is constant,
+\begin{equation}
+  Z_{\text{recovery}}(q) = \unit[1.6]{d}.
+\end{equation}
+
+
+\subsection{Initial conditions}
+
+A sample of size $N$ from the stable age structure was used to
+initialize the population.  (See \autoref{no_infection}.)  The sex of
+each buffalo was randomly selected with probability
+$p_{\text{male birth}}$ of being male.  The simulations were started
+at $t = 0$ with $2$ initial infections in randomly chosen members of
+the population.
+
+
+\begin{figure}
+  \centering
+  \includegraphics[width = \textwidth]{hazards}
+  \caption{Hazard functions.}
+  \label{fig:hazard}
+\end{figure}
+
+
+\begin{figure}
+  \centering
+  \includegraphics[width = \textwidth]{survivals}
+  \caption{Survival functions.}
+  \label{fig:survival}
+\end{figure}
+
+
+
+\clearpage
+\section{Analysis}
+
+\subsection{No infection}
+\label{no_infection}
+
+In the absence of infection, the mean number of female births $B(t)$
+follows the Lotka equation
+\begin{equation}
+  \label{lotka}
+  \begin{split}
+    B(t) =&
+    \int_0^t B(t - a) S_{\text{mortality}}(a) h_{\text{birth}}(t, a) \md a
+    \\
+    & {} +
+    \int_0^{\infty} n_0(a) \frac{S_{\text{mortality}}(a +
+      t)}{S_{\text{mortality}}(a)} h_{\text{birth}}(t, a + t) \md a,
+  \end{split}
+\end{equation}
+where $n_0(a)$ is the number of age $a$ females at time $t = 0$
+\citetext{\citealp[Chapter VI, Section 29 on
+  pp.~159--161]{harris_1963};
+  \citealp[Chapter 20 on pp.~353--364]{kot_01}}.
+% For large $t$, the contribution of the initial cohort---the second
+% integral in \eqref{lotka}---becomes negligible, so
+% \begin{equation}
+%   B(t) =
+%   \int_0^t B(t - a) \hat{h}_{\text{birth}}(t, a) \md a
+% \end{equation}
+% for large $t$,
+% where
+% \begin{equation}
+%   \hat{h}_{\text{birth}}(t, a) = 
+%   S_{\text{mortality}}(a) 
+%   h_{\text{birth}}(t, a).
+% \end{equation}
+% Alternately,
+% \begin{equation}
+%   B(t)
+%   =
+%   \int_0^{t}
+%   B(u)
+%   \hat{h}_{\text{birth}}(t, t - u)
+%   \md u.
+% \end{equation}
+Given $B(t)$, the mean number of females of age $a$ is
+\begin{equation}
+  n(t, a) =
+  \begin{cases}
+    B(t - a) S_{\text{mortality}}(a)
+    & \text{if $a < t$},
+    \\
+    n_0(a - t)
+    \frac{S_{\text{mortality}}(a)}{S_{\text{mortality}}(a - t)}
+    & \text{if $a > t$}.
+  \end{cases}
+\end{equation}
+The mean number of females of age $a$ satisifies the McKendrick--von
+Foerster equation
+\begin{equation}
+  \begin{split}
+    \frac{\partial n}{\partial t} + \frac{\partial n}{\partial a}
+    &= - h_{\text{death}}(a) n(t, a),
+    \\
+    n(t, 0) &= \int_0^t n(t, a) h_{\text{birth}}(t, a) \md a,
+    \\
+    n(0, a) &= n_0(a).
+  \end{split}
+\end{equation}
+
+Discretizing in $a$ by setting
+\begin{equation}
+  \label{eq:11}
+  \vec{a} = \left[0, \Delta a, 2 \Delta a, \cdots, a_{\text{max}} \right]^{\mT}
+\end{equation}
+and
+\begin{equation}
+  \vec{n}(t) \approx n(t, \vec{a})
+\end{equation}
+gives
+\begin{equation}
+  \begin{split}
+    \frac{\md \vec{n}}{\md t} &=
+    \left[\mat{B}(t)
+      - \mat{M}
+      + \mat{A}\right] \vec{n},
+  \end{split}
+\end{equation}
+with
+\begin{equation}
+  \begin{split}
+    \mat{B}(t)
+    &=
+    (1 - p_{\text{male birth}})
+    \begin{bmatrix}
+      \cdots & h_{\text{birth}}(t, \vec{a}) & \dots
+      \\
+      \cdots & 0 & \cdots
+      \\
+      \cdots & 0 & \cdots
+      \\
+      & \vdots &
+      \\
+      \cdots & 0 & \cdots
+    \end{bmatrix},
+    \\
+    \mat{M} &=
+    \operatorname{diag}\left(h_{\text{mortality}}(\vec{a})\right),
+    \\
+    \mat{A} &=
+    \frac{1}{\Delta a}
+    \begin{bmatrix}
+      -1 & 0 & 0 & 0 & \cdots & 0 & 0
+      \\
+      1 & -1 & 0 & 0 & \cdots & 0 & 0
+      \\
+      0 & 1 & -1 & 0 & \cdots & 0 & 0
+      \\
+      \vdots & \ddots & \ddots & \ddots & \ddots &  & \vdots
+      \\
+      \vdots &  & \ddots & \ddots & \ddots & \ddots & \vdots
+      \\
+      0  & \cdots & \cdots & 0 & 1 & - 1 & 0
+      \\
+      0  & \cdots & \cdots & \cdots & 0 & 1 & 0
+    \end{bmatrix},
+  \end{split}
+\end{equation}
+Solving this from $t_0$ to $t_0 + 1$ gives
+\begin{equation}
+  \vec{n}(t_0 + 1) = \vec{n}(t_0)
+  \exp\left(\bar{\mat{B}} - \mat{M} + \mat{A}\right)
+\end{equation}
+where
+\begin{equation}
+  \begin{split}
+    \bar{\mat{B}} &=
+    \int_{t_0}^{t_0 + 1} \mat{B}(t) \md t =
+    (1 - p_{\text{male birth}})
+    \begin{bmatrix}
+      \cdots & \bar{h}_{\text{birth}}(\vec{a}) & \dots
+      \\
+      \cdots & 0 & \cdots
+      \\
+      \cdots & 0 & \cdots
+      \\
+      & \vdots &
+      \\
+      \cdots & 0 & \cdots
+    \end{bmatrix},
+    \\
+    \bar{h}_{\text{birth}}(a) &=
+    \int_{t_0}^{t_0 + 1} h_{\text{birth}}(t, a + t) \md t
+    \\
+    &=
+    \begin{cases}
+      0 & \text{if $a < 3$},
+      \\
+      \alpha \left(
+        a - 3 + \frac{\sigma}{2 \pi}
+        \left[
+          \sin\left(2\pi t_0\right)
+          - \sin\left(2 \pi (t_0 - a)\right)
+        \right]
+      \right)
+      & \text{if $3 \leq a < 4$},
+      \\
+      \alpha & \text{if $a \geq 4$}.
+    \end{cases}
+  \end{split}
+\end{equation}
+Assuming the stable age distribution so that
+\begin{equation}
+  \vec{n}(t_0 + 1) = \me^r \vec{n}(t_0)
+\end{equation}
+gives
+\begin{equation}
+  r = \lambda_0\left(\bar{\mat{B}} - \mat{M} + \mat{A}\right),
+\end{equation}
+where $\lambda_0(\mat{X})$ is the eigenvalue of $\mat{X}$ with largest
+magnitude.  The eigenvector corresponding to this eigenvalue is the
+stable age distribution $\vec{n}_{\text{stable}}$.
+
+We numerically computed the eigenvalue and eigenvector by using age
+steps $\Delta a = 0.01$, maximum age $a_{\text{max}} = 20$
+(probability of survival $S_{\text{mortality}}(20) = 0.0016$), and a
+standard eigenvalue solver
+\citep[\texttt{numpy.linalg.eig},][]{scipy}.  We then used a standard
+root-finding algorithm
+\citep[\texttt{scipy.optimize.fsolve},][]{scipy} to find the value of
+the mean birth hazard $\alpha \approx 0.443$ that gave growth rate
+$r = 0$.  Halving the age step to $\Delta a = 0.005$ gave a value of
+$\alpha$ within $1.2 \times 10^{-4}$ and doubling the maximum age to
+$a_{\text{max}} = 40$ gave a value of $\alpha$ within
+$1.7 \times 10^{-12}$.
+
+
+\subsection{$R_0$}
+
+
+\bibliography{journal_abbreviations,math_epi}
+\bibliographystyle{jpmbib}
+
+
+\end{document}

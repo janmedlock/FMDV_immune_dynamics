@@ -1,0 +1,1 @@
+initialInfections = 2

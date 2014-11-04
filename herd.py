@@ -34,7 +34,7 @@ class Buffalo:
             self.immuneStatus = 'maternal immunity'
 
             self.events['maternalImmunityWaning'] \
-            = Event(self.herd.time + maternalImmunityWaningAge - age,
+            = Event(self.birthDate + maternalImmunityWaningAge,
                     self.maternalImmunityWaning,
                     'maternal immunity waning for #{}'.format(self.identifier))
         else:
@@ -43,11 +43,13 @@ class Buffalo:
             else:
                 self.immuneStatus = 'recovered'
 
+        # Use resampling to get a death age > current age.
         while True:
-            deathDate = self.birthDate + parameters.mortality.rvs()
-            if deathDate > self.herd.time:
+            deathAge = parameters.mortality.rvs()
+            if deathAge > age:
                 break
-        self.events['mortality'] = Event(deathDate, self.mortality,
+        self.events['mortality'] = Event(self.birthDate + deathAge,
+                                         self.mortality,
                                          'mortality for #{}'.format(
                                              self.identifier))
 
@@ -82,7 +84,7 @@ class Buffalo:
             pass
 
     def infection(self):
-        assert self.immuneStatus == 'susceptible'
+        assert self.isSusceptible()
         self.immuneStatus = 'infectious'
         try:
             del self.events['infection']
@@ -96,7 +98,7 @@ class Buffalo:
                   'recovery for #{}'.format(self.identifier))
     
     def recovery(self):
-        assert self.immuneStatus == 'infectious'
+        assert self.isInfectious()
         self.immuneStatus = 'recovered'
         try:
             del self.events['recovery']
@@ -118,13 +120,16 @@ class Buffalo:
             if (forceOfInfection > 0.):
                 infectionTime \
                   = scipy.stats.expon(scale = 1. / forceOfInfection).rvs()
-            else:
-                infectionTime = numpy.inf
             
-            self.events['infection'] \
-              = Event(self.herd.time + infectionTime,
-                      self.infection,
-                      'infection for #{}'.format(self.identifier))
+                self.events['infection'] \
+                  = Event(self.herd.time + infectionTime,
+                          self.infection,
+                          'infection for #{}'.format(self.identifier))
+            else:
+                try:
+                    del self.events['infection']
+                except KeyError:
+                    pass
 
 
 class Herd(list):
