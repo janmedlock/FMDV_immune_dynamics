@@ -9,9 +9,8 @@ from . import utility
 class birth_gen(stats.rv_continuous):
     def __init__(self, *args, **kwargs):
         stats.rv_continuous.__init__(self, *args, **kwargs)
-        # self.scaling = 1.
         # self.findBirthScaling(mortality, male)
-        self.scaling = 0.4429783313759379
+        self.scaling = 0.4429783313744527
 
     def _argcheck(self, time0, age0):
         return (age0 >= 0.)
@@ -58,12 +57,16 @@ class birth_gen(stats.rv_continuous):
 
     def findBirthScaling(self, mortality, male,
                          *args, **kwargs):
+        self.scaling = 1.
+
         (ages, matrices) = utility.buildMatrices(mortality, self, male,
                                                  *args, **kwargs)
         def objective(z):
-            return utility.findGrowthRate(mortality, self, male, z,
-                                          matrices,
+            return utility.findGrowthRate(mortality, self, male,
+                                          _birthScaling = numpy.asscalar(z),
+                                          _matrices = matrices,
                                           *args, **kwargs)
+
         self.scaling = numpy.asscalar(optimize.fsolve(objective, 0.443))
 
 

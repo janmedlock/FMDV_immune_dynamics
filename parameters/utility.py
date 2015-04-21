@@ -3,11 +3,9 @@ from scipy import sparse, integrate
 
 
 def findDominantEigenpair(Y):
-    # numpy
-    [L, V] = numpy.linalg.eig(Y)
-
-    # scipy.sparse
-    # [L, V] = sparse.linalg.eigs(Y, k = 1, which = 'LR', maxiter = 20000)
+    # [L, V] = numpy.linalg.eig(Y)
+    [L, V] = sparse.linalg.eigs(Y, k = 1, which = 'LR',
+                                maxiter = int(1e5))
 
     i = numpy.argmax(numpy.real(L))
     l0 = numpy.asscalar(numpy.real_if_close(L[i]))
@@ -21,42 +19,72 @@ def findDominantEigenpair(Y):
 def buildMatrices(mortality, birth, male,
                   ageMax = 20., ageStep = 0.01):
     ages = numpy.arange(0., ageMax + ageStep / 2., ageStep)
-
     da = numpy.diff(ages)
-    A = - numpy.diag(numpy.hstack((1. / da, 0.))) + numpy.diag(1. / da, -1)
 
-    M = numpy.diag(mortality.hazard(ages))
+    # Aging
+    # A = (- numpy.diag(numpy.hstack((1. / da, 0.)))
+    #      + numpy.diag(1. / da, -1))
+    # A = sparse.lil_matrix((len(ages), ) * 2)
+    # A.setdiag(- numpy.hstack((1. / da, 0.)))
+    # A.setdiag(1. / da, -1)
 
-    B_bar = numpy.zeros((len(ages), len(ages)))
+    # Mortality
+    # M = numpy.diag(mortality.hazard(ages))
+    # M = sparse.lil_matrix((len(ages), ) * 2)
+    # M.setdiag(mortality.hazard(ages))
+
+    # Aging & Mortality
+    # AM = (- numpy.diag(numpy.hstack((1. / da, 0.)
+    #                    + mortality.hazard(ages)))
+    #       + numpy.diag(1. / da, -1))
+    AM = sparse.lil_matrix((len(ages), ) * 2)
+    AM.setdiag(- numpy.hstack((1. / da, 0.))
+               - mortality.hazard(ages))
+    AM.setdiag(1. / da, -1)
+
+    # B_bar = numpy.zeros((len(ages), ) * 2)
+    B_bar = sparse.lil_matrix((len(ages), ) * 2)
     # The first row, B_bar[0], is the mean, over a year,
     # of the birth rates times the probability of female birth.
     for j in xrange(len(ages)):
-        bj = lambda t: (1. - male.mean()) * birth.hazard(t, 0., ages[j] - t)
+        bj = lambda t: ((1. - male.mean())
+                        * birth.hazard(t, 0., ages[j] - t))
         result = integrate.quad(bj, 0., 1., limit = 100)
         B_bar[0, j] = result[0]
 
-    return (ages, (B_bar, A, M))
+    # return (ages, (B_bar, A, M))
+    return (ages, (B_bar, AM))
 
 
 def findGrowthRate(mortality, birth, male,
-                   birthScaling = 1., _matrices = None,
+                   _birthScaling = 1., _matrices = None,
                    *args, **kwargs):
     if _matrices is None:
-        (ages, (B_bar, A, M)) = buildMatrices(mortality, birth, male,
-                                              *args, **kwargs)
+        (ages, matrices) = buildMatrices(mortality, birth, male,
+                                         *args, **kwargs)
     else:
-        (B_bar, A, M) = _matrices
+        matrices = _matrices
 
-    G = birthScaling * B_bar + A - M
+    # (B_bar, A, M) = matrices
+    (B_bar, AM) = matrices
+
+    # G = _birthScaling * B_bar + A - M
+    G = _birthScaling * B_bar + AM
+
     return findDominantEigenpair(G)[0]
 
 
 def findStableAgeStructure(mortality, birth, male,
                            *args, **kwargs):
-    (ages, (B_bar, A, M)) = buildMatrices(mortality, birth, male,
-                                          *args, **kwargs)
+    (ages, matrices) = buildMatrices(mortality, birth, male,
+                                     *args, **kwargs)
 
-    G = B_bar + A - M
+    # (B_bar, A, M) = _matrices
+    (B_bar, AM) = _matrices
+
+    # G = B_bar + A - M
+    G = B_bar + AM
+
     return (ages, findDominantEigenpair(G)[1])
 
 
