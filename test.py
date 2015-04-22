@@ -3,34 +3,38 @@
 import numpy
 import matplotlib.pyplot
 
-import parameters
 import herd
+import parameters
 
-parameters.populationSize = 1000
 
-parameters.infectionDuration = 21. / 365.
-parameters.recovery = parameters.deterministic(
-    scale = parameters.infectionDuration)
+populationSize = 100
+
+infectionDuration = 21. / 365.
 
 R0s = (5., 10., 20.)
 
 
 tMax = numpy.inf
-nRuns = 100
+nRuns = 10
 debug = False
 
 def runSimulations(R0):
-    parameters.R0 = R0
-    parameters.setTransmissionRate()
-
-    #numpy.random.seed(1)
+    # numpy.random.seed(1)
 
     T = []
     I = []
     extinctionTimes = []
 
+    p = parameters.Parameters()
+    p.populationSize = populationSize
+    p.infectionDuration = infectionDuration
+    p.R0 = R0
+
     for i in xrange(nRuns):
-        h = herd.Herd(debug = debug)
+        print 'R0 = {:g}, run #{}'.format(R0, i + 1)
+
+        h = herd.Herd(p,
+                      debug = debug)
         result = h.run(tMax)
         (t, i) = map(numpy.array, zip(*result))
 

@@ -33,7 +33,3 @@ class mortality_gen(stats.rv_continuous):
                 1. + (numpy.log(1. - q) - numpy.log(0.7)) / numpy.log(0.95),
                 12. + (numpy.log(1. - q) - numpy.log(0.7)
                        - 11. * numpy.log(0.95)) / numpy.log(0.5)))
-
-
-mortality = mortality_gen(name = 'mortality',
-                          a = 0.)

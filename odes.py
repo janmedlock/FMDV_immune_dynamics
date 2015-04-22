@@ -2,10 +2,9 @@
 
 import numpy
 from scipy import integrate
-import parameters
 
 
-def rhs(Y, t):
+def rhs(Y, t, parameters):
     (M, S, I, R) = Y
 
     B = parameters.birth.hazard(t, 0., 4.)
@@ -26,7 +25,7 @@ def rhs(Y, t):
     return (dM, dS, dI, dR)
 
 
-def solve(tMax):
+def solve(tMax, parameters):
     M0 = parameters.populationSize \
       * parameters.ageStructure.cdf(parameters.maternalImmunityDuration)
     I0 = parameters.initialInfections
@@ -36,7 +35,7 @@ def solve(tMax):
     
     t = numpy.linspace(0., tMax, 1001)
 
-    Y = integrate.odeint(rhs, (M0, S0, I0, R0), t)
+    Y = integrate.odeint(rhs, (M0, S0, I0, R0), t, args = (parameters, ))
 
     (M, S, I, R) = numpy.hsplit(Y, 4)
 
@@ -45,10 +44,13 @@ def solve(tMax):
 
 if __name__ == '__main__':
     import pylab
+    import parameters
     
+    p = parameters.Parameters()
+
     tMax = 1.
 
-    (t, M, S, I, R) = solve(tMax)
+    (t, M, S, I, R) = solve(tMax, p)
 
     pylab.plot(365. * t, I)
     pylab.xlabel('time (days)')

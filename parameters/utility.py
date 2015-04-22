@@ -79,13 +79,21 @@ def findStableAgeStructure(mortality, birth, male,
     (ages, matrices) = buildMatrices(mortality, birth, male,
                                      *args, **kwargs)
 
-    # (B_bar, A, M) = _matrices
-    (B_bar, AM) = _matrices
+    # (B_bar, A, M) = matrices
+    (B_bar, AM) = matrices
 
     # G = B_bar + A - M
     G = B_bar + AM
 
     return (ages, findDominantEigenpair(G)[1])
+
+
+def get_shelve_key(mortality, birth, male):
+    # Note: mortality is not yet in the key.
+    probabilityOfMaleBirth = male.args[0]
+    key = ','.join(str(x) for x in (probabilityOfMaleBirth,
+                                    birth.seasonalAmplitude))
+    return key
 
 
 class memoized:

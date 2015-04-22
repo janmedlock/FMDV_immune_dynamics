@@ -1,24 +1,33 @@
 import numpy
 from scipy import stats, optimize
+import inspect
+import os.path
+import shelve
 
-from .mortality import *
-from .male import *
 from . import utility
 
 
 class birth_gen(stats.rv_continuous):
-    def __init__(self, *args, **kwargs):
+    def __init__(self,
+                 mortality, male,
+                 seasonalAmplitude = 1.,
+                 *args, **kwargs):
+        self.seasonalAmplitude = seasonalAmplitude
+
+        self.findBirthScaling(mortality, male)
+
         stats.rv_continuous.__init__(self, *args, **kwargs)
-        # self.findBirthScaling(mortality, male)
-        self.scaling = 0.4429783313744527
 
     def _argcheck(self, time0, age0):
         return (age0 >= 0.)
         
     def hazard(self, time, time0, age0):
-        return self.scaling \
-          * numpy.where(age0 + time < 4., 0.,
-                        (1. + numpy.cos(2 * numpy.pi * (time + time0))))
+        return numpy.where(
+            age0 + time < 4.,
+            0.,
+            self.scaling * (1.
+                            + self.seasonalAmplitude
+                            * numpy.cos(2 * numpy.pi * (time + time0))))
 
     # def _cdf_single(self, time, time0, age0):
     #     result = scipy.integrate.quad(self.hazard, 0, time,
@@ -37,7 +46,7 @@ class birth_gen(stats.rv_continuous):
             0.,
             self.scaling \
             * ((time - lb)
-               + 1. / 2. / numpy.pi
+               + self.seasonalAmplitude / 2. / numpy.pi
                * (numpy.sin(2. * numpy.pi * (time + time0))
                   - numpy.sin(2. * numpy.pi * (lb + time0)))))
         
@@ -57,20 +66,25 @@ class birth_gen(stats.rv_continuous):
 
     def findBirthScaling(self, mortality, male,
                          *args, **kwargs):
-        self.scaling = 1.
+        mydir = os.path.dirname(inspect.getfile(self.__class__))
+        shelf = shelve.open(os.path.join(mydir, 'birthScaling.shelve'))
 
-        (ages, matrices) = utility.buildMatrices(mortality, self, male,
-                                                 *args, **kwargs)
-        def objective(z):
-            return utility.findGrowthRate(mortality, self, male,
-                                          _birthScaling = numpy.asscalar(z),
-                                          _matrices = matrices,
-                                          *args, **kwargs)
+        key = utility.get_shelve_key(mortality, self, male)
 
-        self.scaling = numpy.asscalar(optimize.fsolve(objective, 0.443))
+        if key in shelf:
+            self.scaling = shelf[key]
+        else:
+            self.scaling = 1.
 
+            (ages, matrices) = utility.buildMatrices(mortality, self, male,
+                                                     *args, **kwargs)
+            def objective(z):
+                return utility.findGrowthRate(mortality, self, male,
+                                              _birthScaling = numpy.asscalar(z),
+                                              _matrices = matrices,
+                                              *args, **kwargs)
 
+            self.scaling = numpy.asscalar(optimize.fsolve(objective, 0.443))
+            shelf[key] = self.scaling
 
-birth = birth_gen(name = 'birth',
-                  a = 0.,
-                  shapes = 'time0, age0')
+        shelf.close()

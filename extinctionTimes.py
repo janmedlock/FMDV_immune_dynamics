@@ -23,23 +23,34 @@ def findExtinctionTimes(tMax,
                         populationSize = None,
                         infectionDuration = None,
                         R0 = None,
+                        birthSeasonalAmplitude = None,
                         *args,
                         **kwds):
+
+    runFindTransmissionRate = False
+
     if populationSize is not None:
-        populationSizeOrig = parameters.populationSize
         parameters.populationSize = populationSize
+        runFindTransmissionRate = True
 
     if infectionDuration is not None:
-        infectionDurationOrig = parameters.infectionDuration
         parameters.infectionDuration = infectionDuration
         parameters.recovery \
           = parameters.deterministic(scale = infectionDuration)
-        parameters.setTransmissionRate()
+        runFindTransmissionRate = True
 
     if R0 is not None:
-        R0Orig = parameters.R0
         parameters.R0 = R0
-        parameters.setTransmissionRate()
+        runFindTransmissionRate = True
+
+    if runFindTransmissionRate:
+        parameters.findTransmissionRate(parameters.R0,
+                                        parameters.recovery,
+                                        parameters.populationSize)
+
+    if birthSeasonalAmplitude is not None:
+        parameters.birthSeasonalAmplitude = birthSeasonalAmplitude
+        parameters.birth.findBirthScaling()
 
     pool = multiprocessing.Pool(initializer = setRandomSeed)
     
@@ -52,19 +63,6 @@ def findExtinctionTimes(tMax,
     pool.close()
 
     extinctionTimes = [r.get() for r in results]
-
-    if populationSize is not None:
-        parameters.populationSize = populationSizeOrig
-
-    if infectionDuration is not None:
-        parameters.infectionDuration = infectionDurationOrig
-        parameters.recovery \
-          = parameters.deterministic(scale = infectionDurationOrig)
-        parameters.setTransmissionRate()
-
-    if R0 is not None:
-        parameters.R0 = R0Orig
-        parameters.setTransmissionRate()
 
     return extinctionTimes
 

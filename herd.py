@@ -2,7 +2,6 @@
 
 import numpy
 import scipy.stats
-import parameters
 
 
 class Event:
@@ -21,15 +20,19 @@ class Event:
 class Buffalo:
     def __init__(self, herd, age = 0., identifier = None):
         self.herd = herd
+
+        # All members of the herd have the same parameters.
+        self.parameters = self.herd.parameters
+
         self.birthDate = self.herd.time - age
         self.identifier = identifier
-        self.sex = 'male' if (parameters.male.rvs() == 1) \
+        self.sex = 'male' if (self.parameters.male.rvs() == 1) \
           else 'female'
 
         self.events = {}
 
         maternalImmunityWaningAge \
-          = parameters.maternalImmunityWaning.rvs()
+          = self.parameters.maternalImmunityWaning.rvs()
         if age < maternalImmunityWaningAge:
             self.immuneStatus = 'maternal immunity'
 
@@ -45,7 +48,7 @@ class Buffalo:
 
         # Use resampling to get a death age > current age.
         while True:
-            deathAge = parameters.mortality.rvs()
+            deathAge = self.parameters.mortality.rvs()
             if deathAge > age:
                 break
         self.events['mortality'] = Event(self.birthDate + deathAge,
@@ -56,7 +59,7 @@ class Buffalo:
         if self.sex == 'female':
             self.events['giveBirth'] \
               = Event(self.herd.time
-                      + parameters.birth(self.herd.time, age).rvs(),
+                      + self.parameters.birth.rvs(self.herd.time, age),
                       self.giveBirth,
                       'give birth for #{}'.format(self.identifier))
 
@@ -71,7 +74,7 @@ class Buffalo:
         self.events['giveBirth'] \
           = Event(
               self.herd.time
-              + parameters.birth(self.herd.time, self.age()).rvs(),
+              + self.parameters.birth.rvs(self.herd.time, self.age()),
               self.giveBirth,
               'give birth for #{}'.format(self.identifier))
 
@@ -93,7 +96,7 @@ class Buffalo:
         
         self.events['recovery'] \
           = Event(self.herd.time
-                  + parameters.recovery.rvs(),
+                  + self.parameters.recovery.rvs(),
                   self.recovery,
                   'recovery for #{}'.format(self.identifier))
     
@@ -133,18 +136,19 @@ class Buffalo:
 
 
 class Herd(list):
-    def __init__(self, debug = False):
+    def __init__(self, parameters, debug = False):
+        self.parameters = parameters
         self.debug = debug
 
         self.time = 0.
         self.identifier = 0
 
-        ages = parameters.ageStructure.rvs(
-            size = parameters.populationSize)
+        ages = self.parameters.ageStructure.rvs(
+            size = self.parameters.populationSize)
         for a in ages:
             self.birth(a)
 
-        self.addInfections(parameters.initialInfections)
+        self.addInfections(self.parameters.initialInfections)
 
     def addInfections(self, numberOfInfections):
         i = 0
@@ -176,7 +180,7 @@ class Herd(list):
     def updateInfectionTimes(self):
         self.numberInfectious = sum(buffalo.isInfectious() for buffalo in self)
         self.forceOfInfection \
-          = parameters.transmissionRate * self.numberInfectious
+          = self.parameters.transmissionRate * self.numberInfectious
         for buffalo in self:
             buffalo.updateInfectionTime(self.forceOfInfection)
 
@@ -219,8 +223,12 @@ class Herd(list):
 
 if __name__ == '__main__':
     import pylab
+
     import odes
-    
+    import parameters
+
+    p = parameters.Parameters()
+
     tMax = 1.
     nRuns = 10
     debug = False
@@ -229,7 +237,7 @@ if __name__ == '__main__':
 
     extinctionTimes = []
     for r in xrange(nRuns):
-        h = Herd(debug = debug)
+        h = Herd(p, debug = debug)
         result = h.run(tMax)
         (t, I) = zip(*result)
 
@@ -239,7 +247,7 @@ if __name__ == '__main__':
 
         pylab.step(365. * numpy.asarray(t), I, where = 'post')
 
-    (to, Mo, So, Io, Ro) = odes.solve(max(extinctionTimes))
+    (to, Mo, So, Io, Ro) = odes.solve(max(extinctionTimes), p)
     pylab.plot(365. * to, Io, linestyle = ':')
 
     pylab.xlabel('time (days)')

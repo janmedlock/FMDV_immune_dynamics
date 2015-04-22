@@ -1,6 +1,5 @@
 from .deterministic import *
 
 
-infectionDuration = 1.6 / 365.
-
-recovery = deterministic(scale = infectionDuration)
+def recovery_gen(infectionDuration):
+    return deterministic(scale = infectionDuration)

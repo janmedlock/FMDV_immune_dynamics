@@ -1,6 +1,5 @@
 from scipy import stats
 
 
-probabilityOfMaleBirth = 0.5
-
-male = stats.bernoulli(probabilityOfMaleBirth)
+def male_gen(probabilityOfMaleBirth):
+    return stats.bernoulli(probabilityOfMaleBirth)
