@@ -8,7 +8,8 @@ def get_rectangular_hazard(mu, sigma):
     b = mu ** 2 / (mu ** 2 + sigma ** 2)
 
     def f(t):
-        return numpy.where(numpy.abs(numpy.mod(t + 0.5, 1) - 0.5) <= b / 2.,
+        tau = numpy.mod(t + 0.5, 1) - 0.5
+        return numpy.where(numpy.abs(tau) <= b / 2.,
                            a, 0.)
 
     return f
@@ -17,15 +18,15 @@ def get_rectangular_hazard(mu, sigma):
 def get_triangular_hazard(mu, sigma):
     if sigma < mu / numpy.sqrt(3):
         a = mu + sigma * numpy.sqrt(3)
-        c = 2 * sigma * numpy.sqrt(3) / (mu + sigma * numpy.sqrt(3))
+        b = 2 * sigma * numpy.sqrt(3) / (mu + sigma * numpy.sqrt(3))
     else:
         a = 3 * (mu ** 2 + sigma ** 2) / 2 / mu
-        c = 3 * (mu ** 2 + sigma ** 2) / 4 / mu ** 2
+        b = 3 * (mu ** 2 + sigma ** 2) / 4 / mu ** 2
 
     def f(t):
-        return numpy.clip(
-            a * (1 - 2 * c * numpy.abs(numpy.mod(t + 0.5, 1) - 0.5)),
-            0, numpy.inf)
+        tau = numpy.mod(t + 0.5, 1) - 0.5
+        return numpy.clip(a * (1 - 2 * b * numpy.abs(tau)),
+                          0, numpy.inf)
 
     return f
 

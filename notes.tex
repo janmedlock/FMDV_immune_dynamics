@@ -526,57 +526,65 @@ With $\mu$ fixed, this gives two parameters, $\sigma^2$ and $t_0$.
 
 \subsection{Triangular}
 
-\subsubsection{$c \leq 1$}
-
-Let the hazard be triangular with maximum $a$ and slopes $\pm 2 a c$
+Let the hazard be triangular with maximum $a$ and slopes $\pm 2 a b$
 centered at $t = t_0$:
 \begin{equation}
-  h(t) = a \left(1 - 2 c |t - t_0|\right).
+  h(t) = \max\left\{
+    a \left(1 - 2 b |t - t_0|\right),
+    0
+  \right\}.
+\end{equation}
+
+\subsubsection{$b \leq 1$}
+
+Let the hazard be triangular with maximum $a$ and slopes $\pm 2 a b$
+centered at $t = t_0$:
+\begin{equation}
+  h(t) = a \left(1 - 2 b |t - t_0|\right).
 \end{equation}
 The mean is
 \begin{align}
   \mu = \int_0^1 h(t) \md t
-  = 2 a \int_0^{\frac{1}{2}} 1 - 2 c t \; \md t
-  = 2 a \left[t - c t^2\right]_0^{\frac{1}{2}}
-  = \frac{a}{2} (2 - c)
+  = 2 a \int_0^{\frac{1}{2}} 1 - 2 b t \; \md t
+  % = 2 a \left[t - b t^2\right]_0^{\frac{1}{2}}
+  = \frac{a}{2} (2 - b)
 \end{align}
 and
 \begin{align}
   \mathrm{E} X^2 &= \int_0^1 \left[h(t)\right]^2 \md t
-  \\
-  &= 2 a^2 \int_0^{\frac{1}{2}} \left(1 - 2 c t\right)^2 \md t
-  \\
-  &= 2 a^2 \int_0^{\frac{1}{2}} 1 - 4 c t + 4 c^2 t^2
-    \; \md t
-  \\
-  &= 2 a^2 \left[t - 2 c t^2 + \frac{4 c^2}{3} t^3\right]_0^{\frac{1}{2}}
-  \\
-  &= \frac{a^2}{3} (c^2 - 3 c + 3)
+  % \\
+  = 2 a^2 \int_0^{\frac{1}{2}} \left(1 - 2 b t\right)^2 \md t
+  % \\
+  % &= 2 a^2 \int_0^{\frac{1}{2}} 1 - 4 b t + 4 b^2 t^2 \; \md t
+  % \\
+  % &= 2 a^2 \left[t - 2 b t^2 + \frac{4 b^2}{3} t^3\right]_0^{\frac{1}{2}}
+  % \\
+  = \frac{a^2}{3} (b^2 - 3 b + 3)
 \end{align}
 so the variance is
 \begin{align}
-  \sigma^2 &= \frac{a^2}{3} (c^2 - 3 c + 3)
-             - \frac{a^2}{4} (2 - c)^2
-  \\
-           &= \frac{a^2 c^2}{12}.
+  \sigma^2
+  % &= \frac{a^2}{3} (b^2 - 3 b + 3) - \frac{a^2}{4} (2 - b)^2
+  % \\
+  &= \frac{a^2 b^2}{12}.
 \end{align}
 Then
 \begin{align}
   a &= \mu + \sigma \sqrt{3},
   &
-  c &= \frac{2 \sigma \sqrt{3}}{\mu + \sigma \sqrt{3}}.
+  b &= \frac{2 \sigma \sqrt{3}}{\mu + \sigma \sqrt{3}}.
 \end{align}
 
 
-\subsubsection{$c \geq 1$}
+\subsubsection{$b \geq 1$}
 
 Let the hazard be triangular with maximum $a$ in the region of width
-$\frac{1}{c} \leq 1$ centered at $t = t_0$ and $0$ elsewhere:
+$\frac{1}{b} \leq 1$ centered at $t = t_0$ and $0$ elsewhere:
 \begin{equation}
   h(t) =
   \begin{cases}
-    a \left(1 - 2 c |t - t_0|\right)
-    & \text{if $|t - t_0| \leq \frac{1}{2 c}$},
+    a \left(1 - 2 b |t - t_0|\right)
+    & \text{if $|t - t_0| \leq \frac{1}{2 b}$},
     \\
     0 & \text{otherwise}.
   \end{cases}
@@ -584,36 +592,36 @@ $\frac{1}{c} \leq 1$ centered at $t = t_0$ and $0$ elsewhere:
 The mean is
 \begin{align}
   \mu = \int_0^1 h(t) \md t
-  = 2 a \int_0^{\frac{1}{2 c}} 1 - 2 c t \; \md t
-  = \frac{a}{2 c}
+  = 2 a \int_0^{\frac{1}{2 b}} 1 - 2 b t \; \md t
+  = \frac{a}{2 b}
 \end{align}
 and
 \begin{align}
   \mathrm{E} X^2 &= \int_0^1 \left[h(t)\right]^2 \md t
-  \\
-  &= 2 a^2 \int_0^{\frac{1}{2 c}} \left(1 - 2 c t\right)^2 \md t
-  \\
-  &= 2 a^2 \int_0^{\frac{1}{2 c}} 1 - 4 c t + 4 c^2 t^2
-    \; \md t
-  \\
-  &= 2 a^2 \left[t - 2 c t^2 + \frac{4 c^2}{3} t^3\right]_0^{\frac{1}{2 c}}
-  \\
-  &= \frac{a^2}{3 c},
+  % \\
+  = 2 a^2 \int_0^{\frac{1}{2 b}} \left(1 - 2 b t\right)^2 \md t
+  % \\
+  % &= 2 a^2 \int_0^{\frac{1}{2 c}} 1 - 4 c t + 4 c^2 t^2
+  %   \; \md t
+  % \\
+  % &= 2 a^2 \left[t - 2 c t^2 + \frac{4 c^2}{3} t^3\right]_0^{\frac{1}{2 c}}
+  % \\
+  = \frac{a^2}{3 b},
 \end{align}
 so the variance is
 \begin{align}
-  \sigma^2 = \frac{a^2}{12 c^2} (4 c - 3)
+  \sigma^2 = \frac{a^2}{12 b^2} (4 b - 3)
 \end{align}
 This gives
 \begin{align}
   a &= \frac{3}{2} \frac{\mu^2 + \sigma^2}{\mu},
   &
-  c &= \frac{3}{4} \frac{\mu^2 + \sigma^2}{\mu^2}.
+  b &= \frac{3}{4} \frac{\mu^2 + \sigma^2}{\mu^2}.
 \end{align}
 With $\mu$ fixed, this gives two parameters, $\sigma^2$ and $t_0$.
 
 
-Combining the cases $c \leq 1$ and $c \geq 1$ gives
+Combining the cases $b \leq 1$ and $b \geq 1$ gives
 \begin{align}
   a &=
       \begin{cases}
@@ -624,7 +632,7 @@ Combining the cases $c \leq 1$ and $c \geq 1$ gives
         & \text{if $\sigma^2 \geq \frac{\mu^2}{3}$},
       \end{cases}
   &
-  c &= 
+  b &= 
       \begin{cases}
         \frac{2 \sigma \sqrt{3}}{\mu + \sigma \sqrt{3}}
         & \text{if $\sigma^2 \leq \frac{\mu^2}{3}$},
