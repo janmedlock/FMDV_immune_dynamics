@@ -16,7 +16,7 @@ parameters.R0 = 10.
 #                    800, 900, 1000, 2000, 3000, 5000, 7500, 10000)
 populationSizes = (100, )
 
-birthSeasonalAmplitudes = (1., )
+birthSeasonalVariances = (1., )
 
 
 (basename, ext) = os.path.splitext(os.path.basename(sys.argv[0]))
@@ -35,21 +35,21 @@ def searchPopulationSize(tMax, nRuns,
             debug = debug)
 
 
-def searchBirthSeasonalAmplitude(tMax, nRuns,
+def searchBirthSeasonalVariance(tMax, nRuns,
                          callback = None, debug = False):
-    for birthSeasonalAmplitude in birthSeasonalAmplitudes:
-        print 'birthSeasonalAmplitude = {}'.format(birthSeasonalAmplitude)
+    for birthSeasonalVariance in birthSeasonalVariances:
+        print 'birthSeasonalVariance = {}'.format(birthSeasonalVariance)
         extinctionTimes.searchParameters(
             tMax,
             nRuns,
-            birthSeasonalAmplitude = birthSeasonalAmplitude,
+            birthSeasonalVariance = birthSeasonalVariance,
             callback = callback,
             debug = debug)
 
 
 def SaveOut(csvWriter):
-    def _SaveOut(populationSize, birthSeasonalAmplitude, data):
-        csvWriter.writerow([populationSize, birthSeasonalAmplitude]
+    def _SaveOut(populationSize, birthSeasonalVariance, data):
+        csvWriter.writerow([populationSize, birthSeasonalVariance]
                            + data)
     return _SaveOut
     

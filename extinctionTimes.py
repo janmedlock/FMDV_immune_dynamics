@@ -23,7 +23,7 @@ def findExtinctionTimes(tMax,
                         populationSize = None,
                         infectionDuration = None,
                         R0 = None,
-                        birthSeasonalAmplitude = None,
+                        birthSeasonalVariance = None,
                         *args,
                         **kwds):
 
@@ -48,8 +48,8 @@ def findExtinctionTimes(tMax,
                                         parameters.recovery,
                                         parameters.populationSize)
 
-    if birthSeasonalAmplitude is not None:
-        parameters.birthSeasonalAmplitude = birthSeasonalAmplitude
+    if birthSeasonalVariance is not None:
+        parameters.birthSeasonalVariance = birthSeasonalVariance
         parameters.birth.findBirthScaling()
 
     pool = multiprocessing.Pool(initializer = setRandomSeed)

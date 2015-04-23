@@ -8,9 +8,9 @@ from . import utility
 class birth_gen(rv.RV, stats.rv_continuous):
     def __init__(self,
                  mortality, male,
-                 seasonalAmplitude = 1.,
+                 seasonalVariance = 1.,
                  *args, **kwargs):
-        self.seasonalAmplitude = seasonalAmplitude
+        self.seasonalVariance = seasonalVariance
 
         self.mortality = mortality
         self.male = male
@@ -30,7 +30,7 @@ class birth_gen(rv.RV, stats.rv_continuous):
             age0 + time < 4.,
             0.,
             self.scaling * (1.
-                            + self.seasonalAmplitude
+                            + self.seasonalVariance
                             * numpy.cos(2 * numpy.pi * (time + time0))))
 
     # def _cdf_single(self, time, time0, age0):
@@ -50,7 +50,7 @@ class birth_gen(rv.RV, stats.rv_continuous):
             0.,
             self.scaling \
             * ((time - lb)
-               + self.seasonalAmplitude / 2. / numpy.pi
+               + self.seasonalVariance / 2. / numpy.pi
                * (numpy.sin(2. * numpy.pi * (time + time0))
                   - numpy.sin(2. * numpy.pi * (lb + time0)))))
         
@@ -74,4 +74,4 @@ class birth_gen(rv.RV, stats.rv_continuous):
                                                 *args, **kwargs)
 
     def __repr__(self):
-        return rv.RV.__repr__(self, ('seasonalAmplitude', ))
+        return rv.RV.__repr__(self, ('seasonalVariance', ))

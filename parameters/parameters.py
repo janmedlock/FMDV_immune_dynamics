@@ -13,7 +13,7 @@ class Parameters(object):
         self._initialized = False
 
         self.R0 = 5.
-        self.birthSeasonalAmplitude = 1.
+        self.birthSeasonalVariance = 1.
         self.initialInfections = 2
         self.probabilityOfMaleBirth = 0.5
         self.maternalImmunityDuration = 0.5
@@ -44,7 +44,7 @@ class Parameters(object):
     def get_birth(self):
         self.birth = birth_gen(self.mortality,
                                self.male,
-                               self.birthSeasonalAmplitude)
+                               self.birthSeasonalVariance)
 
     def get_ageStructure(self):
         self.ageStructure = ageStructure_gen(self.mortality,
@@ -98,9 +98,9 @@ class Parameters(object):
         if self._initialized:
             self.get_transmissionRate()
 
-    def set_birthSeasonalAmplitude(self, a):
-        # self.birthSeasonalAmplitude = a
-        self._set('birthSeasonalAmplitude', a)
+    def set_birthSeasonalVariance(self, a):
+        # self.birthSeasonalVariance = a
+        self._set('birthSeasonalVariance', a)
 
         if self._initialized:
             self.get_birth()
