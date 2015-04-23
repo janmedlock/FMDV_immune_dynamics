@@ -1,5 +1,10 @@
-from .deterministic import *
+from . import rv
 
 
-def recovery_gen(infectionDuration):
-    return deterministic(scale = infectionDuration)
+class recovery_gen(rv.deterministic):
+    'Transition at infectionDuration with probability 1.'
+
+    def __init__(self, infectionDuration, *args, **kwargs):
+        super(recovery_gen, self).__init__('infectionDuration',
+                                           infectionDuration,
+                                           *args, **kwargs)

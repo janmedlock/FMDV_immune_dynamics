@@ -1,8 +1,14 @@
 import numpy
-from scipy import stats, integrate
+from scipy import integrate
+
+from . import rv
 
 
-class mortality_gen(stats.rv_continuous):
+class mortality_gen(rv.RV):
+    def __init__(self, *args, **kwargs):
+        # stats.rv_continuous.__init__(self, name = 'mortality', a = 0.)
+        pass
+
     def annualSurvival(self, age):
         return numpy.where(
             age < 1., 0.7, numpy.where(

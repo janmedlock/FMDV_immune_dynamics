@@ -10,6 +10,7 @@ from .transmission import *
 class Parameters(object):
     def __init__(self):
         'Initialize with default values.'
+        self._initialized = False
 
         self.R0 = 5.
         self.birthSeasonalAmplitude = 1.
@@ -17,9 +18,10 @@ class Parameters(object):
         self.probabilityOfMaleBirth = 0.5
         self.maternalImmunityDuration = 0.5
         self.populationSize = 100
-        self.infectionDuration = 1.6 / 365.
+        self.infectionDuration = 1.7 / 365.
 
         self.build()
+        self._initialized = True
 
     def get_male(self):
         self.male = male_gen(self.probabilityOfMaleBirth)
@@ -29,7 +31,7 @@ class Parameters(object):
             self.maternalImmunityDuration)
 
     def get_mortality(self):
-        self.mortality = mortality_gen(name = 'mortality', a = 0.)
+        self.mortality = mortality_gen()
 
     def get_recovery(self):
         self.recovery = recovery_gen(self.infectionDuration)
@@ -42,10 +44,7 @@ class Parameters(object):
     def get_birth(self):
         self.birth = birth_gen(self.mortality,
                                self.male,
-                               self.birthSeasonalAmplitude,
-                               name = 'birth',
-                               a = 0.,
-                               shapes = 'time0, age0')
+                               self.birthSeasonalAmplitude)
 
     def get_ageStructure(self):
         self.ageStructure = ageStructure_gen(self.mortality,
@@ -63,48 +62,58 @@ class Parameters(object):
 
     def set_probabilityOfMaleBirth(self, p):
         # self.probabilityOfMaleBirth = p
-        object.__setattr__(self, 'probabilityOfMaleBirth', p)
+        self._set('probabilityOfMaleBirth', p)
 
-        self.get_male()
-        self.get_birth()
-        self.get_ageStructure()
+        if self._initialized:
+            self.get_male()
+            self.get_birth()
+            self.get_ageStructure()
 
     def set_maternalImmunityDuration(self, d):
         # self.maternalImmunityDuration = d
-        object.__setattr__(self, 'maternalImmunityDuration', d)
+        self._set('maternalImmunityDuration', d)
 
-        self.get_maternalImmunityWaning()
+        if self._initialized:
+            self.get_maternalImmunityWaning()
 
     def set_infectionDuration(self, d):
         # self.infectionDuration = d
-        object.__setattr__(self, 'infectionDuration', d)
+        self._set('infectionDuration', d)
 
-        self.get_recovery()
-        self.get_transmissionRate()
+        if self._initialized:
+            self.get_recovery()
+            self.get_transmissionRate()
 
     def set_R0(self, r):
         # self.R0 = r
-        object.__setattr__(self, 'R0', r)
+        self._set('R0', r)
         
-        self.get_transmissionRate()
+        if self._initialized:
+            self.get_transmissionRate()
 
     def set_populationSize(self, p):
         # self.populationSize = p
-        object.__setattr__(self, 'populationSize', p)
+        self._set('populationSize', p)
 
-        self.get_transmissionRate()
+        if self._initialized:
+            self.get_transmissionRate()
 
     def set_birthSeasonalAmplitude(self, a):
         # self.birthSeasonalAmplitude = a
-        object.__setattr__(self, 'birthSeasonalAmplitude', a)
+        self._set('birthSeasonalAmplitude', a)
 
-        self.get_birth()
-        self.get_ageStructure()
+        if self._initialized:
+            self.get_birth()
+            self.get_ageStructure()
+
+    def _set(self, k, v):
+        'Really set the value, bypassing self.__setattr__()'
+        super(Parameters, self).__setattr__(k, v)
 
     def __setattr__(self, k, v):
         'Try to use set_* methods if available.'
         try:
-            f = getattr(self, 'set_{}'.format(k))
-            f(v)
+            set_k = getattr(self, 'set_{}'.format(k))
+            set_k(v)
         except (AttributeError, TypeError):
-            object.__setattr__(self, k, v)
+            self._set(k, v)
