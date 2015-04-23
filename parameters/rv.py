@@ -22,14 +22,13 @@ class RV(object):
 
 
 class deterministic(RV, stats.rv_continuous):
-    def __init__(self, paramname = 'scale', scale = 1., *args, **kwargs):
+    def __init__(self, paramname = '_scale', scale = 1., *args, **kwargs):
         self._scale = scale
 
         self._paramname = paramname
-        setattr(self, paramname, scale)
 
-        kwargs['a'] = kwargs['b'] = scale
-        stats.rv_continuous.__init__(self, *args, **kwargs)
+        stats.rv_continuous.__init__(self, a = scale, b = scale,
+                                     *args, **kwargs)
 
     def _cdf(self, age):
         return numpy.where(age < self._scale, 0., 1.)

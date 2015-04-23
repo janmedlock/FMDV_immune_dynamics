@@ -493,6 +493,147 @@ $1.7 \times 10^{-12}$.
 \subsection{$R_0$}
 
 
+\appendix
+
+\section{Alternate Birth Hazards}
+
+\subsection{Rectangular}
+
+Let the hazard be constant $a$ in a the region of width $b \leq 1$
+centered at $t = t_0$ and $0$ elsewhere:
+\begin{equation}
+  h(t) =
+  \begin{cases}
+    a & \text{if $|t - t_0| \leq \frac{b}{2}$},
+    \\
+    0 & \text{otherwise}.
+  \end{cases}
+\end{equation}
+The mean and variance are
+\begin{align}
+  \mu &= a b,
+  &
+  \sigma^2 &= a^2 b (1 - b),
+\end{align}
+which gives
+\begin{align}
+  a &= \frac{\mu^2 + \sigma^2}{\mu},
+  &
+  b &= \frac{\mu^2}{\mu^2 + \sigma^2}.
+\end{align}
+With $\mu$ fixed, this gives two parameters, $\sigma^2$ and $t_0$.
+
+
+\subsection{Triangular}
+
+\subsubsection{$b \leq 1$}
+
+Let the hazard be triangular with maximum $a$ in the region of width
+$b \leq 1$ centered at $t = t_0$ and $0$ elsewhere:
+\begin{equation}
+  h(t) =
+  \begin{cases}
+    a \left(1 - \frac{2}{b} |t - t_0|\right)
+    & \text{if $|t - t_0| \leq \frac{b}{2}$},
+    \\
+    0 & \text{otherwise}.
+  \end{cases}
+\end{equation}
+The mean is
+\begin{align}
+  \mu = \int_0^1 h(t) \md t
+  = 2 a \int_0^{\frac{b}{2}} 1 - \frac{2}{b} t \; \md t
+  = \frac{a b}{2}
+\end{align}
+and
+\begin{align}
+  \mathrm{E} X^2 &= \int_0^1 \left[h(t)\right]^2 \md t
+  \\
+  &= 2 a^2 \int_0^{\frac{b}{2}} \left(1 - \frac{2}{b} t\right)^2 \md t
+  \\
+  &= 2 a^2 \int_0^{\frac{b}{2}} 1 - \frac{4}{b} t + \frac{4}{b^2} t^2
+    \; \md t
+  \\
+  &= 2 a^2 \left[t - \frac{2}{b} t^2 + \frac{4}{3 b^2} t^3\right]_0^{\frac{b}{2}}
+  \\
+  &= \frac{a^2 b}{3},
+\end{align}
+so the variance is
+\begin{align}
+  \sigma^2 = \frac{a^2 b}{12} (4 - 3 b)
+\end{align}
+This gives
+\begin{align}
+  a &= \frac{3}{2} \frac{\mu^2 + \sigma^2}{\mu},
+  &
+  b &= \frac{4}{3} \frac{\mu^2}{\mu^2 + \sigma^2}.
+\end{align}
+With $\mu$ fixed, this gives two parameters, $\sigma^2$ and $t_0$.
+
+
+\subsubsection{$b \geq 1$}
+
+Let the hazard be triangular with maximum $a$ and slopes $\pm \frac{2
+  a}{b}$ centered at $t = t_0$:
+\begin{equation}
+  h(t) = a \left(1 - \frac{2}{b} |t - t_0|\right).
+\end{equation}
+The mean is
+\begin{align}
+  \mu = \int_0^1 h(t) \md t
+  = 2 a \int_0^{\frac{1}{2}} 1 - \frac{2}{b} t \; \md t
+  = 2 a \left[t - \frac{1}{b} t^2\right]_0^{\frac{1}{2}}
+  = \frac{a}{2 b} (2 b - 1)
+\end{align}
+and
+\begin{align}
+  \mathrm{E} X^2 &= \int_0^1 \left[h(t)\right]^2 \md t
+  \\
+  &= 2 a^2 \int_0^{\frac{1}{2}} \left(1 - \frac{2}{b} t\right)^2 \md t
+  \\
+  &= 2 a^2 \int_0^{\frac{1}{2}} 1 - \frac{4}{b} t + \frac{4}{b^2} t^2
+    \; \md t
+  \\
+  &= 2 a^2 \left[t - \frac{2}{b} t^2 + \frac{4}{3 b^2} t^3\right]_0^{\frac{1}{2}}
+  \\
+  &= \frac{a^2}{3 b^2} (3 b^2 - 3 b + 1)
+\end{align}
+so the variance is
+\begin{align}
+  \sigma^2 &= \frac{a^2}{3 b^2} (3 b^2 - 3 b + 1)
+             - \frac{a^2}{4 b^2} (2 b - 1)^2
+  \\
+           &= \frac{a^2}{12 b^2}.
+\end{align}
+Then
+\begin{align}
+  a &= \mu + \sigma \sqrt{3},
+  &
+  b &= \frac{\mu + \sigma \sqrt{3}}{2 \sigma \sqrt{3}}.
+\end{align}
+
+
+Combining the cases $b \leq 1$ and $b \geq 1$ gives
+\begin{align}
+  a &=
+      \begin{cases}
+        \mu + \sigma \sqrt{3}
+        & \text{if $\sigma^2 \leq \frac{\mu^2}{3}$},
+        \\
+        \frac{3}{2} \frac{\mu^2 + \sigma^2}{\mu}
+        & \text{if $\sigma^2 \geq \frac{\mu^2}{3}$},
+      \end{cases}
+  &
+  b &= 
+      \begin{cases}
+        \frac{\mu + \sigma \sqrt{3}}{2 \sigma \sqrt{3}}
+        & \text{if $\sigma^2 \leq \frac{\mu^2}{3}$},
+        \\
+        \frac{4}{3} \frac{\mu^2}{\mu^2 + \sigma^2}
+        & \text{if $\sigma^2 \geq \frac{\mu^2}{3}$}.
+      \end{cases}
+\end{align}
+
 \bibliography{journal_abbreviations,math_epi}
 \bibliographystyle{jpmbib}
 
