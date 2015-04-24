@@ -4,19 +4,25 @@ import numpy
 import matplotlib.pyplot
 
 import herd
-import parameters
+import Parameters
 
 
-populationSize = 100
+populationSize = 10000
 
 infectionDuration = 21. / 365.
 
-R0s = (5., 10., 20.)
+birthSeasonalVariance = 0.
+
+# R0s = (5., 10., 20.)
+R0s = (10., )
 
 
-tMax = numpy.inf
-nRuns = 10
-debug = False
+# tMax = numpy.inf
+tMax = 10
+# nRuns = 10
+nRuns = 1
+# debug = False
+debug = True
 
 def runSimulations(R0):
     # numpy.random.seed(1)
@@ -25,9 +31,10 @@ def runSimulations(R0):
     I = []
     extinctionTimes = []
 
-    p = parameters.Parameters()
+    p = Parameters.Parameters()
     p.populationSize = populationSize
     p.infectionDuration = infectionDuration
+    p.birthSeasonalVariance = birthSeasonalVariance
     p.R0 = R0
 
     for i in xrange(nRuns):

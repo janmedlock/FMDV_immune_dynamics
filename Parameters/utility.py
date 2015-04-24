@@ -3,6 +3,7 @@ from scipy import sparse, integrate, optimize
 import shelve
 import inspect
 import os.path
+import atexit # Workaround for shelve bug on exit.
 
 
 class shelved:
@@ -25,7 +26,8 @@ class shelved:
         # Catch errors if the cache is already closed.
         try:
             self.cache.close()
-        except (ValueError, TypeError):
+            del self.cache
+        except (ValueError, TypeError, AttributeError):
             pass
 
     def __call__(self, func):
@@ -34,6 +36,8 @@ class shelved:
         # Name the cache file func.__name__ + '.shelve'
         myfile = os.path.join(mydir, '{}.shelve'.format(func.__name__))
         self.cache = shelve.open(myfile)
+        # Workaround for shelve bug on exit.
+        atexit.register(self.cache.close)
 
         def wrapped_func(*args, **kwargs):
             key = self.get_key_func(*args, **kwargs)

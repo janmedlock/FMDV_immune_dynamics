@@ -5,7 +5,7 @@
 \usepackage{natbib}
 \usepackage{hypernat}
 
-\DeclareMathOperator{\dv}{div}
+\allowdisplaybreaks[1]
 
 \title{FMDV notes}
 \author{Jan Medlock}
@@ -149,47 +149,120 @@ This has inverse
 \subsection{Birth}
 
 We assumed that females reach reproductive maturity at age $4$ and
-that the birth hazard varies sinusoidally in time:
+that the birth hazard varies at a periodic, triangular-shaped rate in
+time:
 \begin{equation}
   h_{\text{birth}}(t, a) =
   \begin{cases}
     0 & \text{if $a < 4$},
     \\
-    \alpha \left[1
-      + \sigma \cos\left(2 \pi t\right)\right]
-    & \text{if $a \geq 4$}.
+    \mu \alpha \left[1 - 2 \beta \{t\}\right]
+    & \text{if $a \geq 4$ and $\{t\} < \frac{1}{2 \beta}$},
+    \\
+    \mu \alpha \left[1 - 2 \beta (1 - \{t\})\right]
+    & \text{if $\{t\} \geq \frac{1}{2 \beta}$},
+    \\
+    0 & \text{otherwise}
   \end{cases}
 \end{equation}
-The seasonal variation is captured by $\sigma \in [0, 1]$, which we
-took to be $1$ by default.  The annual mean $\alpha$ was chosen so
-that the population achieves the mean growth rate $r = 0$ in the
-absence of infection.  (See \autoref{no_infection}.)
+with
+\begin{align}
+  \alpha &= \frac{3}{2} (1 + \sigma^2),
+  &
+  \beta &= \frac{3}{4} (1 + \sigma^2),
+\end{align}
+and $\{x\}$ is the fractional part of $x$.  The seasonal variation is
+captured by $\sigma$, which we took to be $1$ by default.  The annual
+mean $\mu$ was chosen so that the population achieves the mean growth
+rate $r = 0$ in the absence of infection.  (See
+\autoref{no_infection}.)
 
 The survival function is then
 \begin{equation}
-  \begin{split}
-    S_{\text{birth}}(t, a, t_0) &=
-    \exp\left(- \int_0^t h_{\text{birth}}(t_0 + \tau, a + \tau) \md
-      \tau\right)
+  S_{\text{birth}}(t, a, t_0) =
+  \begin{cases}
+    1 & \text{if a < 4 - t},
     \\
-    &=
-    \begin{cases}
-      1 & \text{if $a < 4 - t$},
-      \\
-      \exp\left(- \alpha \left[
-          (t - \ell)
-          + \frac{\sigma}{2 \pi}
-          \left[\sin\left(2 \pi (t + t_0)\right)
-            - \sin\left(2 \pi (t_0 + \ell)\right)\right]
-        \right]
-      \right)
-      & \text{if $a \geq 4 - t$},
-    \end{cases}
-  \end{split}
+    \exp(-\alpha H) & \text{otherwise},
+  \end{cases}
 \end{equation}
-with $\ell = \max\{0, 4 - a\}$.  There is no explicit inverse survival
-function.  Instead, the inverse was found numerically using a
-root-finding algorithm \citep{scipy}.
+where
+\begin{align}
+  H &=
+  \begin{cases}
+    H_1 + H_2  + H_3
+    & \text{if $\sigma^2 < \frac{1}{3}$},
+    \\
+    H_4 + H_5 + H_6
+    & \text{otherwise},
+  \end{cases}
+  \\
+  H_1 &= \left(1 - \frac{\beta}{2}\right)
+  \left(\lfloor d \rfloor - \lfloor c \rfloor - 1\right),
+  \\
+  H_2 &=
+  \begin{cases}
+    \frac{1}{2} \left(1 - \frac{\beta}{2}\right)
+    + \left(\frac{1}{2} - \{c\}\right)
+    \left[1 - \beta
+      + \beta \left(\frac{1}{2} - \{c\}\right)\right]
+    & \text{if $\{c\} < \frac{1}{2}$},
+    \\
+    \left(1 - \{c\}\right)
+    \left[1 - \beta + \beta \left(1 - \{c\}\right)\right]
+    & \text{otherwise},
+  \end{cases}
+  \\
+  H_3 &=
+  \begin{cases}
+    \{d\}\left(1 - \beta \{d\}\right)
+    & \text{if $\{d\} < \frac{1}{2}$},
+    \\
+    \frac{1}{2} \left(1 - \frac{\beta}{2}\right)
+    + \left(\{d\} - \frac{1}{2}\right)
+    \left[1 - \beta + \beta \left(\{d\} - \frac{1}{2}\right)\right]
+    & \text{otherwise},
+    \end{cases}
+  \\
+  H_4 &= \frac{1}{2 \beta}
+  \left(\lfloor d \rfloor - \lfloor c \rfloor - 1\right),
+  \\
+  H_5 &=
+  \begin{cases}
+    \frac{1}{4 \beta} + \beta \left(\frac{1}{2 \beta} - \{c\}\right)^2
+    & \text{if $\{c\} < \frac{1}{2 \beta}$},
+    \\
+    \frac{1}{4 \beta}
+    & \text{if $\frac{1}{2 \beta} \leq \{c\} < 1 - \frac{1}{2 \beta}$},
+    \\
+    \left(1 - \{c\}\right) \left[1 -
+      \beta \left(1 - \{c\}\right)\right]
+    & \text{otherwise}
+  \end{cases},
+  \\
+  H_6 &=
+  \begin{cases}
+    \{d\} \left[1 - \beta \{d\}\right]
+    & \text{if $\{d\} < \frac{1}{2 \beta}$},
+    \\
+    \frac{1}{4 \beta}
+    & \text{if $\frac{1}{2 \beta} \leq \{d\} <
+      1 - \frac{1}{2 \beta}$},
+    \\
+    \frac{1}{4 \beta} + \beta \left[\{d\} - \left(1
+        - \frac{1}{2 \beta}\right)\right]^2
+    & \text{otherwise},
+  \end{cases}
+  \\
+  c &= \max[4 - a, 0] + t_0,
+  \\
+  d &= t + t_0,
+\end{align}
+and $\lfloor x \rfloor$ is the floor function,
+i.e.~$\lfloor x \rfloor = x - \{x\}$.
+
+There is no explicit inverse survival function.  Instead, the inverse
+was found numerically using a root-finding algorithm \citep{scipy}.
 
 The fraction of newborns that are male was taken to be
 \begin{equation}
@@ -503,7 +576,7 @@ $1.7 \times 10^{-12}$.
 Let the hazard be constant $\alpha$ in the regions of width $\beta$
 centered at $t \bmod 1 = 0$ and $0$ elsewhere:
 \begin{equation}
-  h_{\mathrm{birth}} (t, a) =
+  h_{\text{birth}} (t, a) =
   \begin{cases}
     \alpha & \text{if $a \geq 4$ and $\left(t + \frac{\beta}{2}\right)
       \bmod 1 \leq \beta$},
@@ -527,7 +600,7 @@ With $\mu$ fixed, this gives one parameter, $\sigma^2$.
 
 The survival is
 \begin{equation}
-  S_{\mathrm{birth}}(t, a, t_0) =
+  S_{\text{birth}}(t, a, t_0) =
   \begin{cases}
     1 & \text{if $a < 4 - t$},
     \\
@@ -539,7 +612,7 @@ where
 \begin{equation}
   H(t, a, t_0) =
   \alpha \left[
-    \beta (d \dv 1 - c \dv 1)
+    \beta (\lfloor d \rfloor - \lfloor c \rfloor)
     + \min\{d \bmod 1, \beta\}
     - \min\{c \bmod 1, \beta\}
   \right]
@@ -558,7 +631,7 @@ and
 Let the hazard be triangular with maximum $\alpha$ and slopes
 $\pm 2 \alpha \beta$ centered at $t = 0$:
 \begin{equation}
-  h_{\mathrm{birth}} (t, a) =
+  h_{\text{birth}} (t, a) =
   \begin{cases}
     0 & \text{if $a < 4$},
     \\
@@ -574,7 +647,7 @@ $\pm 2 \alpha \beta$ centered at $t = 0$:
 
 With $\beta \leq 1$, the $\max\{x, 0\} = x$ in the hazard:
 \begin{equation}
-  h_{\mathrm{birth}} (t, a) =
+  h_{\text{birth}} (t, a) =
   \begin{cases}
     0 & \text{if $a < 4$},
     \\
@@ -587,14 +660,14 @@ With $\beta \leq 1$, the $\max\{x, 0\} = x$ in the hazard:
 \end{equation}
 For $a > 4$, the mean is
 \begin{align}
-  \mu = \int_0^1 h_{\mathrm{birth}}(t, a) \; \md t
+  \mu = \int_0^1 h_{\text{birth}}(t, a) \; \md t
   = 2 \alpha \int_0^{\frac{1}{2}} 1 - 2 \beta t \; \md t
   % = 2 a \left[t - b t^2\right]_0^{\frac{1}{2}}
   = \frac{\alpha (2 - \beta)}{2}
 \end{align}
 and
 \begin{align}
-  \int_0^1 \left[h_{\mathrm{birth}}(t, a)\right]^2 \md t
+  \int_0^1 \left[h_{\text{birth}}(t, a)\right]^2 \md t
   % \\
   = 2 \alpha^2 \int_0^{\frac{1}{2}} \left(1 - 2 \beta t\right)^2 \md t
   % \\
@@ -621,7 +694,7 @@ Then
 
 The survival is
 \begin{equation}
-  S_{\mathrm{birth}}(t, a, t_0) =
+  S_{\text{birth}}(t, a, t_0) =
   \begin{cases}
     1 & \text{if a < 4 - t},
     \\
@@ -651,7 +724,7 @@ Then
 \begin{equation}
   H =
   \left(1 - \frac{\beta}{2}\right)
-  \left(d \dv 1 - c \dv 1 - 1\right)
+  \left(\lfloor d \rfloor - \lfloor c \rfloor - 1\right)
   + H_1  + H_2,
 \end{equation}
 with
@@ -692,14 +765,14 @@ and
 
 Here we have
 \begin{equation}
-  h_{\mathrm{birth}}(t, a) =
+  h_{\text{birth}}(t, a) =
   \begin{cases}
     0 & \text{if $a < 4$},
     \\
-    a \left[1 - 2 \beta (t \bmod 1)\right]
+    \alpha \left[1 - 2 \beta (t \bmod 1)\right]
     & \text{if $a \geq 4$ and $t \bmod 1 < \frac{1}{2 \beta}$},
     \\
-    a \left[1 - 2 \beta (1 - t \bmod 1)\right]
+    \alpha \left[1 - 2 \beta (1 - t \bmod 1)\right]
     & \text{if $t \bmod 1 \geq \frac{1}{2 \beta}$},
     \\
     0 & \text{otherwise}.
@@ -707,13 +780,13 @@ Here we have
 \end{equation}
 For $a \geq 4$, the mean is
 \begin{align}
-  \mu = \int_0^1 h_{\mathrm{birth}}(t, a) \md t
+  \mu = \int_0^1 h_{\text{birth}}(t, a) \md t
   = 2 \alpha \int_0^{\frac{1}{2 \beta}} 1 - 2 \beta t \; \md t
   = \frac{\alpha}{2 \beta}
 \end{align}
 and
 \begin{align}
-  \mathrm{E} X^2 &= \int_0^1 \left[h_{\mathrm{birth}}(t, a)\right]^2 \md t
+  \text{E} X^2 &= \int_0^1 \left[h_{\text{birth}}(t, a)\right]^2 \md t
   % \\
   = 2 \alpha^2 \int_0^{\frac{1}{2 \beta}} \left(1 - 2 \beta t\right)^2 \md t
   % \\
@@ -737,7 +810,7 @@ This gives
 
 The survival is
 \begin{equation}
-  S_{\mathrm{birth}}(t, a, t_0) =
+  S_{\text{birth}}(t, a, t_0) =
   \begin{cases}
     1 & \text{if a < 4 - t},
     \\
@@ -746,8 +819,7 @@ The survival is
 \end{equation}
 where
 \begin{equation}
-  H =
-  \int_{\ell}^t g(t_0 + \tau)~\md \tau,
+  H = \int_{\ell}^t g(t_0 + \tau)~\md \tau,
 \end{equation}
 \begin{equation}
   g (t) =
@@ -758,8 +830,7 @@ where
     1 - 2 \beta (1 - t \bmod 1)
     & \text{if $t \bmod 1 \geq \frac{1}{2 \beta}$},
     \\
-    0
-    & \text{otherwise},
+    0 & \text{otherwise},
   \end{cases}
 \end{equation}
 and
@@ -768,23 +839,23 @@ and
 \end{equation}
 Then
 \begin{equation}
-  H =
-  \frac{1}{2 \beta} \left(d \dv 1 - c \dv 1 - 1\right)
-  + H_1  + H_2,
+  H = \frac{1}{2 \beta} \left(\lfloor d \rfloor - \lfloor c \rfloor -
+    1\right) + H_1 + H_2,
 \end{equation}
 with
 \begin{equation}
   H_1 =
   \begin{cases}
-    \frac{1}{4 \beta}
-    + \beta \left(\frac{1}{2 \beta} - c \bmod 1\right)^2
+    \frac{1}{4 \beta} + \beta \left(\frac{1}{2 \beta}
+      - c \bmod 1\right)^2
     & \text{if $c \bmod 1 < \frac{1}{2 \beta}$},
     \\
     \frac{1}{4 \beta}
-    & \text{if $\frac{1}{2 \beta} \leq c \bmod 1 < 1 - \frac{1}{2 \beta}$},
+    & \text{if $\frac{1}{2 \beta} \leq c \bmod 1
+      < 1 - \frac{1}{2 \beta}$},
     \\
-    \left(1 - c \bmod 1\right)
-    \left[1 - \beta \left(1 - c \bmod 1\right)\right]
+    \left(1 - c \bmod 1\right) \left[1 -
+      \beta \left(1 - c \bmod 1\right)\right]
     & \text{otherwise}
   \end{cases},
 \end{equation}
@@ -795,12 +866,13 @@ with
     & \text{if $d \bmod 1 < \frac{1}{2 \beta}$},
     \\
     \frac{1}{4 \beta}
-    & \text{if $\frac{1}{2 \beta} \leq d \bmod 1 < 1 - \frac{1}{2 \beta}$},
+    & \text{if $\frac{1}{2 \beta} \leq d \bmod 1 <
+      1 - \frac{1}{2 \beta}$},
     \\
-    \frac{1}{4 \beta}
-    + \beta \left(d \bmod 1 - 1 + \frac{1}{2 \beta}\right)^2
+    \frac{1}{4 \beta} + \beta \left(d \bmod 1 - 1
+      + \frac{1}{2 \beta}\right)^2
     & \text{otherwise},
-    \end{cases}
+  \end{cases}
 \end{equation}
 and
 \begin{align}
@@ -808,6 +880,53 @@ and
   &
   d &= t + t_0.
 \end{align}
+
+
+\subsection{Sinusoidal}
+
+We assumed that females reach reproductive maturity at age $4$ and
+that the birth hazard varies sinusoidally in time:
+\begin{equation}
+  h_{\text{birth}}(t, a) =
+  \begin{cases}
+    0 & \text{if $a < 4$},
+    \\
+    \alpha \left[1
+      + \sigma \cos\left(2 \pi t\right)\right]
+    & \text{if $a \geq 4$}.
+  \end{cases}
+\end{equation}
+The seasonal variation is captured by $\sigma \in [0, 1]$, which we
+took to be $1$ by default.  The annual mean $\alpha$ was chosen so
+that the population achieves the mean growth rate $r = 0$ in the
+absence of infection.  (See \autoref{no_infection}.)
+
+The survival function is then
+\begin{equation}
+  \begin{split}
+    S_{\text{birth}}(t, a, t_0) &=
+    \exp\left(- \int_0^t h_{\text{birth}}(t_0 + \tau, a + \tau) \md
+      \tau\right)
+    \\
+    &=
+    \begin{cases}
+      1 & \text{if $a < 4 - t$},
+      \\
+      \exp\left(- \alpha \left[
+          (t - \ell)
+          + \frac{\sigma}{2 \pi}
+          \left[\sin\left(2 \pi (t + t_0)\right)
+            - \sin\left(2 \pi (t_0 + \ell)\right)\right]
+        \right]
+      \right)
+      & \text{if $a \geq 4 - t$},
+    \end{cases}
+  \end{split}
+\end{equation}
+with $\ell = \max\{0, 4 - a\}$.  There is no explicit inverse survival
+function.  Instead, the inverse was found numerically using a
+root-finding algorithm \citep{scipy}.
+
 
 
 \bibliography{journal_abbreviations,math_epi}

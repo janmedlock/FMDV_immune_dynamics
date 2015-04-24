@@ -3,6 +3,8 @@
 import numpy
 import scipy.stats
 
+import Parameters
+
 
 class Event:
     def __init__(self, time, func, label):
@@ -22,17 +24,17 @@ class Buffalo:
         self.herd = herd
 
         # All members of the herd have the same parameters.
-        self.parameters = self.herd.parameters
+        self.RVs = self.herd.RVs
 
         self.birthDate = self.herd.time - age
         self.identifier = identifier
-        self.sex = 'male' if (self.parameters.male.rvs() == 1) \
+        self.sex = 'male' if (self.RVs.male.rvs() == 1) \
           else 'female'
 
         self.events = {}
 
         maternalImmunityWaningAge \
-          = self.parameters.maternalImmunityWaning.rvs()
+          = self.RVs.maternalImmunityWaning.rvs()
         if age < maternalImmunityWaningAge:
             self.immuneStatus = 'maternal immunity'
 
@@ -48,7 +50,7 @@ class Buffalo:
 
         # Use resampling to get a death age > current age.
         while True:
-            deathAge = self.parameters.mortality.rvs()
+            deathAge = self.RVs.mortality.rvs()
             if deathAge > age:
                 break
         self.events['mortality'] = Event(self.birthDate + deathAge,
@@ -59,7 +61,7 @@ class Buffalo:
         if self.sex == 'female':
             self.events['giveBirth'] \
               = Event(self.herd.time
-                      + self.parameters.birth.rvs(self.herd.time, age),
+                      + self.RVs.birth.rvs(self.herd.time, age),
                       self.giveBirth,
                       'give birth for #{}'.format(self.identifier))
 
@@ -74,7 +76,7 @@ class Buffalo:
         self.events['giveBirth'] \
           = Event(
               self.herd.time
-              + self.parameters.birth.rvs(self.herd.time, self.age()),
+              + self.RVs.birth.rvs(self.herd.time, self.age()),
               self.giveBirth,
               'give birth for #{}'.format(self.identifier))
 
@@ -96,7 +98,7 @@ class Buffalo:
         
         self.events['recovery'] \
           = Event(self.herd.time
-                  + self.parameters.recovery.rvs(),
+                  + self.RVs.recovery.rvs(),
                   self.recovery,
                   'recovery for #{}'.format(self.identifier))
     
@@ -138,13 +140,15 @@ class Buffalo:
 class Herd(list):
     def __init__(self, parameters, debug = False):
         self.parameters = parameters
+
         self.debug = debug
+
+        self.RVs = Parameters.RandomVariables(self.parameters)
 
         self.time = 0.
         self.identifier = 0
 
-        ages = self.parameters.ageStructure.rvs(
-            size = self.parameters.populationSize)
+        ages = self.RVs.ageStructure.rvs(size = self.parameters.populationSize)
         for a in ages:
             self.birth(a)
 
@@ -180,7 +184,7 @@ class Herd(list):
     def updateInfectionTimes(self):
         self.numberInfectious = sum(buffalo.isInfectious() for buffalo in self)
         self.forceOfInfection \
-          = self.parameters.transmissionRate * self.numberInfectious
+          = self.RVs.transmissionRate * self.numberInfectious
         for buffalo in self:
             buffalo.updateInfectionTime(self.forceOfInfection)
 
@@ -225,9 +229,8 @@ if __name__ == '__main__':
     import pylab
 
     import odes
-    import parameters
 
-    p = parameters.Parameters()
+    p = Parameters.Parameters()
 
     tMax = 1.
     nRuns = 10

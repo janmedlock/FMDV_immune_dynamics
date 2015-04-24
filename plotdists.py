@@ -3,10 +3,11 @@
 import numpy
 from matplotlib import pyplot, ticker
 
-import parameters
+import Parameters
 
 
-p = parameters.Parameters()
+p = Parameters.Parameters()
+RVs = Parameters.RandomVariables(p)
 
 t = numpy.linspace(0, 20, 1001)
 
@@ -21,16 +22,16 @@ def axclean(ax):
 
 (fig, ax) = pyplot.subplots(1, 2, sharey = True)
 
-ax[0].step(t, p.mortality.hazard(t), where = 'post', color = 'black')
+ax[0].step(t, RVs.mortality.hazard(t), where = 'post', color = 'black')
 ax[0].set_title('Death')
 ax[0].set_xlabel('Age (years)')
 
-ax[1].plot(t, p.birth.hazard(t, 0, 4 - t), color = 'black')
+ax[1].plot(t, RVs.birth.hazard(t, 0, 4 - t), color = 'black')
 ax[1].set_title('Birth')
 ax[1].set_xlabel('Time (years)')
 ax[1].set_xlim(xmax = 3)
 
-ax[0].set_ylim(0, 1)
+# ax[0].set_ylim(0, 1)
 
 for axes in ax:
     axclean(axes)
@@ -40,26 +41,26 @@ fig.savefig('hazards.pdf')
 
 (fig, ax) = pyplot.subplots(1, 4, sharey = True)
 
-ax[0].plot(t, p.mortality.sf(t), color = 'black')
+ax[0].plot(t, RVs.mortality.sf(t), color = 'black')
 ax[0].set_title('Death')
 ax[0].set_xlabel('Age (years)')
 ax[0].xaxis.set_major_locator(ticker.MaxNLocator(2))
 
-ax[1].plot(t, p.birth.sf(t, 0, 4), color = 'black')
+ax[1].plot(t, RVs.birth.sf(t, 0, 4), color = 'black')
 ax[1].set_title('Birth')
 ax[1].set_xlabel('Time (years)')
 ax[1].set_xlim(xmax = 10)
 ax[1].xaxis.set_major_locator(ticker.MaxNLocator(2))
 
 t1 = numpy.linspace(0, 1, 1001)
-ax[2].step(t1, p.maternalImmunityWaning.sf(t1), where = 'post',
+ax[2].step(t1, RVs.maternalImmunityWaning.sf(t1), where = 'post',
            color = 'black')
 ax[2].set_title('Waning')
 ax[2].set_xlabel('Age (years)')
 ax[2].xaxis.set_major_locator(ticker.MaxNLocator(2))
 
 t2 = numpy.linspace(0, 5, 1001)
-ax[3].step(t2, p.recovery.sf(t2 / 365.), where = 'post',
+ax[3].step(t2, RVs.recovery.sf(t2 / 365.), where = 'post',
            color = 'black')
 ax[3].set_title('Recovery')
 ax[3].set_xlabel('Time (days)')

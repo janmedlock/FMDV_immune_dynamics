@@ -4,7 +4,12 @@ import numpy
 from scipy import integrate
 from matplotlib import pyplot
 from mpl_toolkits.mplot3d import Axes3D
-import parameters
+
+import Parameters
+
+
+parameters = Parameters.Parameters()
+RVs = Parameters.RandomVariables(parameters)
 
 
 tmax = 100.
@@ -18,12 +23,12 @@ a = numpy.arange(0., amax + astep, astep)
 da = numpy.diff(ages)
 A = - numpy.diag(numpy.hstack((da, 0.))) + numpy.diag(da, -1)
 
-M = numpy.diag(parameters.mortality.hazard(a))
+M = numpy.diag(RVs.mortality.hazard(a))
 
 def B(t):
     Bval = numpy.zeros((len(a), ) * 2)
-    Bval[0] = ((1 - parameters.male.mean())
-               * parameters.birth.hazard(t, 0, a - t))
+    Bval[0] = ((1 - parameters.probabilityOfMaleBirth)
+               * RVs.birth.hazard(t, 0, a - t))
     return Bval
 
 

@@ -9,12 +9,17 @@ class birth_gen(rv.RV, stats.rv_continuous):
     def __init__(self,
                  mortality, male,
                  seasonalVariance = 1.,
+                 _findBirthScaling = True,
                  *args, **kwargs):
         self.seasonalVariance = seasonalVariance
 
         self.mortality = mortality
         self.male = male
-        self.findBirthScaling(mortality, male)
+
+        if _findBirthScaling:
+            self.findBirthScaling(mortality, male)
+        else:
+            self.scaling = 1.
 
         stats.rv_continuous.__init__(self,
                                      name = 'birth',
@@ -22,39 +27,21 @@ class birth_gen(rv.RV, stats.rv_continuous):
                                      shapes = 'time0, age0',
                                      *args, **kwargs)
 
+    def hazard(self, *args, **kwargs):
+        raise NotImplementedError
+
     def _argcheck(self, time0, age0):
         return (age0 >= 0.)
         
-    def hazard(self, time, time0, age0):
-        return numpy.where(
-            age0 + time < 4.,
-            0.,
-            self.scaling * (1.
-                            + self.seasonalVariance
-                            * numpy.cos(2 * numpy.pi * (time + time0))))
-
-    # def _cdf_single(self, time, time0, age0):
-    #     result = scipy.integrate.quad(self.hazard, 0, time,
-    #                                   args = (time0, age0),
-    #                                   limit = 100, full_output = 1)
-    #     I = result[0]
-    #     return 1. - numpy.exp(- I)
-
-    # def _cdf(self, time, time0, age0):
-    #     return numpy.vectorize(self._cdf_single)(time, time0, age0)
+    def _cdf_single(self, time, time0, age0):
+        result = integrate.quad(self.hazard, 0, time,
+                                args = (time0, age0),
+                                limit = 100, full_output = 1)
+        I = result[0]
+        return 1. - numpy.exp(- I)
 
     def _cdf(self, time, time0, age0):
-        lb = numpy.max(numpy.hstack((0., 4 - age0)))
-        I = numpy.where(
-            time < 4 - age0,
-            0.,
-            self.scaling \
-            * ((time - lb)
-               + self.seasonalVariance / 2. / numpy.pi
-               * (numpy.sin(2. * numpy.pi * (time + time0))
-                  - numpy.sin(2. * numpy.pi * (lb + time0)))))
-        
-        return 1. - numpy.exp(- I)
+        return numpy.vectorize(self._cdf_single)(time, time0, age0)
 
     def _ppf(self, q, *args, **kwds):
         'Trap errors for _ppf'
