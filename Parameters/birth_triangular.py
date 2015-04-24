@@ -37,22 +37,23 @@ class birth_gen(birth.birth_gen):
         d = time + time0
         
         if beta < 1:
-            H0 = (1 - beta / 2.) * (numpy.floor(d) - numpy.floor(c) - 1.)
-            H1 = numpy.where(fracpart(c) < 1. / 2.,
+            H1 = (1 - beta / 2.) * (numpy.floor(d) - numpy.floor(c) - 1.)
+            H2 = numpy.where(fracpart(c) < 1. / 2.,
                              1. / 2. * (1. - beta / 2.) + 
                              (1. / 2. - fracpart(c))
                              * (1. - beta / 2. - beta * fracpart(c)),
                              (1. - fracpart(c))
                              * (1 - beta * fracpart(c)))
-            H2 = numpy.where(fracpart(d) < 1. / 2.,
+            H3 = numpy.where(fracpart(d) < 1. / 2.,
                              fracpart(d) * (1. - beta * fracpart(d)),
                              1. / 2. * (1. - beta / 2.)
                              + (fracpart(d) - 1. / 2.)
                              * (1. - 3. / 2. * beta + beta * fracpart(d)))
 
+            H = H1 + H2 + H3
         else:
-            H0 = 1 / 2. / beta * (numpy.floor(d) - numpy.floor(c) - 1.)
-            H1 = numpy.where(fracpart(c) < 1. / 2. / beta,
+            H4 = 1 / 2. / beta * (numpy.floor(d) - numpy.floor(c) - 1.)
+            H5 = numpy.where(fracpart(c) < 1. / 2. / beta,
                              1. / 4. / beta
                              + beta * (1. / 2. / beta - fracpart(c)) ** 2,
                              numpy.where(fracpart(c) < 1. - 1. / 2. / beta,
@@ -60,7 +61,7 @@ class birth_gen(birth.birth_gen):
                                          (1. - fracpart(c))
                                          * (1. - beta
                                             * (1. - fracpart(c)))))
-            H2 = numpy.where(fracpart(d) < 1. / 2. / beta,
+            H6 = numpy.where(fracpart(d) < 1. / 2. / beta,
                              fracpart(d) * (1. - beta * fracpart(d)),
                              numpy.where(fracpart(d) < 1. - 1. / 2. / beta,
                                          1. / 4. / beta,
@@ -68,9 +69,10 @@ class birth_gen(birth.birth_gen):
                                          + beta * (fracpart(d) - 1
                                                    + 1. / 2. / beta) ** 2))
                                      
+            H = H4 + H5 + H6
 
         I = self.scaling * numpy.where(time < 4 - age0,
                                        0.,
-                                       alpha * (H0 + H1 + H2))
+                                       alpha * H)
 
         return 1. - numpy.exp(- I)

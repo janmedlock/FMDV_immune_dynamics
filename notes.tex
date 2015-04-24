@@ -156,34 +156,32 @@ time:
   \begin{cases}
     0 & \text{if $a < 4$},
     \\
-    \mu \alpha \left[1 - 2 \beta \{t\}\right]
-    & \text{if $a \geq 4$ and $\{t\} < \frac{1}{2 \beta}$},
+    \max\left(\mu \alpha \left[1 - 2 \beta \{t\}\right], 0\right)
+    & \text{if $a \geq 4$ and $\{t\} < \frac{1}{2}$},
     \\
-    \mu \alpha \left[1 - 2 \beta (1 - \{t\})\right]
-    & \text{if $\{t\} \geq \frac{1}{2 \beta}$},
-    \\
-    0 & \text{otherwise}
+    \max\left(\mu \alpha \left[1 - 2 \beta (1 - \{t\})\right], 0\right)
+    & \text{if $\{t\} \geq \frac{1}{2}$},
   \end{cases}
 \end{equation}
 with
 \begin{align}
-  \alpha &= \frac{3}{2} (1 + \sigma^2),
+  \alpha &= \frac{3}{2} \left(1 + \sigma^2\right),
   &
-  \beta &= \frac{3}{4} (1 + \sigma^2),
+  \beta &= \frac{3}{4} \left(1 + \sigma^2\right),
 \end{align}
-and $\{x\}$ is the fractional part of $x$.  The seasonal variation is
-captured by $\sigma$, which we took to be $1$ by default.  The annual
-mean $\mu$ was chosen so that the population achieves the mean growth
-rate $r = 0$ in the absence of infection.  (See
-\autoref{no_infection}.)
+and $\{x\}$ is the fractional part of $x$.  The magnitude of the
+seasonal variation is captured by $\sigma$, which we took to be $1$ by
+default.  The annual mean $\mu$ was chosen so that the population
+achieves the mean growth rate $r = 0$ in the absence of infection.
+(See \autoref{no_infection}.)
 
 The survival function is then
 \begin{equation}
   S_{\text{birth}}(t, a, t_0) =
   \begin{cases}
-    1 & \text{if a < 4 - t},
+    1 & \text{if $a < 4 - t$},
     \\
-    \exp(-\alpha H) & \text{otherwise},
+    \exp(-\mu \alpha H) & \text{otherwise},
   \end{cases}
 \end{equation}
 where
