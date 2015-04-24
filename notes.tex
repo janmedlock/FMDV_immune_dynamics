@@ -5,6 +5,7 @@
 \usepackage{natbib}
 \usepackage{hypernat}
 
+\DeclareMathOperator{\dv}{div}
 
 \title{FMDV notes}
 \author{Jan Medlock}
@@ -499,148 +500,315 @@ $1.7 \times 10^{-12}$.
 
 \subsection{Rectangular}
 
-Let the hazard be constant $a$ in a the region of width $b \leq 1$
-centered at $t = t_0$ and $0$ elsewhere:
+Let the hazard be constant $\alpha$ in the regions of width $\beta$
+centered at $t \bmod 1 = 0$ and $0$ elsewhere:
 \begin{equation}
-  h(t) =
+  h_{\mathrm{birth}} (t, a) =
   \begin{cases}
-    a & \text{if $|t - t_0| \leq \frac{b}{2}$},
+    \alpha & \text{if $a \geq 4$ and $\left(t + \frac{\beta}{2}\right)
+      \bmod 1 \leq \beta$},
     \\
     0 & \text{otherwise}.
   \end{cases}
 \end{equation}
-The mean and variance are
+For $a > 4$, the mean and variance are
 \begin{align}
-  \mu &= a b,
+  \mu &= \alpha \beta,
   &
-  \sigma^2 &= a^2 b (1 - b),
+  \sigma^2 &= \alpha^2 \beta (1 - \beta),
 \end{align}
 which gives
 \begin{align}
-  a &= \frac{\mu^2 + \sigma^2}{\mu},
+  \alpha &= \mu \left(1 + \frac{\sigma^2}{\mu^2}\right),
   &
-  b &= \frac{\mu^2}{\mu^2 + \sigma^2}.
+  \beta &= \frac{1}{1 + \frac{\sigma^2}{\mu^2}}.
 \end{align}
-With $\mu$ fixed, this gives two parameters, $\sigma^2$ and $t_0$.
+With $\mu$ fixed, this gives one parameter, $\sigma^2$.
+
+The survival is
+\begin{equation}
+  S_{\mathrm{birth}}(t, a, t_0) =
+  \begin{cases}
+    1 & \text{if $a < 4 - t$},
+    \\
+    \exp\left(-H(t, a, t_0)\right)
+    & \text{otherwise},
+  \end{cases}
+\end{equation}
+where
+\begin{equation}
+  H(t, a, t_0) =
+  \alpha \left[
+    \beta (d \dv 1 - c \dv 1)
+    + \min\{d \bmod 1, \beta\}
+    - \min\{c \bmod 1, \beta\}
+  \right]
+\end{equation}
+and
+\begin{align}
+  c &= \max\{4 - a, 0\} + t_0 + \frac{\beta}{2},
+  &
+  d &= t + t_0 + \frac{\beta}{2}.
+\end{align}
+
 
 
 \subsection{Triangular}
 
-Let the hazard be triangular with maximum $a$ and slopes $\pm 2 a b$
-centered at $t = t_0$:
+Let the hazard be triangular with maximum $\alpha$ and slopes
+$\pm 2 \alpha \beta$ centered at $t = 0$:
 \begin{equation}
-  h(t) = \max\left\{
-    a \left(1 - 2 b |t - t_0|\right),
-    0
-  \right\}.
+  h_{\mathrm{birth}} (t, a) =
+  \begin{cases}
+    0 & \text{if $a < 4$},
+    \\
+    \alpha \max\left\{1 - 2 \beta (t \bmod 1), 0\right\}
+    & \text{if $a \geq 4$ and $t \bmod 1 < \frac{1}{2}$},
+    \\
+    \alpha \max\left\{1 + 2 \beta (t \bmod 1 - 1), 0\right\}
+    & \text{if $a \geq 4$ and $t \bmod 1 \geq \frac{1}{2}$}.
+  \end{cases}
 \end{equation}
 
-\subsubsection{$b \leq 1$}
+\subsubsection{$\beta \leq 1$}
 
-Let the hazard be triangular with maximum $a$ and slopes $\pm 2 a b$
-centered at $t = t_0$:
+With $\beta \leq 1$, the $\max\{x, 0\} = x$ in the hazard:
 \begin{equation}
-  h(t) = a \left(1 - 2 b |t - t_0|\right).
+  h_{\mathrm{birth}} (t, a) =
+  \begin{cases}
+    0 & \text{if $a < 4$},
+    \\
+    \alpha \left[1 - 2 \beta (t \bmod 1)\right]
+    & \text{if $a \geq 4$ and $t \bmod 1 < \frac{1}{2}$},
+    \\
+    \alpha \left[1 - 2 \beta (1 - t \bmod 1)\right]
+    & \text{if $a \geq 4$ and $t \bmod 1 \geq \frac{1}{2}$}.
+  \end{cases}
 \end{equation}
-The mean is
+For $a > 4$, the mean is
 \begin{align}
-  \mu = \int_0^1 h(t) \md t
-  = 2 a \int_0^{\frac{1}{2}} 1 - 2 b t \; \md t
+  \mu = \int_0^1 h_{\mathrm{birth}}(t, a) \; \md t
+  = 2 \alpha \int_0^{\frac{1}{2}} 1 - 2 \beta t \; \md t
   % = 2 a \left[t - b t^2\right]_0^{\frac{1}{2}}
-  = \frac{a}{2} (2 - b)
+  = \frac{\alpha (2 - \beta)}{2}
 \end{align}
 and
 \begin{align}
-  \mathrm{E} X^2 &= \int_0^1 \left[h(t)\right]^2 \md t
+  \int_0^1 \left[h_{\mathrm{birth}}(t, a)\right]^2 \md t
   % \\
-  = 2 a^2 \int_0^{\frac{1}{2}} \left(1 - 2 b t\right)^2 \md t
+  = 2 \alpha^2 \int_0^{\frac{1}{2}} \left(1 - 2 \beta t\right)^2 \md t
   % \\
   % &= 2 a^2 \int_0^{\frac{1}{2}} 1 - 4 b t + 4 b^2 t^2 \; \md t
   % \\
   % &= 2 a^2 \left[t - 2 b t^2 + \frac{4 b^2}{3} t^3\right]_0^{\frac{1}{2}}
   % \\
-  = \frac{a^2}{3} (b^2 - 3 b + 3)
+  = \frac{\alpha^2 (\beta^2 - 3 \beta + 3)}{3}
 \end{align}
 so the variance is
 \begin{align}
   \sigma^2
   % &= \frac{a^2}{3} (b^2 - 3 b + 3) - \frac{a^2}{4} (2 - b)^2
   % \\
-  &= \frac{a^2 b^2}{12}.
+  &= \frac{\alpha^2 \beta^2}{12}.
 \end{align}
 Then
 \begin{align}
-  a &= \mu + \sigma \sqrt{3},
+  \alpha &= \mu \left(1 + \sqrt{3} \frac{\sigma}{\mu}\right),
   &
-  b &= \frac{2 \sigma \sqrt{3}}{\mu + \sigma \sqrt{3}}.
+  \beta &= \frac{2 \sqrt{3} \frac{\sigma}{\mu}}
+          {1 + \sqrt{3} \frac{\sigma}{\mu}}.
+\end{align}
+
+The survival is
+\begin{equation}
+  S_{\mathrm{birth}}(t, a, t_0) =
+  \begin{cases}
+    1 & \text{if a < 4 - t},
+    \\
+    \exp(-\alpha H) & \text{otherwise},
+  \end{cases}
+\end{equation}
+where
+\begin{equation}
+  H =
+  \int_{\ell}^t g(t_0 + \tau)~\md \tau,
+\end{equation}
+\begin{equation}
+  g (t) =
+  \begin{cases}
+    1 - 2 \beta (t \bmod 1)
+    & \text{if $t \bmod 1 < \frac{1}{2}$},
+    \\
+    1 - 2 \beta (1 - t \bmod 1)
+    & \text{if $t \bmod 1 \geq \frac{1}{2}$},
+  \end{cases}
+\end{equation}
+and
+\begin{equation}
+  \ell = \max\{4 - a, 0\}.
+\end{equation}
+Then
+\begin{equation}
+  H =
+  \left(1 - \frac{\beta}{2}\right)
+  \left(d \dv 1 - c \dv 1 - 1\right)
+  + H_1  + H_2,
+\end{equation}
+with
+\begin{equation}
+  H_1 =
+  \begin{cases}
+    \frac{1}{2} \left(1 - \frac{\beta}{2}\right)
+    + \left(\frac{1}{2} - c \bmod 1\right)
+    \left[1 - \frac{\beta}{2} - \beta \left(c \bmod 1\right)\right]
+    & \text{if $c \bmod 1 < \frac{1}{2}$},
+    \\
+    \left(1 - c \bmod 1\right)
+    \left[ 1 - \beta \left(c \bmod 1\right)\right]
+    & \text{otherwise},
+  \end{cases}
+\end{equation}
+\begin{equation}
+  H_2 =
+  \begin{cases}
+    \left(d \bmod 1\right)\left[1 - \beta \left(d \bmod 1\right)\right]
+    & \text{if $d \bmod 1 < \frac{1}{2}$},
+    \\
+    \frac{1}{2} \left(1 - \frac{\beta}{2}\right)
+    + \left(d \bmod 1 - \frac{1}{2}\right)
+    \left[1 - \frac{3}{2} \beta + \beta \left(d \bmod 1\right)\right]
+    & \text{otherwise},
+    \end{cases}
+\end{equation}
+and
+\begin{align}
+  c &= \ell + t_0 = \max\{4 - a, 0\} + t_0,
+  &
+  d &= t + t_0.
 \end{align}
 
 
-\subsubsection{$b \geq 1$}
+\subsubsection{$\beta \geq 1$}
 
-Let the hazard be triangular with maximum $a$ in the region of width
-$\frac{1}{b} \leq 1$ centered at $t = t_0$ and $0$ elsewhere:
+Here we have
 \begin{equation}
-  h(t) =
+  h_{\mathrm{birth}}(t, a) =
   \begin{cases}
-    a \left(1 - 2 b |t - t_0|\right)
-    & \text{if $|t - t_0| \leq \frac{1}{2 b}$},
+    0 & \text{if $a < 4$},
+    \\
+    a \left[1 - 2 \beta (t \bmod 1)\right]
+    & \text{if $a \geq 4$ and $t \bmod 1 < \frac{1}{2 \beta}$},
+    \\
+    a \left[1 - 2 \beta (1 - t \bmod 1)\right]
+    & \text{if $t \bmod 1 \geq \frac{1}{2 \beta}$},
     \\
     0 & \text{otherwise}.
   \end{cases}
 \end{equation}
-The mean is
+For $a \geq 4$, the mean is
 \begin{align}
-  \mu = \int_0^1 h(t) \md t
-  = 2 a \int_0^{\frac{1}{2 b}} 1 - 2 b t \; \md t
-  = \frac{a}{2 b}
+  \mu = \int_0^1 h_{\mathrm{birth}}(t, a) \md t
+  = 2 \alpha \int_0^{\frac{1}{2 \beta}} 1 - 2 \beta t \; \md t
+  = \frac{\alpha}{2 \beta}
 \end{align}
 and
 \begin{align}
-  \mathrm{E} X^2 &= \int_0^1 \left[h(t)\right]^2 \md t
+  \mathrm{E} X^2 &= \int_0^1 \left[h_{\mathrm{birth}}(t, a)\right]^2 \md t
   % \\
-  = 2 a^2 \int_0^{\frac{1}{2 b}} \left(1 - 2 b t\right)^2 \md t
+  = 2 \alpha^2 \int_0^{\frac{1}{2 \beta}} \left(1 - 2 \beta t\right)^2 \md t
   % \\
   % &= 2 a^2 \int_0^{\frac{1}{2 c}} 1 - 4 c t + 4 c^2 t^2
   %   \; \md t
   % \\
   % &= 2 a^2 \left[t - 2 c t^2 + \frac{4 c^2}{3} t^3\right]_0^{\frac{1}{2 c}}
   % \\
-  = \frac{a^2}{3 b},
+  = \frac{\alpha^2}{3 \beta},
 \end{align}
 so the variance is
 \begin{align}
-  \sigma^2 = \frac{a^2}{12 b^2} (4 b - 3)
+  \sigma^2 = \frac{\alpha^2}{12 \beta^2} (4 \beta - 3)
 \end{align}
 This gives
 \begin{align}
-  a &= \frac{3}{2} \frac{\mu^2 + \sigma^2}{\mu},
+  \alpha &= \frac{3}{2} \mu \left(1 + \frac{\sigma^2}{\mu^2}\right),
   &
-  b &= \frac{3}{4} \frac{\mu^2 + \sigma^2}{\mu^2}.
+  \beta &= \frac{3}{4} \left(1 + \frac{\sigma^2}{\mu^2}\right).
 \end{align}
-With $\mu$ fixed, this gives two parameters, $\sigma^2$ and $t_0$.
 
-
-Combining the cases $b \leq 1$ and $b \geq 1$ gives
+The survival is
+\begin{equation}
+  S_{\mathrm{birth}}(t, a, t_0) =
+  \begin{cases}
+    1 & \text{if a < 4 - t},
+    \\
+    \exp(-\alpha H) & \text{otherwise},
+  \end{cases}
+\end{equation}
+where
+\begin{equation}
+  H =
+  \int_{\ell}^t g(t_0 + \tau)~\md \tau,
+\end{equation}
+\begin{equation}
+  g (t) =
+  \begin{cases}
+    1 - 2 \beta (t \bmod 1)
+    & \text{if $t \bmod 1 < \frac{1}{2 \beta}$},
+    \\
+    1 - 2 \beta (1 - t \bmod 1)
+    & \text{if $t \bmod 1 \geq \frac{1}{2 \beta}$},
+    \\
+    0
+    & \text{otherwise},
+  \end{cases}
+\end{equation}
+and
+\begin{equation}
+  \ell = \max\{4 - a, 0\}.
+\end{equation}
+Then
+\begin{equation}
+  H =
+  \frac{1}{2 \beta} \left(d \dv 1 - c \dv 1 - 1\right)
+  + H_1  + H_2,
+\end{equation}
+with
+\begin{equation}
+  H_1 =
+  \begin{cases}
+    \frac{1}{4 \beta}
+    + \beta \left(\frac{1}{2 \beta} - c \bmod 1\right)^2
+    & \text{if $c \bmod 1 < \frac{1}{2 \beta}$},
+    \\
+    \frac{1}{4 \beta}
+    & \text{if $\frac{1}{2 \beta} \leq c \bmod 1 < 1 - \frac{1}{2 \beta}$},
+    \\
+    \left(1 - c \bmod 1\right)
+    \left[1 - \beta \left(1 - c \bmod 1\right)\right]
+    & \text{otherwise}
+  \end{cases},
+\end{equation}
+\begin{equation}
+  H_2 =
+  \begin{cases}
+    (d \bmod 1) \left[1 - \beta (d \bmod 1)\right]
+    & \text{if $d \bmod 1 < \frac{1}{2 \beta}$},
+    \\
+    \frac{1}{4 \beta}
+    & \text{if $\frac{1}{2 \beta} \leq d \bmod 1 < 1 - \frac{1}{2 \beta}$},
+    \\
+    \frac{1}{4 \beta}
+    + \beta \left(d \bmod 1 - 1 + \frac{1}{2 \beta}\right)^2
+    & \text{otherwise},
+    \end{cases}
+\end{equation}
+and
 \begin{align}
-  a &=
-      \begin{cases}
-        \mu + \sigma \sqrt{3}
-        & \text{if $\sigma^2 \leq \frac{\mu^2}{3}$},
-        \\
-        \frac{3}{2} \frac{\mu^2 + \sigma^2}{\mu}
-        & \text{if $\sigma^2 \geq \frac{\mu^2}{3}$},
-      \end{cases}
+  c &= \ell + t_0 = \max\{4 - a, 0\} + t_0,
   &
-  b &= 
-      \begin{cases}
-        \frac{2 \sigma \sqrt{3}}{\mu + \sigma \sqrt{3}}
-        & \text{if $\sigma^2 \leq \frac{\mu^2}{3}$},
-        \\
-        \frac{3}{4} \frac{\mu^2 + \sigma^2}{\mu^2}
-        & \text{if $\sigma^2 \geq \frac{\mu^2}{3}$}.
-      \end{cases}
+  d &= t + t_0.
 \end{align}
+
 
 \bibliography{journal_abbreviations,math_epi}
 \bibliographystyle{jpmbib}

@@ -1,5 +1,5 @@
 from .ageStructure import *
-from .birth import *
+from .birth_triangular import *
 from .male import *
 from .maternalImmunity import *
 from .mortality import *
