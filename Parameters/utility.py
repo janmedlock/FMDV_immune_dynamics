@@ -155,3 +155,7 @@ def findBirthScaling(mortality, birth, male,
     scaling = numpy.asscalar(optimize.fsolve(_objective, 0.443))
 
     return scaling
+
+
+def fracpart(x):
+    return numpy.mod(x, 1.)

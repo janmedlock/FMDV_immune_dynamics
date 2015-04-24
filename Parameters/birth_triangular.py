@@ -1,6 +1,7 @@
 import numpy
 
 from . import birth
+from .utility import fracpart
 
 
 class birth_gen(birth.birth_gen):
@@ -19,7 +20,7 @@ class birth_gen(birth.birth_gen):
     def hazard(self, time, time0, age0):
         (alpha, beta) = self._getparams()
 
-        tau = numpy.mod(time + time0, 1.)
+        tau = fracpart(time + time0)
 
         fdown = alpha * numpy.clip(1. - 2. * beta * tau, 0., numpy.inf)
         fup = alpha * numpy.clip(1. - 2. * beta * (1 - tau), 0., numpy.inf)
@@ -37,34 +38,34 @@ class birth_gen(birth.birth_gen):
         
         if beta < 1:
             H0 = (1 - beta / 2.) * (numpy.floor(d) - numpy.floor(c) - 1.)
-            H1 = numpy.where(numpy.mod(c, 1.) < 1. / 2.,
+            H1 = numpy.where(fracpart(c) < 1. / 2.,
                              1. / 2. * (1. - beta / 2.) + 
-                             (1. / 2. - numpy.mod(c, 1.))
-                             * (1. - beta / 2. - beta * numpy.mod(c, 1.)),
-                             (1. - numpy.mod(c, 1.))
-                             * (1 - beta * numpy.mod(c, 1.)))
-            H2 = numpy.where(numpy.mod(d, 1.) < 1. / 2.,
-                             numpy.mod(d, 1.) * (1. - beta * numpy.mod(d, 1.)),
+                             (1. / 2. - fracpart(c))
+                             * (1. - beta / 2. - beta * fracpart(c)),
+                             (1. - fracpart(c))
+                             * (1 - beta * fracpart(c)))
+            H2 = numpy.where(fracpart(d) < 1. / 2.,
+                             fracpart(d) * (1. - beta * fracpart(d)),
                              1. / 2. * (1. - beta / 2.)
-                             + (numpy.mod(d, 1.) - 1. / 2.)
-                             * (1. - 3. / 2. * beta + beta * numpy.mod(d, 1.)))
+                             + (fracpart(d) - 1. / 2.)
+                             * (1. - 3. / 2. * beta + beta * fracpart(d)))
 
         else:
             H0 = 1 / 2. / beta * (numpy.floor(d) - numpy.floor(c) - 1.)
-            H1 = numpy.where(numpy.mod(c, 1.) < 1. / 2. / beta,
+            H1 = numpy.where(fracpart(c) < 1. / 2. / beta,
                              1. / 4. / beta
-                             + beta * (1. / 2. / beta - numpy.mod(c, 1.)) ** 2,
-                             numpy.where(numpy.mod(c, 1.) < 1. - 1. / 2. / beta,
+                             + beta * (1. / 2. / beta - fracpart(c)) ** 2,
+                             numpy.where(fracpart(c) < 1. - 1. / 2. / beta,
                                          1. / 4. / beta,
-                                         (1. - numpy.mod(c, 1.))
+                                         (1. - fracpart(c))
                                          * (1. - beta
-                                            * (1. - numpy.mod(c, 1.)))))
-            H2 = numpy.where(numpy.mod(d, 1.) < 1. / 2. / beta,
-                             numpy.mod(d, 1.) * (1. - beta * numpy.mod(d, 1.)),
-                             numpy.where(numpy.mod(d, 1.) < 1. - 1. / 2. / beta,
+                                            * (1. - fracpart(c)))))
+            H2 = numpy.where(fracpart(d) < 1. / 2. / beta,
+                             fracpart(d) * (1. - beta * fracpart(d)),
+                             numpy.where(fracpart(d) < 1. - 1. / 2. / beta,
                                          1. / 4. / beta,
                                          1. / 4. / beta
-                                         + beta * (numpy.mod(d, 1.) - 1
+                                         + beta * (fracpart(d) - 1
                                                    + 1. / 2. / beta) ** 2))
                                      
 

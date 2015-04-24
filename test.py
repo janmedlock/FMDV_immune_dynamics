@@ -7,22 +7,16 @@ import herd
 import Parameters
 
 
-populationSize = 10000
+populationSize = 100
 
 infectionDuration = 21. / 365.
 
-birthSeasonalVariance = 0.
-
-# R0s = (5., 10., 20.)
-R0s = (10., )
+R0s = (5., 10., 20.)
 
 
-# tMax = numpy.inf
-tMax = 10
-# nRuns = 10
-nRuns = 1
-# debug = False
-debug = True
+tMax = numpy.inf
+nRuns = 10
+debug = False
 
 def runSimulations(R0):
     # numpy.random.seed(1)
@@ -34,7 +28,6 @@ def runSimulations(R0):
     p = Parameters.Parameters()
     p.populationSize = populationSize
     p.infectionDuration = infectionDuration
-    p.birthSeasonalVariance = birthSeasonalVariance
     p.R0 = R0
 
     for i in xrange(nRuns):

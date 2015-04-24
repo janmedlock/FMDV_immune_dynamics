@@ -1,6 +1,7 @@
 import numpy
 
 from . import birth
+from .utility import fracpart
 
 
 class birth_gen(birth.birth_gen):
@@ -12,7 +13,7 @@ class birth_gen(birth.birth_gen):
     def hazard(self, time, time0, age0):
         (alpha, beta) = self._getparams()
         
-        tau = numpy.mod(time + time0 + beta / 2., 1.)
+        tau = fracpart(time + time0 + beta / 2.)
 
         # 0 if current age (age0 + time) < 4
         # else: alpha if (time + time0 - beta / 2) mod 1 <= beta
@@ -29,7 +30,7 @@ class birth_gen(birth.birth_gen):
         I = self.scaling * numpy.where(
             time < 4 - age0, 0.,
             alpha * (beta * (numpy.floor(d) - numpy.floor(c))
-                     + numpy.clip(numpy.mod(d, 1.), -numpy.inf, beta)
-                     - numpy.clip(numpy.mod(c, 1.), -numpy.inf, beta)))
+                     + numpy.clip(fracpart(d), -numpy.inf, beta)
+                     - numpy.clip(fracpart(c), -numpy.inf, beta)))
 
         return 1. - numpy.exp(- I)
