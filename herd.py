@@ -1,7 +1,7 @@
 #!/usr/bin/python
 
 import numpy
-import scipy.stats
+from scipy import stats
 
 import Parameters
 
@@ -124,7 +124,7 @@ class Buffalo:
         if self.isSusceptible():
             if (forceOfInfection > 0.):
                 infectionTime \
-                  = scipy.stats.expon.rvs(scale = 1. / forceOfInfection)
+                  = stats.expon.rvs(scale = 1. / forceOfInfection)
             
                 self.events['infection'] \
                   = Event(self.herd.time + infectionTime,

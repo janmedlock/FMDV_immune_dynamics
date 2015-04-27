@@ -1,7 +1,6 @@
 #!/usr/bin/python
 
 import numpy
-import scipy.stats
 import multiprocessing
 import collections
 
@@ -47,28 +46,28 @@ def proportion_ge_x(D, x):
     return float(len(numpy.compress(numpy.asarray(D) >= x, D))) / float(len(D))
 
 def findStats(extinctionTimes):
-    stats = {}
+    mystats = {}
     
-    stats['median'] = numpy.median(extinctionTimes)
-    stats['mean'] = numpy.mean(extinctionTimes)
+    mystats['median'] = numpy.median(extinctionTimes)
+    mystats['mean'] = numpy.mean(extinctionTimes)
         
-    stats['q_90'] = ppf(extinctionTimes, 0.9)
-    stats['q_95'] = ppf(extinctionTimes, 0.95)
-    stats['q_99'] = ppf(extinctionTimes, 0.99)
+    mystats['q_90'] = ppf(extinctionTimes, 0.9)
+    mystats['q_95'] = ppf(extinctionTimes, 0.95)
+    mystats['q_99'] = ppf(extinctionTimes, 0.99)
 
-    stats['proportion >= 1'] = proportion_ge_x(extinctionTimes, 1.)
-    stats['proportion >= 10'] = proportion_ge_x(extinctionTimes, 10.)
+    mystats['proportion >= 1'] = proportion_ge_x(extinctionTimes, 1.)
+    mystats['proportion >= 10'] = proportion_ge_x(extinctionTimes, 10.)
     
     # Convert everything from years to days
-    for (k, v) in stats.iteritems():
-        stats[k] = 365. * v
+    for (k, v) in mystats.iteritems():
+        mystats[k] = 365. * v
 
-    return stats
+    return mystats
     
-def showStats(stats):
+def showStats(mystats):
     print ('stats: {'
            + ',\n        '.join(['{} = {}'.format(k, v)
-                                 for (k, v) in stats.iteritems()])
+                                 for (k, v) in mystats.iteritems()])
            + '}')
 
 
@@ -108,5 +107,5 @@ if __name__ == '__main__':
 
     eT = findExtinctionTimes(parameters, tMax, nRuns, debug = debug)
 
-    stats = findStats(eT)
-    showStats(stats)
+    mystats = findStats(eT)
+    showStats(mystats)
