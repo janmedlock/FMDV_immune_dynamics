@@ -72,7 +72,7 @@ if __name__ == '__main__':
     (basename, ext) = os.path.splitext(os.path.basename(sys.argv[0]))
     filename = basename + '.csv'
 
-    w = csv.writer(open(filename, 'w'))
+    w = csv.writer(open(filename, 'w', 0)) # 0 for unbuffered.
     saveOut = SaveOut(w)
 
     searchBirthSeasonalVariance(birthSeasonalVariances, parameters, tMax, nRuns,
