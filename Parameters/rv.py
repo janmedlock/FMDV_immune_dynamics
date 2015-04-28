@@ -39,5 +39,11 @@ class deterministic(RV, stats.rv_continuous):
     def _rvs(self):
         return self._scale * numpy.ones(self._size)
 
+    def _munp(self, n, *args):
+        if n == 1:
+            return self._scale
+        else:
+            return 0.
+
     def __repr__(self):
         return RV.__repr__(self, (self._paramname, ))
