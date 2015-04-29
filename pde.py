@@ -1,53 +1,57 @@
 #!/usr/bin/python
 
 import numpy
+from scipy import sparse
 from scipy import integrate
 from matplotlib import pyplot
 from mpl_toolkits.mplot3d import Axes3D
 
 import Parameters
+from Parameters import utility
 
 
 parameters = Parameters.Parameters()
+parameters.populationSize = 10000
+parameters.infectionDuration = 21. / 365.
+parameters.R0 = 10.
+
 RVs = Parameters.RandomVariables(parameters)
 
 
-tmax = 100.
-tstep = 0.1
+tmax = 10.
+tstep = 0.01
 
-amax = 20.
-astep = 0.1
+ageMax = 20.
+ageStep = 0.1
 
-a = numpy.arange(0., amax + astep, astep)
-
-da = numpy.diff(ages)
-A = - numpy.diag(numpy.hstack((da, 0.))) + numpy.diag(da, -1)
-
-M = numpy.diag(RVs.mortality.hazard(a))
+(ages, matrices) = utility.buildMatrices(RVs.mortality, RVs.birth, RVs.male,
+                                         ageMax = ageMax, ageStep = ageStep)
+(B_bar, A, M) = matrices
 
 def B(t):
-    Bval = numpy.zeros((len(a), ) * 2)
+    Bval = sparse.lil_matrix((len(ages), ) * 2)
     Bval[0] = ((1 - parameters.probabilityOfMaleBirth)
-               * RVs.birth.hazard(t, 0, a - t))
+               * RVs.birth.hazard(t, 0, ages - t))
     return Bval
 
 
 def rhs(N, t):
-    dN = numpy.dot(B(t) - M + A, N)
+    dN = (B(t) - M + A).dot(N)
     return dN
 
 
-N0 = numpy.hstack((1, numpy.zeros(len(a) - 1)))
+N0 = (utility.findDominantEigenpair(B_bar + A - M)[1]
+      * parameters.populationSize)
 
 t = numpy.arange(0., tmax + tstep, tstep)
 
 N = integrate.odeint(rhs, N0, t)
 
-n = integrate.trapz(N, a, axis = 1)
+n = integrate.trapz(N, ages, axis = 1)
 
 (fig, ax) = pyplot.subplots(subplot_kw = {'projection': '3d'})
 tvals = (t > t[-1] - 2)
-(x, y) = numpy.meshgrid(a, t[tvals])
+(x, y) = numpy.meshgrid(ages, t[tvals])
 z = N[tvals]
 ax.plot_surface(x, y, z, linewidth = 0)
 ax.set_xlabel('Age (years)')

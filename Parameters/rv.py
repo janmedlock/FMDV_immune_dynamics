@@ -45,5 +45,12 @@ class deterministic(RV, stats.rv_continuous):
         else:
             return 0.
 
+    def __getattribute__(self, k):
+        get = object.__getattribute__
+        if k == get(self, '_paramname'):
+            return get(self, '_scale')
+        else:
+            return get(self, k)
+
     def __repr__(self):
         return RV.__repr__(self, (self._paramname, ))
