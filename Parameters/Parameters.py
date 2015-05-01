@@ -12,7 +12,6 @@ class Parameters(object):
         'Initialize with default values.'
         self.R0 = 5.
         self.birthSeasonalVariance = 1.
-        self.initialInfections = 2
         self.probabilityOfMaleBirth = 0.5
         self.maternalImmunityDuration = 0.5
         self.populationSize = 100

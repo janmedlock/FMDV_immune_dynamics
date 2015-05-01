@@ -32,7 +32,7 @@ def solve(tMax, parameters):
 
     M0 = parameters.populationSize \
       * RVs.ageStructure.cdf(parameters.maternalImmunityDuration)
-    I0 = parameters.initialInfections
+    I0 = 2.
     R0 = parameters.populationSize * (1. - RVs.ageStructure.cdf(2.))
     S0 = parameters.populationSize - M0 - I0 - R0
     

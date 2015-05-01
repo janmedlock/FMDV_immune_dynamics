@@ -179,7 +179,7 @@ class Herd(list):
             for age in ages:
                 self.birth(immuneStatus, age)
 
-        self.addInfections(self.parameters.initialInfections)
+        # self.addInfections(self.parameters.initialInfections)
 
     def addInfections(self, numberOfInfections):
         i = 0
