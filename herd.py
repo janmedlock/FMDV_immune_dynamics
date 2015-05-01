@@ -232,7 +232,12 @@ if __name__ == '__main__':
 
     p = Parameters.Parameters()
 
-    tMax = 1.
+    p.populationSize = 10000
+    p.infectionDuration = 21. / 365.
+    p.R0 = 10.
+    p.birthSeasonalVariation = 1.
+
+    tMax = 10.
     nRuns = 10
     debug = False
     

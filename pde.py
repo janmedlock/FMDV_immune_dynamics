@@ -3,72 +3,104 @@
 import numpy
 from scipy import sparse
 from scipy import integrate
-from matplotlib import pyplot
-from mpl_toolkits.mplot3d import Axes3D
 
 import Parameters
 from Parameters import utility
 
 
-parameters = Parameters.Parameters()
-parameters.populationSize = 10000
-parameters.infectionDuration = 21. / 365.
-parameters.R0 = 10.
-
-RVs = Parameters.RandomVariables(parameters)
-
-
-tmax = 10.
-tstep = 0.01
-
-ageMax = 20.
-ageStep = 0.1
-
-(ages, matrices) = utility.buildMatrices(RVs.mortality, RVs.birth, RVs.male,
-                                         ageMax = ageMax, ageStep = ageStep)
-(B_bar, A, M) = matrices
-
-def B(t):
+def B(t, ages, parameters, RVs):
     Bval = sparse.lil_matrix((len(ages), ) * 2)
     Bval[0] = ((1 - parameters.probabilityOfMaleBirth)
                * RVs.birth.hazard(t, 0, ages - t))
     return Bval
 
 
-def rhs(N, t):
-    dN = (B(t) - M + A).dot(N)
-    return dN
+def rhs(Y, t, ages, parameters, RVs, AM):
+    (M, S, I, R) = numpy.hsplit(Y, 4)
+    
+    N = M + S + I + R
+
+    forceOfInfection = RVs.transmissionRate * integrate.trapz(I, ages)
+
+    dM = (B(t, ages, parameters, RVs).dot(N)
+          + AM.dot(M)
+          - 1. / parameters.maternalImmunityDuration * M)
+    dS = (AM.dot(S)
+          + 1. / parameters.maternalImmunityDuration * M
+          - forceOfInfection * S)
+    dI = (AM.dot(I)
+          + forceOfInfection * S
+          - 1. / parameters.infectionDuration * I)
+    dR = (AM.dot(R)
+          + 1. / parameters.infectionDuration * I)
+
+    dY = numpy.hstack((dM, dS, dI, dR))
+
+    return dY
 
 
-N0 = (utility.findDominantEigenpair(B_bar + A - M)[1]
-      * parameters.populationSize)
+def solve(tMax, ageMax, ageStep, parameters = None, RVs = None):
+    if parameters is None:
+        parameters = Parameters.Parameters()
+    if RVs is None:
+        RVs = Parameters.RandomVariables(parameters)
 
-t = numpy.arange(0., tmax + tstep, tstep)
+    (ages, (B_bar, A, M)) = utility.buildMatrices(RVs.mortality,
+                                                  RVs.birth,
+                                                  RVs.male,
+                                                  ageMax = ageMax,
+                                                  ageStep = ageStep)
+    AM = A - M
 
-N = integrate.odeint(rhs, N0, t)
+    evect = utility.findDominantEigenpair(B_bar + AM)[1]
+    N0 = evect / integrate.trapz(evect, ages) * parameters.populationSize
 
-n = integrate.trapz(N, ages, axis = 1)
+    M0 = numpy.where(ages < parameters.maternalImmunityDuration, N0, 0.)
+    S0 = numpy.where((ages >= parameters.maternalImmunityDuration)
+                     & (ages < 2.),
+                     N0, 0.)
+    I0 = S0 * 2. / integrate.trapz(S0, ages)
+    S0 -= I0
+    R0 = N0 - M0 - S0 - I0
 
-(fig, ax) = pyplot.subplots(subplot_kw = {'projection': '3d'})
-tvals = (t > t[-1] - 2)
-(x, y) = numpy.meshgrid(ages, t[tvals])
-z = N[tvals]
-ax.plot_surface(x, y, z, linewidth = 0)
-ax.set_xlabel('Age (years)')
-ax.set_ylabel('Time (years)')
-ax.set_zlabel('Buffaloes')
+    Y0 = numpy.hstack((M0, S0, I0, R0))
 
-(fig, ax) = pyplot.subplots()
-ax.plot(t, n)
-ax.set_xlabel('Time (years)')
-ax.set_ylabel('Total buffaloes')
+    t = numpy.linspace(0., tMax, 1001)
 
-(fig, ax) = pyplot.subplots()
-m = numpy.interp(t[t >= 1] - 1, t, n)
-r = (n[t >= 1] - m) / m
-y = numpy.hstack((numpy.nan * numpy.ones_like(t[t < 1]), r))
-ax.plot(t, y)
-ax.set_xlabel('Time (years)')
-ax.set_ylabel('Growth rate (per year)')
+    Y = integrate.odeint(rhs, Y0, t, args = (ages, parameters, RVs, AM))
 
-pyplot.show()
+    return (t, ages, numpy.hsplit(Y, 4))
+
+
+def get_endemic_equilibrium(parameters, tMax = 20.,
+                            ageMax = 20., ageStep = 0.01):
+    (t, ages, (M, S, I, R)) = solve(tMax, ageMax, ageStep, parameters)
+    
+    return (M[-1], S[-1], I[-1], R[-1])
+
+    
+
+if __name__ == '__main__':
+    from matplotlib import pyplot
+
+    tMax = 10.
+
+    ageMax = 20.
+    ageStep = 0.1
+
+    parameters = Parameters.Parameters()
+    parameters.populationSize = 10000
+    parameters.infectionDuration = 21. / 365.
+    parameters.R0 = 10.
+    parameters.birthSeasonalVariance = 1.
+
+    (t, ages, (M, S, I, R)) = solve(tMax, ageMax, ageStep, parameters)
+
+    i = integrate.trapz(I, ages, axis = 1)
+
+    (fig, ax) = pyplot.subplots()
+    ax.plot(t, i)
+    ax.set_xlabel('Time (years)')
+    ax.set_ylabel('Infected buffaloes')
+
+    pyplot.show()

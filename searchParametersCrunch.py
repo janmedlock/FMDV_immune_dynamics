@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import numpy
-import matplotlib.pyplot
+from matplotlib import pyplot
 import mpl_toolkits.mplot3d
 
 
@@ -19,12 +19,12 @@ def find_proportion_over_x(D, x):
 
 
 def plot_slice1D(X, D, parameters1, **kwds):
-    matplotlib.pyplot.figure()
+    pyplot.figure()
 
-    matplotlib.pyplot.boxplot(D['extinctionTimes'].T, positions = X[0])
-    matplotlib.pyplot.xlabel(parameters1[0])
-    matplotlib.pyplot.ylabel('Extinction Time')
-    matplotlib.pyplot.title(', '.join(['{} = {}'.format(k, v)
+    pyplot.boxplot(D['extinctionTimes'].T, positions = X[0])
+    pyplot.xlabel(parameters1[0])
+    pyplot.ylabel('Extinction Time')
+    pyplot.title(', '.join(['{} = {}'.format(k, v)
                                        for (k, v) in kwds.iteritems()]))
 
 
@@ -32,39 +32,39 @@ def plot_slice2D(X, D, parameters1, **kwds):
     dim = [len(parametersValues[p]) for p in parameters1]
     X = map(lambda x: x.reshape(dim), X)
 
-    matplotlib.pyplot.figure()
+    pyplot.figure()
 
-    matplotlib.pyplot.subplot(2, 2, 1)
+    pyplot.subplot(2, 2, 1)
     Y = numpy.median(D['extinctionTimes'], axis = 1).reshape(dim)
-    matplotlib.pyplot.pcolor(X[0], X[1], Y) 
-    matplotlib.pyplot.colorbar()
-    matplotlib.pyplot.title('Median')
-    matplotlib.pyplot.xlabel(parameters1[0])
-    matplotlib.pyplot.ylabel(parameters1[1])
+    pyplot.pcolor(X[0], X[1], Y) 
+    pyplot.colorbar()
+    pyplot.title('Median')
+    pyplot.xlabel(parameters1[0])
+    pyplot.ylabel(parameters1[1])
 
-    matplotlib.pyplot.subplot(2, 2, 2)
+    pyplot.subplot(2, 2, 2)
     Y = numpy.mean(D['extinctionTimes'], axis = 1).reshape(dim)
-    matplotlib.pyplot.pcolor(X[0], X[1], Y) 
-    matplotlib.pyplot.colorbar()
-    matplotlib.pyplot.title('Mean')
-    matplotlib.pyplot.xlabel(parameters1[0])
-    matplotlib.pyplot.ylabel(parameters1[1])
+    pyplot.pcolor(X[0], X[1], Y) 
+    pyplot.colorbar()
+    pyplot.title('Mean')
+    pyplot.xlabel(parameters1[0])
+    pyplot.ylabel(parameters1[1])
 
-    matplotlib.pyplot.subplot(2, 2, 3)
+    pyplot.subplot(2, 2, 3)
     Y = find_quantile(D['extinctionTimes'], 0.95).reshape(dim)
-    matplotlib.pyplot.pcolor(X[0], X[1], Y) 
-    matplotlib.pyplot.colorbar()
-    matplotlib.pyplot.title('Upper 95% quantile')
-    matplotlib.pyplot.xlabel(parameters1[0])
-    matplotlib.pyplot.ylabel(parameters1[1])
+    pyplot.pcolor(X[0], X[1], Y) 
+    pyplot.colorbar()
+    pyplot.title('Upper 95% quantile')
+    pyplot.xlabel(parameters1[0])
+    pyplot.ylabel(parameters1[1])
 
-    matplotlib.pyplot.subplot(2, 2, 4)
+    pyplot.subplot(2, 2, 4)
     Y = numpy.max(D['extinctionTimes'], axis = 1).reshape(dim)
-    matplotlib.pyplot.pcolor(X[0], X[1], Y) 
-    matplotlib.pyplot.colorbar()
-    matplotlib.pyplot.title('Maximum')
-    matplotlib.pyplot.xlabel(parameters1[0])
-    matplotlib.pyplot.ylabel(parameters1[1])
+    pyplot.pcolor(X[0], X[1], Y) 
+    pyplot.colorbar()
+    pyplot.title('Maximum')
+    pyplot.xlabel(parameters1[0])
+    pyplot.ylabel(parameters1[1])
 
 
 def plot_slice(**kwds):
@@ -138,12 +138,12 @@ def setAxis(axes, coord, key):
 
 
 def plot_3D(X, Y, Z, C, title):
-    fig = matplotlib.pyplot.figure()
+    fig = pyplot.figure()
     axes = fig.add_subplot(1, 1, 1, projection = '3d', axisbg = (0, 0, 0, 0))
     
     points = axes.scatter(numpy.log10(X), numpy.log10(Y), numpy.log10(Z),
                           c = C,
-                          cmap = matplotlib.pyplot.cm.spectral_r,
+                          cmap = pyplot.cm.spectral_r,
                           linewidth = 0,
                           vmin = 0.)
 
@@ -290,4 +290,4 @@ for years in (1, 2, 3, 5):
                                                   '' if years == 1 else 's'))
 
 
-# matplotlib.pyplot.show()
+# pyplot.show()

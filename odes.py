@@ -9,7 +9,7 @@ import Parameters
 def rhs(Y, t, parameters, RVs):
     (M, S, I, R) = Y
 
-    B = RVs.birth.hazard(t, 0., 4.)
+    B = parameters.probabilityOfMaleBirth * RVs.birth.scaling
     forceOfInfection = RVs.transmissionRate * I
     
     dM = B * (S + I + R) \
@@ -48,13 +48,16 @@ def solve(tMax, parameters):
 if __name__ == '__main__':
     import pylab
     
-    tMax = 1.
+    tMax = 5.
 
     parameters = Parameters.Parameters()
+    parameters.populationSize = 10000
+    parameters.infectionDuration = 21. / 365.
+    parameters.R0 = 10.
 
     (t, M, S, I, R) = solve(tMax, parameters)
 
-    pylab.plot(365. * t, I)
+    pylab.plot(t, I / (M + S + I + R) * parameters.populationSize)
     pylab.xlabel('time (days)')
     pylab.ylabel('number infected')
 
