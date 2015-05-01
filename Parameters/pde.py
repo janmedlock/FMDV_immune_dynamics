@@ -9,26 +9,23 @@ from . import birth
 from . import transmission
 
 
-def rhs(Y, t, AM, B, forceOfInfection, gamma, omega):
-    (M, S, I, R) = numpy.hsplit(Y, 4)
+def rhs(Y, t, AM, B, forceOfInfection, recoveryRate):
+    (S, I, R) = numpy.hsplit(Y, 3)
     
-    N = M + S + I + R
+    N = S + I + R
 
     lambda_ = forceOfInfection(I)
 
-    dM = (B(t).dot(N)
-          + AM.dot(M)
-          - omega * M)
-    dS = (AM.dot(S)
-          + omega * M
+    dS = (B(t).dot(N)
+          + AM.dot(S)
           - lambda_ * S)
     dI = (AM.dot(I)
           + lambda_ * S
-          - gamma * I)
+          - recoveryRate * I)
     dR = (AM.dot(R)
-          + gamma * I)
+          + recoveryRate * I)
 
-    dY = numpy.hstack((dM, dS, dI, dR))
+    dY = numpy.hstack((dS, dI, dR))
 
     return dY
 
@@ -53,29 +50,35 @@ def solve(tMax, ageMax, ageStep, parameters):
                    * birthRV.hazard(t, 0, ages - t))
         return Bval
 
-    beta = transmission.transmissionRate_gen(parameters)
+    transmissibility = transmission.transmissionRate_gen(parameters)
+    susceptibility = numpy.where(ages >= parameters.maternalImmunityDuration,
+                                 1., 0.)
     def forceOfInfection(I):
-        return beta * integrate.trapz(I, ages)
+        return integrate.trapz(transmissibility * I, ages) * susceptibility
 
-    gamma = 1. / parameters.infectionDuration
-    omega = 1. / parameters.maternalImmunityDuration
-
-    M0 = numpy.where(ages < parameters.maternalImmunityDuration, N0, 0.)
-    S0 = numpy.where((ages >= parameters.maternalImmunityDuration)
-                     & (ages < 2.),
-                     N0, 0.)
-    I0 = S0 * 2. / integrate.trapz(S0, ages)
+    recoveryRate = 1. / parameters.infectionDuration
+    # Everyone under 2 susceptible (except for maternal immunity).
+    S0 = numpy.where(ages < 2., N0, 0.)
+    # initial infections.
+    I0 = 2. * S0 / integrate.trapz(S0, ages)
     S0 -= I0
-    R0 = N0 - M0 - S0 - I0
+    R0 = N0 - S0 - I0
 
-    Y0 = numpy.hstack((M0, S0, I0, R0))
+    Y0 = numpy.hstack((S0, I0, R0))
 
     t = numpy.linspace(0., tMax, 1001)
 
     Y = integrate.odeint(rhs, Y0, t,
-                         args = (AM, B, forceOfInfection, gamma, omega))
+                         args = (AM, B, forceOfInfection, recoveryRate))
 
-    return (t, ages, numpy.hsplit(Y, 4))
+    (S, I, R) = numpy.hsplit(Y, 3)
+
+    # Split susceptibles into maternal immunity and not.
+    mask = (ages < parameters.maternalImmunityDuration)
+    M = numpy.where(mask[numpy.newaxis, :], S, 0.)
+    S -= M
+
+    return (t, ages, (M, S, I, R))
 
 
 @utility.shelved
