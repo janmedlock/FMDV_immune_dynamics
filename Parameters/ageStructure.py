@@ -1,29 +1,14 @@
 import numpy
-from scipy import stats
 
 from . import rv
-from . import utility
 
 
-class ageStructure_gen(rv.RV):
-    def __init__(self, mortality, birth, male,
-                 *args, **kwargs):
-        self.findStableAgeStructure(mortality, birth, male,
-                                    *args, **kwargs)
+class ageStructure_gen(rv.ageStructure_gen):
+    def __init__(self, parameters, *args, **kwargs):
+        from . import utility
 
-        self._quantilerv = stats.rv_discrete(values = (range(len(self.p)),
-                                                       self.p))
-        
-    def rvs(self, *args, **kwargs):
-        return self.a[self._quantilerv.rvs(*args, **kwargs)]
-        
-    def cdf(self, x):
-        return numpy.where(self.a <= x, self.p, 0.).sum()
+        (ages, proportion) = utility.findStableAgeStructure(
+            parameters, *args, **kwargs)
 
-    def findStableAgeStructure(self, mortality, birth, male,
-                               *args, **kwargs):
-        (self.a, self.p) = utility.findStableAgeStructure(mortality,
-                                                          birth,
-                                                          male,
-                                                          *args,
-                                                          **kwargs)
+        super(ageStructure_gen, self).__init__(ages, proportion,
+                                               *args, **kwargs)

@@ -5,7 +5,7 @@ from . import rv
 
 
 class mortality_gen(rv.RV, stats.rv_continuous):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, parameters, *args, **kwargs):
         stats.rv_continuous.__init__(self, name = 'mortality',
                                      a = 0., *args, **kwargs)
 

@@ -1,10 +1,13 @@
 import numpy
 
-from . import birth
-from .utility import fracpart
+from . import birth_super
 
 
-class birth_gen(birth.birth_gen):
+def fracpart(x):
+    return numpy.mod(x, 1.)
+
+
+class birth_gen(birth_super.birth_gen):
     def _getparams(self):
         if self.seasonalVariance < 1. / 3.:
             alpha = 1. + numpy.sqrt(3. * self.seasonalVariance)

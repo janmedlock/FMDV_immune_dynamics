@@ -54,3 +54,18 @@ class deterministic(RV, stats.rv_continuous):
 
     def __repr__(self):
         return RV.__repr__(self, (self._paramname, ))
+
+
+class ageStructure_gen(RV):
+    def __init__(self, ages, proportion, *args, **kwargs):
+        self.ages = ages
+        self.proportion = proportion
+
+        self._quantilerv = stats.rv_discrete(
+            values = (range(len(self.proportion)), self.proportion))
+        
+    def rvs(self, *args, **kwargs):
+        return self.ages[self._quantilerv.rvs(*args, **kwargs)]
+        
+    def cdf(self, x):
+        return numpy.where(self.ages <= x, self.proportion, 0.).sum()

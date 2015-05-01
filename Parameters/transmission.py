@@ -1,2 +1,4 @@
-def transmissionRate_gen(R0, recovery, populationSize):
-    return R0 / recovery.mean() / populationSize
+def transmissionRate_gen(parameters):
+    return (parameters.R0
+            / parameters.infectionDuration
+            / parameters.populationSize)

@@ -1,5 +1,5 @@
-from .ageStructure import *
-from .birth_triangular import *
+from .birth import *
+from .endemicEquilibrium import *
 from .male import *
 from .maternalImmunity import *
 from .mortality import *
@@ -28,23 +28,16 @@ class RandomVariables(object):
             parameters = Parameters()
         self.parameters = parameters
 
-        self.male = male_gen(parameters.probabilityOfMaleBirth)
+        self.male = male_gen(parameters)
 
-        self.maternalImmunityWaning = maternalImmunityWaning_gen(
-            parameters.maternalImmunityDuration)
+        self.maternalImmunityWaning = maternalImmunityWaning_gen(parameters)
 
-        self.mortality = mortality_gen()
+        self.mortality = mortality_gen(parameters)
 
-        self.recovery = recovery_gen(parameters.infectionDuration)
+        self.recovery = recovery_gen(parameters)
 
-        self.transmissionRate = transmissionRate_gen(parameters.R0,
-                                                     self.recovery,
-                                                     parameters.populationSize)
+        self.transmissionRate = transmissionRate_gen(parameters)
 
-        self.birth = birth_gen(self.mortality,
-                               self.male,
-                               parameters.birthSeasonalVariance)
+        self.birth = birth_gen(parameters)
 
-        self.ageStructure = ageStructure_gen(self.mortality,
-                                             self.birth,
-                                             self.male)
+        self.endemicEquilibrium = endemicEquilibrium_gen(parameters)

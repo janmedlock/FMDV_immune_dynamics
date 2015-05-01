@@ -4,56 +4,61 @@ import numpy
 from scipy import sparse
 from scipy import integrate
 
-import Parameters
-from Parameters import utility
+from . import utility
+from . import birth
+from . import transmission
 
 
-def B(t, ages, parameters, RVs):
-    Bval = sparse.lil_matrix((len(ages), ) * 2)
-    Bval[0] = ((1 - parameters.probabilityOfMaleBirth)
-               * RVs.birth.hazard(t, 0, ages - t))
-    return Bval
-
-
-def rhs(Y, t, ages, parameters, RVs, AM):
+def rhs(Y, t, AM, B, forceOfInfection, gamma, omega):
     (M, S, I, R) = numpy.hsplit(Y, 4)
     
     N = M + S + I + R
 
-    forceOfInfection = RVs.transmissionRate * integrate.trapz(I, ages)
+    lambda_ = forceOfInfection(I)
 
-    dM = (B(t, ages, parameters, RVs).dot(N)
+    dM = (B(t).dot(N)
           + AM.dot(M)
-          - 1. / parameters.maternalImmunityDuration * M)
+          - omega * M)
     dS = (AM.dot(S)
-          + 1. / parameters.maternalImmunityDuration * M
-          - forceOfInfection * S)
+          + omega * M
+          - lambda_ * S)
     dI = (AM.dot(I)
-          + forceOfInfection * S
-          - 1. / parameters.infectionDuration * I)
+          + lambda_ * S
+          - gamma * I)
     dR = (AM.dot(R)
-          + 1. / parameters.infectionDuration * I)
+          + gamma * I)
 
     dY = numpy.hstack((dM, dS, dI, dR))
 
     return dY
 
 
-def solve(tMax, ageMax, ageStep, parameters = None, RVs = None):
-    if parameters is None:
-        parameters = Parameters.Parameters()
-    if RVs is None:
-        RVs = Parameters.RandomVariables(parameters)
+def solve(tMax, ageMax, ageStep, parameters):
+    matrices = utility.buildMatrices(parameters,
+                                     ageMax = ageMax,
+                                     ageStep = ageStep)
+    (ages, (B_bar, A, M)) = matrices
+    eigenpair = utility.findDominantEigenpair(parameters,
+                                              _matrices = matrices)
+    eigenvector = eigenpair[1][1]
+    N0 = (eigenvector / integrate.trapz(eigenvector, ages)
+          * parameters.populationSize)
 
-    (ages, (B_bar, A, M)) = utility.buildMatrices(RVs.mortality,
-                                                  RVs.birth,
-                                                  RVs.male,
-                                                  ageMax = ageMax,
-                                                  ageStep = ageStep)
     AM = A - M
 
-    evect = utility.findDominantEigenpair(B_bar + AM)[1]
-    N0 = evect / integrate.trapz(evect, ages) * parameters.populationSize
+    birthRV = birth.birth_gen(parameters)
+    def B(t):
+        Bval = sparse.lil_matrix((len(ages), ) * 2)
+        Bval[0] = ((1 - parameters.probabilityOfMaleBirth)
+                   * birthRV.hazard(t, 0, ages - t))
+        return Bval
+
+    beta = transmission.transmissionRate_gen(parameters)
+    def forceOfInfection(I):
+        return beta * integrate.trapz(I, ages)
+
+    gamma = 1. / parameters.infectionDuration
+    omega = 1. / parameters.maternalImmunityDuration
 
     M0 = numpy.where(ages < parameters.maternalImmunityDuration, N0, 0.)
     S0 = numpy.where((ages >= parameters.maternalImmunityDuration)
@@ -67,21 +72,23 @@ def solve(tMax, ageMax, ageStep, parameters = None, RVs = None):
 
     t = numpy.linspace(0., tMax, 1001)
 
-    Y = integrate.odeint(rhs, Y0, t, args = (ages, parameters, RVs, AM))
+    Y = integrate.odeint(rhs, Y0, t,
+                         args = (AM, B, forceOfInfection, gamma, omega))
 
     return (t, ages, numpy.hsplit(Y, 4))
 
 
-def get_endemic_equilibrium(parameters, tMax = 20.,
-                            ageMax = 20., ageStep = 0.01):
+@utility.shelved
+def getEndemicEquilibrium(parameters, tMax = 20.,
+                          ageMax = 20., ageStep = 0.01):
     (t, ages, (M, S, I, R)) = solve(tMax, ageMax, ageStep, parameters)
     
-    return (M[-1], S[-1], I[-1], R[-1])
-
+    return (ages, (M[-1], S[-1], I[-1], R[-1]))
     
 
 if __name__ == '__main__':
     from matplotlib import pyplot
+    import Parameters
 
     tMax = 10.
 

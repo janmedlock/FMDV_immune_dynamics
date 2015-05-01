@@ -1,9 +1,9 @@
 import numpy
 
-from . import birth
+from . import birth_super
 
 
-class birth_gen(birth.birth_gen):
+class birth_gen(birth_super.birth_gen):
     def hazard(self, time, time0, age0):
         return numpy.where(
             age0 + time < 4.,

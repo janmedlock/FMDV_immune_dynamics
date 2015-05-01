@@ -20,8 +20,10 @@ class Event:
 
 
 class Buffalo:
-    def __init__(self, herd, age = 0., identifier = None):
+    def __init__(self, herd, immuneStatus = 'maternal immunity', age = 0.,
+                 identifier = None):
         self.herd = herd
+        self.immuneStatus = immuneStatus
 
         # All members of the herd have the same parameters.
         self.RVs = self.herd.RVs
@@ -33,20 +35,26 @@ class Buffalo:
 
         self.events = {}
 
-        maternalImmunityWaningAge \
-          = self.RVs.maternalImmunityWaning.rvs()
-        if age < maternalImmunityWaningAge:
-            self.immuneStatus = 'maternal immunity'
-
-            self.events['maternalImmunityWaning'] \
-            = Event(self.birthDate + maternalImmunityWaningAge,
+        if self.immuneStatus == 'maternal immunity':
+            eventTime = self.birthDate + self.RVs.maternalImmunityWaning.rvs()
+            if eventTime < 0.:
+                eventTime = 0.
+            self.events['maternalImmunityWaning'] = Event(
+                    eventTime,
                     self.maternalImmunityWaning,
                     'maternal immunity waning for #{}'.format(self.identifier))
+        elif self.immuneStatus == 'susceptible':
+            pass
+        elif self.immuneStatus == 'infectious':
+            self.events['recovery'] \
+                = Event(self.herd.time + self.RVs.recovery.rvs(),
+                        self.recovery,
+                        'recovery for #{}'.format(self.identifier))
+        elif self.immuneStatus == 'recovered':
+            pass
         else:
-            if age < 2.:
-                self.immuneStatus = 'susceptible'
-            else:
-                self.immuneStatus = 'recovered'
+            raise ValueError('Unknown immuneStatus = {}!'.format(
+                self.immuneStatus))
 
         # Use resampling to get a death age > current age.
         while True:
@@ -72,7 +80,12 @@ class Buffalo:
         self.herd.mortality(self)
 
     def giveBirth(self):
-        self.herd.birth()
+        if self.immuneStatus == 'recovered':
+            calfStatus = 'maternal immunity'
+        else:
+            calfStatus = 'susceptible'
+
+        self.herd.birth(immuneStatus = calfStatus)
         self.events['giveBirth'] \
           = Event(
               self.herd.time
@@ -148,9 +161,23 @@ class Herd(list):
         self.time = 0.
         self.identifier = 0
 
-        ages = self.RVs.ageStructure.rvs(size = self.parameters.populationSize)
-        for a in ages:
-            self.birth(a)
+        flags_ages = self.RVs.endemicEquilibrium.rvs(
+            self.parameters.populationSize)
+
+        for (flag, ages) in enumerate(flags_ages):
+            if flag == 0:
+                immuneStatus = 'maternal immunity'
+            elif flag == 1:
+                immuneStatus = 'susceptible'
+            elif flag == 2:
+                immuneStatus = 'infectious'
+            elif flag == 3:
+                immuneStatus = 'recovered'
+            else:
+                raise ValueError('Unknown immuneStatus flag = {}!'.format(flag))
+                
+            for age in ages:
+                self.birth(immuneStatus, age)
 
         self.addInfections(self.parameters.initialInfections)
 
@@ -168,17 +195,22 @@ class Herd(list):
     def mortality(self, buffalo):
         self.remove(buffalo)
 
-    def birth(self, age = 0.):
+    def birth(self, immuneStatus = 'maternal immunity', age = 0.):
         if self.debug:
             if age > 0:
-                print 't = {}: arrival of #{} at age {}'.format(self.time,
-                                                                self.identifier,
-                                                                age)
+                print 't = {}: arrival of #{} at age {} with status {}'.format(
+                    self.time,
+                    self.identifier,
+                    age,
+                    immuneStatus)
             else:
-                print 't = {}: birth of #{}'.format(self.time,
-                                                    self.identifier)
+                print 't = {}: birth of #{} with status {}'.format(
+                    self.time,
+                    self.identifier,
+                    immuneStatus)
 
-        self.append(Buffalo(self, age, identifier = self.identifier))
+        self.append(Buffalo(self, immuneStatus, age,
+                            identifier = self.identifier))
         self.identifier += 1
 
     def updateInfectionTimes(self):
@@ -228,7 +260,7 @@ class Herd(list):
 if __name__ == '__main__':
     import pylab
 
-    import odes
+    # import odes
 
     p = Parameters.Parameters()
 
@@ -237,7 +269,7 @@ if __name__ == '__main__':
     p.R0 = 10.
     p.birthSeasonalVariation = 1.
 
-    tMax = 10.
+    tMax = 2.
     nRuns = 10
     debug = False
     
@@ -255,8 +287,8 @@ if __name__ == '__main__':
 
         pylab.step(365. * numpy.asarray(t), I, where = 'post')
 
-    (to, Mo, So, Io, Ro) = odes.solve(max(extinctionTimes), p)
-    pylab.plot(365. * to, Io, linestyle = ':')
+    # (to, Mo, So, Io, Ro) = odes.solve(max(extinctionTimes), p)
+    # pylab.plot(365. * to, Io, linestyle = ':')
 
     pylab.xlabel('time (days)')
     pylab.ylabel('number infected')
