@@ -257,10 +257,27 @@ class Herd(list):
         return result[-1][0]
 
 
+def getMean(data):
+    (T, I) = zip(*data)
+
+    t_mean = numpy.unique(numpy.hstack(T))
+
+    i_mean = numpy.zeros_like(t_mean)
+    for (j, tj) in enumerate(t_mean):
+        for (Tk, Ik) in zip(T, I):
+            i_mean[j] += numpy.compress(numpy.asarray(Tk) <= tj, Ik)[-1]
+    i_mean /= len(data)
+
+    return (t_mean, i_mean)
+
+
 if __name__ == '__main__':
     import pylab
+    import seaborn
+    import itertools
+    from scipy import integrate
 
-    # import odes
+    from Parameters import pde
 
     p = Parameters.Parameters()
 
@@ -270,25 +287,39 @@ if __name__ == '__main__':
     p.birthSeasonalVariation = 1.
 
     tMax = 2.
-    nRuns = 10
+    nRuns = 5
     debug = False
     
     numpy.random.seed(1)
 
+    colors = itertools.cycle(seaborn.color_palette('husl', 8))
+    data = []
     extinctionTimes = []
     for r in xrange(nRuns):
         h = Herd(p, debug = debug)
         result = h.run(tMax)
         (t, I) = zip(*result)
+        data.append((t, I))
 
         eT = t[-1]
         extinctionTimes.append(eT)
         print 'Run #{}: Extinct after {} days'.format(r + 1, 365. * eT)
 
-        pylab.step(365. * numpy.asarray(t), I, where = 'post')
+        pylab.step(365. * numpy.asarray(t), I, where = 'post',
+                   color = colors.next(), alpha = 0.5)
 
-    # (to, Mo, So, Io, Ro) = odes.solve(max(extinctionTimes), p)
-    # pylab.plot(365. * to, Io, linestyle = ':')
+    (t_mean, I_mean) = getMean(data)
+    pylab.step(365. * t_mean, I_mean, where = 'post',
+               color = 'black')
+
+    (t, a, (M, S, I, R)) = pde.solve(20, 20, 0.1, p)
+    i = integrate.trapz(I, a, axis = 1)
+    n = numpy.ceil(max(extinctionTimes))
+    dt = t[1] - t[0]
+    j0 = int(- n / dt - 1)
+    t -= t[j0]
+    pylab.plot(365. * t[j0 : ], i[j0 : ],
+               linestyle = ':', color = 'black')
 
     pylab.xlabel('time (days)')
     pylab.ylabel('number infected')
