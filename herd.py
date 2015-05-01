@@ -37,8 +37,7 @@ class Buffalo:
 
         if self.immuneStatus == 'maternal immunity':
             eventTime = self.birthDate + self.RVs.maternalImmunityWaning.rvs()
-            if eventTime < 0.:
-                eventTime = 0.
+            assert eventTime >= 0.
             self.events['maternalImmunityWaning'] = Event(
                     eventTime,
                     self.maternalImmunityWaning,
