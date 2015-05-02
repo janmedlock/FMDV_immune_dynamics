@@ -3,7 +3,6 @@ from scipy import sparse, integrate, optimize
 import shelve
 import inspect
 import os.path
-import atexit # Workaround for shelve bug on exit.
 
 
 class shelved:
@@ -24,41 +23,28 @@ class shelved:
         # Put the cache file in the same directory as the caller.
         mydir = os.path.dirname(inspect.getfile(self.func))
         # Name the cache file func.__name__ + '.shelve'
-        myfile = os.path.join(mydir, '{}.shelve'.format(self.func.__name__))
-        self.cache = shelve.open(myfile)
-        # Workaround for shelve bug on exit.
-        atexit.register(self.cache.close)
+        self.myfile = os.path.join(mydir,
+                                   '{}.shelve'.format(self.func.__name__))
 
     def __call__(self, parameters, *args, **kwargs):
         # Derive the shelve key from the parameters object.
         key = repr(parameters)
 
+        cache = shelve.open(self.myfile)
         try:
-            return self.cache[key]
+            val = cache[key]
         except (KeyError, ValueError, TypeError):
             print '{} not in {} cache.  Computing...'.format(
                 key, self.func.__name__)
-            v = self.func(parameters, *args, **kwargs)
+            val = cache[key] = self.func(parameters, *args, **kwargs)
             print '\tFinished computing {}.'.format(self.func.__name__)
+        finally:
+            cache.close()
 
-            try:
-                self.cache[key] = v
-            except (ValueError, TypeError):
-                # The cache is broken, possibly closed?
-                pass
-            return v
-
-    def __del__(self):
-        # Catch errors if the cache is already closed.
-        try:
-            self.cache.close()
-            del self.cache
-        except (ValueError, TypeError, AttributeError):
-            pass
+        return val
 
 
-def buildMatrices(parameters,
-                  ageMax = 20., ageStep = 0.01):
+def buildMatrices(parameters, ageMax = 20., ageStep = 0.01):
     from . import mortality
     from . import birth
 
