@@ -38,8 +38,9 @@ class shelved:
         except (KeyError, ValueError, TypeError):
             print '{} not in {} cache.  Computing...'.format(
                 key, self.func.__name__)
-
             v = self.func(parameters, *args, **kwargs)
+            print '\tFinished computing {}.'.format(self.func.__name__)
+
             try:
                 self.cache[key] = v
             except (ValueError, TypeError):
