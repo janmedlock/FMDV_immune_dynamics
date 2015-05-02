@@ -2,6 +2,7 @@
 
 import numpy
 from scipy import stats
+import multiprocessing
 
 import Parameters
 
@@ -201,6 +202,14 @@ class Herd(list):
         for buffalo in self:
             buffalo.updateInfectionTime(self.forceOfInfection)
 
+    def getStats(self):
+        counts = []
+        for status in ('maternal immunity', 'susceptible',
+                       'infectious', 'recovered'):
+            counts.append(sum(1 for buffalo in self
+                              if buffalo.immuneStatus == status))
+        return [self.time] + counts
+
     def getNextEvent(self):
         if len(self) > 0:
             return min([b.getNextEvent() for b in self])
@@ -208,9 +217,14 @@ class Herd(list):
             return None
 
     def stop(self):
-        return (self.numberInfectious == 0)
+        try:
+            return (self.numberInfectious == 0)
+        except AttributeError:
+            # If self.numberInfectious isn't defined yet.
+            return False
 
     def step(self, tMax = numpy.inf):
+        self.updateInfectionTimes()
         event = self.getNextEvent()
 
         if (event is not None) and (event.time < tMax):
@@ -221,15 +235,12 @@ class Herd(list):
         else:
             self.time = tMax
 
-        self.updateInfectionTimes()
-
     def run(self, tMax):
-        self.updateInfectionTimes()
-        result = [(self.time, self.numberInfectious)]
+        result = [self.getStats()]
 
         while (self.time < tMax) and (not self.stop()):
             self.step(tMax)
-            result.append((self.time, self.numberInfectious))
+            result.append(self.getStats())
 
         return result
 
@@ -238,22 +249,52 @@ class Herd(list):
         return result[-1][0]
 
 
+
+def doOne(parameters, tMax, *args, **kwds):
+    return  Herd(parameters, *args, **kwds).run(tMax)
+
+def showResult(x):
+    print 'Simulation ended at {} days.'.format(365. * x[-1][0])
+
+def multirun(nRuns, *args, **kwds):
+    pool = multiprocessing.Pool(initializer = numpy.random.seed)
+    
+    results = [pool.apply_async(doOne,
+                                args,
+                                kwds,
+                                showResult)
+               for i in xrange(nRuns)]
+
+    pool.close()
+
+    return [r.get() for r in results]
+
+
 def getMean(data):
-    (T, I) = zip(*data)
+    (T, M, S, I, R) = zip(*(zip(*x) for x in data))
 
     t_mean = numpy.unique(numpy.hstack(T))
 
+    m_mean = numpy.zeros_like(t_mean)
+    s_mean = numpy.zeros_like(t_mean)
     i_mean = numpy.zeros_like(t_mean)
+    r_mean = numpy.zeros_like(t_mean)
     for (j, tj) in enumerate(t_mean):
-        for (Tk, Ik) in zip(T, I):
+        for (Tk, Mk, Sk, Ik, Rk) in zip(T, M, S, I, R):
+            m_mean[j] += numpy.compress(numpy.asarray(Tk) <= tj, Mk)[-1]
+            s_mean[j] += numpy.compress(numpy.asarray(Tk) <= tj, Sk)[-1]
             i_mean[j] += numpy.compress(numpy.asarray(Tk) <= tj, Ik)[-1]
+            r_mean[j] += numpy.compress(numpy.asarray(Tk) <= tj, Rk)[-1]
+    m_mean /= len(data)
+    s_mean /= len(data)
     i_mean /= len(data)
+    r_mean /= len(data)
 
-    return (t_mean, i_mean)
+    return (t_mean, m_mean, s_mean, i_mean, r_mean)
 
 
 if __name__ == '__main__':
-    import pylab
+    from matplotlib import pyplot
     import seaborn
     import itertools
     from scipy import integrate
@@ -262,48 +303,65 @@ if __name__ == '__main__':
 
     p = Parameters.Parameters()
 
-    p.populationSize = 10000
+    p.populationSize = 1000
     p.infectionDuration = 21. / 365.
     p.R0 = 10.
     p.birthSeasonalVariation = 1.
 
     tMax = 2.
-    nRuns = 10
+    nRuns = multiprocessing.cpu_count()
     debug = False
     
-    numpy.random.seed(1)
-
     colors = itertools.cycle(seaborn.color_palette('husl', 8))
-    data = []
-    extinctionTimes = []
-    for r in xrange(nRuns):
-        h = Herd(p, debug = debug)
-        result = h.run(tMax)
-        (t, I) = zip(*result)
-        data.append((t, I))
+    data = multirun(nRuns, p, tMax, debug = debug)
 
-        eT = t[-1]
-        extinctionTimes.append(eT)
-        print 'Run #{}: Extinct after {} days'.format(r + 1, 365. * eT)
-
-        pylab.step(365. * numpy.asarray(t), I, where = 'post',
+    (fig, ax) = pyplot.subplots(4, sharex = True)
+    (T, M, S, I, R) = zip(*(zip(*x) for x in data))
+    for (t, m, s, i, r) in zip(T, M, S, I, R):
+        ax[0].step(365. * numpy.asarray(t), m, where = 'post',
+                   color = colors.next(), alpha = 0.5)
+        ax[1].step(365. * numpy.asarray(t), s, where = 'post',
+                   color = colors.next(), alpha = 0.5)
+        ax[2].step(365. * numpy.asarray(t), i, where = 'post',
+                   color = colors.next(), alpha = 0.5)
+        ax[3].step(365. * numpy.asarray(t), r, where = 'post',
                    color = colors.next(), alpha = 0.5)
 
-    (t_mean, I_mean) = getMean(data)
-    pylab.step(365. * t_mean, I_mean, where = 'post',
+    (t_mean, M_mean, S_mean, I_mean, R_mean) = getMean(data)
+    ax[0].step(365. * t_mean, M_mean, where = 'post',
+               color = 'black')
+    ax[1].step(365. * t_mean, S_mean, where = 'post',
+               color = 'black')
+    ax[2].step(365. * t_mean, I_mean, where = 'post',
+               color = 'black')
+    ax[3].step(365. * t_mean, R_mean, where = 'post',
                color = 'black')
 
-    (t, a, (M, S, I, R)) = pde.solve(20, 20, 0.1, p)
-    i = integrate.trapz(I, a, axis = 1)
-    n = numpy.ceil(max(extinctionTimes))
-    dt = t[1] - t[0]
-    j0 = int(- n / dt - 1)
-    t -= t[j0]
-    pylab.plot(365. * t[j0 : ], i[j0 : ],
+    (t_, a_, (M_, S_, I_, R_)) = pde.solve(20, 20, 0.1, p)
+    m_ = integrate.trapz(M_, a_, axis = 1)
+    s_ = integrate.trapz(S_, a_, axis = 1)
+    i_ = integrate.trapz(I_, a_, axis = 1)
+    r_ = integrate.trapz(R_, a_, axis = 1)
+    Tmax = numpy.max(numpy.hstack(T))
+    n_ = numpy.ceil(Tmax)
+    dt_ = t_[1] - t_[0]
+    j_ = int(- n_ / dt_ - 1)
+    t_ -= t_[j_]
+    ax[0].plot(365. * t_[j_ : ], m_[j_ : ],
+               linestyle = ':', color = 'black')
+    ax[1].plot(365. * t_[j_ : ], s_[j_ : ],
+               linestyle = ':', color = 'black')
+    ax[2].plot(365. * t_[j_ : ], i_[j_ : ],
+               linestyle = ':', color = 'black')
+    ax[3].plot(365. * t_[j_ : ], r_[j_ : ],
                linestyle = ':', color = 'black')
 
-    pylab.xlabel('time (days)')
-    pylab.ylabel('number infected')
-    pylab.ylim(ymin = 0.)
+    for ax_ in ax:
+        ax_.set_ylim(ymin = 0.)
+    ax[3].set_xlabel('time (days)')
+    ax[0].set_ylabel('maternal immunity')
+    ax[1].set_ylabel('susceptible')
+    ax[2].set_ylabel('infected')
+    ax[3].set_ylabel('recovered')
 
-    pylab.show()
+    pyplot.show()
