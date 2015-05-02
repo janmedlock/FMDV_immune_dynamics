@@ -13,6 +13,11 @@ class endemicEquilibrium_gen(rv.RV):
                                               *args,
                                               **kwargs)
 
+        self.statuses = ('maternal immunity',
+                         'susceptible',
+                         'infectious',
+                         'recovered')
+
         self.weights = numpy.array([integrate.trapz(x, ages) for x in Y])
         self.weights /= self.weights.sum()
 
@@ -26,6 +31,7 @@ class endemicEquilibrium_gen(rv.RV):
         # occured.
         N = numpy.random.multinomial(size, self.weights)
 
-        result = [RV.rvs(size = n) for (RV, n) in zip(self.RVs, N)]
+        result = {status: RV.rvs(size = n)
+                  for (status, RV, n) in zip(self.statuses, self.RVs, N)}
 
         return result

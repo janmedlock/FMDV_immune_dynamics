@@ -160,36 +160,18 @@ class Herd(list):
         self.time = 0.
         self.identifier = 0
 
-        flags_ages = self.RVs.endemicEquilibrium.rvs(
-            self.parameters.populationSize)
-
-        for (flag, ages) in enumerate(flags_ages):
-            if flag == 0:
-                immuneStatus = 'maternal immunity'
-            elif flag == 1:
-                immuneStatus = 'susceptible'
-            elif flag == 2:
-                immuneStatus = 'infectious'
-            elif flag == 3:
-                immuneStatus = 'recovered'
+        # Loop until we get a non-zero number of initial infections.
+        while True:
+            status_ages = self.RVs.endemicEquilibrium.rvs(
+                self.parameters.populationSize)
+            if len(status_ages['infectious']) > 0:
+                break
             else:
-                raise ValueError('Unknown immuneStatus flag = {}!'.format(flag))
-                
+                print 'Initial infections = 0!  Re-sampling initial conditions.'
+
+        for (immuneStatus, ages) in status_ages.items():
             for age in ages:
                 self.birth(immuneStatus, age)
-
-        # self.addInfections(self.parameters.initialInfections)
-
-    def addInfections(self, numberOfInfections):
-        i = 0
-        for b in self:
-            if b.isSusceptible():
-                b.infection()
-                i += 1
-            if i >= numberOfInfections:
-                break
-        if i != numberOfInfections:
-            raise RuntimeError('Could only make {} infections!'.format(i))
 
     def mortality(self, buffalo):
         self.remove(buffalo)
@@ -286,7 +268,7 @@ if __name__ == '__main__':
     p.birthSeasonalVariation = 1.
 
     tMax = 2.
-    nRuns = 5
+    nRuns = 10
     debug = False
     
     numpy.random.seed(1)
