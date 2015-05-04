@@ -342,18 +342,18 @@ if __name__ == '__main__':
     s_ = integrate.trapz(S_, a_, axis = 1)
     i_ = integrate.trapz(I_, a_, axis = 1)
     r_ = integrate.trapz(R_, a_, axis = 1)
-    Tmax = numpy.max(numpy.hstack(T))
-    n_ = numpy.ceil(Tmax)
+    n_ = m_ + s_ + i_ + r_
+    Tmax_ = numpy.ceil(numpy.max(numpy.hstack(T)))
     dt_ = t_[1] - t_[0]
-    j_ = int(- n_ / dt_ - 1)
+    j_ = int(- Tmax_ / dt_ - 1)
     t_ -= t_[j_]
-    ax[0].plot(365. * t_[j_ : ], m_[j_ : ],
+    ax[0].plot(365. * t_[j_ : ], m_[j_ : ] / n_[j_ : ] * p.populationSize,
                linestyle = ':', color = 'black')
-    ax[1].plot(365. * t_[j_ : ], s_[j_ : ],
+    ax[1].plot(365. * t_[j_ : ], s_[j_ : ] / n_[j_ : ] * p.populationSize,
                linestyle = ':', color = 'black')
-    ax[2].plot(365. * t_[j_ : ], i_[j_ : ],
+    ax[2].plot(365. * t_[j_ : ], i_[j_ : ] / n_[j_ : ] * p.populationSize,
                linestyle = ':', color = 'black')
-    ax[3].plot(365. * t_[j_ : ], r_[j_ : ],
+    ax[3].plot(365. * t_[j_ : ], r_[j_ : ] / n_[j_ : ] * p.populationSize,
                linestyle = ':', color = 'black')
 
     for ax_ in ax:
