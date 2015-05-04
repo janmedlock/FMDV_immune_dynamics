@@ -217,6 +217,7 @@ class Herd(list):
             return None
 
     def stop(self):
+        return False
         try:
             return (self.numberInfectious == 0)
         except AttributeError:
@@ -280,15 +281,21 @@ def getMean(data):
     i_mean = numpy.zeros_like(t_mean)
     r_mean = numpy.zeros_like(t_mean)
     for (j, tj) in enumerate(t_mean):
+        n = 0.
         for (Tk, Mk, Sk, Ik, Rk) in zip(T, M, S, I, R):
-            m_mean[j] += numpy.compress(numpy.asarray(Tk) <= tj, Mk)[-1]
-            s_mean[j] += numpy.compress(numpy.asarray(Tk) <= tj, Sk)[-1]
-            i_mean[j] += numpy.compress(numpy.asarray(Tk) <= tj, Ik)[-1]
-            r_mean[j] += numpy.compress(numpy.asarray(Tk) <= tj, Rk)[-1]
-    m_mean /= len(data)
-    s_mean /= len(data)
-    i_mean /= len(data)
-    r_mean /= len(data)
+            # If we're not past the end of this simulation.
+            if tj <= Tk[-1]:
+                # Find the last time point <= tj.
+                jk = numpy.argwhere(numpy.asarray(Tk) <= tj)[-1]
+                n += 1.
+                m_mean[j] += Mk[jk]
+                s_mean[j] += Sk[jk]
+                i_mean[j] += Ik[jk]
+                r_mean[j] += Rk[jk]
+        m_mean[j] /= n
+        s_mean[j] /= n
+        i_mean[j] /= n
+        r_mean[j] /= n
 
     return (t_mean, m_mean, s_mean, i_mean, r_mean)
 
@@ -308,7 +315,7 @@ if __name__ == '__main__':
     p.R0 = 10.
     p.birthSeasonalVariation = 1.
 
-    tMax = 2.
+    tMax = 1.
     nRuns = multiprocessing.cpu_count()
     debug = False
     
@@ -347,13 +354,13 @@ if __name__ == '__main__':
     dt_ = t_[1] - t_[0]
     j_ = int(- Tmax_ / dt_ - 1)
     t_ -= t_[j_]
-    ax[0].plot(365. * t_[j_ : ], m_[j_ : ] / n_[j_ : ] * p.populationSize,
+    ax[0].plot(365. * t_[j_ : ], m_[j_ : ] / n_[j_] * p.populationSize,
                linestyle = ':', color = 'black')
-    ax[1].plot(365. * t_[j_ : ], s_[j_ : ] / n_[j_ : ] * p.populationSize,
+    ax[1].plot(365. * t_[j_ : ], s_[j_ : ] / n_[j_] * p.populationSize,
                linestyle = ':', color = 'black')
-    ax[2].plot(365. * t_[j_ : ], i_[j_ : ] / n_[j_ : ] * p.populationSize,
+    ax[2].plot(365. * t_[j_ : ], i_[j_ : ] / n_[j_] * p.populationSize,
                linestyle = ':', color = 'black')
-    ax[3].plot(365. * t_[j_ : ], r_[j_ : ] / n_[j_ : ] * p.populationSize,
+    ax[3].plot(365. * t_[j_ : ], r_[j_ : ] / n_[j_] * p.populationSize,
                linestyle = ':', color = 'black')
 
     for ax_ in ax:
