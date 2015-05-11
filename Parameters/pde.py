@@ -96,7 +96,7 @@ if __name__ == '__main__':
     tMax = 10.
 
     ageMax = 20.
-    ageStep = 0.1
+    ageStep = 0.01
 
     parameters = Parameters.Parameters()
     parameters.populationSize = 10000
