@@ -1,38 +1,21 @@
 #!/usr/bin/python
 
 import numpy
-import multiprocessing
-import collections
 
 import herd
 
 
-def setRandomSeed():
-    numpy.random.seed()
-
-def doOne(parameters, tMax, *args, **kwds):
-    h = herd.Herd(parameters, *args, **kwds)
-    return h.findExtinctionTime(tMax)
-
-def showResult(extinctionTime):
-    print 'Extinct after {} days'.format(365. * extinctionTime)
-   
-def findExtinctionTimes(parameters,
+def findExtinctionTimes(nRuns,
+                        parameters,
                         tMax,
-                        nRuns,
                         *args,
                         **kwds):
-    pool = multiprocessing.Pool(initializer = setRandomSeed)
-    
-    results = [pool.apply_async(doOne,
-                                (parameters, tMax, ) + args,
-                                kwds,
-                                callback = showResult)
-               for n in xrange(nRuns)]
+    data = herd.multirun(nRuns, parameters, tMax, *args, **kwds)
 
-    pool.close()
+    (T, X) = zip(*(zip(*y) for (runNumber, y) in data))
 
-    extinctionTimes = [r.get() for r in results]
+    extinctionTimes = [t[-1] if (x[-1][2] == 0) else None
+                       for (t, x) in zip(T, X)]
 
     return extinctionTimes
 
@@ -58,10 +41,6 @@ def findStats(extinctionTimes):
     mystats['proportion >= 1'] = proportion_ge_x(extinctionTimes, 1.)
     mystats['proportion >= 10'] = proportion_ge_x(extinctionTimes, 10.)
     
-    # Convert everything from years to days
-    for (k, v) in mystats.iteritems():
-        mystats[k] = 365. * v
-
     return mystats
     
 def showStats(mystats):
@@ -71,41 +50,21 @@ def showStats(mystats):
            + '}')
 
 
-Key = collections.namedtuple('parameters', ('populationSize',
-                                            'infectionDuration',
-                                            'R0'))
-
-def searchParameters(parameters,
-                     tMax,
-                     nRuns,
-                     callback = None,
-                     *args, **kwds):
-    numpy.random.seed(1)
-
-    eT = findExtinctionTimes(parameters,
-                             tMax,
-                             nRuns,
-                             *args,
-                             **kwds)
-
-    if callable(callback):
-        callback(parameters, eT)
-
-    return eT
-
-
 if __name__ == '__main__':
     import Parameters
 
-    parameters = Parameters.Parameters()
+    p = Parameters.Parameters()
 
-    nRuns = 10
-    tMax = 10.
+    p.populationSize = 10000
+    p.infectionDuration = 21. / 365.
+    p.R0 = 10.
+    p.birthSeasonalVariance = 1.
+
+    nRuns = 100
+    tMax = 5.
     debug = False
     
-    numpy.random.seed(1)
-
-    eT = findExtinctionTimes(parameters, tMax, nRuns, debug = debug)
+    eT = findExtinctionTimes(nRuns, p, tMax, debug = debug)
 
     mystats = findStats(eT)
     showStats(mystats)
