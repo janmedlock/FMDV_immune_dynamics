@@ -218,7 +218,6 @@ class Herd(list):
             return None
 
     def stop(self):
-        return False
         try:
             return (self.numberInfectious == 0)
         except AttributeError:
@@ -263,8 +262,8 @@ def showResult(y):
     state_last = x[-1]
     t_last = state_last[0]
 
-    print 'Simulation #{} ended at {} days.'.format(runNumber,
-                                                    365. * t_last)
+    print 'Simulation #{} ended at {:g} days.'.format(runNumber,
+                                                      365. * t_last)
 
 def getkwds(kwds, i):
     res = kwds.copy()
@@ -288,16 +287,21 @@ def multirun(nRuns, *args, **kwds):
 def getMean(T, X):
     T_mean = numpy.unique(numpy.hstack(T))
     X_mean = numpy.zeros((len(T_mean), len(X[0][0])))
-    for (j, tj) in enumerate(T_mean):
-        n = 0.
-        for (Tk, Xk) in zip(T, X):
-            # If we're not past the end of this simulation.
-            if tj <= Tk[-1]:
-                # Find the last time point <= tj.
-                jk = numpy.argwhere(numpy.asarray(Tk) <= tj)[-1]
-                X_mean[j] += Xk[jk]
-                n += 1.
-        X_mean[j] /= n
+    n = numpy.zeros_like(T_mean)
+    for (Tk, Xk) in zip(T, X):
+        Tk = numpy.array(Tk)
+        Xk = numpy.array(Xk)
+
+        # Only go to the end of this simulation.
+        T_ = T_mean.compress(T_mean <= Tk[-1])
+
+        # Find the indicies i[j] of the largest Tk with Tk[i[j]] <= T_[j]
+        indices = [(Tk <= t).nonzero()[0][-1] for t in T_]
+
+        X_mean[ : len(T_)] += Xk[indices]
+        n[ : len(T_)] += 1.
+    X_mean /= n[:, numpy.newaxis]
+
     return (T_mean, X_mean)
 
 
@@ -332,7 +336,7 @@ def makePlots(data, show = True):
         ax[j].step(365. * T_mean, X_mean[:, j], where = 'post',
                    color = 'black')
 
-    (t_, a_, X_) = pde.solve(20, 20, 0.1, p)
+    (t_, a_, X_) = pde.solve(20, 20, 0.01, p)
     x_ = numpy.zeros((len(X_), len(t_)))
     for j in range(len(X_)):
         x_[j] = integrate.trapz(X_[j], a_, axis = 1)
@@ -364,13 +368,21 @@ def makePlots(data, show = True):
         pyplot.show()
 
 
+def getIterminal(data):
+    (T, X) = zip(*(zip(*y) for (runNumber, y) in data))
+    Iterminal = [x[-1][2] for x in X]
+    return numpy.asarray(Iterminal)
+
+
 if __name__ == '__main__':
+    import cPickle
+
     p = Parameters.Parameters()
 
     p.populationSize = 10000
     p.infectionDuration = 21. / 365.
     p.R0 = 10.
-    p.birthSeasonalVariation = 1.
+    p.birthSeasonalVariance = 0.
 
     tMax = 1.
     # nRuns = multiprocessing.cpu_count()
@@ -378,5 +390,6 @@ if __name__ == '__main__':
     debug = False
     
     data = multirun(nRuns, p, tMax, debug = debug)
-
+    cPickle.dump(data, open('herd_aseasonal.p', 'wb'))
+    
     makePlots(data)
