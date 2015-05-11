@@ -1,55 +1,39 @@
 #!/usr/bin/python
 
+import sys
+import os.path
+import csv
+
 import Parameters
 import extinctionTimes
 
 
-def searchPopulationSize(populationSizes, parameters, tMax, nRuns,
-                         callback = None, debug = False):
-    for x in populationSizes:
-        parameters.populationSize = x
-        print 'populationSize = {}'.format(parameters.populationSize)
-        extinctionTimes.searchParameters(
-            parameters,
-            tMax,
-            nRuns,
-            callback = callback,
-            debug = debug)
+def searchParameter(parameterName, values, nRuns, parameters, tMax,
+                    *args, **kwargs):
+    assert hasattr(parameters, parameterName)
 
+    (basename, ext) = os.path.splitext(os.path.basename(sys.argv[0]))
+    filename = basename + '.csv'
 
-def searchBirthSeasonalVariance(birthSeasonalVariances, parameters, tMax, nRuns,
-                                callback = None, debug = False):
-    for x in birthSeasonalVariances:
-        parameters.birthSeasonalVariance = x
+    w = csv.writer(open(filename, 'w', 0)) # 0 for unbuffered.
 
-        print 'birthSeasonalVariance = {}'.format(
-            parameters.birthSeasonalVariance)
+    paramkeys = sorted(parameters.__dict__.keys())
 
-        extinctionTimes.searchParameters(
-            parameters,
-            tMax,
-            nRuns,
-            callback = callback,
-            debug = debug)
-
-
-def SaveOut(csvWriter):
     # Write header.
-    csvWriter.writerow(['populationSize', 'birthSeasonalVariance',
-                        'extinctionTimes (years)'])
-    def _SaveOut(parameters, data):
-        csvWriter.writerow([parameters.populationSize,
-                            parameters.birthSeasonalVariance]
-                           + data)
-    return _SaveOut
+    w.writerow(paramkeys)
+
+    for v in values:
+        setattr(parameters, parameterName, v)
+        print '{} = {}'.format(parameterName, v)
+        eT = extinctionTimes.findExtinctionTimes(nRuns, parameters, tMax,
+                                                 *args, **kwargs)
+
+        w.writerow([getattr(parameters, k) for k in paramkeys]
+                   + eT)
     
 
 if __name__ == '__main__':
-    import sys
-    import os.path
-    import csv
     import numpy
-
 
     parameters = Parameters.Parameters()
 
@@ -58,22 +42,25 @@ if __name__ == '__main__':
 
     # populationSizes = (100, 150, 200, 250, 300, 350, 400, 500, 600, 700,
     #                    800, 900, 1000, 2000, 3000, 5000, 7500, 10000)
-    # populationSizes = (100, 150, 200, 250, 300, 350, 400, 500, 600, 700,
-    #                    800, 900, 1000)
-    parameters.populationSize = 10000
+    parameters.populationSize = 1000
 
-    birthSeasonalVariances = numpy.linspace(0., 1., 7)
+    # birthSeasonalVariance calculated from gapSizes
+    gapSizes = (None, 0, 3, 6, 9) # In months.  None is aseasonal.
+    birthSeasonalVariances = []
+    for g in gapSizes:
+        if g is None:
+            birthSeasonalVariances.append(0.)
+        else:
+            birthSeasonalVariances.append(4. / 3. / (1. - g / 12.) - 1.)
 
     nRuns = 100
     # tMax = numpy.inf
-    tMax = 10.
+    tMax = 5.
     debug = False
 
-    (basename, ext) = os.path.splitext(os.path.basename(sys.argv[0]))
-    filename = basename + '.csv'
-
-    w = csv.writer(open(filename, 'w', 0)) # 0 for unbuffered.
-    saveOut = SaveOut(w)
-
-    searchBirthSeasonalVariance(birthSeasonalVariances, parameters, tMax, nRuns,
-                                callback = saveOut, debug = debug)
+    searchParameter('birthSeasonalVariance',
+                    birthSeasonalVariances,
+                    nRuns,
+                    parameters,
+                    tMax,
+                    debug = debug)
