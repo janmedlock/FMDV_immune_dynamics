@@ -270,11 +270,14 @@ def getkwds(kwds, i):
     res['runNumber'] = i
     return res
 
-def multirun(nRuns, *args, **kwds):
+def multirun(nRuns, parameters, *args, **kwds):
+    # Build the RVs once to make sure the caches are seeded.
+    RVs = Parameters.RandomVariables(parameters)
+
     pool = multiprocessing.Pool(initializer = numpy.random.seed)
     
     results = [pool.apply_async(doOne,
-                                args,
+                                (parameters, ) + args,
                                 getkwds(kwds, i),
                                 showResult)
                for i in xrange(nRuns)]
@@ -390,6 +393,6 @@ if __name__ == '__main__':
     debug = False
     
     data = multirun(nRuns, p, tMax, debug = debug)
-    cPickle.dump(data, open('herd_aseasonal.p', 'wb'))
+    # cPickle.dump(data, open('herd_aseasonal.p', 'wb'))
     
     makePlots(data)
