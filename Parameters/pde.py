@@ -123,7 +123,7 @@ def getEndemicEquilibrium(parameters, tMax = 200.,
     (ages, ICs) = _getEndemicEquilibrium(parameters,
                                          tMax, ageMax, ageStep)
     parameters.populationSize = populationSize
-    
+
     ICs_ = [[x * populationSize for x in IC] for IC in ICs]
 
     return (ages, ICs_)
