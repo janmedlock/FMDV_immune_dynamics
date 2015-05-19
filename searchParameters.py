@@ -46,11 +46,10 @@ if __name__ == '__main__':
     parameters.populationSize = 1000
 
     # birthSeasonalVariance calculated from gapSizes
-    # gapSizes = (None, 0, 3, 6, 9) # In months.  None is aseasonal.
     gapSizes = [None] + range(12) # In months.  None is aseasonal.
     birthSeasonalVariances = map(birth.getSeasonalVarianceFromGapSize,
                                  gapSizes)
- 
+
     nRuns = 100
     # tMax = numpy.inf
     tMax = 5.
