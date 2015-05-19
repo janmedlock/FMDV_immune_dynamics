@@ -103,16 +103,48 @@ def getPeriod(t, ages, (M, S, I, R), abserr = 1e-3, relerr = 1e-3,
         raise ValueError('period not found!')
     
 
-@utility.shelved
-def _getEndemicEquilibrium(parameters, tMax, ageMax, ageStep):
-    (t, ages, (M, S, I, R)) = solve(tMax, ageMax, ageStep, parameters)
+def getLimitCycle(parameters, ageMax, ageStep, periodMax = 3, tBurnIn = 100.):
+    from scipy import special
+    from scipy import optimize
 
-    period = getPeriod(t, ages, (M, S, I, R))
+    print 'Running burn-in...'
+    (t, ages, (M, S, I, R)) = solve(tBurnIn, ageMax, ageStep, parameters)
+    print 'Burn-in finished.'
+
+    Y0 = numpy.hstack((M[-1] + S[-1], I[-1], R[-1]))
+    tMax = special.factorial(periodMax)
+    def f(Y0):
+        (t, ages, (M, S, I, R)) = solve(tMax, ageMax, ageStep, parameters,
+                                        Y0 = Y0)
+        return numpy.hstack((M[-1] + S[-1], I[-1], R[-1]))
+
+    print 'Running root solver...'
+    sol = optimize.fixed_point(f, Y0, xtol = 1e-3, maxiter = 1000)
+    print 'Root solver finshed.'
+
+    Y0 = sol.x
+    (t, ages, Y) = solve(tMax, ageMax, ageStep, parameters, Y0 = Y0)
+
+    period = getPeriod(t, ages, Y)
 
     ICs = []
     for j in range(period):
         k = numpy.argwhere(t <= t[-1] - j)[-1, 0]
-        ICs.append((M[k], S[k], I[k], R[k]))
+        ICs.append([y[k] for y in Y])
+
+    return ICs
+
+
+@utility.shelved
+def _getEndemicEquilibrium(parameters, tMax, ageMax, ageStep):
+    (t, ages, Y) = solve(tMax, ageMax, ageStep, parameters)
+
+    period = getPeriod(t, ages, Y)
+
+    ICs = []
+    for j in range(period):
+        k = numpy.argwhere(t <= t[-1] - j)[-1, 0]
+        ICs.append([y[k] for y in Y])
 
     return (ages, ICs)
 
