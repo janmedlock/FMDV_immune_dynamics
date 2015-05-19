@@ -10,12 +10,12 @@ from .transmission import *
 class Parameters(object):
     def __init__(self):
         'Initialize with default values.'
-        self.R0 = 5.
+        self.R0 = 10.
         self.birthSeasonalVariance = 1.
         self.probabilityOfMaleBirth = 0.5
         self.maternalImmunityDuration = 0.5
-        self.populationSize = 100
-        self.infectionDuration = 1.7 / 365.
+        self.populationSize = 1000
+        self.infectionDuration = 21. / 365.
 
     def __repr__(self):
         clsname = '{}.{}'.format(self.__module__, self.__class__.__name__)
