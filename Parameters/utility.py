@@ -109,7 +109,7 @@ def findStableAgeStructure(parameters, *args, **kwargs):
     # stable age structure is independent of populationSize,
     # so factor out populationSize for more efficient caching.
     populationSize = parameters.populationSize
-    parameters.populationSize = 1.
+    del parameters.populationSize
     SAS = _findStableAgeStructure(parameters, *args, **kwargs)
     parameters.populationSize = populationSize
     return SAS
@@ -133,7 +133,7 @@ def findBirthScaling(parameters, *args, **kwargs):
     # birthScaling is independent of populationSize,
     # so factor out populationSize for more efficient caching.
     populationSize = parameters.populationSize
-    parameters.populationSize = 1.
+    del parameters.populationSize
     scaling = _findBirthScaling(parameters, *args, **kwargs)
     parameters.populationSize = populationSize
     return scaling

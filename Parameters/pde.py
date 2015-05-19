@@ -34,6 +34,9 @@ def solve(tMax, ageMax, ageStep, parameters, Y0 = None):
     matrices = utility.buildMatrices(parameters,
                                      ageMax = ageMax,
                                      ageStep = ageStep)
+    if not hasattr(parameters, 'populationSize'):
+        parameters.populationSize = 1.
+
     (ages, (B_bar, A, M)) = matrices
 
     AM = A - M
@@ -119,7 +122,7 @@ def getEndemicEquilibrium(parameters, tMax = 200.,
     # The PDE solutions simply scale multiplicatively with
     # populationSize, so factor that out for more efficient caching.
     populationSize = parameters.populationSize
-    parameters.populationSize = 1.
+    del parameters.populationSize
     (ages, ICs) = _getEndemicEquilibrium(parameters,
                                          tMax, ageMax, ageStep)
     parameters.populationSize = populationSize
@@ -139,10 +142,6 @@ if __name__ == '__main__':
     ageStep = 0.01
 
     parameters = Parameters.Parameters()
-    parameters.populationSize = 10000
-    parameters.infectionDuration = 21. / 365.
-    parameters.R0 = 10.
-    parameters.birthSeasonalVariance = 1.
 
     (t, ages, (M, S, I, R)) = solve(tMax, ageMax, ageStep, parameters)
 
