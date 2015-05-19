@@ -7,6 +7,21 @@ def fracpart(x):
     return numpy.mod(x, 1.)
 
 
+def getSeasonalVarianceFromGapSize(g):
+    'g in months'
+    if g is None:
+        return 0.
+    else:
+        return 4. / 3. / (1. - g / 12.) - 1.
+
+def getGapSizeFromSeasonalVariance(b):
+    'in months'
+    if b == 0.:
+        return None
+    else:
+        return 12. * (1. - 4. / 3. / (b + 1.))
+
+
 class birth_gen(birth_super.birth_gen):
     def _getparams(self):
         if self.seasonalVariance < 1. / 3.:
