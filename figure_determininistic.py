@@ -7,6 +7,7 @@ import seaborn
 
 import Parameters
 from Parameters import pde
+from Parameters import birth
 
 
 tMax = 10.
@@ -28,11 +29,10 @@ ax.set_ylabel('Infected buffaloes')
 colors = seaborn.color_palette('husl', n_colors = len(gapSizes))
 
 for (g, c) in zip(gapSizes, colors):
+    parameters.birthSeasonalVariance = birth.getSeasonalVarianceFromGapSize(g)
     if g is None:
-        parameters.birthSeasonalVariance = 0.
         label = 'Aseasonal'
     else:
-        parameters.birthSeasonalVariance = 4. / 3. / (1. - g / 12.) - 1.
         label = 'Seasonal, {}-month gap'.format(g)
 
     (t, ages, (M, S, I, R)) = pde.solve(tMax, ageMax, ageStep, parameters)
