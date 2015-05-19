@@ -5,6 +5,7 @@ import os.path
 import csv
 
 import Parameters
+from Parameters import birth
 import extinctionTimes
 
 
@@ -15,12 +16,12 @@ def searchParameter(parameterName, values, nRuns, parameters, tMax,
     (basename, ext) = os.path.splitext(os.path.basename(sys.argv[0]))
     filename = basename + '.csv'
 
-    w = csv.writer(open(filename, 'w', 0)) # 0 for unbuffered.
+    w = csv.writer(open(filename, 'a', 0)) # 0 for unbuffered.
 
     paramkeys = sorted(parameters.__dict__.keys())
 
     # Write header.
-    w.writerow(paramkeys)
+    # w.writerow(paramkeys + ['extinctionTimes (years)'])
 
     for v in values:
         setattr(parameters, parameterName, v)
@@ -42,16 +43,14 @@ if __name__ == '__main__':
 
     # populationSizes = (100, 150, 200, 250, 300, 350, 400, 500, 600, 700,
     #                    800, 900, 1000, 2000, 3000, 5000, 7500, 10000)
-    parameters.populationSize = 1000
+    parameters.populationSize = 10000
 
     # birthSeasonalVariance calculated from gapSizes
-    gapSizes = (None, 0, 3, 6, 9) # In months.  None is aseasonal.
+    # gapSizes = (None, 0, 3, 6, 9) # In months.  None is aseasonal.
+    gapSizes = (1, 2, 4, 5, 7, 8, 10, 11) # In months.  None is aseasonal.
     birthSeasonalVariances = []
     for g in gapSizes:
-        if g is None:
-            birthSeasonalVariances.append(0.)
-        else:
-            birthSeasonalVariances.append(4. / 3. / (1. - g / 12.) - 1.)
+        parameters.birthSeasonalVariance = birth.getSeasonalVarianceFromGapSize(g)
 
     nRuns = 100
     # tMax = numpy.inf
