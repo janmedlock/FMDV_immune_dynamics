@@ -102,12 +102,21 @@ def findGrowthRate(parameters, *args, **kwargs):
 
 
 @shelved
-def findStableAgeStructure(parameters, *args, **kwargs):
+def _findStableAgeStructure(parameters, *args, **kwargs):
     return findDominantEigenpair(parameters, *args, **kwargs)[1]
+
+def findStableAgeStructure(parameters, *args, **kwargs):
+    # stable age structure is independent of populationSize,
+    # so factor out populationSize for more efficient caching.
+    populationSize = parameters.populationSize
+    parameters.populationSize = 1.
+    SAS = _findStableAgeStructure(parameters, *args, **kwargs)
+    parameters.populationSize = populationSize
+    return SAS
 
 
 @shelved
-def findBirthScaling(parameters, *args, **kwargs):
+def _findBirthScaling(parameters, *args, **kwargs):
     matrices = buildMatrices(parameters, *args, **kwargs)
 
     def _objective(z):
@@ -118,4 +127,13 @@ def findBirthScaling(parameters, *args, **kwargs):
 
     scaling = numpy.asscalar(optimize.fsolve(_objective, 0.443))
 
+    return scaling
+
+def findBirthScaling(parameters, *args, **kwargs):
+    # birthScaling is independent of populationSize,
+    # so factor out populationSize for more efficient caching.
+    populationSize = parameters.populationSize
+    parameters.populationSize = 1.
+    scaling = _findBirthScaling(parameters, *args, **kwargs)
+    parameters.populationSize = populationSize
     return scaling
