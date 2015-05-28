@@ -12,6 +12,7 @@
 
 
 \newcommand{\comment}[1]{\textbf{[#1]}}
+\DeclareMathOperator{\diag}{diag}
 
 
 \begin{document}
@@ -927,6 +928,360 @@ The survival function is then
 with $\ell = \max\{0, 4 - a\}$.  There is no explicit inverse survival
 function.  Instead, the inverse was found numerically using a
 root-finding algorithm \citep{scipy}.
+
+
+
+\section{Finite-difference method}
+
+\subsection{Explicit}
+
+For the McKendrick--von Foerster equation
+\begin{equation}
+  \begin{split}
+    \frac{\partial u}{\partial t} + \frac{\partial u}{\partial a}
+    &= f(a, u),
+    \\
+    u(t, 0) &= \int_0^t B(t, a) u(t, a) \md a,
+    \\
+    u(0, a) &= u_0(a),
+  \end{split}
+\end{equation}
+for the approximation
+\begin{equation}
+  u(n \Delta t, i \Delta a) \approx U_i^n,
+\end{equation}
+we will use a forward difference in time,
+\begin{equation}
+  \frac{\partial u}{\partial t} (n \Delta t, i \Delta a)
+  \approx
+  \frac{U^{n + 1}_i - U^n_i}{\Delta t},
+\end{equation}
+and a backward difference in age,
+\begin{equation}
+  \frac{\partial u}{\partial a} (n \Delta t, i \Delta a)
+  \approx
+  \frac{U^n_i - U^n_{i - 1}}{\Delta a}.
+\end{equation}
+Letting
+\begin{equation}
+  f\left(i \Delta a, u(n \Delta t, a)\right)
+  \approx F_i(\vec{U}^n)
+\end{equation}
+gives
+\begin{equation}
+  \frac{U^{n + 1}_i - U^n_i}{\Delta t}
+  +
+  \frac{U^n_i - U^n_{i - 1}}{\Delta a}
+  = F_i(\vec{U}^n).
+\end{equation}
+Alternately
+\begin{equation}
+  U^{n + 1}_i
+  =
+  \left(1 - \frac{\Delta t}{\Delta a}\right)
+  U^n_i
+  +
+  \frac{\Delta t}{\Delta a} U^n_{i - 1} + \Delta t \, F_i(\vec{U}^n),
+\end{equation}
+or
+\begin{equation}
+  \vec{U}^{n + 1}
+  =
+  \mat{A} \vec{U}^{n} + \Delta t \, \vec{F}(\vec{U}^n),
+\end{equation}
+with
+\begin{equation}
+  \mat{A} =
+  \begin{bmatrix}
+    1 - \frac{\Delta t}{\Delta a} & 0
+    & \hdotsfor{3} & 0
+    \\
+    \frac{\Delta t}{\Delta a} & 1 - \frac{\Delta t}{\Delta a} & 0
+    & \hdotsfor{2} & 0
+    \\
+    0 & \frac{\Delta t}{\Delta a} & 1 - \frac{\Delta t}{\Delta a} & 0
+    & \hdots & 0
+    \\
+    \vdots & \ddots & \ddots & \ddots & \ddots & \vdots
+    \\
+    0 & \hdots & 0 & \frac{\Delta t}{\Delta a}  & 1 - \frac{\Delta
+      t}{\Delta a} & 0
+    \\
+    0 & \hdotsfor{2} & 0 & \frac{\Delta t}{\Delta a} & 1
+  \end{bmatrix}.
+\end{equation}
+
+
+\subsection{Implicit}
+
+For the McKendrick--von Foerster equation
+\begin{equation}
+  \begin{split}
+    \frac{\partial u}{\partial t} + \frac{\partial u}{\partial a}
+    &= f(a, u),
+    \\
+    u(t, 0) &= \int_0^t B(t, a) u(t, a) \md a,
+    \\
+    u(0, a) &= u_0(a),
+  \end{split}
+\end{equation}
+for the approximation
+\begin{equation}
+  u(n \Delta t, i \Delta a) \approx U_i^n,
+\end{equation}
+we will use a backward difference in time,
+\begin{equation}
+  \frac{\partial u}{\partial t} (n \Delta t, i \Delta a)
+  \approx
+  \frac{U^n_i - U^{n - 1}_i}{\Delta t},
+\end{equation}
+and a forward difference in age,
+\begin{equation}
+  \frac{\partial u}{\partial a} (n \Delta t, i \Delta a)
+  \approx
+  \frac{U^n_{i + 1} - U^n_i}{\Delta a}.
+\end{equation}
+Letting
+\begin{equation}
+  f\left(i \Delta a, u(n \Delta t, a)\right)
+  \approx F_i(\vec{U}^{n - 1}, \vec{U}^n)
+\end{equation}
+gives
+\begin{equation}
+  \frac{U^n_i - U^{n - 1}_i}{\Delta t}
+  +
+  \frac{U^n_{i + 1} - U^n_i}{\Delta a}
+  = F_i(\vec{U}^{n - 1}, \vec{U}^n).
+\end{equation}
+Alternately
+\begin{equation}
+  \frac{\Delta t}{\Delta a} U^n_{i + 1}
+  +
+  \left(1 - \frac{\Delta t}{\Delta a}\right)
+  U^n_i
+  =
+  U^{n - 1}_i + \Delta t \, F_i(\vec{U}^{n - 1}, \vec{U}^n),
+\end{equation}
+or
+\begin{equation}
+  \mat{A} \vec{U}^n
+  =
+  \vec{U}^{n - 1} + \Delta t \, \vec{F}(\vec{U}^{n - 1}, \vec{U}^n),
+\end{equation}
+with
+\begin{equation}
+  \mat{A} =
+  \begin{bmatrix}
+    1 - \frac{\Delta t}{\Delta a} & \frac{\Delta t}{\Delta a} & 0
+    & \hdotsfor{2} & 0
+    \\
+    0 & 1 - \frac{\Delta t}{\Delta a} & \frac{\Delta t}{\Delta a}
+    & 0 & \hdots & 0
+    \\
+    \vdots & \ddots & \ddots & \ddots & \ddots & \vdots
+    \\
+    0 & \hdots & 0 & 1 - \frac{\Delta t}{\Delta a} &
+    \frac{\Delta t}{\Delta a} & 0
+    \\
+    0 & \hdotsfor{2} & 0 & 1 - \frac{\Delta t}{\Delta a} & \frac{\Delta t}{\Delta a}
+    \\
+    0 & \hdotsfor{3} & 0 & 1
+  \end{bmatrix}.
+\end{equation}
+
+More concretely,
+\begin{equation}
+  \begin{split}
+    \mat{A} \vec{S}^n
+    &=
+    \vec{S}^{n - 1}
+    + \Delta t \, 
+    \mat{F}_S(\vec{S}^{n - 1}, \vec{I}^{n - 1}, \vec{R}^{n - 1},
+    \vec{S}^n, \vec{I}^n, \vec{R}^n),
+    \\
+    \mat{A} \vec{I}^n
+    &=
+    \vec{I}^{n - 1}
+    + \Delta t \,
+    \mat{F}_I(\vec{S}^{n - 1}, \vec{I}^{n - 1}, \vec{R}^{n - 1},
+    \vec{S}^n, \vec{I}^n, \vec{R}^n),
+    \\
+    \mat{A} \vec{R}^n
+    &=
+    \vec{R}^{n - 1}
+    + \Delta t \mat{F}_R(\vec{S}^{n - 1}, \vec{I}^{n - 1}, \vec{R}^{n - 1},
+    \vec{S}^n, \vec{I}^n, \vec{R}^n),
+  \end{split}
+\end{equation}
+with
+\begin{equation}
+  \begin{split}
+    \vec{F}_S(\vec{S}^{n - 1}, \vec{I}^{n - 1}, \vec{R}^{n - 1},
+    \vec{S}^n, \vec{I}^n, \vec{R}^n)
+    &= \mat{B}^n (\vec{S}^n + \vec{I}^n + \vec{R}^n)
+    - \mat{M} \vec{S}^n
+    - {\vec{I}^{\ell}}^{\mT} \vec{T} \mat{\Sigma} \vec{S}^m
+    \\
+    \vec{F}_I(\vec{S}^{n - 1}, \vec{I}^{n - 1}, \vec{R}^{n - 1},
+    \vec{S}^n, \vec{I}^n, \vec{R}^n)
+    &= - \mat{M} \vec{I}^n
+    + {\vec{I}^{\ell}}^{\mT} \vec{T} \mat{\Sigma} \vec{S}^m
+    - \frac{1}{T_{\text{recovery}}} \vec{I}^n
+    \\
+    \vec{F}_R(\vec{S}^{n - 1}, \vec{I}^{n - 1}, \vec{R}^{n - 1},
+    \vec{S}^n, \vec{I}^n, \vec{R}^n)
+    &= - \mat{M} \vec{R}^n + \frac{1}{T_{\text{recovery}}} \vec{I}^n,
+    \\
+    \mat{M} &= \diag\left(\left\{h_{\text{mortatlity}}(i \Delta
+        a)\right\}_{i = 0}^{N_a}\right),
+    \\
+    \mat{B}^n &=
+    \begin{bmatrix}
+      b^n_0
+      &
+      b^n_1
+      &
+      \hdots
+      &
+      b^n_{N_a}
+      \\
+      0 & 0 & \hdots & 0
+      \\
+      \vdots & \vdots & & \vdots
+      \\
+      0 & 0 & \hdots & 0
+    \end{bmatrix},
+    \\
+    b^n_i &= h_{\text{birth}}(n \Delta t, i \Delta a),
+    \\
+    \vec{T} &= \beta \Delta a
+    \begin{pmatrix}
+      \frac{1}{2} \\ 1 \\ 1 \\ \vdots \\ 1 \\ \frac{1}{2}
+    \end{pmatrix},
+    \\
+    \mat{\Sigma} &= \diag\left(
+      \left\{
+        \begin{array}{ll}
+          0 & \text{if $i \Delta a \leq T_{\text{maternal immunity}}$}
+          \\
+          1 & \text{otherwise}
+        \end{array}
+      \right\}_{i = 0}^{N_a}
+    \right),
+  \end{split}
+\end{equation}
+and $\ell, m \in \{n - 1, n\}$.  Combining these gives
+\begin{equation}
+  \begin{split}
+    \vec{U}^n &=
+    \begin{pmatrix}
+      \vec{S}^n
+      \\
+      \vec{I}^n
+      \\
+      \vec{R}^n
+    \end{pmatrix},
+    \\
+    \mat{A}_U \vec{U}^n
+    &=
+    \vec{U}^{n - 1}
+    + \Delta t \, \vec{F}_U(\vec{U}^{n - 1}, \vec{U}^n),
+    \\
+    \mat{A}_U &=
+    \begin{bmatrix}
+      \mat{A} & \mat{0} & \mat{0}
+      \\
+      \mat{0} & \mat{A} & \mat{0}
+      \\
+      \mat{0} & \mat{0} & \mat{A}
+    \end{bmatrix},
+    \\
+    \vec{F}_U(\vec{U}^{n - 1}, \vec{U}^n) &=
+    - \mat{M}_U \vec{U}^n  + \mat{\Gamma}_U \vec{U}^n
+    + \mat{B}_U^n \vec{U}^n
+    + {\vec{U}^{\ell}}^{\mT} \vec{T}_U \mat{\Sigma}_U \vec{U}^m,
+    \\
+    \mat{B}_U^n &=
+    \begin{bmatrix}
+      \mat{B}^n & \mat{B}^n & \mat{B}^n
+      \\
+      \mat{0} & \mat{0} & \mat{0}
+      \\
+      \mat{0} & \mat{0} & \mat{0}
+    \end{bmatrix},
+    \\
+    \mat{M}_U &=
+    \begin{bmatrix}
+      \mat{M} & \mat{0} & \mat{0}
+      \\
+      \mat{0} & \mat{M} & \mat{0}
+      \\
+      \mat{0} & \mat{0} & \mat{M}
+    \end{bmatrix},
+    \\
+    \mat{\Sigma}_U &=
+    \begin{bmatrix}
+      - \mat{\Sigma} & \mat{0} & \mat{0}
+      \\
+      \mat{\Sigma} & \mat{0} & \mat{0}
+      \\
+      \mat{0} & \mat{0} & \mat{0}
+    \end{bmatrix},
+    \\
+    \mat{T}_U &=
+    \begin{pmatrix}
+      \vec{0} \\ \vec{T} \\ \vec{0}
+    \end{pmatrix},
+    \\
+    \mat{\Gamma}_U &=
+    \begin{bmatrix}
+      \mat{0} & \mat{0} & \mat{0}
+      \\
+      \mat{0} & - \mat{\Gamma} & \mat{0}
+      \\
+      \mat{0} & \mat{\Gamma} & \mat{0}
+    \end{bmatrix},
+    \\
+    \mat{\Gamma} &= \diag\left(\frac{1}{T_{\text{recovery}}}\right).
+  \end{split}
+\end{equation}
+Thus
+\begin{equation}
+  \left[\mat{A}_U + \Delta t \left(\mat{M}_U - \mat{\Gamma}_U
+    - \mat{B}_U^n\right)\right] \vec{U}^n
+  =
+  \vec{U}^{n - 1}
+  + \Delta t \, {\vec{U}^{\ell}}^{\mT} \vec{T}_U \mat{\Sigma}_U \vec{U}^m.
+\end{equation}
+
+\begin{enumerate}
+\item $\ell = n - 1$ and $m = n$,
+  \begin{equation}
+    \left[\mat{A}_U + \Delta t \left(\mat{M}_U - \mat{\Gamma}_U
+        - \mat{B}_U^n
+        - {\vec{U}^{n-1}}^{\mT} \vec{T}_U \mat{\Sigma}_U\right)\right] \vec{U}^n
+    =
+    \vec{U}^{n - 1}.
+  \end{equation}
+\item $\ell = m = n - 1$,
+  \begin{equation}
+    \left[\mat{A}_U + \Delta t \left(\mat{M}_U - \mat{\Gamma}_U
+      - \mat{B}_U^n\right)\right] \vec{U}^n
+    =
+    \left(\mat{I}
+      + \Delta t \, {\vec{U}^{n - 1}}^{\mT} \vec{T}_U \mat{\Sigma}_U\right)
+    \vec{U}^{n - 1}.
+  \end{equation}
+% \item $\ell = n$ and $m = n - 1$,
+%   \begin{equation}
+%     \left[\mat{A}_U + \Delta t \left(\mat{M}_U - \mat{\Gamma}_U
+%       - \mat{B}_U^n \right)\right] \vec{U}^n
+%   - \Delta t \, {\vec{U}^n}^{\mT} \vec{T}_U \mat{\Sigma}_U \vec{U}^{n - 1}
+%     =
+%     \vec{U}^{n - 1}.
+%   \end{equation}
+%   I'm not sure how to handle this one.
+\end{enumerate}
 
 
 
