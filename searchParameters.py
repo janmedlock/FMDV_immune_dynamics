@@ -43,7 +43,7 @@ if __name__ == '__main__':
 
     # populationSizes = (100, 150, 200, 250, 300, 350, 400, 500, 600, 700,
     #                    800, 900, 1000, 2000, 3000, 5000, 7500, 10000)
-    parameters.populationSize = 1000
+    parameters.populationSize = 10000
 
     # birthSeasonalVariance calculated from gapSizes
     gapSizes = [None] + range(12) # In months.  None is aseasonal.
