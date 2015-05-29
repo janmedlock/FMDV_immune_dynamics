@@ -378,14 +378,9 @@ def getIterminal(data):
 
 
 if __name__ == '__main__':
-    import cPickle
-
     p = Parameters.Parameters()
-
-    p.populationSize = 10000
-    p.infectionDuration = 21. / 365.
-    p.R0 = 10.
-    p.birthSeasonalVariance = 0.
+    p.populationSize = 1000
+    p.birthSeasonalVariance = 1.
 
     tMax = 1.
     # nRuns = multiprocessing.cpu_count()
@@ -393,6 +388,5 @@ if __name__ == '__main__':
     debug = False
     
     data = multirun(nRuns, p, tMax, debug = debug)
-    # cPickle.dump(data, open('herd_aseasonal.p', 'wb'))
     
     makePlots(data)
