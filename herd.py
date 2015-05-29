@@ -378,6 +378,8 @@ def getIterminal(data):
 
 
 if __name__ == '__main__':
+    import time
+
     p = Parameters.Parameters()
     p.populationSize = 1000
     p.birthSeasonalVariance = 1.
@@ -387,6 +389,9 @@ if __name__ == '__main__':
     nRuns = 100
     debug = False
     
+    t0 = time.time()
     data = multirun(nRuns, p, tMax, debug = debug)
+    t1 = time.time()
+    print 'Run time: {} seconds.'.format(t1 - t0)
     
     makePlots(data)
