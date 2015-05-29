@@ -380,6 +380,8 @@ def getIterminal(data):
 if __name__ == '__main__':
     import time
 
+    numpy.random.seed(1)
+
     p = Parameters.Parameters()
     p.populationSize = 1000
     p.birthSeasonalVariance = 1.
