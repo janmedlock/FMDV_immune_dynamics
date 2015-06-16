@@ -41,23 +41,24 @@ if __name__ == '__main__':
     parameters.infectionDuration = 21. / 365.
     parameters.R0 = 10.
 
-    # populationSizes = (100, 150, 200, 250, 300, 350, 400, 500, 600, 700,
-    #                    800, 900, 1000, 2000, 3000, 5000, 7500, 10000)
-    parameters.populationSize = 10000
+    populationSizes = (1000, 2000, 5000, 10000)
 
-    # birthSeasonalVariance calculated from gapSizes
-    gapSizes = [None] + range(12) # In months.  None is aseasonal.
-    birthSeasonalVariances = map(birth.getSeasonalVarianceFromGapSize,
-                                 gapSizes)
+    for ps in populationSizes:
+        parameters.populationSize = ps
 
-    nRuns = 100
-    # tMax = numpy.inf
-    tMax = 5.
-    debug = False
+        # birthSeasonalVariance calculated from gapSizes
+        gapSizes = [None] + range(12) # In months.  None is aseasonal.
+        birthSeasonalVariances = map(birth.getSeasonalVarianceFromGapSize,
+                                     gapSizes)
 
-    searchParameter('birthSeasonalVariance',
-                    birthSeasonalVariances,
-                    nRuns,
-                    parameters,
-                    tMax,
-                    debug = debug)
+        nRuns = 100
+        # tMax = numpy.inf
+        tMax = 5.
+        debug = False
+
+        searchParameter('birthSeasonalVariance',
+                        birthSeasonalVariances,
+                        nRuns,
+                        parameters,
+                        tMax,
+                        debug = debug)
