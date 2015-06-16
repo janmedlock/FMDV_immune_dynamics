@@ -136,13 +136,12 @@ class Buffalo:
     def updateInfectionTime(self, forceOfInfection):
         if self.isSusceptible():
             if (forceOfInfection > 0.):
-                infectionTime \
-                  = stats.expon.rvs(scale = 1. / forceOfInfection)
+                infectionTime = stats.expon.rvs(scale = 1. / forceOfInfection)
             
-                self.events['infection'] \
-                  = Event(self.herd.time + infectionTime,
-                          self.infection,
-                          'infection for #{}'.format(self.identifier))
+                self.events['infection'] = Event(
+                    self.herd.time + infectionTime,
+                    self.infection,
+                    'infection for #{}'.format(self.identifier))
             else:
                 try:
                     del self.events['infection']
