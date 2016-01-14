@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 
 import numpy
 from scipy import sparse
@@ -91,8 +91,9 @@ def solve(tMax, ageMax, ageStep, parameters, Y0 = None):
     return (t, ages, (M, S, I, R))
 
 
-def getPeriod(t, ages, (M, S, I, R), abserr = 1e-3, relerr = 1e-3,
+def getPeriod(t, ages, X, abserr = 1e-3, relerr = 1e-3,
               periodMax = 3):
+    (M, S, I, R) = X
     Y = numpy.hstack((M + S, I, R))
     for period in range(1, periodMax + 1):
         i = numpy.argwhere(t <= t[-1] - period)[-1]
@@ -107,9 +108,9 @@ def getLimitCycle(parameters, ageMax, ageStep, periodMax = 3, tBurnIn = 100.):
     from scipy import special
     from scipy import optimize
 
-    print 'Running burn-in...'
+    print('Running burn-in...')
     (t, ages, (M, S, I, R)) = solve(tBurnIn, ageMax, ageStep, parameters)
-    print 'Burn-in finished.'
+    print('Burn-in finished.')
 
     Y0 = numpy.hstack((M[-1] + S[-1], I[-1], R[-1]))
     tMax = special.factorial(periodMax)
@@ -118,9 +119,9 @@ def getLimitCycle(parameters, ageMax, ageStep, periodMax = 3, tBurnIn = 100.):
                                         Y0 = Y0)
         return numpy.hstack((M[-1] + S[-1], I[-1], R[-1]))
 
-    print 'Running root solver...'
+    print('Running root solver...')
     sol = optimize.fixed_point(f, Y0, xtol = 1e-3, maxiter = 1000)
-    print 'Root solver finshed.'
+    print('Root solver finshed.')
 
     Y0 = sol.x
     (t, ages, Y) = solve(tMax, ageMax, ageStep, parameters, Y0 = Y0)
@@ -162,26 +163,3 @@ def getEndemicEquilibrium(parameters, tMax = 200.,
     ICs_ = [[x * populationSize for x in IC] for IC in ICs]
 
     return (ages, ICs_)
-    
-
-if __name__ == '__main__':
-    from matplotlib import pyplot
-    import Parameters
-
-    tMax = 10.
-
-    ageMax = 20.
-    ageStep = 0.01
-
-    parameters = Parameters.Parameters()
-
-    (t, ages, (M, S, I, R)) = solve(tMax, ageMax, ageStep, parameters)
-
-    i = integrate.trapz(I, ages, axis = 1)
-
-    (fig, ax) = pyplot.subplots()
-    ax.plot(t, i)
-    ax.set_xlabel('Time (years)')
-    ax.set_ylabel('Infected buffaloes')
-
-    pyplot.show()

@@ -22,9 +22,9 @@ class shelved:
         
         # Put the cache file in the same directory as the caller.
         mydir = os.path.dirname(inspect.getfile(self.func))
-        # Name the cache file func.__name__ + '.shelve'
+        # Name the cache file func.__name__ + '.db'
         self.myfile = os.path.join(mydir,
-                                   '{}.shelve'.format(self.func.__name__))
+                                   str(self.func.__name__))
 
     def __call__(self, parameters, *args, **kwargs):
         # Derive the shelve key from the parameters object.
@@ -34,10 +34,10 @@ class shelved:
         try:
             val = cache[key]
         except (KeyError, ValueError, TypeError):
-            print '{} not in {} cache.  Computing...'.format(
-                key, self.func.__name__)
+            print('{} not in {} cache.  Computing...'.format(
+                key, self.func.__name__))
             val = cache[key] = self.func(parameters, *args, **kwargs)
-            print '\tFinished computing {}.'.format(self.func.__name__)
+            print('\tFinished computing {}.'.format(self.func.__name__))
         finally:
             cache.close()
 
@@ -66,7 +66,7 @@ def buildMatrices(parameters, ageMax = 20., ageStep = 0.01):
     B_bar = sparse.lil_matrix((len(ages), ) * 2)
     # The first row, B_bar[0], is the mean, over a year,
     # of the birth rates times the probability of female birth.
-    for j in xrange(len(ages)):
+    for j in range(len(ages)):
         bj = lambda t: ((1. - parameters.probabilityOfMaleBirth)
                         * birthRV.hazard(t, 0., ages[j] - t))
         result = integrate.quad(bj, 0., 1., limit = 100)
