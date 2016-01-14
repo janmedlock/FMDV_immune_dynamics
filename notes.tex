@@ -157,19 +157,17 @@ time:
   \begin{cases}
     0 & \text{if $a < 4$},
     \\
-    \max\left(\mu \alpha \left[1 - 2 \beta \{t\}\right], 0\right)
+    \max\left(\mu \alpha \left[1 - \alpha \{t\}\right], 0\right)
     & \text{if $a \geq 4$ and $\{t\} < \frac{1}{2}$},
     \\
-    \max\left(\mu \alpha \left[1 - 2 \beta (1 - \{t\})\right], 0\right)
+    \max\left(\mu \alpha \left[1 - \alpha (1 - \{t\})\right], 0\right)
     & \text{if $\{t\} \geq \frac{1}{2}$},
   \end{cases}
 \end{equation}
 with
-\begin{align}
-  \alpha &= \frac{3}{2} \left(1 + \sigma^2\right),
-  &
-  \beta &= \frac{3}{4} \left(1 + \sigma^2\right),
-\end{align}
+\begin{equation}
+  \alpha = \frac{3}{2} \left(1 + \sigma^2\right),
+\end{equation}
 and $\{x\}$ is the fractional part of $x$.  The magnitude of the
 seasonal variation is captured by $\sigma$, which we took to be $1$ by
 default.  The annual mean $\mu$ was chosen so that the population
@@ -196,60 +194,63 @@ where
     & \text{otherwise},
   \end{cases}
   \\
-  H_1 &= \left(1 - \frac{\beta}{2}\right)
+  H_1 &= \left(1 - \frac{\alpha}{4}\right)
   \left(\lfloor d \rfloor - \lfloor c \rfloor - 1\right),
   \\
   H_2 &=
   \begin{cases}
-    \frac{1}{2} \left(1 - \frac{\beta}{2}\right)
+    \frac{1}{2} \left(1 - \frac{\alpha}{4}\right)
     + \left(\frac{1}{2} - \{c\}\right)
-    \left[1 - \beta
-      + \beta \left(\frac{1}{2} - \{c\}\right)\right]
+    \left[1 - \frac{\alpha}{2}
+      + \frac{\alpha}{2} \left(\frac{1}{2} - \{c\}\right)\right]
     & \text{if $\{c\} < \frac{1}{2}$},
     \\
     \left(1 - \{c\}\right)
-    \left[1 - \beta + \beta \left(1 - \{c\}\right)\right]
+    \left[1 - \frac{\alpha}{2} + \frac{\alpha}{2} \left(1 - \{c\}\right)\right]
     & \text{otherwise},
   \end{cases}
   \\
   H_3 &=
   \begin{cases}
-    \{d\}\left(1 - \beta \{d\}\right)
+    \{d\}\left(1 - \frac{\alpha}{2} \{d\}\right)
     & \text{if $\{d\} < \frac{1}{2}$},
     \\
-    \frac{1}{2} \left(1 - \frac{\beta}{2}\right)
+    \frac{1}{2} \left(1 - \frac{\alpha}{4}\right)
     + \left(\{d\} - \frac{1}{2}\right)
-    \left[1 - \beta + \beta \left(\{d\} - \frac{1}{2}\right)\right]
+    \left[1 - \frac{\alpha}{2}
+      + \frac{\alpha}{2} \left(\{d\} - \frac{1}{2}\right)\right]
     & \text{otherwise},
     \end{cases}
   \\
-  H_4 &= \frac{1}{2 \beta}
+  H_4 &= \frac{1}{\alpha}
   \left(\lfloor d \rfloor - \lfloor c \rfloor - 1\right),
   \\
   H_5 &=
   \begin{cases}
-    \frac{1}{4 \beta} + \beta \left(\frac{1}{2 \beta} - \{c\}\right)^2
-    & \text{if $\{c\} < \frac{1}{2 \beta}$},
+    \frac{1}{2 \alpha}
+    + \frac{\alpha}{2} \left(\frac{1}{\alpha} - \{c\}\right)^2
+    & \text{if $\{c\} < \frac{1}{\alpha}$},
     \\
-    \frac{1}{4 \beta}
-    & \text{if $\frac{1}{2 \beta} \leq \{c\} < 1 - \frac{1}{2 \beta}$},
+    \frac{1}{2 \alpha}
+    & \text{if $\frac{1}{\alpha} \leq \{c\} < 1 - \frac{1}{\alpha}$},
     \\
     \left(1 - \{c\}\right) \left[1 -
-      \beta \left(1 - \{c\}\right)\right]
+      \frac{\alpha}{2} \left(1 - \{c\}\right)\right]
     & \text{otherwise}
   \end{cases},
   \\
   H_6 &=
   \begin{cases}
-    \{d\} \left[1 - \beta \{d\}\right]
-    & \text{if $\{d\} < \frac{1}{2 \beta}$},
+    \{d\} \left[1 - \frac{\alpha}{2} \{d\}\right]
+    & \text{if $\{d\} < \frac{1}{\alpha}$},
     \\
-    \frac{1}{4 \beta}
-    & \text{if $\frac{1}{2 \beta} \leq \{d\} <
-      1 - \frac{1}{2 \beta}$},
+    \frac{1}{2 \alpha}
+    & \text{if $\frac{1}{\alpha} \leq \{d\} <
+      1 - \frac{1}{\alpha}$},
     \\
-    \frac{1}{4 \beta} + \beta \left[\{d\} - \left(1
-        - \frac{1}{2 \beta}\right)\right]^2
+    \frac{1}{2 \alpha}
+    + \frac{\alpha}{2}
+    \left[\{d\} - \left(1 - \frac{1}{\alpha}\right)\right]^2
     & \text{otherwise},
   \end{cases}
   \\
