@@ -1,20 +1,26 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 
 import numpy
 from scipy import stats
+import functools
 import multiprocessing
 
 import Parameters
 
 
+# Use __lt__ and __eq__ to generate all the other comparisons
+@functools.total_ordering
 class Event:
     def __init__(self, time, func, label):
         self.time = time
         self.func = func
         self.label = label
 
-    def __cmp__(self, other):
-        return cmp(self.time, other.time)
+    def __lt__(self, other):
+        return (self.time < other.time)
+
+    def __eq__(self, other):
+        return (self.time == other.time)
 
     def __call__(self):
         return self.func()
@@ -124,7 +130,7 @@ class Buffalo:
             pass
     
     def getNextEvent(self):
-        return min(self.events.itervalues())
+        return min(self.events.values())
 
     def isSusceptible(self):
         return self.immuneStatus == 'susceptible'
@@ -168,7 +174,8 @@ class Herd(list):
             if len(status_ages['infectious']) > 0:
                 break
             else:
-                print 'Initial infections = 0!  Re-sampling initial conditions.'
+                print(
+                    'Initial infections = 0!  Re-sampling initial conditions.')
 
         for (immuneStatus, ages) in status_ages.items():
             for age in ages:
@@ -180,16 +187,16 @@ class Herd(list):
     def birth(self, immuneStatus = 'maternal immunity', age = 0.):
         if self.debug:
             if age > 0:
-                print 't = {}: arrival of #{} at age {} with status {}'.format(
+                print('t = {}: arrival of #{} at age {} with status {}'.format(
                     self.time,
                     self.identifier,
                     age,
-                    immuneStatus)
+                    immuneStatus))
             else:
-                print 't = {}: birth of #{} with status {}'.format(
+                print('t = {}: birth of #{} with status {}'.format(
                     self.time,
                     self.identifier,
-                    immuneStatus)
+                    immuneStatus))
 
         self.append(Buffalo(self, immuneStatus, age,
                             identifier = self.identifier))
@@ -229,7 +236,7 @@ class Herd(list):
 
         if (event is not None) and (event.time < tMax):
             if self.debug:
-                print 't = {}: {}'.format(event.time, event.label)
+                print('t = {}: {}'.format(event.time, event.label))
             self.time = event.time
             event()
         else:
@@ -261,8 +268,8 @@ def showResult(y):
     state_last = x[-1]
     t_last = state_last[0]
 
-    print 'Simulation #{} ended at {:g} days.'.format(runNumber,
-                                                      365. * t_last)
+    print('Simulation #{} ended at {:g} days.'.format(runNumber,
+                                                      365. * t_last))
 
 def getkwds(kwds, i):
     res = kwds.copy()
@@ -279,7 +286,7 @@ def multirun(nRuns, parameters, *args, **kwds):
                                 (parameters, ) + args,
                                 getkwds(kwds, i),
                                 showResult)
-               for i in xrange(nRuns)]
+               for i in range(nRuns)]
 
     pool.close()
 
@@ -320,7 +327,7 @@ def makePlots(data, show = True):
 
     (T, X) = zip(*(zip(*y) for (runNumber, y) in data))
     for (t, x) in zip(T, X):
-        c = colors.next()
+        c = next(colors)
         t = numpy.array(t)
         x = numpy.array(x)
         # Add column for total.
@@ -393,6 +400,6 @@ if __name__ == '__main__':
     t0 = time.time()
     data = multirun(nRuns, p, tMax, debug = debug)
     t1 = time.time()
-    print 'Run time: {} seconds.'.format(t1 - t0)
+    print('Run time: {} seconds.'.format(t1 - t0))
     
     makePlots(data)
