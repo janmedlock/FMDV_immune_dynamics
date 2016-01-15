@@ -1,8 +1,10 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 
 import numpy
 from matplotlib import pyplot, ticker
 
+import sys
+sys.path.append('..')
 import Parameters
 
 
