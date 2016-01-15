@@ -11,3 +11,5 @@
 *.pdf
 *.run.xml
 *.synctex.gz
+Parameters/_findBirthScaling.db
+Parameters/_getEndemicEquilibrium.db
