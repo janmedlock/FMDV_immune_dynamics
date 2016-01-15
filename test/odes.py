@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 
 import numpy
 from scipy import integrate
@@ -30,11 +30,8 @@ def rhs(Y, t, parameters, RVs):
 def solve(tMax, parameters):
     RVs = Parameters.RandomVariables(parameters)
 
-    M0 = parameters.populationSize \
-      * RVs.ageStructure.cdf(parameters.maternalImmunityDuration)
-    I0 = 2.
-    R0 = parameters.populationSize * (1. - RVs.ageStructure.cdf(2.))
-    S0 = parameters.populationSize - M0 - I0 - R0
+    (M0, I0, R0, S0) = (parameters.populationSize
+                        * RVs.endemicEquilibrium.weights[0])
     
     t = numpy.linspace(0., tMax, 1001)
 
