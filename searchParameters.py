@@ -42,7 +42,6 @@ if __name__ == '__main__':
     parameters.R0 = 10.
 
     populationSizes = (1000, 2000, 5000, 10000)
-    populationSizes = (100, )
 
     for ps in populationSizes:
         parameters.populationSize = ps
@@ -52,9 +51,8 @@ if __name__ == '__main__':
         birthSeasonalVariances = map(birth.getSeasonalVarianceFromGapSize,
                                      gapSizes)
 
-        nRuns = 8
-        # tMax = numpy.inf
-        tMax = 5.
+        nRuns = 100
+        tMax = numpy.inf
         debug = False
 
         searchParameter('birthSeasonalVariance',
