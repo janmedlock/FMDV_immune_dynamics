@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 
 import numpy
 
@@ -44,10 +44,10 @@ def findStats(extinctionTimes):
     return mystats
     
 def showStats(mystats):
-    print ('stats: {'
-           + ',\n        '.join(['{} = {}'.format(k, v)
-                                 for (k, v) in mystats.iteritems()])
-           + '}')
+    print('stats: {'
+          + ',\n        '.join(['{} = {}'.format(k, v)
+                                for (k, v) in mystats.items()])
+          + '}')
 
 
 if __name__ == '__main__':
@@ -55,12 +55,12 @@ if __name__ == '__main__':
 
     p = Parameters.Parameters()
 
-    p.populationSize = 10000
+    p.populationSize = 100
     p.infectionDuration = 21. / 365.
     p.R0 = 10.
     p.birthSeasonalVariance = 1.
 
-    nRuns = 100
+    nRuns = 10000
     tMax = 5.
     debug = False
     

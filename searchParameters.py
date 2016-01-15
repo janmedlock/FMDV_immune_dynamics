@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 
 import sys
 import os.path
@@ -16,7 +16,7 @@ def searchParameter(parameterName, values, nRuns, parameters, tMax,
     (basename, ext) = os.path.splitext(os.path.basename(sys.argv[0]))
     filename = basename + '.csv'
 
-    w = csv.writer(open(filename, 'a', 0)) # 0 for unbuffered.
+    w = csv.writer(open(filename, 'a'))
 
     paramkeys = sorted(parameters.__dict__.keys())
 
@@ -25,7 +25,7 @@ def searchParameter(parameterName, values, nRuns, parameters, tMax,
 
     for v in values:
         setattr(parameters, parameterName, v)
-        print '{} = {}'.format(parameterName, v)
+        print('{} = {}'.format(parameterName, v))
         eT = extinctionTimes.findExtinctionTimes(nRuns, parameters, tMax,
                                                  *args, **kwargs)
 
@@ -42,16 +42,17 @@ if __name__ == '__main__':
     parameters.R0 = 10.
 
     populationSizes = (1000, 2000, 5000, 10000)
+    populationSizes = (100, )
 
     for ps in populationSizes:
         parameters.populationSize = ps
 
         # birthSeasonalVariance calculated from gapSizes
-        gapSizes = [None] + range(12) # In months.  None is aseasonal.
+        gapSizes = [None] + list(range(12)) # In months.  None is aseasonal.
         birthSeasonalVariances = map(birth.getSeasonalVarianceFromGapSize,
                                      gapSizes)
 
-        nRuns = 100
+        nRuns = 8
         # tMax = numpy.inf
         tMax = 5.
         debug = False
