@@ -44,3 +44,12 @@ class RandomVariables(object):
         self.birth = birth_gen(parameters)
 
         self.endemicEquilibrium = endemicEquilibrium_gen(parameters)
+
+    def __repr__(self):
+        # Like Parameters, but with module & class changed.
+        clsname = '{}.{}'.format(self.__module__, self.__class__.__name__)
+
+        params_clsname = '{}.{}'.format(Parameters.__module__,
+                                        Parameters.__name__)
+
+        return repr(self.parameters).replace(params_clsname, clsname)
