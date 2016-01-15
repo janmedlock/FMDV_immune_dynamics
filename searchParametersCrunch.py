@@ -145,8 +145,7 @@ def plot_3D(X, Y, Z, C, title):
     points = axes.scatter(numpy.log10(X), numpy.log10(Y), numpy.log10(Z),
                           c = C,
                           cmap = pyplot.cm.spectral_r,
-                          linewidth = 0,
-                          vmin = 0.)
+                          linewidth = 0)
 
     W = limits['populationSize'][0] * numpy.ones_like(X)
     axes.scatter(numpy.log10(W), numpy.log10(Y), numpy.log10(Z),
