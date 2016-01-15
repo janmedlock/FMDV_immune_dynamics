@@ -1,7 +1,8 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 # -*- coding: utf-8 -*-
 
 import numpy
+import functools
 from matplotlib import pyplot
 import mpl_toolkits.mplot3d
 
@@ -25,12 +26,12 @@ def plot_slice1D(X, D, parameters1, **kwds):
     pyplot.xlabel(parameters1[0])
     pyplot.ylabel('Extinction Time')
     pyplot.title(', '.join(['{} = {}'.format(k, v)
-                                       for (k, v) in kwds.iteritems()]))
+                                       for (k, v) in kwds.items()]))
 
 
 def plot_slice2D(X, D, parameters1, **kwds):
     dim = [len(parametersValues[p]) for p in parameters1]
-    X = map(lambda x: x.reshape(dim), X)
+    X = [x.reshape(dim) for x in X]
 
     pyplot.figure()
 
@@ -70,8 +71,8 @@ def plot_slice2D(X, D, parameters1, **kwds):
 def plot_slice(**kwds):
     parameters1 = [k for k in parametersOrdered if k not in kwds]
 
-    filters = [extinctionTimes[k] == v for (k, v) in kwds.iteritems()]
-    f = reduce(lambda x, y: x & y, filters)
+    filters = [extinctionTimes[k] == v for (k, v) in kwds.items()]
+    f = functools.reduce(lambda x, y: x & y, filters)
     D = numpy.compress(f, extinctionTimes)
 
     X = [D[p] for p in parameters1]
@@ -194,7 +195,7 @@ def plot_average_extinction_time(average = 'mean'):
 
 
 def plot_persistance(years):
-    title = u'Proportion persisting ≥{} year{}'.format(
+    title = 'Proportion persisting ≥{} year{}'.format(
         years,
         '' if years == 1 else 's')
     
@@ -242,11 +243,12 @@ ticks = {'populationSize':    (100, 500, 1000, 5000, 10000),
          'infectionDuration': (1.6, 5., 10., 15., 21.),
          'R0':                (1.2, 5., 10., 20., 30.)}
 
-limits = {k: (v[0], v[-1]) for (k, v) in ticks.iteritems()}
+limits = {k: (v[0], v[-1]) for (k, v) in ticks.items()}
 
-# f = reduce(lambda x, y: x & y,
-#            [(extinctionTimes[k] >= v[0]) & (extinctionTimes[k] <= v[1])
-#             for (k, v) in limits.iteritems()])
+# f = functools.reduce(lambda x, y: x & y,
+#                      [((extinctionTimes[k] >= v[0])
+#                        & (extinctionTimes[k] <= v[1]))
+#                       for (k, v) in limits.items()])
 # extinctionTimes = numpy.compress(f, extinctionTimes)
 
 
