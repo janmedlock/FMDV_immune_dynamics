@@ -250,9 +250,11 @@ class Herd(list):
             result.append(self.getStats())
 
         if self.runNumber is not None:
-            return (self.runNumber, result)
-        else:
-            return result
+            t_last = result[-1][0]
+            print('Simulation #{} ended at {:g} days.'.format(self.runNumber,
+                                                              365. * t_last))
+
+        return result
 
     def findExtinctionTime(self, tMax):
         result = self.run(tMax)
@@ -260,37 +262,33 @@ class Herd(list):
 
 
 
-def doOne(parameters, tMax, *args, **kwds):
-    return Herd(parameters, *args, **kwds).run(tMax)
+def _runOne(parameters, tMax, *args, **kwds):
+    '''
+    Run one simulation, among multiple running in parallel.
+    runNumber is at the end of *args to allow easy use of
+    multiprocessing.Pool().map() with functools.partial().
+    '''
+    runNumber = args[-1]
+    otherArgs = args[ : -1]
+    return Herd(parameters, *otherArgs,
+                runNumber = runNumber, **kwds).run(tMax)
 
-def showResult(y):
-    (runNumber, x) = y
-    state_last = x[-1]
-    t_last = state_last[0]
+def multirun(nRuns, parameters, tMax, *args, **kwds):
+    'Run many simulations in parallel.'
 
-    print('Simulation #{} ended at {:g} days.'.format(runNumber,
-                                                      365. * t_last))
-
-def getkwds(kwds, i):
-    res = kwds.copy()
-    res['runNumber'] = i
-    return res
-
-def multirun(nRuns, parameters, *args, **kwds):
     # Build the RVs once to make sure the caches are seeded.
     RVs = Parameters.RandomVariables(parameters)
 
-    pool = multiprocessing.Pool(initializer = numpy.random.seed)
-    
-    results = [pool.apply_async(doOne,
-                                (parameters, ) + args,
-                                getkwds(kwds, i),
-                                showResult)
-               for i in range(nRuns)]
+    # Set the random seed on each worker to a different seed.
+    # numpy.random.seed() with no argument uses /dev/urandom to seed.
+    with multiprocessing.Pool(initializer = numpy.random.seed) as pool:
+        # f is _doOne with all the args and kwargs set, except runNumber,
+        # which will be appended to args.
+        f = functools.partial(_runOne, parameters, tMax, *args, **kwds)
 
-    pool.close()
-
-    return [r.get() for r in results]
+        # f(0), f(1), f(2), ..., f(nRuns - 1),
+        # computed in parallel.
+        return pool.map(f, range(nRuns))
 
 
 def getMean(T, X):
@@ -325,7 +323,7 @@ def makePlots(data, show = True):
     (fig, ax) = pyplot.subplots(5, sharex = True)
     colors = itertools.cycle(seaborn.color_palette('husl', 8))
 
-    (T, X) = zip(*(zip(*y) for (runNumber, y) in data))
+    (T, X) = zip(*(zip(*d) for d in data))
     for (t, x) in zip(T, X):
         c = next(colors)
         t = numpy.array(t)
@@ -378,9 +376,10 @@ def makePlots(data, show = True):
 
 
 def getIterminal(data):
-    (T, X) = zip(*(zip(*y) for (runNumber, y) in data))
-    Iterminal = [x[-1][2] for x in X]
-    return numpy.asarray(Iterminal)
+    tXterminal = (d[-1] for d in data)
+    Xterminal = (tX[-1] for tX in tXterminal)
+    Iterminal = (X[2] for X in Xterminal)
+    return numpy.fromiter(Iterminal, numpy.int, len(data))
 
 
 if __name__ == '__main__':
