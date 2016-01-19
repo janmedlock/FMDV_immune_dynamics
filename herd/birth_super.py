@@ -4,15 +4,15 @@ from scipy import stats
 from . import rv
 
 
-class birth_gen(rv.RV, stats.rv_continuous):
+class gen(rv.RV, stats.rv_continuous):
     def __init__(self,
                  parameters,
-                 _findBirthScaling = True,
+                 _find_birth_scaling = True,
                  *args, **kwargs):
-        self.seasonalVariance = parameters.birthSeasonalVariance
+        self.seasonal_variance = parameters.birth_seasonal_variance
 
-        if _findBirthScaling:
-            self.findBirthScaling(parameters)
+        if _find_birth_scaling:
+            self.find_birth_scaling(parameters)
         else:
             self.scaling = 1.
 
@@ -41,7 +41,7 @@ class birth_gen(rv.RV, stats.rv_continuous):
     def _ppf(self, q, *args, **kwds):
         'Trap errors for _ppf'
         try:
-            result = super(birth_gen, self)._ppf(q, *args, **kwds)
+            result = super()._ppf(q, *args, **kwds)
         except ValueError:
             # Assume the error is near q = 1,
             # so return the right-hand endpoint
@@ -50,11 +50,11 @@ class birth_gen(rv.RV, stats.rv_continuous):
             result = self.b
         return result
 
-    def findBirthScaling(self, parameters,
-                         *args, **kwargs):
+    def find_birth_scaling(self, parameters,
+                           *args, **kwargs):
         from . import utility
-        self.scaling = utility.findBirthScaling(parameters,
-                                                *args, **kwargs)
+        self.scaling = utility.find_birth_scaling(parameters,
+                                                  *args, **kwargs)
 
     def __repr__(self):
-        return rv.RV.__repr__(self, ('seasonalVariance', ))
+        return rv.RV.__repr__(self, ('seasonal_variance', ))

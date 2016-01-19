@@ -7,10 +7,10 @@ def fracpart(x):
     return numpy.mod(x, 1.)
 
 
-class birth_gen(birth_super.birth_gen):
+class gen(birth_super.gen):
     def _getparams(self):
-        alpha = 1 + self.seasonalVariance
-        beta = 1 / (1 + self.seasonalVariance)
+        alpha = 1 + self.seasonal_variance
+        beta = 1 / (1 + self.seasonal_variance)
         return (alpha, beta)
 
     def hazard(self, time, time0, age0):

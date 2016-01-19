@@ -56,7 +56,7 @@ class deterministic(RV, stats.rv_continuous):
         return RV.__repr__(self, (self._paramname, ))
 
 
-class ageStructure_gen(RV):
+class age_structured(RV):
     def __init__(self, ages, proportion, *args, **kwargs):
         self.ages = ages
         self.proportion = proportion

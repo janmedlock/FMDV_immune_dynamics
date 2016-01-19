@@ -3,13 +3,13 @@ import numpy
 from . import birth_super
 
 
-class birth_gen(birth_super.birth_gen):
+class gen(birth_super.gen):
     def hazard(self, time, time0, age0):
         return numpy.where(
             age0 + time < 4.,
             0.,
             self.scaling * (1.
-                            + self.seasonalVariance
+                            + self.seasonal_variance
                             * numpy.cos(2 * numpy.pi * (time + time0))))
 
     def _cdf(self, time, time0, age0):
@@ -19,7 +19,7 @@ class birth_gen(birth_super.birth_gen):
             0.,
             self.scaling \
             * ((time - lb)
-               + self.seasonalVariance / 2. / numpy.pi
+               + self.seasonal_variance / 2. / numpy.pi
                * (numpy.sin(2. * numpy.pi * (time + time0))
                   - numpy.sin(2. * numpy.pi * (lb + time0)))))
         

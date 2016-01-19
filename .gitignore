@@ -11,5 +11,5 @@
 *.pdf
 *.run.xml
 *.synctex.gz
-Parameters/_findBirthScaling.db
-Parameters/_getEndemicEquilibrium.db
+herd/_find_birth_scaling.db
+herd/_get_endemic_equilibrium.db
