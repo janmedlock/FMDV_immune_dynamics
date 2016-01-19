@@ -50,11 +50,11 @@ def solve(tmax, agemax, agestep, parameters, Y0 = None):
 
     transmissibility = transmission_rate.gen(parameters)
     susceptibility = numpy.where(ages >= parameters.maternal_immunity_duration,
-                                 1., 0.)
+                                 1, 0)
     def force_of_infection(I):
         return integrate.trapz(transmissibility * I, ages) * susceptibility
 
-    recovery_rate = 1. / parameters.recovery_infection_duration
+    recovery_rate = 1 / parameters.recovery_infection_duration
 
     if Y0 is None:
         eigenpair = utility.find_dominant_eigenpair(parameters,
@@ -64,7 +64,7 @@ def solve(tmax, agemax, agestep, parameters, Y0 = None):
               * parameters.population_size)
 
         # Everyone under 2 susceptible (except for maternal immunity).
-        S0 = numpy.where(ages < 2., N0, 0.)
+        S0 = numpy.where(ages < 2, N0, 0)
         # initial infections.
         I0 = 0.01 * S0
         S0 -= I0
@@ -72,7 +72,7 @@ def solve(tmax, agemax, agestep, parameters, Y0 = None):
 
         Y0 = numpy.hstack((S0, I0, R0))
 
-    t = numpy.linspace(0., tmax, 1001)
+    t = numpy.linspace(0, tmax, 1001)
 
     (Y, info) = integrate.odeint(rhs, Y0, t,
                                  args = (AM, B,
@@ -86,7 +86,7 @@ def solve(tmax, agemax, agestep, parameters, Y0 = None):
 
     # Split susceptibles into maternal immunity and not.
     mask = (ages < parameters.maternal_immunity_duration)
-    M = numpy.where(mask[numpy.newaxis, :], S, 0.)
+    M = numpy.where(mask[numpy.newaxis, :], S, 0)
     S -= M
 
     return (t, ages, (M, S, I, R))
@@ -106,7 +106,7 @@ def get_period(t, ages, X, abserr = 1e-3, relerr = 1e-3,
     
 
 def get_limit_cycle(parameters, agemax, agestep,
-                    periodmax = 3, t_burnin = 100.):
+                    periodmax = 3, t_burnin = 100):
     from scipy import special
     from scipy import optimize
 
@@ -152,8 +152,8 @@ def _get_endemic_equilibrium(parameters, tmax, agemax, agestep):
     return (ages, ICs)
 
     
-def get_endemic_equilibrium(parameters, tmax = 200.,
-                            agemax = 20., agestep = 0.01):
+def get_endemic_equilibrium(parameters, tmax = 200,
+                            agemax = 20, agestep = 0.01):
     # The PDE solutions simply scale multiplicatively with
     # population_size, so factor that out for more efficient caching.
     population_size = parameters.population_size

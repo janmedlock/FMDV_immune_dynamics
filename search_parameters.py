@@ -38,8 +38,8 @@ if __name__ == '__main__':
 
     parameters = herd.Parameters()
 
-    parameters.recovery_infection_duration = 21. / 365.
-    parameters.R0 = 10.
+    parameters.recovery_infection_duration = 21 / 365
+    parameters.R0 = 10
 
     population_sizes = (1000, 2000, 5000, 10000)
 
@@ -50,14 +50,14 @@ if __name__ == '__main__':
     for ps in population_sizes:
         parameters.population_size = ps
 
-        # birth_seasonal_variance calculated from gap_sizes
+        # birth_seasonal_coefficient_of_variation calculated from gap_sizes
         gap_sizes = [None] + list(range(12)) # In months.  None is aseasonal.
-        birth_seasonal_variances = map(
-            birth.get_seasonalvariance_from_gap_size,
+        birth_seasonal_coefficient_of_variations = map(
+            birth.get_seasonalcoefficient_of_variation_from_gap_size,
             gap_sizes)
 
-        search_parameter('birth_seasonal_variance',
-                         birth_seasonal_variances,
+        search_parameter('birth_seasonal_coefficient_of_variation',
+                         birth_seasonal_coefficient_of_variations,
                          nruns,
                          parameters,
                          tmax,

@@ -38,8 +38,8 @@ def find_stats(extinction_times):
     mystats['q_95'] = ppf(extinction_times, 0.95)
     mystats['q_99'] = ppf(extinction_times, 0.99)
 
-    mystats['proportion >= 1'] = proportion_ge_x(extinction_times, 1.)
-    mystats['proportion >= 10'] = proportion_ge_x(extinction_times, 10.)
+    mystats['proportion >= 1'] = proportion_ge_x(extinction_times, 1)
+    mystats['proportion >= 10'] = proportion_ge_x(extinction_times, 10)
     
     return mystats
     
@@ -56,12 +56,12 @@ if __name__ == '__main__':
     p = herd.Parameters()
 
     p.population_size = 100
-    p.infection_duration = 21. / 365.
-    p.R0 = 10.
-    p.birth_seasonal_variance = 1.
+    p.infection_duration = 21 / 365
+    p.R0 = 10
+    p.birth_seasonal_coefficient_of_variation = 1
 
     nruns = 10000
-    tmax = 5.
+    tmax = 5
     debug = False
     
     extinction_times = find_extinction_times(nruns, p, tmax, debug = debug)

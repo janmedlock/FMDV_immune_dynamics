@@ -52,7 +52,7 @@ def get_mean(T, X):
         indices = [(Tk <= t).nonzero()[0][-1] for t in T_]
 
         X_mean[ : len(T_)] += Xk[indices]
-        n[ : len(T_)] += 1.
+        n[ : len(T_)] += 1
     X_mean /= n[:, numpy.newaxis]
 
     return (T_mean, X_mean)
@@ -78,7 +78,7 @@ def make_plots(data, show = True):
         n = x.sum(-1)
         x = numpy.column_stack((x, n))
         for j in range(x.shape[-1]):
-            ax[j].step(365. * t, x[:, j], where = 'post',
+            ax[j].step(365 * t, x[:, j], where = 'post',
                        color = c, alpha = 0.5)
 
     (T_mean, X_mean) = get_mean(T, X)
@@ -86,7 +86,7 @@ def make_plots(data, show = True):
     N_mean = X_mean.sum(-1)
     X_mean = numpy.column_stack((X_mean, N_mean))
     for j in range(X_mean.shape[-1]):
-        ax[j].step(365. * T_mean, X_mean[:, j], where = 'post',
+        ax[j].step(365 * T_mean, X_mean[:, j], where = 'post',
                    color = 'black')
 
     (t_, a_, X_) = pde.solve(20, 20, 0.01, p)
@@ -101,7 +101,7 @@ def make_plots(data, show = True):
     j_ = int(- Tmax_ / dt_ - 1)
     t_ -= t_[j_]
     for k in range(len(x_)):
-        ax[k].plot(365. * t_[j_ : ], x_[k, j_ : ] / n_[j_] * p.population_size,
+        ax[k].plot(365 * t_[j_ : ], x_[k, j_ : ] / n_[j_] * p.population_size,
                    linestyle = ':', color = 'black')
 
     ax[0].set_ylabel('maternal immunity')
@@ -114,8 +114,8 @@ def make_plots(data, show = True):
 
     for ax_ in ax:
         yl = ax_.get_ylim()
-        if yl[0] < 0.:
-            ax_.set_ylim(ymin = 0.)
+        if yl[0] < 0:
+            ax_.set_ylim(ymin = 0)
 
     if show:
         pyplot.show()
@@ -135,9 +135,9 @@ if __name__ == '__main__':
 
     p = herd.Parameters()
     p.population_size = 1000
-    p.birth_seasonal_variance = 1.
+    p.birth_seasonal_coefficient_of_variation = 1
 
-    tmax = 1.
+    tmax = 1
     nruns = 100
     debug = False
     

@@ -6,7 +6,7 @@ from . import event
 class Buffalo:
     'A single buffalo and the actions that can occur to it.'
 
-    def __init__(self, herd, immune_status = 'maternal immunity', age = 0.,
+    def __init__(self, herd, immune_status = 'maternal immunity', age = 0,
                  identifier = None):
         self.herd = herd
         self.immune_status = immune_status
@@ -24,7 +24,7 @@ class Buffalo:
         if self.immune_status == 'maternal immunity':
             event_time = (self.birth_date
                           + self.rvs.maternal_immunity_waning.rvs())
-            assert event_time >= 0.
+            assert event_time >= 0
             self.events['maternal_immunity_waning'] = event.Event(
                     event_time,
                     self.maternal_immunity_waning,
@@ -121,9 +121,9 @@ class Buffalo:
     ## Fix me! ##
     def update_infection_time(self, force_of_infection):
         if self.is_susceptible():
-            if (force_of_infection > 0.):
+            if (force_of_infection > 0):
                 infection_time = stats.expon.rvs(
-                    scale = 1. / force_of_infection)
+                    scale = 1 / force_of_infection)
             
                 self.events['infection'] = event.Event(
                     self.herd.time + infection_time,

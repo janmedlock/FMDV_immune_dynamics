@@ -9,7 +9,7 @@ sys.path.append('..')
 import herd
 from herd import birth_rectangular, birth_triangular, birth_sine
 
-sigma_vals = numpy.linspace(0., 1., 6)
+cv_vals = numpy.linspace(0, 1, 6)
 
 parameters = herd.Parameters()
 
@@ -18,8 +18,8 @@ t = numpy.linspace(-0.5, 2.5, 301)
 (fig, ax) = pyplot.subplots(3, 1)
 
 lines = []
-for sigma in sigma_vals:
-    parameters.birth_seasonal_variance = sigma**2
+for cv in cv_vals:
+    parameters.birth_seasonal_coefficient_of_variation = cv
     br = birth_rectangular.gen(parameters,
                                _find_birth_scaling = False)
     bt = birth_triangular.gen(parameters,
@@ -49,8 +49,8 @@ for a in ax:
                        for i in range(*ytickrange)])
 
 fig.legend(lines,
-           ['$\sigma = {:g}$'.format(sigma) for sigma in sigma_vals],
+           ['$c_v = {:g}$'.format(cv) for cv in cv_vals],
            'lower center',
-           ncol = len(sigma_vals))
+           ncol = len(cv_vals))
 
 pyplot.show()

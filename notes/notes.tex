@@ -157,22 +157,39 @@ time:
   \begin{cases}
     0 & \text{if $a < 4$},
     \\
-    \max\left(\mu \alpha \left[1 - \alpha \{t\}\right], 0\right)
+    \mu \alpha \max\left(1 - 2 \beta \{t\}, 0\right)
     & \text{if $a \geq 4$ and $\{t\} < \frac{1}{2}$},
     \\
-    \max\left(\mu \alpha \left[1 - \alpha (1 - \{t\})\right], 0\right)
+    \mu \alpha \max\left(1 - 2 \beta (1 - \{t\}), 0\right)
     & \text{if $\{t\} \geq \frac{1}{2}$},
   \end{cases}
 \end{equation}
 with
 \begin{equation}
-  \alpha = \frac{3}{2} \left(1 + \sigma^2\right),
+  \alpha =
+  \begin{cases}
+    1 + c_v \sqrt{3}
+    & \text{if $c_v < \frac{1}{\sqrt{3}}$},
+    \\
+    \frac{3}{2} \left(1 + c_v^2\right)
+    & \text{otherwise},
+  \end{cases}
+\end{equation}
+\begin{equation}
+  \beta =
+  \begin{cases}
+    \frac{2 c_v \sqrt{3}}{1 + c_v \sqrt{3}}
+    & \text{if $c_v < \frac{1}{\sqrt{3}}$},
+    \\
+    \frac{3}{4} \left(1 + c_v^2\right)
+    & \text{otherwise},
+  \end{cases}
 \end{equation}
 and $\{x\}$ is the fractional part of $x$.  The magnitude of the
-seasonal variation is captured by $\sigma$, which we took to be $1$ by
-default.  The annual mean $\mu$ was chosen so that the population
-achieves the mean growth rate $r = 0$ in the absence of infection.
-(See \autoref{no_infection}.)
+seasonal variation is captured by the coefficient of variation $c_v$,
+which we took to be $1$ by default.  The annual mean $\mu$ was chosen
+so that the population achieves the mean growth rate $r = 0$ in the
+absence of infection.  (See \autoref{no_infection}.)
 
 The survival function is then
 \begin{equation}
@@ -188,73 +205,73 @@ where
   H &=
   \begin{cases}
     H_1 + H_2  + H_3
-    & \text{if $\sigma^2 < \frac{1}{3}$},
+    & \text{if $c_v < \frac{1}{\sqrt{3}}$},
     \\
     H_4 + H_5 + H_6
     & \text{otherwise},
   \end{cases}
   \\
-  H_1 &= \left(1 - \frac{\alpha}{4}\right)
+  H_1 &= \left(1 - \frac{\beta}{2}\right)
   \left(\lfloor d \rfloor - \lfloor c \rfloor - 1\right),
   \\
   H_2 &=
   \begin{cases}
-    \frac{1}{2} \left(1 - \frac{\alpha}{4}\right)
+    \frac{1}{2} \left(1 - \frac{\beta}{2}\right)
     + \left(\frac{1}{2} - \{c\}\right)
-    \left[1 - \frac{\alpha}{2}
-      + \frac{\alpha}{2} \left(\frac{1}{2} - \{c\}\right)\right]
+    \left[1 - \beta
+      + \beta \left(\frac{1}{2} - \{c\}\right)\right]
     & \text{if $\{c\} < \frac{1}{2}$},
     \\
     \left(1 - \{c\}\right)
-    \left[1 - \frac{\alpha}{2} + \frac{\alpha}{2} \left(1 - \{c\}\right)\right]
+    \left[1 - \beta + \beta \left(1 - \{c\}\right)\right]
     & \text{otherwise},
   \end{cases}
   \\
   H_3 &=
   \begin{cases}
-    \{d\}\left(1 - \frac{\alpha}{2} \{d\}\right)
+    \{d\}\left(1 - \beta \{d\}\right)
     & \text{if $\{d\} < \frac{1}{2}$},
     \\
-    \frac{1}{2} \left(1 - \frac{\alpha}{4}\right)
+    \frac{1}{2} \left(1 - \frac{\beta}{2}\right)
     + \left(\{d\} - \frac{1}{2}\right)
-    \left[1 - \frac{\alpha}{2}
-      + \frac{\alpha}{2} \left(\{d\} - \frac{1}{2}\right)\right]
+    \left[1 - \beta
+      + \beta \left(\{d\} - \frac{1}{2}\right)\right]
     & \text{otherwise},
     \end{cases}
   \\
-  H_4 &= \frac{1}{\alpha}
+  H_4 &= \frac{1}{2 \beta}
   \left(\lfloor d \rfloor - \lfloor c \rfloor - 1\right),
   \\
   H_5 &=
   \begin{cases}
-    \frac{1}{2 \alpha}
-    + \frac{\alpha}{2} \left(\frac{1}{\alpha} - \{c\}\right)^2
-    & \text{if $\{c\} < \frac{1}{\alpha}$},
+    \frac{1}{4 \beta}
+    + \beta \left(\frac{1}{2 \beta} - \{c\}\right)^2
+    & \text{if $\{c\} < \frac{1}{2 \beta}$},
     \\
-    \frac{1}{2 \alpha}
-    & \text{if $\frac{1}{\alpha} \leq \{c\} < 1 - \frac{1}{\alpha}$},
+    \frac{1}{4 \beta}
+    & \text{if $\frac{1}{2 \beta} \leq \{c\} < 1 - \frac{1}{2 \beta}$},
     \\
     \left(1 - \{c\}\right) \left[1 -
-      \frac{\alpha}{2} \left(1 - \{c\}\right)\right]
+      \beta \left(1 - \{c\}\right)\right]
     & \text{otherwise}
   \end{cases},
   \\
   H_6 &=
   \begin{cases}
-    \{d\} \left[1 - \frac{\alpha}{2} \{d\}\right]
-    & \text{if $\{d\} < \frac{1}{\alpha}$},
+    \{d\} \left[1 - \beta \{d\}\right]
+    & \text{if $\{d\} < \frac{1}{2 \beta}$},
     \\
-    \frac{1}{2 \alpha}
-    & \text{if $\frac{1}{\alpha} \leq \{d\} <
-      1 - \frac{1}{\alpha}$},
+    \frac{1}{4 \beta}
+    & \text{if $\frac{1}{2 \beta} \leq \{d\} <
+      1 - \frac{1}{2 \beta}$},
     \\
-    \frac{1}{2 \alpha}
-    + \frac{\alpha}{2}
-    \left[\{d\} - \left(1 - \frac{1}{\alpha}\right)\right]^2
+    \frac{1}{4 \beta}
+    + \beta
+    \left[\{d\} - \left(1 - \frac{1}{2 \beta}\right)\right]^2
     & \text{otherwise},
   \end{cases}
   \\
-  c &= \max[4 - a, 0] + t_0,
+  c &= \max(4 - a, 0) + t_0,
   \\
   d &= t + t_0,
 \end{align}
@@ -576,30 +593,35 @@ $1.7 \times 10^{-12}$.
 
 \subsection{Rectangular}
 
-Let the hazard be constant $\alpha$ in the regions of width $\beta$
-centered at $t \bmod 1 = 0$ and $0$ elsewhere:
+Let the hazard be constant $\alpha$ in the regions of width
+$\beta \in (0, 1]$ centered at $\{t\} = 0$ and $0$ elsewhere:
 \begin{equation}
   h_{\text{birth}} (t, a) =
   \begin{cases}
-    \alpha & \text{if $a \geq 4$ and $\left(t + \frac{\beta}{2}\right)
-      \bmod 1 \leq \beta$},
+    \alpha & \text{if $a \geq 4$ and $\left\{t + \frac{\beta}{2}\right\}
+      \leq \beta$},
     \\
-    0 & \text{otherwise}.
+    0 & \text{otherwise},
   \end{cases}
 \end{equation}
-For $a > 4$, the mean and variance are
+where $\{x\}$ is the fractional part of $x$.  For $a > 4$, the mean
+and variance are
 \begin{align}
   \mu &= \alpha \beta,
   &
   \sigma^2 &= \alpha^2 \beta (1 - \beta),
 \end{align}
+so the coefficient of variation is
+\begin{equation}
+  c_v = \sqrt{\frac{1 - \beta}{\beta}},
+\end{equation}
 which gives
 \begin{align}
-  \alpha &= \mu \left(1 + \frac{\sigma^2}{\mu^2}\right),
+  \alpha &= \mu \left(1 + c_v^2\right),
   &
-  \beta &= \frac{1}{1 + \frac{\sigma^2}{\mu^2}}.
+  \beta &= \frac{1}{1 + c_v^2}.
 \end{align}
-With $\mu$ fixed, this gives one parameter, $\sigma^2$.
+With $\mu$ fixed, this gives one parameter, $c_v$.
 
 The survival is
 \begin{equation}
@@ -616,13 +638,13 @@ where
   H(t, a, t_0) =
   \alpha \left[
     \beta (\lfloor d \rfloor - \lfloor c \rfloor)
-    + \min\{d \bmod 1, \beta\}
-    - \min\{c \bmod 1, \beta\}
+    + \min(\{d\}, \beta)
+    - \min(\{c\}, \beta)
   \right]
 \end{equation}
 and
 \begin{align}
-  c &= \max\{4 - a, 0\} + t_0 + \frac{\beta}{2},
+  c &= \max(4 - a, 0) + t_0 + \frac{\beta}{2},
   &
   d &= t + t_0 + \frac{\beta}{2}.
 \end{align}
@@ -638,27 +660,27 @@ $\pm 2 \alpha \beta$ centered at $t = 0$:
   \begin{cases}
     0 & \text{if $a < 4$},
     \\
-    \alpha \max\left\{1 - 2 \beta (t \bmod 1), 0\right\}
-    & \text{if $a \geq 4$ and $t \bmod 1 < \frac{1}{2}$},
+    \alpha \max\left(1 - 2 \beta \{t\}, 0\right)
+    & \text{if $a \geq 4$ and $\{t\} < \frac{1}{2}$},
     \\
-    \alpha \max\left\{1 + 2 \beta (t \bmod 1 - 1), 0\right\}
-    & \text{if $a \geq 4$ and $t \bmod 1 \geq \frac{1}{2}$}.
+    \alpha \max\left(1 - 2 \beta (1 - \{t\}), 0\right)
+    & \text{if $a \geq 4$ and $\{t\} \geq \frac{1}{2}$}.
   \end{cases}
 \end{equation}
 
 \subsubsection{$\beta \leq 1$}
 
-With $\beta \leq 1$, the $\max\{x, 0\} = x$ in the hazard:
+With $\beta \leq 1$, the $\max(x, 0) = x$ in the hazard:
 \begin{equation}
   h_{\text{birth}} (t, a) =
   \begin{cases}
     0 & \text{if $a < 4$},
     \\
-    \alpha \left[1 - 2 \beta (t \bmod 1)\right]
-    & \text{if $a \geq 4$ and $t \bmod 1 < \frac{1}{2}$},
+    \alpha \left(1 - 2 \beta \{t\}\right)
+    & \text{if $a \geq 4$ and $\{t\} < \frac{1}{2}$},
     \\
-    \alpha \left[1 - 2 \beta (1 - t \bmod 1)\right]
-    & \text{if $a \geq 4$ and $t \bmod 1 \geq \frac{1}{2}$}.
+    \alpha \left[1 - 2 \beta (1 - \{t\})\right]
+    & \text{if $a \geq 4$ and $\{t\} \geq \frac{1}{2}$}.
   \end{cases}
 \end{equation}
 For $a > 4$, the mean is
@@ -685,14 +707,17 @@ so the variance is
   \sigma^2
   % &= \frac{a^2}{3} (b^2 - 3 b + 3) - \frac{a^2}{4} (2 - b)^2
   % \\
-  &= \frac{\alpha^2 \beta^2}{12}.
+  &= \frac{\alpha^2 \beta^2}{12}
 \end{align}
+and the coefficient of variation is
+\begin{equation}
+  c_v = \frac{\beta}{(2 - \beta) \sqrt{3}}.
+\end{equation}
 Then
 \begin{align}
-  \alpha &= \mu \left(1 + \sqrt{3} \frac{\sigma}{\mu}\right),
+  \alpha &= \mu \left(1 + c_v \sqrt{3}\right),
   &
-  \beta &= \frac{2 \sqrt{3} \frac{\sigma}{\mu}}
-          {1 + \sqrt{3} \frac{\sigma}{\mu}}.
+  \beta &= \frac{2 c_v \sqrt{3}}{1 + c_v \sqrt{3}}.
 \end{align}
 
 The survival is
@@ -712,53 +737,54 @@ where
 \begin{equation}
   g (t) =
   \begin{cases}
-    1 - 2 \beta (t \bmod 1)
-    & \text{if $t \bmod 1 < \frac{1}{2}$},
+    1 - 2 \beta \{t\}
+    & \text{if $\{t\} < \frac{1}{2}$},
     \\
-    1 - 2 \beta (1 - t \bmod 1)
-    & \text{if $t \bmod 1 \geq \frac{1}{2}$},
+    1 - 2 \beta (1 - \{t\})
+    & \text{if $\{t\} \geq \frac{1}{2}$},
   \end{cases}
 \end{equation}
 and
 \begin{equation}
-  \ell = \max\{4 - a, 0\}.
+  \ell = \max(4 - a, 0).
 \end{equation}
 Then
 \begin{equation}
-  H =
-  \left(1 - \frac{\beta}{2}\right)
-  \left(\lfloor d \rfloor - \lfloor c \rfloor - 1\right)
-  + H_1  + H_2,
+  H = H_1  + H_2 + H_3,
 \end{equation}
 with
-\begin{equation}
-  H_1 =
+\begin{align}
+  H_1 &= \left(1 - \frac{\beta}{2}\right)
+  \left(\lfloor d \rfloor - \lfloor c \rfloor - 1\right),
+  \\
+  H_2 &=
   \begin{cases}
     \frac{1}{2} \left(1 - \frac{\beta}{2}\right)
-    + \left(\frac{1}{2} - c \bmod 1\right)
-    \left[1 - \frac{\beta}{2} - \beta \left(c \bmod 1\right)\right]
-    & \text{if $c \bmod 1 < \frac{1}{2}$},
+    + \left(\frac{1}{2} - \{c\}\right)
+    \left[1 - \beta
+      + \beta \left(\frac{1}{2} - \{c\}\right)\right]
+    & \text{if $\{c\} < \frac{1}{2}$},
     \\
-    \left(1 - c \bmod 1\right)
-    \left[ 1 - \beta \left(c \bmod 1\right)\right]
+    \left(1 - \{c\}\right)
+    \left[1 - \beta + \beta \left(1 - \{c\}\right)\right]
     & \text{otherwise},
   \end{cases}
-\end{equation}
-\begin{equation}
-  H_2 =
+  \\
+  H_3 &=
   \begin{cases}
-    \left(d \bmod 1\right)\left[1 - \beta \left(d \bmod 1\right)\right]
-    & \text{if $d \bmod 1 < \frac{1}{2}$},
+    \{d\}\left(1 - \beta \{d\}\right)
+    & \text{if $\{d\} < \frac{1}{2}$},
     \\
     \frac{1}{2} \left(1 - \frac{\beta}{2}\right)
-    + \left(d \bmod 1 - \frac{1}{2}\right)
-    \left[1 - \frac{3}{2} \beta + \beta \left(d \bmod 1\right)\right]
+    + \left(\{d\} - \frac{1}{2}\right)
+    \left[1 - \beta
+      + \beta \left(\{d\} - \frac{1}{2}\right)\right]
     & \text{otherwise},
     \end{cases}
-\end{equation}
+\end{align}
 and
 \begin{align}
-  c &= \ell + t_0 = \max\{4 - a, 0\} + t_0,
+  c &= \ell + t_0 = \max(4 - a, 0) + t_0,
   &
   d &= t + t_0.
 \end{align}
@@ -772,11 +798,11 @@ Here we have
   \begin{cases}
     0 & \text{if $a < 4$},
     \\
-    \alpha \left[1 - 2 \beta (t \bmod 1)\right]
-    & \text{if $a \geq 4$ and $t \bmod 1 < \frac{1}{2 \beta}$},
+    \alpha \left(1 - 2 \beta \{t\}\right)
+    & \text{if $a \geq 4$ and $\{t\} < \frac{1}{2 \beta}$},
     \\
-    \alpha \left[1 - 2 \beta (1 - t \bmod 1)\right]
-    & \text{if $t \bmod 1 \geq \frac{1}{2 \beta}$},
+    \alpha \left[1 - 2 \beta (1 - \{t\})\right]
+    & \text{if $\{t\} \geq 1 - \frac{1}{2 \beta}$},
     \\
     0 & \text{otherwise}.
   \end{cases}
@@ -789,9 +815,8 @@ For $a \geq 4$, the mean is
 \end{align}
 and
 \begin{align}
-  \text{E} X^2 &= \int_0^1 \left[h_{\text{birth}}(t, a)\right]^2 \md t
-  % \\
-  = 2 \alpha^2 \int_0^{\frac{1}{2 \beta}} \left(1 - 2 \beta t\right)^2 \md t
+  \int_0^1 \left[h_{\text{birth}}(t, a)\right]^2 \md t
+  & = 2 \alpha^2 \int_0^{\frac{1}{2 \beta}} \left(1 - 2 \beta t\right)^2 \md t
   % \\
   % &= 2 a^2 \int_0^{\frac{1}{2 c}} 1 - 4 c t + 4 c^2 t^2
   %   \; \md t
@@ -804,11 +829,15 @@ so the variance is
 \begin{align}
   \sigma^2 = \frac{\alpha^2}{12 \beta^2} (4 \beta - 3)
 \end{align}
+and the coefficient of variation is
+\begin{equation}
+  c_v = \sqrt{\frac{4 \beta - 3}{3}}.
+\end{equation}
 This gives
 \begin{align}
-  \alpha &= \frac{3}{2} \mu \left(1 + \frac{\sigma^2}{\mu^2}\right),
+  \alpha &= \frac{3}{2} \mu \left(1 + c_v^2\right),
   &
-  \beta &= \frac{3}{4} \left(1 + \frac{\sigma^2}{\mu^2}\right).
+  \beta &= \frac{3}{4} \left(1 + c_v^2\right).
 \end{align}
 
 The survival is
@@ -827,59 +856,64 @@ where
 \begin{equation}
   g (t) =
   \begin{cases}
-    1 - 2 \beta (t \bmod 1)
-    & \text{if $t \bmod 1 < \frac{1}{2 \beta}$},
+    1 - 2 \beta \{t\}
+    & \text{if $\{t\} < \frac{1}{2 \beta}$},
     \\
-    1 - 2 \beta (1 - t \bmod 1)
-    & \text{if $t \bmod 1 \geq \frac{1}{2 \beta}$},
+    1 - 2 \beta (1 - \{t\})
+    & \text{if $\{t\} \geq 1 - \frac{1}{2 \beta}$},
     \\
     0 & \text{otherwise},
   \end{cases}
 \end{equation}
 and
 \begin{equation}
-  \ell = \max\{4 - a, 0\}.
+  \ell = \max(4 - a, 0).
 \end{equation}
 Then
 \begin{equation}
-  H = \frac{1}{2 \beta} \left(\lfloor d \rfloor - \lfloor c \rfloor -
-    1\right) + H_1 + H_2,
+  H = H_4 + H_5 + H_6,
 \end{equation}
 with
-\begin{equation}
-  H_1 =
+\begin{align}
+  H_4 &= \frac{1}{2 \beta}
+  \left(\lfloor d \rfloor - \lfloor c \rfloor - 1\right),
+  \\
+  H_5 &=
   \begin{cases}
-    \frac{1}{4 \beta} + \beta \left(\frac{1}{2 \beta}
-      - c \bmod 1\right)^2
-    & \text{if $c \bmod 1 < \frac{1}{2 \beta}$},
+    \frac{1}{4 \beta}
+    + \beta \left(\frac{1}{2 \beta} - \{c\}\right)^2
+    & \text{if $\{c\} < \frac{1}{2 \beta}$},
     \\
     \frac{1}{4 \beta}
-    & \text{if $\frac{1}{2 \beta} \leq c \bmod 1
-      < 1 - \frac{1}{2 \beta}$},
+    & \text{if $\frac{1}{2 \beta} \leq \{c\} < 1 - \frac{1}{2 \beta}$},
     \\
-    \left(1 - c \bmod 1\right) \left[1 -
-      \beta \left(1 - c \bmod 1\right)\right]
+    \left(1 - \{c\}\right) \left[1 -
+      \beta \left(1 - \{c\}\right)\right]
     & \text{otherwise}
   \end{cases},
-\end{equation}
-\begin{equation}
-  H_2 =
+  \\
+  H_6 &=
   \begin{cases}
-    (d \bmod 1) \left[1 - \beta (d \bmod 1)\right]
-    & \text{if $d \bmod 1 < \frac{1}{2 \beta}$},
+    \{d\} \left[1 - \beta \{d\}\right]
+    & \text{if $\{d\} < \frac{1}{2 \beta}$},
     \\
     \frac{1}{4 \beta}
-    & \text{if $\frac{1}{2 \beta} \leq d \bmod 1 <
+    & \text{if $\frac{1}{2 \beta} \leq \{d\} <
       1 - \frac{1}{2 \beta}$},
     \\
-    \frac{1}{4 \beta} + \beta \left(d \bmod 1 - 1
-      + \frac{1}{2 \beta}\right)^2
+    \frac{1}{4 \beta}
+    + \beta
+    \left[\{d\} - \left(1 - \frac{1}{2 \beta}\right)\right]^2
     & \text{otherwise},
   \end{cases}
-\end{equation}
+  \\
+  c &= \max(4 - a, 0) + t_0,
+  \\
+  d &= t + t_0,
+\end{align}
 and
 \begin{align}
-  c &= \ell + t_0 = \max\{4 - a, 0\} + t_0,
+  c &= \ell + t_0 = \max(4 - a, 0) + t_0,
   &
   d &= t + t_0.
 \end{align}
@@ -895,14 +929,15 @@ that the birth hazard varies sinusoidally in time:
     0 & \text{if $a < 4$},
     \\
     \alpha \left[1
-      + \sigma \cos\left(2 \pi t\right)\right]
+      + 2 c_v \cos\left(2 \pi t\right)\right]
     & \text{if $a \geq 4$}.
   \end{cases}
 \end{equation}
-The seasonal variation is captured by $\sigma \in [0, 1]$, which we
-took to be $1$ by default.  The annual mean $\alpha$ was chosen so
-that the population achieves the mean growth rate $r = 0$ in the
-absence of infection.  (See \autoref{no_infection}.)
+The seasonal variation is captured by the coefficient of variation
+$c_v \in \left[0, \frac{1}{2}\right]$, which we took to be
+$\frac{1}{2}$ by default.  The annual mean $\alpha$ was chosen so that
+the population achieves the mean growth rate $r = 0$ in the absence of
+infection.  (See \autoref{no_infection}.)
 
 The survival function is then
 \begin{equation}
@@ -917,7 +952,7 @@ The survival function is then
       \\
       \exp\left(- \alpha \left[
           (t - \ell)
-          + \frac{\sigma}{2 \pi}
+          + \frac{c_V}{\pi}
           \left[\sin\left(2 \pi (t + t_0)\right)
             - \sin\left(2 \pi (t_0 + \ell)\right)\right]
         \right]

@@ -22,7 +22,7 @@ class Herd(list):
 
         self.rvs = random_variables.RandomVariables(self.params)
 
-        self.time = 0.
+        self.time = 0
         self.identifier = 0
 
         # Loop until we get a non-zero number of initial infections.
@@ -42,7 +42,7 @@ class Herd(list):
     def mortality(self, b):
         self.remove(b)
 
-    def birth(self, immune_status = 'maternal immunity', age = 0.):
+    def birth(self, immune_status = 'maternal immunity', age = 0):
         if self.debug:
             if age > 0:
                 print('t = {}: arrival of #{} at age {} with status {}'.format(
@@ -111,7 +111,7 @@ class Herd(list):
         if self.run_number is not None:
             t_last = result[-1][0]
             print('Simulation #{} ended at {:g} days.'.format(self.run_number,
-                                                              365. * t_last))
+                                                              365 * t_last))
 
         return result
 

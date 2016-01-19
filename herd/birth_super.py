@@ -9,16 +9,17 @@ class gen(rv.RV, stats.rv_continuous):
                  parameters,
                  _find_birth_scaling = True,
                  *args, **kwargs):
-        self.seasonal_variance = parameters.birth_seasonal_variance
+        self.seasonal_coefficient_of_variation \
+            = parameters.birth_seasonal_coefficient_of_variation
 
         if _find_birth_scaling:
             self.find_birth_scaling(parameters)
         else:
-            self.scaling = 1.
+            self.scaling = 1
 
         stats.rv_continuous.__init__(self,
                                      name = 'birth',
-                                     a = 0.,
+                                     a = 0,
                                      shapes = 'time0, age0',
                                      *args, **kwargs)
 
@@ -26,14 +27,14 @@ class gen(rv.RV, stats.rv_continuous):
         raise NotImplementedError
 
     def _argcheck(self, time0, age0):
-        return (age0 >= 0.)
+        return (age0 >= 0)
         
     def _cdf_single(self, time, time0, age0):
         result = integrate.quad(self.hazard, 0, time,
                                 args = (time0, age0),
                                 limit = 100, full_output = 1)
         I = result[0]
-        return 1. - numpy.exp(- I)
+        return 1 - numpy.exp(- I)
 
     def _cdf(self, time, time0, age0):
         return numpy.vectorize(self._cdf_single)(time, time0, age0)
@@ -57,4 +58,4 @@ class gen(rv.RV, stats.rv_continuous):
                                                   *args, **kwargs)
 
     def __repr__(self):
-        return rv.RV.__repr__(self, ('seasonal_variance', ))
+        return rv.RV.__repr__(self, ('seasonal_coefficient_of_variation', ))

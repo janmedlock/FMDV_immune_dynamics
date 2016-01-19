@@ -235,13 +235,13 @@ extinction_times = numpy.genfromtxt('search_parameters.csv',
                                     invalid_raise = False)
 
 # Convert to days
-extinction_times['infection_duration'] *= 365.
-extinction_times['extinction_times'] *= 365.
+extinction_times['infection_duration'] *= 365
+extinction_times['extinction_times'] *= 365
 
 # Truncate to parameter ranges.
 ticks = {'population_size':    (100, 500, 1000, 5000, 10000),
-         'infection_duration': (1.6, 5., 10., 15., 21.),
-         'R0':                 (1.2, 5., 10., 20., 30.)}
+         'infection_duration': (1.6, 5, 10, 15, 21),
+         'R0':                 (1.2, 5, 10, 20, 30)}
 
 limits = {k: (v[0], v[-1]) for (k, v) in ticks.items()}
 
@@ -264,8 +264,8 @@ parameters_values = {k: numpy.unique(extinction_times[k])
                      for k in parameters_ordered}
 
 default = {'population_size': 100,
-           'infection_duration': 1.6 / 365. * 365.,
-           'R0': 5.}
+           'infection_duration': 1.6 / 365 * 365,
+           'R0': 5}
            
 
 # plot_slice(infection_duration = default['infection_duration'],

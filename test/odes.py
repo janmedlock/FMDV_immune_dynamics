@@ -52,8 +52,8 @@ if __name__ == '__main__':
 
     parameters = herd.Parameters()
     parameters.population_size = 10000
-    parameters.recovery_infection_duration = 21. / 365.
-    parameters.R0 = 10.
+    parameters.recovery_infection_duration = 21 / 365
+    parameters.R0 = 10
 
     (t, M, S, I, R) = solve(tmax, parameters)
 

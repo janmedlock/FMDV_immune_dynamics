@@ -44,17 +44,17 @@ class shelved:
         return val
 
 
-def build_matrices(parameters, agemax = 20., agestep = 0.01):
+def build_matrices(parameters, agemax = 20, agestep = 0.01):
     from . import mortality
     from . import birth
 
-    ages = numpy.arange(0., agemax + agestep / 2., agestep)
+    ages = numpy.arange(0, agemax + agestep / 2, agestep)
     da = numpy.diff(ages)
 
     # Aging
     A = sparse.lil_matrix((len(ages), ) * 2)
-    A.setdiag(- numpy.hstack((1. / da, 0.)))
-    A.setdiag(1. / da, -1)
+    A.setdiag(- numpy.hstack((1 / da, 0.)))
+    A.setdiag(1 / da, -1)
 
     # Mortality
     mortalityRV = mortality.gen(parameters)
@@ -67,16 +67,16 @@ def build_matrices(parameters, agemax = 20., agestep = 0.01):
     # The first row, B_bar[0], is the mean, over a year,
     # of the birth rates times the probability of female birth.
     for j in range(len(ages)):
-        bj = lambda t: ((1. - parameters.male_probability_at_birth)
-                        * birthRV.hazard(t, 0., ages[j] - t))
-        result = integrate.quad(bj, 0., 1., limit = 100)
+        bj = lambda t: ((1 - parameters.male_probability_at_birth)
+                        * birthRV.hazard(t, 0, ages[j] - t))
+        result = integrate.quad(bj, 0, 1, limit = 100)
         B_bar[0, j] = result[0]
 
     return (ages, (B_bar, A, M))
 
 
 def find_dominant_eigenpair(parameters,
-                            _birth_scaling = 1., _matrices = None,
+                            _birth_scaling = 1, _matrices = None,
                             *args, **kwargs):
     if _matrices is None:
         _matrices = build_matrices(parameters, *args, **kwargs)

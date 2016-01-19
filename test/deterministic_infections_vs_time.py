@@ -13,15 +13,15 @@ from herd import pde
 from herd import birth
 
 
-tmax = 10.
+tmax = 10
 
-agemax = 20.
+agemax = 20
 agestep = 0.1
 
 parameters = herd.Parameters()
 parameters.population_size = 10000
-parameters.recovery_infection_duration = 21. / 365.
-parameters.R0 = 10.
+parameters.recovery_infection_duration = 21 / 365
+parameters.R0 = 10
 
 gap_sizes = (None, 0, 3, 6, 9) # In months.  None is aseasonal.
 
@@ -32,8 +32,8 @@ ax.set_ylabel('Infected buffaloes')
 colors = seaborn.color_palette('husl', n_colors = len(gap_sizes))
 
 for (g, c) in zip(gap_sizes, colors):
-    parameters.birth_seasonal_variance \
-        = birth.get_seasonal_variance_from_gap_size(g)
+    parameters.birth_seasonal_coefficient_of_variation \
+        = birth.get_seasonal_coefficient_of_variation_from_gap_size(g)
 
     if g is None:
         label = 'Aseasonal'
