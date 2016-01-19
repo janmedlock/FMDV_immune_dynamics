@@ -3,39 +3,42 @@
 import numpy
 from scipy import integrate
 
-import Parameters
+import sys
+sys.path.append('..')
+
+import herd
 
 
-def rhs(Y, t, parameters, RVs):
+def rhs(Y, t, parameters, rvs):
     (M, S, I, R) = Y
 
-    B = parameters.probabilityOfMaleBirth * RVs.birth.scaling
-    forceOfInfection = RVs.transmissionRate * I
+    B = (1. - parameters.male_probability_at_birth) * rvs.birth.scaling
+    force_of_infection = rvs.transmission_rate * I
     
-    dM = B * (S + I + R) \
-      - M / parameters.maternalImmunityDuration \
-      + numpy.log(0.7) * M
-    dS = M / parameters.maternalImmunityDuration \
-      + numpy.log(0.95) * S \
-      - forceOfInfection * S
-    dI = forceOfInfection * S \
-      + numpy.log(0.95) * I \
-      - I / parameters.infectionDuration
-    dR = I / parameters.infectionDuration \
-      + numpy.log(0.95) * R
+    dM = (B * (S + I + R)
+          - M / parameters.maternal_immunity_duration
+          + numpy.log(0.7) * M)
+    dS = (M / parameters.maternal_immunity_duration
+          + numpy.log(0.95) * S
+          - force_of_infection * S)
+    dI = (force_of_infection * S
+          + numpy.log(0.95) * I \
+          - I / parameters.recovery_infection_duration)
+    dR = (I / parameters.recovery_infection_duration
+          + numpy.log(0.95) * R)
 
     return (dM, dS, dI, dR)
 
 
-def solve(tMax, parameters):
-    RVs = Parameters.RandomVariables(parameters)
+def solve(tmax, parameters):
+    rvs = herd.RandomVariables(parameters)
 
-    (M0, I0, R0, S0) = (parameters.populationSize
-                        * RVs.endemicEquilibrium.weights[0])
+    (M0, I0, R0, S0) = (parameters.population_size
+                        * rvs.endemic_equilibrium.weights[0])
     
-    t = numpy.linspace(0., tMax, 1001)
+    t = numpy.linspace(0., tmax, 1001)
 
-    Y = integrate.odeint(rhs, (M0, S0, I0, R0), t, args = (parameters, RVs))
+    Y = integrate.odeint(rhs, (M0, S0, I0, R0), t, args = (parameters, rvs))
 
     (M, S, I, R) = numpy.hsplit(Y, 4)
 
@@ -45,16 +48,16 @@ def solve(tMax, parameters):
 if __name__ == '__main__':
     import pylab
     
-    tMax = 5.
+    tmax = 5.
 
-    parameters = Parameters.Parameters()
-    parameters.populationSize = 10000
-    parameters.infectionDuration = 21. / 365.
+    parameters = herd.Parameters()
+    parameters.population_size = 10000
+    parameters.recovery_infection_duration = 21. / 365.
     parameters.R0 = 10.
 
-    (t, M, S, I, R) = solve(tMax, parameters)
+    (t, M, S, I, R) = solve(tmax, parameters)
 
-    pylab.plot(t, I / (M + S + I + R) * parameters.populationSize)
+    pylab.plot(t, I / (M + S + I + R) * parameters.population_size)
     pylab.xlabel('time (days)')
     pylab.ylabel('number infected')
 

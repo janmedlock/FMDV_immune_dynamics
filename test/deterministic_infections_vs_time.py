@@ -5,37 +5,42 @@ from scipy import integrate
 from matplotlib import pyplot
 import seaborn
 
-import Parameters
-from Parameters import pde
-from Parameters import birth
+import sys
+sys.path.append('..')
+
+import herd
+from herd import pde
+from herd import birth
 
 
-tMax = 10.
+tmax = 10.
 
-ageMax = 20.
-ageStep = 0.1
+agemax = 20.
+agestep = 0.1
 
-parameters = Parameters.Parameters()
-parameters.populationSize = 10000
-parameters.infectionDuration = 21. / 365.
+parameters = herd.Parameters()
+parameters.population_size = 10000
+parameters.recovery_infection_duration = 21. / 365.
 parameters.R0 = 10.
 
-gapSizes = (None, 0, 3, 6, 9) # In months.  None is aseasonal.
+gap_sizes = (None, 0, 3, 6, 9) # In months.  None is aseasonal.
 
 
 (fig, ax) = pyplot.subplots()
 ax.set_xlabel('Time (years)')
 ax.set_ylabel('Infected buffaloes')
-colors = seaborn.color_palette('husl', n_colors = len(gapSizes))
+colors = seaborn.color_palette('husl', n_colors = len(gap_sizes))
 
-for (g, c) in zip(gapSizes, colors):
-    parameters.birthSeasonalVariance = birth.getSeasonalVarianceFromGapSize(g)
+for (g, c) in zip(gap_sizes, colors):
+    parameters.birth_seasonal_variance \
+        = birth.get_seasonal_variance_from_gap_size(g)
+
     if g is None:
         label = 'Aseasonal'
     else:
         label = 'Seasonal, {}-month gap'.format(g)
 
-    (t, ages, (M, S, I, R)) = pde.solve(tMax, ageMax, ageStep, parameters)
+    (t, ages, (M, S, I, R)) = pde.solve(tmax, agemax, agestep, parameters)
 
     i = integrate.trapz(I, ages, axis = 1)
 

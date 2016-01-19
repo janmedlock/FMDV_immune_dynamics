@@ -3,13 +3,15 @@
 import numpy
 from matplotlib import pyplot
 
-import Parameters
-from Parameters import birth_rectangular, birth_triangular, birth_sine
+import sys
+sys.path.append('..')
+
+import herd
+from herd import birth_rectangular, birth_triangular, birth_sine
 
 sigma_vals = numpy.linspace(0., 1., 6)
 
-parameters = Parameters.Parameters()
-RVs = Parameters.RandomVariables()
+parameters = herd.Parameters()
 
 t = numpy.linspace(-0.5, 2.5, 301)
 
@@ -17,13 +19,13 @@ t = numpy.linspace(-0.5, 2.5, 301)
 
 lines = []
 for sigma in sigma_vals:
-    parameters.birthSeasonalVariance = sigma**2
-    br = birth_rectangular.birth_gen(parameters,
-                                     _findBirthScaling = False)
-    bt = birth_triangular.birth_gen(parameters,
-                                    _findBirthScaling = False)
-    bs = birth_sine.birth_gen(parameters,
-                              _findBirthScaling = False)
+    parameters.birth_seasonal_variance = sigma**2
+    br = birth_rectangular.gen(parameters,
+                               _find_birth_scaling = False)
+    bt = birth_triangular.gen(parameters,
+                              _find_birth_scaling = False)
+    bs = birth_sine.gen(parameters,
+                        _find_birth_scaling = False)
 
     l = ax[0].step(t, br.hazard(t, 0, 5), where = 'mid')
     l = ax[1].plot(t, bt.hazard(t, 0, 5))
