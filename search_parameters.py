@@ -4,14 +4,14 @@ import sys
 import os.path
 import csv
 
-import Parameters
-from Parameters import birth
-import extinctionTimes
+import herd
+from herd import birth
+import extinction_times
 
 
-def searchParameter(parameterName, values, nRuns, parameters, tMax,
+def search_parameter(parameter_name, values, nruns, parameters, tmax,
                     *args, **kwargs):
-    assert hasattr(parameters, parameterName)
+    assert hasattr(parameters, parameter_name)
 
     (basename, ext) = os.path.splitext(os.path.basename(sys.argv[0]))
     filename = basename + '.csv'
@@ -21,43 +21,44 @@ def searchParameter(parameterName, values, nRuns, parameters, tMax,
     paramkeys = sorted(parameters.__dict__.keys())
 
     # Write header.
-    # w.writerow(paramkeys + ['extinctionTimes (years)'])
+    # w.writerow(paramkeys + ['extinction_times (years)'])
 
     for v in values:
-        setattr(parameters, parameterName, v)
-        print('{} = {}'.format(parameterName, v))
-        eT = extinctionTimes.findExtinctionTimes(nRuns, parameters, tMax,
-                                                 *args, **kwargs)
+        setattr(parameters, parameter_name, v)
+        print('{} = {}'.format(parameter_name, v))
+        ets = extinction_times.find_extinction_times(nruns, parameters, tmax,
+                                                     *args, **kwargs)
 
         w.writerow([getattr(parameters, k) for k in paramkeys]
-                   + eT)
+                   + ets)
     
 
 if __name__ == '__main__':
     import numpy
 
-    parameters = Parameters.Parameters()
+    parameters = herd.Parameters()
 
-    parameters.infectionDuration = 21. / 365.
+    parameters.recovery_infection_duration = 21. / 365.
     parameters.R0 = 10.
 
-    populationSizes = (1000, 2000, 5000, 10000)
+    population_sizes = (1000, 2000, 5000, 10000)
 
-    for ps in populationSizes:
-        parameters.populationSize = ps
+    nruns = 100
+    tmax = numpy.inf
+    debug = False
 
-        # birthSeasonalVariance calculated from gapSizes
-        gapSizes = [None] + list(range(12)) # In months.  None is aseasonal.
-        birthSeasonalVariances = map(birth.getSeasonalVarianceFromGapSize,
-                                     gapSizes)
+    for ps in population_sizes:
+        parameters.population_size = ps
 
-        nRuns = 100
-        tMax = numpy.inf
-        debug = False
+        # birth_seasonal_variance calculated from gap_sizes
+        gap_sizes = [None] + list(range(12)) # In months.  None is aseasonal.
+        birth_seasonal_variances = map(
+            birth.get_seasonalvariance_from_gap_size,
+            gap_sizes)
 
-        searchParameter('birthSeasonalVariance',
-                        birthSeasonalVariances,
-                        nRuns,
-                        parameters,
-                        tMax,
-                        debug = debug)
+        search_parameter('birth_seasonal_variance',
+                         birth_seasonal_variances,
+                         nruns,
+                         parameters,
+                         tmax,
+                         debug = debug)

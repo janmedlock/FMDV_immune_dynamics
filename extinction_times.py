@@ -2,19 +2,19 @@
 
 import numpy
 
-import herd
+import run_many
 
 
-def findExtinctionTimes(nRuns,
-                        parameters,
-                        tMax,
-                        *args,
-                        **kwds):
-    data = herd.multirun(nRuns, parameters, tMax, *args, **kwds)
+def find_extinction_times(nruns,
+                          parameters,
+                          tmax,
+                          *args,
+                          **kwds):
+    data = run_many.run_many(nruns, parameters, tmax, *args, **kwds)
 
-    (T, X) = zip(*(zip(*y) for (runNumber, y) in data))
+    (T, X) = zip(*(zip(*d) for d in data))
 
-    extinctionTimes = [t[-1] if (x[-1][2] == 0) else None
+    extinction_times = [t[-1] if (x[-1][2] == 0) else None
                        for (t, x) in zip(T, X)]
 
     return extinctionTimes
@@ -28,22 +28,22 @@ def ppf(D, q, a = 0):
 def proportion_ge_x(D, x):
     return float(len(numpy.compress(numpy.asarray(D) >= x, D))) / float(len(D))
 
-def findStats(extinctionTimes):
+def find_stats(extinction_times):
     mystats = {}
     
-    mystats['median'] = numpy.median(extinctionTimes)
-    mystats['mean'] = numpy.mean(extinctionTimes)
+    mystats['median'] = numpy.median(extinction_times)
+    mystats['mean'] = numpy.mean(extinction_times)
         
-    mystats['q_90'] = ppf(extinctionTimes, 0.9)
-    mystats['q_95'] = ppf(extinctionTimes, 0.95)
-    mystats['q_99'] = ppf(extinctionTimes, 0.99)
+    mystats['q_90'] = ppf(extinction_times, 0.9)
+    mystats['q_95'] = ppf(extinction_times, 0.95)
+    mystats['q_99'] = ppf(extinction_times, 0.99)
 
-    mystats['proportion >= 1'] = proportion_ge_x(extinctionTimes, 1.)
-    mystats['proportion >= 10'] = proportion_ge_x(extinctionTimes, 10.)
+    mystats['proportion >= 1'] = proportion_ge_x(extinction_times, 1.)
+    mystats['proportion >= 10'] = proportion_ge_x(extinction_times, 10.)
     
     return mystats
     
-def showStats(mystats):
+def show_stats(mystats):
     print('stats: {'
           + ',\n        '.join(['{} = {}'.format(k, v)
                                 for (k, v) in mystats.items()])
@@ -51,20 +51,20 @@ def showStats(mystats):
 
 
 if __name__ == '__main__':
-    import Parameters
+    import herd
 
-    p = Parameters.Parameters()
+    p = herd.Parameters()
 
-    p.populationSize = 100
-    p.infectionDuration = 21. / 365.
+    p.population_size = 100
+    p.infection_duration = 21. / 365.
     p.R0 = 10.
-    p.birthSeasonalVariance = 1.
+    p.birth_seasonal_variance = 1.
 
-    nRuns = 10000
-    tMax = 5.
+    nruns = 10000
+    tmax = 5.
     debug = False
     
-    eT = findExtinctionTimes(nRuns, p, tMax, debug = debug)
+    extinction_times = find_extinction_times(nruns, p, tmax, debug = debug)
 
-    mystats = findStats(eT)
-    showStats(mystats)
+    mystats = find_stats(extinction_times)
+    show_stats(mystats)

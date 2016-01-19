@@ -22,7 +22,7 @@ def find_proportion_over_x(D, x):
 def plot_slice1D(X, D, parameters1, **kwds):
     pyplot.figure()
 
-    pyplot.boxplot(D['extinctionTimes'].T, positions = X[0])
+    pyplot.boxplot(D['extinction_times'].T, positions = X[0])
     pyplot.xlabel(parameters1[0])
     pyplot.ylabel('Extinction Time')
     pyplot.title(', '.join(['{} = {}'.format(k, v)
@@ -36,7 +36,7 @@ def plot_slice2D(X, D, parameters1, **kwds):
     pyplot.figure()
 
     pyplot.subplot(2, 2, 1)
-    Y = numpy.median(D['extinctionTimes'], axis = 1).reshape(dim)
+    Y = numpy.median(D['extinction_times'], axis = 1).reshape(dim)
     pyplot.pcolor(X[0], X[1], Y) 
     pyplot.colorbar()
     pyplot.title('Median')
@@ -44,7 +44,7 @@ def plot_slice2D(X, D, parameters1, **kwds):
     pyplot.ylabel(parameters1[1])
 
     pyplot.subplot(2, 2, 2)
-    Y = numpy.mean(D['extinctionTimes'], axis = 1).reshape(dim)
+    Y = numpy.mean(D['extinction_times'], axis = 1).reshape(dim)
     pyplot.pcolor(X[0], X[1], Y) 
     pyplot.colorbar()
     pyplot.title('Mean')
@@ -52,7 +52,7 @@ def plot_slice2D(X, D, parameters1, **kwds):
     pyplot.ylabel(parameters1[1])
 
     pyplot.subplot(2, 2, 3)
-    Y = find_quantile(D['extinctionTimes'], 0.95).reshape(dim)
+    Y = find_quantile(D['extinction_times'], 0.95).reshape(dim)
     pyplot.pcolor(X[0], X[1], Y) 
     pyplot.colorbar()
     pyplot.title('Upper 95% quantile')
@@ -60,7 +60,7 @@ def plot_slice2D(X, D, parameters1, **kwds):
     pyplot.ylabel(parameters1[1])
 
     pyplot.subplot(2, 2, 4)
-    Y = numpy.max(D['extinctionTimes'], axis = 1).reshape(dim)
+    Y = numpy.max(D['extinction_times'], axis = 1).reshape(dim)
     pyplot.pcolor(X[0], X[1], Y) 
     pyplot.colorbar()
     pyplot.title('Maximum')
@@ -71,9 +71,9 @@ def plot_slice2D(X, D, parameters1, **kwds):
 def plot_slice(**kwds):
     parameters1 = [k for k in parametersOrdered if k not in kwds]
 
-    filters = [extinctionTimes[k] == v for (k, v) in kwds.items()]
+    filters = [extinction_times[k] == v for (k, v) in kwds.items()]
     f = functools.reduce(lambda x, y: x & y, filters)
-    D = numpy.compress(f, extinctionTimes)
+    D = numpy.compress(f, extinction_times)
 
     X = [D[p] for p in parameters1]
 
@@ -86,53 +86,53 @@ def plot_slice(**kwds):
             'I don\'t know how to handle kwds = "{}"!'.format(kwds))
 
 
-# def setTicks(axis, base = 10, minors = 10):
+# def set_ticks(axis, base = 10, minors = 10):
 #     (loga, logb) = axis.get_view_interval()
 #     (a, b) = (base ** loga, base ** logb)
 
-#     majorLocs = numpy.arange(numpy.ceil(loga),
-#                              numpy.floor(logb) + 1)
+#     major_locs = numpy.arange(numpy.ceil(loga),
+#                               numpy.floor(logb) + 1)
 
-#     minorExps = numpy.arange(numpy.floor(loga), numpy.ceil(logb) + 1)
-#     minorSubs = numpy.arange(1, base, base / float(minors))
-#     minorLocs = numpy.log10(numpy.outer(base ** minorExps, minorSubs).flatten())
-#     minorLocs = numpy.compress((minorLocs >= loga)
-#                                & (minorLocs <= logb),
-#                                minorLocs)
+#     minor_exps = numpy.arange(numpy.floor(loga), numpy.ceil(logb) + 1)
+#     minor_subs = numpy.arange(1, base, base / float(minors))
+#     minor_locs = numpy.log10(numpy.outer(base ** minor_exps, minor_subs).flatten())
+#     minor_locs = numpy.compress((minor_locs >= loga)
+#                                & (minor_locs <= logb),
+#                                minor_locs)
     
-#     labels = (10 ** majorLocs).astype(int)
+#     labels = (10 ** major_locs).astype(int)
 
-#     # axis.set_ticks(majorLocs)
-#     # axis.set_ticks(minorLocs, minor = True)
+#     # axis.set_ticks(major_locs)
+#     # axis.set_ticks(minor_locs, minor = True)
 #     # axis.set_ticklabels(labels)
 #     # Minor ticks aren't working for some reason
-#     axis.set_ticks(minorLocs)
-#     labels = [(10 ** l).astype(int) if l in majorLocs else ''
-#               for l in minorLocs]
-#     labels[-1] = '{:g}'.format(10 ** minorLocs[-1])
+#     axis.set_ticks(minor_locs)
+#     labels = [(10 ** l).astype(int) if l in major_locs else ''
+#               for l in minor_locs]
+#     labels[-1] = '{:g}'.format(10 ** minor_locs[-1])
 #     axis.set_ticklabels(labels)
 
 #     axis.set_pane_color((1, 1, 1, 0))
 
 
-def setAxis(axes, coord, key):
+def set_axis(axes, coord, key):
     # axes.set_xlim, etc.
     getattr(axes, 'set_{}lim'.format(coord))(numpy.log10(limits[key]))
 
     # axes.set_xlabel, etc.
     getattr(axes, 'set_{}label'.format(coord))(parametersLabels[key])
 
-    tickLocsMajor = ticks[key]
-    tickLocsMinor = parametersValues[key]
-    tickLocs = numpy.unique(numpy.sort(numpy.hstack((tickLocsMajor,
-                                                     tickLocsMinor))))
-    tickLabels = ['{:g}'.format(l) if l in tickLocsMajor else ''
-                  for l in tickLocs]
+    ticklocs_major = ticks[key]
+    ticklocs_minor = parametersValues[key]
+    ticklocs = numpy.unique(numpy.sort(numpy.hstack((ticklocs_major,
+                                                     ticklocs_minor))))
+    ticklabels = ['{:g}'.format(l) if l in ticklocs_major else ''
+                  for l in ticklocs]
 
     # axes.set_xticks, etc.
-    getattr(axes, 'set_{}ticks'.format(coord))(numpy.log10(tickLocs))
+    getattr(axes, 'set_{}ticks'.format(coord))(numpy.log10(ticklocs))
     # axes.set_xticklabels, etc.
-    getattr(axes, 'set_{}ticklabels'.format(coord))(tickLabels)
+    getattr(axes, 'set_{}ticklabels'.format(coord))(ticklabels)
 
     # axes.xaxis.set_pane_color, etc.
     getattr(axes, '{}axis'.format(coord)).set_pane_color((1, 1, 1, 0))
@@ -160,9 +160,9 @@ def plot_3D(X, Y, Z, C, title):
                  c = (0.5, 0.5, 0.5),
                  linewidth = 0)
 
-    setAxis(axes, 'x', 'populationSize')
-    setAxis(axes, 'y', 'infectionDuration')
-    setAxis(axes, 'z', 'R0')
+    set_axis(axes, 'x', 'population_size')
+    set_axis(axes, 'y', 'recovery_infection_duration')
+    set_axis(axes, 'z', 'R0')
     
     if len(C) > 0:
         cbar = fig.colorbar(points)
@@ -176,10 +176,10 @@ def plot_3D(X, Y, Z, C, title):
 def plot_average_extinction_time(average = 'mean'):
     title = '{} time to extinction (days)'.format(average.capitalize())
 
-    X = extinctionTimes['populationSize']
-    Y = extinctionTimes['infectionDuration']
-    Z = extinctionTimes['R0']
-    C = getattr(numpy, average)(extinctionTimes['extinctionTimes'], axis = 1)
+    X = extinction_times['population_size']
+    Y = extinction_times['recovery_infection_duration']
+    Z = extinction_times['R0']
+    C = getattr(numpy, average)(extinction_times['extinction_times'], axis = 1)
 
     # Only keep those with average greater than 30 days
     f = (C > 30.)
@@ -198,10 +198,10 @@ def plot_persistance(years):
         years,
         '' if years == 1 else 's')
     
-    X = extinctionTimes['populationSize']
-    Y = extinctionTimes['infectionDuration']
-    Z = extinctionTimes['R0']
-    C = find_proportion_over_x(extinctionTimes['extinctionTimes'],
+    X = extinction_times['population_size']
+    Y = extinction_times['infection_duration']
+    Z = extinction_times['R0']
+    C = find_proportion_over_x(extinction_times['extinction_times'],
                                365. * years)
 
     # Keep only those with persistence > 0
@@ -223,61 +223,62 @@ def plot_persistance(years):
 
 
 # Read in data.
-extinctionTimes = numpy.genfromtxt('searchParameters.csv',
-                                   delimiter = ',',
-                                   skip_header = 1,
-                                   dtype = [('populationSize', int),
-                                            ('infectionDuration', float),
-                                            ('R0', float),
-                                            ('extinctionTimes', float,
-                                             (100, ))],
-                                   invalid_raise = False)
+extinction_times = numpy.genfromtxt('search_parameters.csv',
+                                    delimiter = ',',
+                                    skip_header = 1,
+                                    dtype = [
+                                        ('population_size', int),
+                                        ('recovery_infection_duration', float),
+                                        ('R0', float),
+                                        ('extinction_times', float,
+                                         (100, ))],
+                                    invalid_raise = False)
 
 # Convert to days
-extinctionTimes['infectionDuration'] *= 365.
-extinctionTimes['extinctionTimes'] *= 365.
+extinction_times['infection_duration'] *= 365.
+extinction_times['extinction_times'] *= 365.
 
 # Truncate to parameter ranges.
-ticks = {'populationSize':    (100, 500, 1000, 5000, 10000),
-         'infectionDuration': (1.6, 5., 10., 15., 21.),
-         'R0':                (1.2, 5., 10., 20., 30.)}
+ticks = {'population_size':    (100, 500, 1000, 5000, 10000),
+         'infection_duration': (1.6, 5., 10., 15., 21.),
+         'R0':                 (1.2, 5., 10., 20., 30.)}
 
 limits = {k: (v[0], v[-1]) for (k, v) in ticks.items()}
 
 # f = functools.reduce(lambda x, y: x & y,
-#                      [((extinctionTimes[k] >= v[0])
-#                        & (extinctionTimes[k] <= v[1]))
+#                      [((extinction_times[k] >= v[0])
+#                        & (extinction_times[k] <= v[1]))
 #                       for (k, v) in limits.items()])
-# extinctionTimes = numpy.compress(f, extinctionTimes)
+# extinction_times = numpy.compress(f, extinction_times)
 
 
-parametersOrdered = ('populationSize',
-                     'infectionDuration',
-                     'R0')
+parameters_ordered = ('population_size',
+                      'infection_duration',
+                      'R0')
 
-parametersLabels = {'populationSize':    'Population size',
-                    'infectionDuration': 'Infection duration (days)',
-                    'R0':                '$R_0$'}
+parameters_labels = {'population_size':    'Population size',
+                     'infection_duration': 'Infection duration (days)',
+                     'R0':                 '$R_0$'}
 
-parametersValues = {k: numpy.unique(extinctionTimes[k])
-                    for k in parametersOrdered}
+parameters_values = {k: numpy.unique(extinction_times[k])
+                     for k in parameters_ordered}
 
-default = {'populationSize': 100,
-           'infectionDuration': 1.6 / 365. * 365.,
+default = {'population_size': 100,
+           'infection_duration': 1.6 / 365. * 365.,
            'R0': 5.}
            
 
-# plot_slice(infectionDuration = default['infectionDuration'],
+# plot_slice(infection_duration = default['infection_duration'],
 #            R0 = default['R0'])
-# plot_slice(populationSize = default['populationSize'],
+# plot_slice(population_size = default['population_size'],
 #            R0 = default['R0'])
-# plot_slice(populationSize = default['populationSize'],
-#            infectionDuration = default['infectionDuration'])
+# plot_slice(population_size = default['population_size'],
+#            infection_duration = default['infection_duration'])
 
 
 # plot_slice(R0 = default['R0'])
-# plot_slice(infectionDuration = default['infectionDuration'])
-# plot_slice(populationSize = default['populationSize'])
+# plot_slice(infection_duration = default['infection_duration'])
+# plot_slice(population_size = default['population_size'])
 
 
 fig = plot_average_extinction_time('mean')
