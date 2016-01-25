@@ -22,7 +22,7 @@ class Herd(list):
 
         self.rvs = random_variables.RandomVariables(self.params)
 
-        self.time = 0
+        self.time = parameters.start_time
         self.identifier = 0
 
         # Loop until we get a non-zero number of initial infections.
