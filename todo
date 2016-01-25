@@ -1,0 +1,9 @@
+* Figure out what to do with all the untracked files in orphans/.
+
+* Implement start_time.
+
+* Consider storing the events for each buffalo in an efficient data structure
+  to avoid looping through the whole list.
+
+* Consider storing all events for the herd in an efficient data structure
+  to avoid looping through the whole list.
