@@ -1,4 +1,5 @@
 import numpy
+import collections
 
 from . import buffalo
 from . import parameters
@@ -22,7 +23,8 @@ class Herd(list):
 
         self.rvs = random_variables.RandomVariables(self.params)
 
-        self.time = parameters.start_time
+        self.time = self.params.start_time
+        self.counts = collections.Counter()
         self.identifier = 0
 
         # Loop until we get a non-zero number of initial infections.
@@ -37,12 +39,13 @@ class Herd(list):
 
         for (immune_status, ages) in status_ages.items():
             for age in ages:
-                self.birth(immune_status, age)
+                self.birth(immune_status, age, building_herd = True)
 
     def mortality(self, b):
         self.remove(b)
 
-    def birth(self, immune_status = 'maternal immunity', age = 0):
+    def birth(self, immune_status = 'maternal immunity', age = 0,
+              building_herd = False):
         if self.debug:
             if age > 0:
                 print('t = {}: arrival of #{} at age {} with status {}'.format(
@@ -57,37 +60,45 @@ class Herd(list):
                     immune_status))
 
         self.append(buffalo.Buffalo(self, immune_status, age,
-                                    identifier = self.identifier))
+                                    identifier = self.identifier,
+                                    building_herd = building_herd))
         self.identifier += 1
 
     def update_infection_times(self):
-        self.number_infectious = sum(1 for b in self
-                                     if b.is_infectious())
-        self.force_of_infection = (self.rvs.transmission_rate
-                                   * self.number_infectious)
-        for b in self:
-            b.update_infection_time(self.force_of_infection)
+        # assert (self.counts['infectious']
+        #         == sum(1 for b in self if b.is_infectious()))
+
+        if ((not hasattr(self, 'counts_infectious_old'))
+            or (self.counts['infectious'] != self.counts_infectious_old)):
+            # Consider storing a list of susceptible buffalo to avoid
+            # looping over the whole population.
+            for b in self:
+                if b.is_susceptible():
+                    b.update_infection_time()
+            self.counts_infectious_old = self.counts['infectious']
 
     def get_stats(self):
-        counts = []
-        for status in ('maternal immunity', 'susceptible',
-                       'infectious', 'recovered'):
-            counts.append(sum(1 for b in self
-                              if b.immune_status == status))
-        return [self.time, counts]
+        stats = [self.counts[status]
+                 for status in ('maternal immunity', 'susceptible',
+                                'infectious', 'recovered')]
+
+        # counts = [sum(1 for b in self if b.immune_status == status)
+        #           for status in ('maternal immunity', 'susceptible',
+        #                          'infectious', 'recovered')]
+        # assert (stats == counts)
+
+        return [self.time, stats]
 
     def get_next_event(self):
         if len(self) > 0:
-            return min([b.get_next_event() for b in self])
+            # Consider storing all events for the herd in an efficient
+            # data type to avoid looping through the whole list.
+            return min(b.get_next_event() for b in self)
         else:
             return None
 
     def stop(self):
-        try:
-            return (self.number_infectious == 0)
-        except AttributeError:
-            # If self.number_infectious isn't defined yet.
-            return False
+        return (self.counts['infectious'] == 0)
 
     def step(self, tmax = numpy.inf):
         self.update_infection_times()
@@ -104,9 +115,11 @@ class Herd(list):
     def run(self, tmax):
         result = [self.get_stats()]
 
-        while (self.time < tmax) and (not self.stop()):
+        while (self.time < tmax):
             self.step(tmax)
             result.append(self.get_stats())
+            if self.stop():
+                break
 
         if self.run_number is not None:
             t_last = result[-1][0]

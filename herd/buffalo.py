@@ -7,7 +7,7 @@ class Buffalo:
     'A single buffalo and the actions that can occur to it.'
 
     def __init__(self, herd, immune_status = 'maternal immunity', age = 0,
-                 identifier = None):
+                 identifier = None, building_herd = False):
         self.herd = herd
         self.immune_status = immune_status
 
@@ -30,7 +30,8 @@ class Buffalo:
                     self.maternal_immunity_waning,
                     'maternal immunity waning for #{}'.format(self.identifier))
         elif self.immune_status == 'susceptible':
-            pass
+            if not building_herd:
+                self.update_infection_time()
         elif self.immune_status == 'infectious':
             self.events['recovery'] \
                 = event.Event(self.herd.time + self.rvs.recovery.rvs(),
@@ -59,10 +60,13 @@ class Buffalo:
                             self.give_birth,
                             'give birth for #{}'.format(self.identifier))
 
+        self.herd.counts[self.immune_status] += 1
+
     def age(self):
         return self.herd.time - self.birth_date
 
     def mortality(self):
+        self.herd.counts[self.immune_status] -= 1
         self.herd.mortality(self)
 
     def give_birth(self):
@@ -81,7 +85,11 @@ class Buffalo:
 
     def maternal_immunity_waning(self):
         assert self.immune_status == 'maternal immunity'
+
+        self.herd.counts[self.immune_status] -= 1
         self.immune_status = 'susceptible'
+        self.herd.counts[self.immune_status] += 1
+
         try:
             del self.events['maternal_immunity_waning']
         except KeyError:
@@ -89,7 +97,11 @@ class Buffalo:
 
     def infection(self):
         assert self.is_susceptible()
+
+        self.herd.counts[self.immune_status] -= 1
         self.immune_status = 'infectious'
+        self.herd.counts[self.immune_status] += 1
+
         try:
             del self.events['infection']
         except KeyError:
@@ -103,13 +115,19 @@ class Buffalo:
     
     def recovery(self):
         assert self.is_infectious()
+
+        self.herd.counts[self.immune_status] -= 1
         self.immune_status = 'recovered'
+        self.herd.counts[self.immune_status] += 1
+
         try:
             del self.events['recovery']
         except KeyError:
             pass
     
     def get_next_event(self):
+        # Consider storing the events in a data type that's more
+        # efficient to find the minimum.
         return min(self.events.values())
 
     def is_susceptible(self):
@@ -119,18 +137,29 @@ class Buffalo:
         return self.immune_status == 'infectious'
 
     ## Fix me! ##
-    def update_infection_time(self, force_of_infection):
-        if self.is_susceptible():
-            if (force_of_infection > 0):
-                infection_time = stats.expon.rvs(
-                    scale = 1 / force_of_infection)
+    def update_infection_time(self):
+        assert self.is_susceptible()
+
+        # if (hasattr(self, 'counts_infectious_old')
+        #     and (self.herd.counts['infectious']
+        #          == self.counts_infectious_old)):
+        #     print('Redundant update_infection_time() for buffalo #{}!'.format(
+        #         self.identifier))
+        # self.counts_infectious_old = self.herd.counts['infectious']
             
-                self.events['infection'] = event.Event(
-                    self.herd.time + infection_time,
-                    self.infection,
-                    'infection for #{}'.format(self.identifier))
-            else:
-                try:
-                    del self.events['infection']
-                except KeyError:
-                    pass
+        if (self.herd.counts['infectious'] > 0):
+            force_of_infection = (self.rvs.transmission_rate
+                                  * self.herd.counts['infectious'])
+
+            infection_time = stats.expon.rvs(
+                scale = 1 / force_of_infection)
+
+            self.events['infection'] = event.Event(
+                self.herd.time + infection_time,
+                self.infection,
+                'infection for #{}'.format(self.identifier))
+        else:
+            try:
+                del self.events['infection']
+            except KeyError:
+                pass
