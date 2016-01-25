@@ -61,12 +61,14 @@ class Buffalo:
                             'give birth for #{}'.format(self.identifier))
 
         self.herd.counts[self.immune_status] += 1
+        self.herd.by_immune_status[self.immune_status].append(self)
 
     def age(self):
         return self.herd.time - self.birth_date
 
     def mortality(self):
         self.herd.counts[self.immune_status] -= 1
+        self.herd.by_immune_status[self.immune_status].remove(self)
         self.herd.mortality(self)
 
     def give_birth(self):
@@ -87,8 +89,10 @@ class Buffalo:
         assert self.immune_status == 'maternal immunity'
 
         self.herd.counts[self.immune_status] -= 1
+        self.herd.by_immune_status[self.immune_status].remove(self)
         self.immune_status = 'susceptible'
         self.herd.counts[self.immune_status] += 1
+        self.herd.by_immune_status[self.immune_status].append(self)
 
         try:
             del self.events['maternal_immunity_waning']
@@ -99,8 +103,10 @@ class Buffalo:
         assert self.is_susceptible()
 
         self.herd.counts[self.immune_status] -= 1
+        self.herd.by_immune_status[self.immune_status].remove(self)
         self.immune_status = 'infectious'
         self.herd.counts[self.immune_status] += 1
+        self.herd.by_immune_status[self.immune_status].append(self)
 
         try:
             del self.events['infection']
@@ -117,8 +123,10 @@ class Buffalo:
         assert self.is_infectious()
 
         self.herd.counts[self.immune_status] -= 1
+        self.herd.by_immune_status[self.immune_status].remove(self)
         self.immune_status = 'recovered'
         self.herd.counts[self.immune_status] += 1
+        self.herd.by_immune_status[self.immune_status].append(self)
 
         try:
             del self.events['recovery']

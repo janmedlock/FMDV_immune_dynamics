@@ -25,6 +25,7 @@ class Herd(list):
 
         self.time = self.params.start_time
         self.counts = collections.Counter()
+        self.by_immune_status = collections.defaultdict(list)
         self.identifier = 0
 
         # Loop until we get a non-zero number of initial infections.
@@ -70,11 +71,9 @@ class Herd(list):
 
         if ((not hasattr(self, 'counts_infectious_old'))
             or (self.counts['infectious'] != self.counts_infectious_old)):
-            # Consider storing a list of susceptible buffalo to avoid
-            # looping over the whole population.
-            for b in self:
-                if b.is_susceptible():
-                    b.update_infection_time()
+            for b in self.by_immune_status['susceptible']:
+                b.update_infection_time()
+
             self.counts_infectious_old = self.counts['infectious']
 
     def get_stats(self):
@@ -86,6 +85,10 @@ class Herd(list):
         #           for status in ('maternal immunity', 'susceptible',
         #                          'infectious', 'recovered')]
         # assert (stats == counts)
+
+        # assert all(self.counts[status] == len(self.by_immune_status[status])
+        #            for status in ('maternal immunity', 'susceptible',
+        #                           'infectious', 'recovered'))
 
         return [self.time, stats]
 
