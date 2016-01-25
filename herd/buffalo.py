@@ -90,6 +90,8 @@ class Buffalo:
         self.immune_status = 'susceptible'
         self.herd.by_immune_status[self.immune_status].append(self)
 
+        self.update_infection_time()
+
         try:
             del self.events['maternal_immunity_waning']
         except KeyError:
