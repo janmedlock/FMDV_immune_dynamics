@@ -60,14 +60,12 @@ class Buffalo:
                             self.give_birth,
                             'give birth for #{}'.format(self.identifier))
 
-        self.herd.counts[self.immune_status] += 1
         self.herd.by_immune_status[self.immune_status].append(self)
 
     def age(self):
         return self.herd.time - self.birth_date
 
     def mortality(self):
-        self.herd.counts[self.immune_status] -= 1
         self.herd.by_immune_status[self.immune_status].remove(self)
         self.herd.mortality(self)
 
@@ -88,10 +86,8 @@ class Buffalo:
     def maternal_immunity_waning(self):
         assert self.immune_status == 'maternal immunity'
 
-        self.herd.counts[self.immune_status] -= 1
         self.herd.by_immune_status[self.immune_status].remove(self)
         self.immune_status = 'susceptible'
-        self.herd.counts[self.immune_status] += 1
         self.herd.by_immune_status[self.immune_status].append(self)
 
         try:
@@ -102,10 +98,8 @@ class Buffalo:
     def infection(self):
         assert self.is_susceptible()
 
-        self.herd.counts[self.immune_status] -= 1
         self.herd.by_immune_status[self.immune_status].remove(self)
         self.immune_status = 'infectious'
-        self.herd.counts[self.immune_status] += 1
         self.herd.by_immune_status[self.immune_status].append(self)
 
         try:
@@ -122,10 +116,8 @@ class Buffalo:
     def recovery(self):
         assert self.is_infectious()
 
-        self.herd.counts[self.immune_status] -= 1
         self.herd.by_immune_status[self.immune_status].remove(self)
         self.immune_status = 'recovered'
-        self.herd.counts[self.immune_status] += 1
         self.herd.by_immune_status[self.immune_status].append(self)
 
         try:
@@ -148,16 +140,9 @@ class Buffalo:
     def update_infection_time(self):
         assert self.is_susceptible()
 
-        # if (hasattr(self, 'counts_infectious_old')
-        #     and (self.herd.counts['infectious']
-        #          == self.counts_infectious_old)):
-        #     print('Redundant update_infection_time() for buffalo #{}!'.format(
-        #         self.identifier))
-        # self.counts_infectious_old = self.herd.counts['infectious']
-            
-        if (self.herd.counts['infectious'] > 0):
+        if (self.herd.number_infectious > 0):
             force_of_infection = (self.rvs.transmission_rate
-                                  * self.herd.counts['infectious'])
+                                  * self.herd.number_infectious)
 
             infection_time = stats.expon.rvs(
                 scale = 1 / force_of_infection)

@@ -24,7 +24,6 @@ class Herd(list):
         self.rvs = random_variables.RandomVariables(self.params)
 
         self.time = self.params.start_time
-        self.counts = collections.Counter()
         self.by_immune_status = collections.defaultdict(list)
         self.identifier = 0
 
@@ -66,29 +65,19 @@ class Herd(list):
         self.identifier += 1
 
     def update_infection_times(self):
-        # assert (self.counts['infectious']
-        #         == sum(1 for b in self if b.is_infectious()))
+        number_infectious_new = len(self.by_immune_status['infectious'])
 
-        if ((not hasattr(self, 'counts_infectious_old'))
-            or (self.counts['infectious'] != self.counts_infectious_old)):
+        if ((not hasattr(self, 'number_infectious'))
+            or (number_infectious_new != self.number_infectious)):
+            self.number_infectious = number_infectious_new
+
             for b in self.by_immune_status['susceptible']:
                 b.update_infection_time()
 
-            self.counts_infectious_old = self.counts['infectious']
-
     def get_stats(self):
-        stats = [self.counts[status]
+        stats = [len(self.by_immune_status[status])
                  for status in ('maternal immunity', 'susceptible',
                                 'infectious', 'recovered')]
-
-        # counts = [sum(1 for b in self if b.immune_status == status)
-        #           for status in ('maternal immunity', 'susceptible',
-        #                          'infectious', 'recovered')]
-        # assert (stats == counts)
-
-        # assert all(self.counts[status] == len(self.by_immune_status[status])
-        #            for status in ('maternal immunity', 'susceptible',
-        #                           'infectious', 'recovered'))
 
         return [self.time, stats]
 
@@ -101,7 +90,7 @@ class Herd(list):
             return None
 
     def stop(self):
-        return (self.counts['infectious'] == 0)
+        return (self.number_infectious == 0)
 
     def step(self, tmax = numpy.inf):
         self.update_infection_times()
