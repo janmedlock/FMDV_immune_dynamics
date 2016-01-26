@@ -1,5 +1,6 @@
 import numpy
 import collections
+import itertools
 
 from . import buffalo
 from . import parameters
@@ -24,8 +25,8 @@ class Herd(list):
         self.rvs = random_variables.RandomVariables(self.params)
 
         self.time = self.params.start_time
-        self.by_immune_status = collections.defaultdict(list)
-        self.identifier = 0
+        self.immune_status_lists = collections.defaultdict(list)
+        self.identifiers = itertools.count(0)
 
         # Loop until we get a non-zero number of initial infections.
         while True:
@@ -39,34 +40,35 @@ class Herd(list):
 
         for (immune_status, ages) in status_ages.items():
             for age in ages:
-                if self.debug:
-                    if age == 0:
-                        print('t = {}: birth of #{} with status {}'.format(
-                            self.time,
-                            self.identifier,
-                            immune_status))
-                    else:
-                        print('t = {}: arrival of #{} at age {} with status {}'.format(
-                            self.time,
-                            self.identifier,
-                            age,
-                            immune_status))
-
                 self.append(buffalo.Buffalo(self, immune_status, age,
                                             building_herd = True))
 
+    def immune_status_append(self, b):
+        self.immune_status_lists[b.immune_status].append(b)
+
+    def immune_status_remove(self, b):
+        self.immune_status_lists[b.immune_status].remove(b)
+
+    def append(self, b):
+        super().append(b)
+        self.immune_status_append(b)
+
+    def remove(self, b):
+        self.immune_status_remove(b)
+        super().remove(b)
+
     def update_infection_times(self):
-        number_infectious_new = len(self.by_immune_status['infectious'])
+        number_infectious_new = len(self.immune_status_lists['infectious'])
 
         if ((not hasattr(self, 'number_infectious'))
             or (number_infectious_new != self.number_infectious)):
             self.number_infectious = number_infectious_new
 
-            for b in self.by_immune_status['susceptible']:
+            for b in self.immune_status_lists['susceptible']:
                 b.update_infection_time()
 
     def get_stats(self):
-        stats = [len(self.by_immune_status[status])
+        stats = [len(self.immune_status_lists[status])
                  for status in ('maternal immunity', 'susceptible',
                                 'infectious', 'recovered')]
 

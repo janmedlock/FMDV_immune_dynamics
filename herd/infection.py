@@ -25,11 +25,7 @@ class Event(event.Event):
     def __call__(self):
         assert self.buffalo.is_susceptible()
 
-        self.buffalo.herd.by_immune_status[self.buffalo.immune_status].remove(
-            self.buffalo)
-        self.buffalo.immune_status = 'infectious'
-        self.buffalo.herd.by_immune_status[self.buffalo.immune_status].append(
-            self.buffalo)
+        self.buffalo.change_immune_status_to('infectious')
 
         try:
             del self.buffalo.events['infection']

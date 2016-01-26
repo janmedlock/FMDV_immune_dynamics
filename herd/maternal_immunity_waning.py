@@ -23,11 +23,7 @@ class Event(event.Event):
     def __call__(self):
         assert self.buffalo.immune_status == 'maternal immunity'
 
-        self.buffalo.herd.by_immune_status[self.buffalo.immune_status].remove(
-            self.buffalo)
-        self.buffalo.immune_status = 'susceptible'
-        self.buffalo.herd.by_immune_status[self.buffalo.immune_status].append(
-            self.buffalo)
+        self.buffalo.change_immune_status_to('susceptible')
 
         self.buffalo.update_infection_time()
 

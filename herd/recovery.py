@@ -30,11 +30,7 @@ class Event(event.Event):
     def __call__(self):
         assert self.buffalo.is_infectious()
 
-        self.buffalo.herd.by_immune_status[self.buffalo.immune_status].remove(
-            self.buffalo)
-        self.buffalo.immune_status = 'recovered'
-        self.buffalo.herd.by_immune_status[self.buffalo.immune_status].append(
-            self.buffalo)
+        self.buffalo.change_immune_status_to('recovered')
 
         try:
             del self.buffalo.events['recovery']

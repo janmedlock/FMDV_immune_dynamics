@@ -55,6 +55,4 @@ class Event(event.Event):
         self.time = self.buffalo.birth_date + age_at_death
 
     def __call__(self):
-        self.buffalo.herd.by_immune_status[self.buffalo.immune_status].remove(
-            self.buffalo)
         self.buffalo.herd.remove(self.buffalo)

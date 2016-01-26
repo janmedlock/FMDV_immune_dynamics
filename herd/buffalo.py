@@ -15,10 +15,20 @@ class Buffalo:
 
         self.birth_date = self.herd.time - age
 
-        self.identifier = self.herd.identifier
-        self.herd.identifier += 1
+        self.identifier = next(self.herd.identifiers)
 
-        self.sex = 'male' if (self.herd.rvs.male.rvs() == 1) else 'female'
+        if self.herd.debug:
+            if age == 0:
+                print('t = {}: birth of #{} with status {}'.format(
+                    self.herd.time,
+                    self.identifier,
+                    immune_status))
+            else:
+                print('t = {}: arrival of #{} at age {} with status {}'.format(
+                    self.herd.time,
+                    self.identifier,
+                    age,
+                    immune_status))
 
         self.events = {}
 
@@ -42,10 +52,10 @@ class Buffalo:
             raise ValueError('Unknown immune_status = {}!'.format(
                 self.immune_status))
 
+        self.determine_sex()
+
         if self.sex == 'female':
             self.events['give birth'] = birth.Event(self)
-
-        self.herd.by_immune_status[self.immune_status].append(self)
 
     def age(self):
         return (self.herd.time - self.birth_date)
@@ -55,6 +65,14 @@ class Buffalo:
 
     def is_infectious(self):
         return (self.immune_status == 'infectious')
+
+    def determine_sex(self):
+        self.sex = 'male' if (self.herd.rvs.male.rvs() == 1) else 'female'
+
+    def change_immune_status_to(self, new_immune_status):
+        self.herd.immune_status_remove(self)
+        self.immune_status = new_immune_status
+        self.herd.immune_status_append(self)
 
     def update_infection_time(self):
         e = infection.Event(self)
@@ -69,4 +87,4 @@ class Buffalo:
     def get_next_event(self):
         # Consider storing the events in a data type that's more
         # efficient to find the minimum.
-        return  min(self.events.values())
+        return min(self.events.values())
