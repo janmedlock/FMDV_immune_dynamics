@@ -39,30 +39,21 @@ class Herd(list):
 
         for (immune_status, ages) in status_ages.items():
             for age in ages:
-                self.birth(immune_status, age, building_herd = True)
+                if self.debug:
+                    if age == 0:
+                        print('t = {}: birth of #{} with status {}'.format(
+                            self.time,
+                            self.identifier,
+                            immune_status))
+                    else:
+                        print('t = {}: arrival of #{} at age {} with status {}'.format(
+                            self.time,
+                            self.identifier,
+                            age,
+                            immune_status))
 
-    def mortality(self, b):
-        self.remove(b)
-
-    def birth(self, immune_status = 'maternal immunity', age = 0,
-              building_herd = False):
-        if self.debug:
-            if age > 0:
-                print('t = {}: arrival of #{} at age {} with status {}'.format(
-                    self.time,
-                    self.identifier,
-                    age,
-                    immune_status))
-            else:
-                print('t = {}: birth of #{} with status {}'.format(
-                    self.time,
-                    self.identifier,
-                    immune_status))
-
-        self.append(buffalo.Buffalo(self, immune_status, age,
-                                    identifier = self.identifier,
-                                    building_herd = building_herd))
-        self.identifier += 1
+                self.append(buffalo.Buffalo(self, immune_status, age,
+                                            building_herd = True))
 
     def update_infection_times(self):
         number_infectious_new = len(self.by_immune_status['infectious'])
@@ -100,7 +91,7 @@ class Herd(list):
             if self.debug:
                 print('t = {}: {} for buffalo #{}'.format(
                     event.time,
-                    event.__class__.__name__,
+                    event.__module__,
                     event.buffalo.identifier))
             self.time = event.time
             event()
