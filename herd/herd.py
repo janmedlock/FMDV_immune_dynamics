@@ -65,7 +65,7 @@ class Herd(list):
             self.number_infectious = number_infectious_new
 
             for b in self.immune_status_lists['susceptible']:
-                b.update_infection_time()
+                b.update_infection()
 
     def get_stats(self):
         stats = [len(self.immune_status_lists[status])
@@ -91,10 +91,7 @@ class Herd(list):
 
         if (event is not None) and (event.time < tmax):
             if self.debug:
-                print('t = {}: {} for buffalo #{}'.format(
-                    event.time,
-                    event.__module__,
-                    event.buffalo.identifier))
+                print(event)
             self.time = event.time
             event()
         else:

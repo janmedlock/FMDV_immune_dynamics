@@ -1,7 +1,6 @@
 import numpy
 from scipy import integrate, stats
 
-from . import event
 from . import rv
 
 
@@ -40,19 +39,3 @@ class gen(rv.RV, stats.rv_continuous):
                 1 + (numpy.log(1 - q) - numpy.log(0.7)) / numpy.log(0.95),
                 12 + (numpy.log(1 - q) - numpy.log(0.7)
                       - 11 * numpy.log(0.95)) / numpy.log(0.5)))
-
-
-class Event(event.Event):
-    def __init__(self, buffalo):
-        self.buffalo = buffalo
-
-        # Use resampling to get a death age > current age.
-        while True:
-            age_at_death = self.buffalo.herd.rvs.mortality.rvs()
-            if age_at_death > self.buffalo.age():
-                break
-
-        self.time = self.buffalo.birth_date + age_at_death
-
-    def __call__(self):
-        self.buffalo.herd.remove(self.buffalo)
