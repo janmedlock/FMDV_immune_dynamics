@@ -98,7 +98,10 @@ class Herd(list):
 
         if (event is not None) and (event.time < tmax):
             if self.debug:
-                print('t = {}: {}'.format(event.time, event.label))
+                print('t = {}: {} for buffalo #{}'.format(
+                    event.time,
+                    event.__class__.__name__,
+                    event.buffalo.identifier))
             self.time = event.time
             event()
         else:

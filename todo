@@ -3,4 +3,4 @@
 * Implement start_time.
 
 * Consider storing all events for the herd in an efficient data structure
-  to avoid looping through the whole list.
+  (bisect) to avoid looping through the whole list.
