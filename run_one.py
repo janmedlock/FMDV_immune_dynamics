@@ -35,7 +35,7 @@ if __name__ == '__main__':
     p.birth_seasonal_coefficient_of_variation = 1
 
     tmax = 1
-    debug = True
+    debug = False
 
     t0 = time.time()
     data = herd.Herd(p, debug = debug).run(tmax)
