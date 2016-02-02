@@ -184,7 +184,7 @@ time:
     & \text{if $a \geq 4$ and $\{t\} < \frac{1}{2}$},
     \\
     \mu \alpha \max\left(1 - 2 \beta (1 - \{t\}), 0\right)
-    & \text{if $\{t\} \geq \frac{1}{2}$},
+    & \text{if $a \geq 4$ and $\{t\} \geq \frac{1}{2}$},
   \end{cases}
 \end{equation}
 with
@@ -195,7 +195,7 @@ with
     & \text{if $c_v < \frac{1}{\sqrt{3}}$},
     \\
     \frac{3}{2} \left(1 + c_v^2\right)
-    & \text{otherwise},
+    & \text{if $c_v \geq \frac{1}{\sqrt{3}}$},
   \end{cases}
 \end{equation}
 \begin{equation}
@@ -205,7 +205,7 @@ with
     & \text{if $c_v < \frac{1}{\sqrt{3}}$},
     \\
     \frac{3}{4} \left(1 + c_v^2\right)
-    & \text{otherwise},
+    & \text{if $c_v \geq \frac{1}{\sqrt{3}}$},
   \end{cases}
 \end{equation}
 and $\{x\}$ is the fractional part of $x$.  The magnitude of the
@@ -216,22 +216,19 @@ absence of infection.  (See \autoref{no_infection}.)
 
 The survival function is then
 \begin{equation}
-  S_{\text{birth}}(t, a, t_0) =
-  \begin{cases}
-    1 & \text{if $a < 4 - t$},
-    \\
-    \exp(-\mu \alpha H) & \text{otherwise},
-  \end{cases}
+  S_{\text{birth}}(t, a, t_0) = \exp\left(- H(t, a, t_0)\right),
 \end{equation}
-where
+where the cumulative hazard is
 \begin{align}
-  H &=
+  H(t, a, t_0) &=
   \begin{cases}
-    H_1 + H_2  + H_3
-    & \text{if $c_v < \frac{1}{\sqrt{3}}$},
+    0 & \text{if $a < 4 - t$},
     \\
-    H_4 + H_5 + H_6
-    & \text{otherwise},
+    \mu \alpha \left(H_1 + H_2  + H_3\right)
+    & \text{if $a \geq 4 - t$ and $c_v < \frac{1}{\sqrt{3}}$},
+    \\
+    \mu \alpha \left(H_4 + H_5 + H_6\right)
+    & \text{if $a \geq 4 - t$ and $c_v \geq \frac{1}{\sqrt{3}}$},
   \end{cases}
   \\
   H_1 &= \left(1 - \frac{\beta}{2}\right)
@@ -247,7 +244,7 @@ where
     \\
     \left(1 - \{c\}\right)
     \left[1 - \beta + \beta \left(1 - \{c\}\right)\right]
-    & \text{otherwise},
+    & \text{if $\{c\} \geq \frac{1}{2}$},
   \end{cases}
   \\
   H_3 &=
@@ -259,7 +256,7 @@ where
     + \left(\{d\} - \frac{1}{2}\right)
     \left[1 - \beta
       + \beta \left(\{d\} - \frac{1}{2}\right)\right]
-    & \text{otherwise},
+    & \text{if $\{d\} \geq \frac{1}{2}$},
     \end{cases}
   \\
   H_4 &= \frac{1}{2 \beta}
@@ -276,7 +273,7 @@ where
     \\
     \left(1 - \{c\}\right) \left[1 -
       \beta \left(1 - \{c\}\right)\right]
-    & \text{otherwise}
+    & \text{if $\{c\} \geq 1 - \frac{1}{2 \beta}$}
   \end{cases},
   \\
   H_6 &=
@@ -291,7 +288,7 @@ where
     \frac{1}{4 \beta}
     + \beta
     \left[\{d\} - \left(1 - \frac{1}{2 \beta}\right)\right]^2
-    & \text{otherwise},
+    & \text{if $\{d\} \geq 1 - \frac{1}{2 \beta}$},
   \end{cases}
   \\
   c &= \max(4 - a, 0) + t_0,
@@ -308,6 +305,18 @@ The probability density function is
 \begin{align}
   f_{\text{birth}}(t, a, t_0) &=
   h_{\text{birth}}(t, a) S_{\text{birth}}(t, a, t_0).
+\end{align}
+Binning by month gives the probability mass function
+\begin{align}
+  g(m, a, t_0) &=
+  \int_0^1 f_{\text{birth}}\left(\frac{m + \mu}{12}, a, t_0\right)~\md
+  \mu
+  & & \text{for $m \in \{0, 1, 2, \ldots\}$}.
+\end{align}
+Then summing over years gives
+\begin{align}
+  \bar{g}(m, a, t_0) &= \sum_{y = 0}^{\infty} g(m + y, a, t_0)
+  & & \text{for $m \in \{0, 1, 2, \ldots, 11\}$}.
 \end{align}
 
 The fraction of newborns that are male was taken to be
@@ -627,10 +636,13 @@ $\beta \in (0, 1]$ centered at $\{t\} = 0$ and $0$ elsewhere:
 \begin{equation}
   h_{\text{birth}} (t, a) =
   \begin{cases}
+    0 & \text{if $a < 4$},
+    \\
     \alpha & \text{if $a \geq 4$ and $\left\{t + \frac{\beta}{2}\right\}
       \leq \beta$},
     \\
-    0 & \text{otherwise},
+    0 & \text{if $a \leq 4$ and $\left\{t + \frac{\beta}{2}\right\}
+      > \beta$},
   \end{cases}
 \end{equation}
 where $\{x\}$ is the fractional part of $x$.  For $a > 4$, the mean
@@ -655,21 +667,21 @@ With $\mu$ fixed, this gives one parameter, $c_v$.
 The survival is
 \begin{equation}
   S_{\text{birth}}(t, a, t_0) =
-  \begin{cases}
-    1 & \text{if $a < 4 - t$},
-    \\
-    \exp\left(-H(t, a, t_0)\right)
-    & \text{otherwise},
-  \end{cases}
+  \exp\left(-H(t, a, t_0)\right)
 \end{equation}
-where
+where the cumulative hazard is
 \begin{equation}
   H(t, a, t_0) =
-  \alpha \left[
-    \beta (\lfloor d \rfloor - \lfloor c \rfloor)
-    + \min(\{d\}, \beta)
-    - \min(\{c\}, \beta)
-  \right]
+  \begin{cases}
+    0 & \text{if $a < 4 - t$},
+    \\
+    \alpha \left[
+      \beta (\lfloor d \rfloor - \lfloor c \rfloor)
+      + \min(\{d\}, \beta)
+      - \min(\{c\}, \beta)
+    \right]
+    & \text{if $a \geq 4 - t$},
+  \end{cases}
 \end{equation}
 and
 \begin{align}
@@ -751,17 +763,17 @@ Then
 
 The survival is
 \begin{equation}
-  S_{\text{birth}}(t, a, t_0) =
-  \begin{cases}
-    1 & \text{if $a < 4 - t$},
-    \\
-    \exp(-\alpha H) & \text{otherwise},
-  \end{cases}
+  S_{\text{birth}}(t, a, t_0) = \exp\left(- H(t, a, t_0)\right)
 \end{equation}
-where
+where the cumulative hazard is
 \begin{equation}
-  H =
-  \int_{\ell}^t g(t_0 + \tau)~\md \tau,
+  H(t, a, t_0) = 
+  \begin{cases}
+    0 & \text{if $a < 4 - t$},
+    \\
+    \alpha \int_{\ell}^t g(t_0 + \tau)~\md \tau
+    & \text{if $a \geq 4 - t$},
+  \end{cases}
 \end{equation}
 \begin{equation}
   g (t) =
@@ -777,9 +789,15 @@ and
 \begin{equation}
   \ell = \max(4 - a, 0).
 \end{equation}
-Then
+Then the cumulative hazard is
 \begin{equation}
-  H = H_1  + H_2 + H_3,
+  H(t, a, t_0) =
+  \begin{cases}
+    0 & \text{if $a < 4 - t$},
+    \\
+    \alpha \left(H_1  + H_2 + H_3\right)
+    & \text{if $a \geq 4 - t$},
+  \end{cases}
 \end{equation}
 with
 \begin{align}
@@ -796,7 +814,7 @@ with
     \\
     \left(1 - \{c\}\right)
     \left[1 - \beta + \beta \left(1 - \{c\}\right)\right]
-    & \text{otherwise},
+    & \text{if $\{c\} \geq \frac{1}{2}$},
   \end{cases}
   \\
   H_3 &=
@@ -808,7 +826,7 @@ with
     + \left(\{d\} - \frac{1}{2}\right)
     \left[1 - \beta
       + \beta \left(\{d\} - \frac{1}{2}\right)\right]
-    & \text{otherwise},
+    & \text{if $\{d\} \geq \frac{1}{2}$},
     \end{cases}
 \end{align}
 and
@@ -830,10 +848,11 @@ Here we have
     \alpha \left(1 - 2 \beta \{t\}\right)
     & \text{if $a \geq 4$ and $\{t\} < \frac{1}{2 \beta}$},
     \\
-    \alpha \left[1 - 2 \beta (1 - \{t\})\right]
-    & \text{if $\{t\} \geq 1 - \frac{1}{2 \beta}$},
+    0 & \text{if $a \geq 4$ and $\frac{1}{2 \beta} \leq \{t\} < 1 -
+      \frac{1}{2 \beta}$},
     \\
-    0 & \text{otherwise}.
+    \alpha \left[1 - 2 \beta (1 - \{t\})\right]
+    & \text{if $a \geq 4$ and $\{t\} \geq 1 - \frac{1}{2 \beta}$}.
   \end{cases}
 \end{equation}
 For $a \geq 4$, the mean is
@@ -871,16 +890,17 @@ This gives
 
 The survival is
 \begin{equation}
-  S_{\text{birth}}(t, a, t_0) =
-  \begin{cases}
-    1 & \text{if $a < 4 - t$},
-    \\
-    \exp(-\alpha H) & \text{otherwise},
-  \end{cases}
+  S_{\text{birth}}(t, a, t_0) = \exp\left(- H(t, a, t_0)\right)
 \end{equation}
-where
+where the cumulative hazard is
 \begin{equation}
-  H = \int_{\ell}^t g(t_0 + \tau)~\md \tau,
+  H(t, a, t_0) =
+  \begin{cases}
+    0 & \text{if $a < 4 - t$},
+    \\
+    \alpha \int_{\ell}^t g(t_0 + \tau)~\md \tau & \text{if $a \geq 4 -
+      t$},
+  \end{cases}
 \end{equation}
 \begin{equation}
   g (t) =
@@ -888,19 +908,24 @@ where
     1 - 2 \beta \{t\}
     & \text{if $\{t\} < \frac{1}{2 \beta}$},
     \\
+    0 & \text{if $\frac{1}{2 \beta} \leq \{t\} < 1 - \frac{1}{2 \beta}$},
+    \\
     1 - 2 \beta (1 - \{t\})
     & \text{if $\{t\} \geq 1 - \frac{1}{2 \beta}$},
-    \\
-    0 & \text{otherwise},
   \end{cases}
 \end{equation}
 and
 \begin{equation}
   \ell = \max(4 - a, 0).
 \end{equation}
-Then
+Then the cumulative hazard is
 \begin{equation}
-  H = H_4 + H_5 + H_6,
+  H(t, a, t_0) =
+  \begin{cases}
+    0 & \text{if $a < 4 - t$},
+    \\
+    \alpha \left(H_4 + H_5 + H_6\right) & \text{if $a \geq 4 - t$},
+  \end{cases}
 \end{equation}
 with
 \begin{align}
@@ -918,8 +943,8 @@ with
     \\
     \left(1 - \{c\}\right) \left[1 -
       \beta \left(1 - \{c\}\right)\right]
-    & \text{otherwise}
-  \end{cases},
+    & \text{if $\{c\} \geq 1 - \frac{1}{2 \beta}$},
+  \end{cases}
   \\
   H_6 &=
   \begin{cases}
@@ -933,12 +958,8 @@ with
     \frac{1}{4 \beta}
     + \beta
     \left[\{d\} - \left(1 - \frac{1}{2 \beta}\right)\right]^2
-    & \text{otherwise},
+    & \text{if $\{d\} \geq 1 - \frac{1}{2 \beta}$},
   \end{cases}
-  \\
-  c &= \max(4 - a, 0) + t_0,
-  \\
-  d &= t + t_0,
 \end{align}
 and
 \begin{align}
@@ -957,14 +978,14 @@ that the birth hazard varies sinusoidally in time:
   \begin{cases}
     0 & \text{if $a < 4$},
     \\
-    \alpha \left[1
+    \mu \left[1
       + 2 c_v \cos\left(2 \pi t\right)\right]
     & \text{if $a \geq 4$}.
   \end{cases}
 \end{equation}
 The seasonal variation is captured by the coefficient of variation
 $c_v \in \left[0, \frac{1}{2}\right]$, which we took to be
-$\frac{1}{2}$ by default.  The annual mean $\alpha$ was chosen so that
+$\frac{1}{2}$ by default.  The annual mean $\mu$ was chosen so that
 the population achieves the mean growth rate $r = 0$ in the absence of
 infection.  (See \autoref{no_infection}.)
 
@@ -976,19 +997,23 @@ The survival function is then
       \tau\right)
     \\
     &=
-    \begin{cases}
-      1 & \text{if $a < 4 - t$},
-      \\
-      \exp\left(- \alpha \left[
-          (t - \ell)
-          + \frac{c_V}{\pi}
-          \left[\sin\left(2 \pi (t + t_0)\right)
-            - \sin\left(2 \pi (t_0 + \ell)\right)\right]
-        \right]
-      \right)
-      & \text{if $a \geq 4 - t$},
-    \end{cases}
+    \exp\left(- H(t, a, t_0)\right),
   \end{split}
+\end{equation}
+where the cumulative hazard is
+\begin{equation}
+  H(t, a, t_0) =
+  \begin{cases}
+    0 & \text{if $a < 4 - t$},
+    \\
+    \mu \left[
+      (t - \ell)
+      + \frac{c_V}{\pi}
+      \left[\sin\left(2 \pi (t + t_0)\right)
+        - \sin\left(2 \pi (t_0 + \ell)\right)\right]
+    \right]
+    & \text{if $a \geq 4 - t$},
+  \end{cases}
 \end{equation}
 with $\ell = \max\{0, 4 - a\}$.  There is no explicit inverse survival
 function.  Instead, the inverse was found numerically using a
