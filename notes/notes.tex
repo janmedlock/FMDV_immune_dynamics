@@ -1,4 +1,27 @@
-\documentclass{jpmarticle}
+\documentclass{article}
+
+\usepackage[T1]{fontenc}
+\usepackage{textcomp}
+
+\usepackage[english]{babel}
+\usepackage[utf8]{inputenc}
+
+\usepackage{lmodern}
+
+\usepackage{hyperref}
+\hypersetup{breaklinks}
+\hypersetup{pdfborder=0 0 0}
+
+\usepackage[babel=true]{microtype}
+
+
+\usepackage{amsmath}
+\renewcommand{\vec}[1]{\mathbf{#1}}
+\newcommand{\mat}[1]{\mathbf{#1}}
+\DeclareMathOperator{\Prob}{Prob}
+\newcommand{\md}{\mathrm{d}}
+\newcommand{\me}{\mathrm{e}}
+\newcommand{\mT}{\mathrm{T}}
 
 \usepackage{units}
 \usepackage{tikz}
@@ -280,6 +303,12 @@ i.e.~$\lfloor x \rfloor = x - \{x\}$.
 
 There is no explicit inverse survival function.  Instead, the inverse
 was found numerically using a root-finding algorithm \citep{scipy}.
+
+The probability density function is
+\begin{align}
+  f_{\text{birth}}(t, a, t_0) &=
+  h_{\text{birth}}(t, a) S_{\text{birth}}(t, a, t_0).
+\end{align}
 
 The fraction of newborns that are male was taken to be
 \begin{equation}
@@ -577,10 +606,10 @@ standard eigenvalue solver
 \citep[\texttt{numpy.linalg.eig},][]{scipy}.  We then used a standard
 root-finding algorithm
 \citep[\texttt{scipy.optimize.fsolve},][]{scipy} to find the value of
-the mean birth hazard $\alpha \approx 0.443$ that gave growth rate
+the mean birth hazard $\mu \approx 0.443$ that gave growth rate
 $r = 0$.  Halving the age step to $\Delta a = 0.005$ gave a value of
-$\alpha$ within $1.2 \times 10^{-4}$ and doubling the maximum age to
-$a_{\text{max}} = 40$ gave a value of $\alpha$ within
+$\mu$ within $1.2 \times 10^{-4}$ and doubling the maximum age to
+$a_{\text{max}} = 40$ gave a value of $\mu$ within
 $1.7 \times 10^{-12}$.
 
 

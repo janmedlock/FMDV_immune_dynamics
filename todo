@@ -4,3 +4,7 @@
 
 * Consider storing all events for the herd in an efficient data structure
   (bisect) to avoid looping through the whole list.
+
+* Figure out how to do population stats.
+   
+* Figure out how to bin by month.
