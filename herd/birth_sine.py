@@ -12,7 +12,7 @@ class gen(birth_super.gen):
                             + 2 * self.seasonal_coefficient_of_variation
                             * numpy.cos(2 * numpy.pi * (time + time0))))
 
-    def _cdf(self, time, time0, age0):
+    def _logsf(self, time, time0, age0):
         lb = numpy.max(numpy.hstack((0, 4 - age0)))
         I = numpy.where(
             time < 4 - age0,
@@ -23,4 +23,4 @@ class gen(birth_super.gen):
                * (numpy.sin(2 * numpy.pi * (time + time0))
                   - numpy.sin(2 * numpy.pi * (lb + time0)))))
         
-        return 1 - numpy.exp(- I)
+        return (- I)

@@ -24,7 +24,7 @@ class gen(birth_super.gen):
         return self.scaling * numpy.where(age0 + time < 4, 0,
                                           numpy.where(tau <= beta, alpha, 0))
 
-    def _cdf(self, time, time0, age0):
+    def _logsf(self, time, time0, age0):
         (alpha, beta) = self._getparams()
 
         c = numpy.clip(4 - age0, 0, numpy.inf) + time0 + beta / 2
@@ -36,4 +36,4 @@ class gen(birth_super.gen):
                      + numpy.clip(fracpart(d), -numpy.inf, beta)
                      - numpy.clip(fracpart(c), -numpy.inf, beta)))
 
-        return 1 - numpy.exp(- I)
+        return (- I)

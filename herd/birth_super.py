@@ -29,15 +29,23 @@ class gen(rv.RV, stats.rv_continuous):
     def _argcheck(self, time0, age0):
         return (age0 >= 0)
         
-    def _cdf_single(self, time, time0, age0):
+    @numpy.vectorize
+    def _logsf(self, time, time0, age0):
         result = integrate.quad(self.hazard, 0, time,
                                 args = (time0, age0),
                                 limit = 100, full_output = 1)
         I = result[0]
-        return 1 - numpy.exp(- I)
+        return (- I)
+
+    def _sf(self, time, time0, age0):
+        return numpy.exp(self._logsf(time, time0, age0))
 
     def _cdf(self, time, time0, age0):
-        return numpy.vectorize(self._cdf_single)(time, time0, age0)
+        return 1 - self._sf(time, time0, age0)
+
+    def _pdf(self, time, time0, age0):
+        return (self.hazard(time, time0, age0 - time0 + time)
+                * self._sf(time, time0, age0))
 
     def _ppf(self, q, *args, **kwds):
         'Trap errors for _ppf'
