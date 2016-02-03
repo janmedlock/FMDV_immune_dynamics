@@ -13,3 +13,4 @@
 *.synctex.gz
 herd/_find_birth_scaling.db
 herd/_get_endemic_equilibrium.db
+herd/_find_stable_age_structure.db
