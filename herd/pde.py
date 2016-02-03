@@ -140,14 +140,30 @@ def get_limit_cycle(parameters, agemax, agestep,
 
 @utility.shelved
 def _get_endemic_equilibrium(parameters, tmax, agemax, agestep):
-    (t, ages, Y) = solve(tmax, agemax, agestep, parameters)
+    if parameters.start_time == 0:
+        (t, ages, Y) = solve(tmax, agemax, agestep, parameters)
 
-    period = get_period(t, ages, Y)
+        period = get_period(t, ages, Y)
 
-    ICs = []
-    for j in range(period):
-        k = numpy.argwhere(t <= t[-1] - j)[-1, 0]
-        ICs.append([y[k] for y in Y])
+        ICs = []
+        for j in range(period):
+            k = numpy.argwhere(t <= t[-1] - j)[-1, 0]
+            ICs.append([y[k] for y in Y])
+
+    else:
+        start_time = parameters.start_time
+        parameters.start_time = 0
+        (ages, ICs0) = _get_endemic_equilibrium(parameters, tmax,
+                                                agemax, agestep)
+        parameters.start_time = start_time
+
+        ICs = []
+        for IC0 in ICs0:
+            (M0, S0, I0, R0) = IC0
+            Y0 = numpy.hstack((M0 + S0, I0, R0))
+            (t, ages, Y) = solve(parameters.start_time, agemax, agestep,
+                                 parameters, Y0 = Y0)
+            ICs.append([y[-1] for y in Y])
 
     return (ages, ICs)
 
