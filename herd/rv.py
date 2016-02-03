@@ -62,8 +62,9 @@ class age_structured(RV):
         self.proportion = proportion
 
         self._quantilerv = stats.rv_discrete(
-            values = (range(len(self.proportion)), self.proportion))
-        
+            values = (range(len(self.proportion)), self.proportion),
+            *args, **kwargs)
+
     def rvs(self, *args, **kwargs):
         return self.ages[self._quantilerv.rvs(*args, **kwargs)]
         
