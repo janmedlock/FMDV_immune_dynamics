@@ -44,7 +44,7 @@ class gen(rv.RV, stats.rv_continuous):
         return 1 - self._sf(time, time0, age0)
 
     def _pdf(self, time, time0, age0):
-        return (self.hazard(time, time0, age0 - time0 + time)
+        return (self.hazard(time, time0, age0 + time)
                 * self._sf(time, time0, age0))
 
     def _ppf(self, q, *args, **kwds):
