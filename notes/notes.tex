@@ -214,21 +214,22 @@ which we took to be $1$ by default.  The annual mean $\mu$ was chosen
 so that the population achieves the mean growth rate $r = 0$ in the
 absence of infection.  (See \autoref{no_infection}.)
 
-The survival function is then
+The survival function for $t$ years until the next birth, given age
+$a_0$ at the current time $t_0$ is
 \begin{equation}
-  S_{\text{birth}}(t, a, t_0) = \exp\left(- H(t, a, t_0)\right),
+  S_{\text{birth}}(t, t_0, a_0) = \exp\left(- H(t, t_0, a_0)\right),
 \end{equation}
 where the cumulative hazard is
 \begin{align}
-  H(t, a, t_0) &=
+  H(t, t_0, a_0) &=
   \begin{cases}
-    0 & \text{if $a < 4 - t$},
+    0 & \text{if $a_0 + t < 4$},
     \\
     \mu \alpha \left(H_1 + H_2  + H_3\right)
-    & \text{if $a \geq 4 - t$ and $c_v < \frac{1}{\sqrt{3}}$},
+    & \text{if $a_0 + t \geq 4$ and $c_v < \frac{1}{\sqrt{3}}$},
     \\
     \mu \alpha \left(H_4 + H_5 + H_6\right)
-    & \text{if $a \geq 4 - t$ and $c_v \geq \frac{1}{\sqrt{3}}$},
+    & \text{if $a_0 + t_0 \geq 4$ and $c_v \geq \frac{1}{\sqrt{3}}$},
   \end{cases}
   \\
   H_1 &= \left(1 - \frac{\beta}{2}\right)
@@ -291,7 +292,7 @@ where the cumulative hazard is
     & \text{if $\{d\} \geq 1 - \frac{1}{2 \beta}$},
   \end{cases}
   \\
-  c &= \max(4 - a, 0) + t_0,
+  c &= \max(4 - a_0, 0) + t_0,
   \\
   d &= t + t_0,
 \end{align}
@@ -301,22 +302,23 @@ i.e.~$\lfloor x \rfloor = x - \{x\}$.
 There is no explicit inverse survival function.  Instead, the inverse
 was found numerically using a root-finding algorithm \citep{scipy}.
 
-The probability density function is
+The probability density function for births time $t$ later, given age
+$a_0$ at $t_0$ is
 \begin{align}
-  f_{\text{birth}}(t, a, t_0) &=
-  h_{\text{birth}}(t, a) S_{\text{birth}}(t, a, t_0).
+  f_{\text{birth}}(t, t_0, a_0) &=
+  h_{\text{birth}}(t, a_0 - t_0 + t) S_{\text{birth}}(t, t_0, a_0).
 \end{align}
-Binning by month gives the probability mass function
+Multiplying by $N(t_0, a_0)$, the density of females aged $a_0$ at
+$t_0$, and integrating over $a_0$ gives the expected number of
+births time $t$ later:
+\begin{equation}
+  b(t, t_0) = \int_0^{\infty} f_{\text{birth}}(t, t_0, a_0) N(t_0, a_0) \md a_0.
+\end{equation}
+Binning by month gives the expected number of births in month $m$:
 \begin{align}
-  g(m, a, t_0) &=
-  \int_0^1 f_{\text{birth}}\left(\frac{m + \mu}{12}, a, t_0\right)~\md
-  \mu
+  g(m, t_0) &=
+  \int_0^1 b\left(\frac{m + \mu}{12}, t_0\right) \md \mu
   & & \text{for $m \in \{0, 1, 2, \ldots\}$}.
-\end{align}
-Then summing over years gives
-\begin{align}
-  \bar{g}(m, a, t_0) &= \sum_{y = 0}^{\infty} g(m + y, a, t_0)
-  & & \text{for $m \in \{0, 1, 2, \ldots, 11\}$}.
 \end{align}
 
 The fraction of newborns that are male was taken to be
@@ -666,26 +668,26 @@ With $\mu$ fixed, this gives one parameter, $c_v$.
 
 The survival is
 \begin{equation}
-  S_{\text{birth}}(t, a, t_0) =
-  \exp\left(-H(t, a, t_0)\right)
+  S_{\text{birth}}(t, t_0, a_0) =
+  \exp\left(-H(t, t_0, a_0)\right)
 \end{equation}
 where the cumulative hazard is
 \begin{equation}
-  H(t, a, t_0) =
+  H(t, t_0, a_0) =
   \begin{cases}
-    0 & \text{if $a < 4 - t$},
+    0 & \text{if $a_0 + t_0 < 4$},
     \\
     \alpha \left[
       \beta (\lfloor d \rfloor - \lfloor c \rfloor)
       + \min(\{d\}, \beta)
       - \min(\{c\}, \beta)
     \right]
-    & \text{if $a \geq 4 - t$},
+    & \text{if $a_0 + t_0 \geq 4$},
   \end{cases}
 \end{equation}
 and
 \begin{align}
-  c &= \max(4 - a, 0) + t_0 + \frac{\beta}{2},
+  c &= \max(4 - a_0, 0) + t_0 + \frac{\beta}{2},
   &
   d &= t + t_0 + \frac{\beta}{2}.
 \end{align}
@@ -726,8 +728,8 @@ With $\beta \leq 1$, the $\max(x, 0) = x$ in the hazard:
 \end{equation}
 For $a > 4$, the mean is
 \begin{align}
-  \mu = \int_0^1 h_{\text{birth}}(t, a) \; \md t
-  = 2 \alpha \int_0^{\frac{1}{2}} 1 - 2 \beta t \; \md t
+  \mu = \int_0^1 h_{\text{birth}}(t, a) \md t
+  = 2 \alpha \int_0^{\frac{1}{2}} 1 - 2 \beta t \md t
   % = 2 a \left[t - b t^2\right]_0^{\frac{1}{2}}
   = \frac{\alpha (2 - \beta)}{2}
 \end{align}
@@ -737,7 +739,7 @@ and
   % \\
   = 2 \alpha^2 \int_0^{\frac{1}{2}} \left(1 - 2 \beta t\right)^2 \md t
   % \\
-  % &= 2 a^2 \int_0^{\frac{1}{2}} 1 - 4 b t + 4 b^2 t^2 \; \md t
+  % &= 2 a^2 \int_0^{\frac{1}{2}} 1 - 4 b t + 4 b^2 t^2 \md t
   % \\
   % &= 2 a^2 \left[t - 2 b t^2 + \frac{4 b^2}{3} t^3\right]_0^{\frac{1}{2}}
   % \\
@@ -763,16 +765,16 @@ Then
 
 The survival is
 \begin{equation}
-  S_{\text{birth}}(t, a, t_0) = \exp\left(- H(t, a, t_0)\right)
+  S_{\text{birth}}(t, t_0, a_0) = \exp\left(- H(t, t_0, a_0)\right)
 \end{equation}
 where the cumulative hazard is
 \begin{equation}
-  H(t, a, t_0) = 
+  H(t, t_0, a_0) = 
   \begin{cases}
-    0 & \text{if $a < 4 - t$},
+    0 & \text{if $a_0 + t < 4$},
     \\
     \alpha \int_{\ell}^t g(t_0 + \tau)~\md \tau
-    & \text{if $a \geq 4 - t$},
+    & \text{if $a_0 + t \geq 4$},
   \end{cases}
 \end{equation}
 \begin{equation}
@@ -787,16 +789,16 @@ where the cumulative hazard is
 \end{equation}
 and
 \begin{equation}
-  \ell = \max(4 - a, 0).
+  \ell = \max(4 - a_0, 0).
 \end{equation}
 Then the cumulative hazard is
 \begin{equation}
-  H(t, a, t_0) =
+  H(t, t_0, a_0) =
   \begin{cases}
-    0 & \text{if $a < 4 - t$},
+    0 & \text{if $a_0 + t < 4$},
     \\
     \alpha \left(H_1  + H_2 + H_3\right)
-    & \text{if $a \geq 4 - t$},
+    & \text{if $a_0 + t \geq 4$},
   \end{cases}
 \end{equation}
 with
@@ -831,7 +833,7 @@ with
 \end{align}
 and
 \begin{align}
-  c &= \ell + t_0 = \max(4 - a, 0) + t_0,
+  c &= \ell + t_0 = \max(4 - a_0, 0) + t_0,
   &
   d &= t + t_0.
 \end{align}
@@ -890,16 +892,15 @@ This gives
 
 The survival is
 \begin{equation}
-  S_{\text{birth}}(t, a, t_0) = \exp\left(- H(t, a, t_0)\right)
+  S_{\text{birth}}(t, t_0, a_0) = \exp\left(- H(t, t_0, a_0)\right)
 \end{equation}
 where the cumulative hazard is
 \begin{equation}
-  H(t, a, t_0) =
+  H(t, t_0, a_0) =
   \begin{cases}
-    0 & \text{if $a < 4 - t$},
+    0 & \text{if $a_0 + t < 4$},
     \\
-    \alpha \int_{\ell}^t g(t_0 + \tau)~\md \tau & \text{if $a \geq 4 -
-      t$},
+    \alpha \int_{\ell}^t g(t_0 + \tau) \md \tau & \text{if $a_0 + t \geq 4$},
   \end{cases}
 \end{equation}
 \begin{equation}
@@ -916,15 +917,15 @@ where the cumulative hazard is
 \end{equation}
 and
 \begin{equation}
-  \ell = \max(4 - a, 0).
+  \ell = \max(4 - a_0, 0).
 \end{equation}
 Then the cumulative hazard is
 \begin{equation}
-  H(t, a, t_0) =
+  H(t, t_0, a_0) =
   \begin{cases}
-    0 & \text{if $a < 4 - t$},
+    0 & \text{if $a_0 + t < 4$},
     \\
-    \alpha \left(H_4 + H_5 + H_6\right) & \text{if $a \geq 4 - t$},
+    \alpha \left(H_4 + H_5 + H_6\right) & \text{if $a_0 + t \geq 4$},
   \end{cases}
 \end{equation}
 with
@@ -963,7 +964,7 @@ with
 \end{align}
 and
 \begin{align}
-  c &= \ell + t_0 = \max(4 - a, 0) + t_0,
+  c &= \ell + t_0 = \max(4 - a_0, 0) + t_0,
   &
   d &= t + t_0.
 \end{align}
@@ -992,19 +993,19 @@ infection.  (See \autoref{no_infection}.)
 The survival function is then
 \begin{equation}
   \begin{split}
-    S_{\text{birth}}(t, a, t_0) &=
-    \exp\left(- \int_0^t h_{\text{birth}}(t_0 + \tau, a + \tau) \md
+    S_{\text{birth}}(t, t_0, a_0) &=
+    \exp\left(- \int_0^t h_{\text{birth}}(t_0 + \tau, a_0 + \tau) \md
       \tau\right)
     \\
     &=
-    \exp\left(- H(t, a, t_0)\right),
+    \exp\left(- H(t, t_0, a_0)\right),
   \end{split}
 \end{equation}
 where the cumulative hazard is
 \begin{equation}
-  H(t, a, t_0) =
+  H(t, t_0, a_0) =
   \begin{cases}
-    0 & \text{if $a < 4 - t$},
+    0 & \text{if $a_0 + t < 4$},
     \\
     \mu \left[
       (t - \ell)
@@ -1012,11 +1013,11 @@ where the cumulative hazard is
       \left[\sin\left(2 \pi (t + t_0)\right)
         - \sin\left(2 \pi (t_0 + \ell)\right)\right]
     \right]
-    & \text{if $a \geq 4 - t$},
+    & \text{if $a_0 + t \geq 4$},
   \end{cases}
 \end{equation}
-with $\ell = \max\{0, 4 - a\}$.  There is no explicit inverse survival
-function.  Instead, the inverse was found numerically using a
+with $\ell = \max\{0, 4 - a_0\}$.  There is no explicit inverse
+survival function.  Instead, the inverse was found numerically using a
 root-finding algorithm \citep{scipy}.
 
 
