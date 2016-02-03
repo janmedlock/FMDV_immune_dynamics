@@ -1,7 +1,6 @@
 from scipy import stats
 
 from . import rv
-from . import event
 
 
 class gen(rv.RV):
