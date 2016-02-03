@@ -1,7 +1,5 @@
 * Figure out what to do with all the untracked files in orphans/.
 
-* Implement start_time.
-
 * Consider storing all events for the herd in an efficient data structure
   (bisect) to avoid looping through the whole list.
 
