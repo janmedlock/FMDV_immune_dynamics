@@ -106,12 +106,15 @@ def _find_stable_age_structure(parameters, *args, **kwargs):
     return find_dominant_eigenpair(parameters, *args, **kwargs)[1]
 
 def find_stable_age_structure(parameters, *args, **kwargs):
-    # stable age structure is independent of population_size,
-    # so factor out population_size for more efficient caching.
+    # stable age structure is independent of population_size and
+    # start_time, so factor them out for more efficient caching.
     population_size = parameters.population_size
+    start_time = parameters.start_time
     del parameters.population_size
+    del parameters.start_time
     SAS = _find_stable_age_structure(parameters, *args, **kwargs)
     parameters.population_size = population_size
+    parameters.start_time = start_time
     return SAS
 
 
@@ -130,10 +133,13 @@ def _find_birth_scaling(parameters, *args, **kwargs):
     return scaling
 
 def find_birth_scaling(parameters, *args, **kwargs):
-    # birthScaling is independent of population_size,
-    # so factor out population_size for more efficient caching.
+    # birthScaling is independent of population_size and start_time so
+    # factor then out for more efficient caching.
     population_size = parameters.population_size
+    start_time = parameters.start_time
     del parameters.population_size
+    del parameters.start_time
     scaling = _find_birth_scaling(parameters, *args, **kwargs)
     parameters.population_size = population_size
+    parameters.start_time = start_time
     return scaling
