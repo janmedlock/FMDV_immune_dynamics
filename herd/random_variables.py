@@ -9,18 +9,18 @@ from . import transmission_rate
 
 
 class RandomVariables(object):
-    def __init__(self, parameters = None):
-        if parameters is None:
-            parameters = parameters.Parameters()
-        self.parameters = parameters
+    def __init__(self, params = None):
+        if params is None:
+            params = parameters.Parameters()
+        self.parameters = params
 
-        self.male = male.gen(parameters)
-        self.maternal_immunity_waning = maternal_immunity_waning.gen(parameters)
-        self.mortality = mortality.gen(parameters)
-        self.recovery = recovery.gen(parameters)
-        self.transmission_rate = transmission_rate.gen(parameters)
-        self.birth = birth.gen(parameters)
-        self.endemic_equilibrium = endemic_equilibrium.gen(parameters)
+        self.male = male.gen(params)
+        self.maternal_immunity_waning = maternal_immunity_waning.gen(params)
+        self.mortality = mortality.gen(params)
+        self.recovery = recovery.gen(params)
+        self.transmission_rate = transmission_rate.gen(params)
+        self.birth = birth.gen(params)
+        self.endemic_equilibrium = endemic_equilibrium.gen(params)
 
     def __repr__(self):
         'Make instances print nicely.'
