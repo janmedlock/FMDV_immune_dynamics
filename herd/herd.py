@@ -1,6 +1,7 @@
-import numpy
 import collections
 import itertools
+
+import numpy
 
 from . import buffalo
 from . import parameters

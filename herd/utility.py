@@ -1,8 +1,9 @@
-import numpy
-from scipy import sparse, integrate, optimize
 import shelve
 import inspect
 import os.path
+
+import numpy
+from scipy import sparse, integrate, optimize
 
 
 class shelved:
