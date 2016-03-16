@@ -223,13 +223,13 @@ where the cumulative hazard is
 \begin{align}
   H(t, t_0, a_0) &=
   \begin{cases}
-    0 & \text{if $a_0 + t < 4$},
+    0 & \text{if $a_0 + t - t_0 < 4$},
     \\
     \mu \alpha \left(H_1 + H_2  + H_3\right)
-    & \text{if $a_0 + t \geq 4$ and $c_v < \frac{1}{\sqrt{3}}$},
+    & \text{if $a_0 + t - t_0 \geq 4$ and $c_v < \frac{1}{\sqrt{3}}$},
     \\
     \mu \alpha \left(H_4 + H_5 + H_6\right)
-    & \text{if $a_0 + t_0 \geq 4$ and $c_v \geq \frac{1}{\sqrt{3}}$},
+    & \text{if $a_0 + t - t_0 \geq 4$ and $c_v \geq \frac{1}{\sqrt{3}}$},
   \end{cases}
   \\
   H_1 &= \left(1 - \frac{\beta}{2}\right)
