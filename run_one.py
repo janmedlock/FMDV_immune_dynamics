@@ -5,6 +5,7 @@ import time
 
 import herd
 
+export_data = False
 
 def make_plot(data, show = True):
     from matplotlib import pyplot
@@ -27,6 +28,12 @@ def make_plot(data, show = True):
         pyplot.show()
 
 
+def make_datasheet(data):
+	(t, x) = map(numpy.array, zip(*data))
+	data2 = pandas.DataFrame(data=x, index=t, columns=['M', 'S', 'I', 'R'])
+	data2.to_csv("run_one_data.csv", sep=',')
+
+
 if __name__ == '__main__':
     numpy.random.seed(1)
 
@@ -43,3 +50,6 @@ if __name__ == '__main__':
     print('Run time: {} seconds.'.format(t1 - t0))
 
     make_plot(data)
+    if export_data:
+        make_datasheet(data)
+    

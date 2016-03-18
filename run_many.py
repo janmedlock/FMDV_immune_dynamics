@@ -3,9 +3,11 @@
 import numpy
 import functools
 import multiprocessing
+import pandas
 
 import herd
 
+export_data = True
 
 def run_one(parameters, tmax, *args, **kwds):
     '''
@@ -121,6 +123,32 @@ def make_plots(data, show = True):
         pyplot.show()
 
 
+def make_datasheet(data):
+    # Make datasheets (manyruns_data.csv) for each iteration
+    (T, X) = zip(*(zip(*d) for d in data))
+    index = 0
+    appended_data = []
+    for (t, x) in zip(T, X):
+        t = numpy.array(t)
+        x = numpy.array(x)
+        # Add column for total and index
+        n = x.sum(-1)
+        rep = numpy.array([index]* len(t))
+        x = numpy.column_stack((x, n, rep))
+        data = pandas.DataFrame(data=x, index=t, columns=['M', 'S', 'I', 'R', 'Total', 'Rep'])
+        appended_data.append(data)  
+        index += 1      
+    # Make a dataheet with the mean values of all the interations
+    (T_mean, X_mean) = get_mean(T, X)
+    N_mean = X_mean.sum(-1)
+    rep = numpy.array(["mean"]* len(T_mean))
+    X_mean = numpy.column_stack((X_mean, N_mean, rep))
+    mean_data = pandas.DataFrame(data=X_mean, index=T_mean, columns=['M', 'S', 'I', 'R', 'Total', 'Rep'])
+    appended_data.append(mean_data)
+    # Append them together in long format and save
+    final_data = pandas.concat(appended_data)          
+    final_data.to_csv("manyruns_data.csv", sep=',')
+
 def get_I_terminal(data):
     tX_terminal = (d[-1] for d in data)
     X_terminal = (tX[-1] for tX in tX_terminal)
@@ -147,3 +175,5 @@ if __name__ == '__main__':
     print('Run time: {} seconds.'.format(t1 - t0))
     
     make_plots(data)
+    if export_data:
+        make_datasheet(data)
