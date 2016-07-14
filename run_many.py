@@ -163,7 +163,7 @@ if __name__ == '__main__':
 
     p = herd.Parameters()
     p.population_size = 1000
-    p.birth_seasonal_coefficient_of_variation = 1
+    p.birth_seasonal_coefficient_of_variation = 0.61
 
     tmax = 1
     nruns = 100

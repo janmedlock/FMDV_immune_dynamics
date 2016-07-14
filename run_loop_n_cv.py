@@ -102,18 +102,21 @@ if __name__ == '__main__':
 
     numpy.random.seed(1)
     if test:
-        birth_coefficient_values= numpy.arange(0.8, 1.1, 0.2)
-        pop_size = numpy.arange(25, 51, 25)
+        #birth_coefficient_values= numpy.arange(0.6, 1.3, 0.2)
+        #birth_coefficient_values= numpy.arange(0.7, 0.91, 0.1)
+        birth_coefficient_values= numpy.arange(0.3, 0.61, 0.1)
+        pop_size = numpy.arange(25, 2000.1, 25)
+        
     else:
-        birth_coefficient_values = numpy.arange(0.1, 1.02, 0.05)
-        pop_size = numpy.arange(25, 2000.2, 25)
+        birth_coefficient_values = numpy.arange(0.2, 1.6, 0.05)
+        pop_size = numpy.arange(25, 2500.2, 25)
 
 	# test should run 4 loops
     for b in  birth_coefficient_values:
         p = herd.Parameters()
         p.birth_seasonal_coefficient_of_variation = b
         tmax = 1
-        nruns = 5  # 1000
+        nruns = 1000
         debug = False
         print("Seasonal coefficient: ", p.birth_seasonal_coefficient_of_variation, sep="")
         for n in pop_size:

@@ -61,7 +61,7 @@ def get_mean(T, X):
     return (T_mean, X_mean)
 
 
-def make_datasheet(data, b, n):
+def make_one_datasheet(data, b, r):
 	# Saves one datasheet per parameter combination
 	# Each datasheet is has multiple simulations in long format
     # Make datasheets (manyruns_data.csv) for each iteration
@@ -69,7 +69,7 @@ def make_datasheet(data, b, n):
     index = 0
     appended_data = []
     bval = b
-    nval = n
+    rval = r
     for (t, x) in zip(T, X):
         t = numpy.array(t)
         x = numpy.array(x)
@@ -77,9 +77,10 @@ def make_datasheet(data, b, n):
         n = x.sum(-1)
         rep = numpy.array([index]* len(t))
         b = numpy.array([bval]*len(t))
+        Ro = numpy.array([rval]*len(t))
         # doesn't like this one
-        x = numpy.column_stack((x, n, rep, b))
-        data = pandas.DataFrame(data=x, index=t, columns=['M', 'S', 'I', 'R', 'Total', 'Rep', 'b'])
+        x = numpy.column_stack((x, n, rep, b, Ro))
+        data = pandas.DataFrame(data=x, index=t, columns=['M', 'S', 'I', 'R', 'Total', 'Rep', 'b', 'Ro'])
         appended_data.append(data)  
         index += 1      
     # Make a datasheet with the mean values of all the interations
@@ -87,14 +88,22 @@ def make_datasheet(data, b, n):
     N_mean = X_mean.sum(-1)
     rep2 = numpy.array(["mean"]* len(T_mean))
     b2 = numpy.array([bval]*len(T_mean))
-    X_mean = numpy.column_stack((X_mean, N_mean, rep2, b2))
-    mean_data = pandas.DataFrame(data=X_mean, index=T_mean, columns=['M', 'S', 'I', 'R', 'Total', 'Rep', 'b'])
+    Ro2 = numpy.array([rval]*len(T_mean))
+    X_mean = numpy.column_stack((X_mean, N_mean, rep2, b2, Ro2))
+    mean_data = pandas.DataFrame(data=X_mean, index=T_mean, columns=['M', 'S', 'I', 'R', 'Total', 'Rep', 'b', 'Ro2'])
     appended_data.append(mean_data)
     # Append them together in long format and save
     final_data = pandas.concat(appended_data)          
-    final_data.to_csv("manyruns_data_cv_Ro_"+str(bval)+ "_" + str(nval) + ".csv", sep=',')
+    #final_data.to_csv("manyruns_data_cv_Ro_"+str(bval)+ "_" + str(rval) + ".csv", sep=',')
+    return (final_data)  # new
 
 
+def make_combined_datasheet(olddata, data, b, r):
+    # Prep data = contains results from 1000 sims for one parameter set. 
+    temp = make_one_datasheet(data, b, r)
+    # Concatinate 
+    frames = [olddata, temp]
+    return pandas.concat(frames)
 
 
 if __name__ == '__main__':
@@ -102,28 +111,34 @@ if __name__ == '__main__':
 
     numpy.random.seed(1)
     if test:
-        birth_coefficient_values= numpy.arange(0.5, 0.61, 0.1)
-        pop_size = numpy.arange(1050, 2000.1, 25)
+        birth_coefficient_values= numpy.arange(0.58, 0.61, 0.1)
+        Ro = numpy.arange(1.5, 2.2, 0.5)
         
     else:
         birth_coefficient_values = numpy.arange(0.2, 1.6, 0.05)
-        Ro = numpy.arange(0.5, 20.2, 0.1)
+        Ro = numpy.arange(1.5, 20.2, 0.1)
 
-	# test should run 4 loops
+    # initialize dataframe to hold combined results of each simulation
+    olddata = pandas.DataFrame(columns=['M', 'S', 'I', 'R', 'Total', 'Rep', 'b', 'Ro'])
+	
     for b in  birth_coefficient_values:
         p = herd.Parameters()
         p.birth_seasonal_coefficient_of_variation = b
-        tmax = 1
+        tmax = 5   # increased from 1... 
         nruns = 1000
         debug = False
         print("Seasonal coefficient: ", p.birth_seasonal_coefficient_of_variation, sep="")
         for r in Ro:
             t0 = time.time()        
             p.R0 = r
-            if test:
-                print("Ro = ", p.R0)
+            print("Ro = ", p.R0)
             data = run_many(nruns, p, tmax, debug = debug)
             t1 = time.time()
             print('Run time: {} seconds.'.format(t1 - t0))
-            if export_data:
-                make_datasheet(data, b, n)
+            olddata = make_combined_datasheet(olddata, data, b, r)
+
+	# export final data sheet
+        final_data = olddata
+        if export_data:
+            final_data.to_csv("manyruns_data_loop_cv_Ro.csv")
+                
