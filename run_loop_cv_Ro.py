@@ -108,6 +108,7 @@ def make_combined_datasheet(olddata, data, b, r):
 
 if __name__ == '__main__':
     import time
+    t0 = time.time()        
 
     numpy.random.seed(1)
     if test:
@@ -115,8 +116,8 @@ if __name__ == '__main__':
         Ro = numpy.arange(1.5, 2.2, 0.5)
         
     else:
-        birth_coefficient_values = numpy.arange(0.2, 1.6, 0.05)
-        Ro = numpy.arange(1.5, 20.2, 0.1)
+        birth_coefficient_values = numpy.arange(0.4, 1.3, 0.1)
+        Ro = numpy.arange(1.5, 10.2, 0.2)
 
     # initialize dataframe to hold combined results of each simulation
     olddata = pandas.DataFrame(columns=['M', 'S', 'I', 'R', 'Total', 'Rep', 'b', 'Ro'])
@@ -129,16 +130,15 @@ if __name__ == '__main__':
         debug = False
         print("Seasonal coefficient: ", p.birth_seasonal_coefficient_of_variation, sep="")
         for r in Ro:
-            t0 = time.time()        
             p.R0 = r
             print("Ro = ", p.R0)
             data = run_many(nruns, p, tmax, debug = debug)
-            t1 = time.time()
-            print('Run time: {} seconds.'.format(t1 - t0))
-            olddata = make_combined_datasheet(olddata, data, b, r)
+            olddata = make_combined_datasheet(olddata, data, b, r)      
 
 	# export final data sheet
-        final_data = olddata
-        if export_data:
-            final_data.to_csv("manyruns_data_loop_cv_Ro_SAT2.csv")
+    t1 = time.time()
+    print('Run time: {} seconds.'.format(t1 - t0))
+    final_data = olddata
+    if export_data:
+        final_data.to_csv("manyruns_data_loop_cv_Ro_SAT2.csv")
                 

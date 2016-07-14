@@ -6,7 +6,7 @@ class Parameters(object):
             self.birth_seasonal_coefficient_of_variation = 0.61  # initially set at 1
             self.male_probability_at_birth = 0.5
             self.maternal_immunity_duration = 0.5
-            self.population_size = 1000
+            self.population_size = 500
             self.recovery_infection_duration = 4.35/ 365 # 4.9 / 365   # initially set at 21/365
             self.start_time = 0
 
