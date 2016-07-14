@@ -8,7 +8,7 @@ import pandas
 import herd
 
 export_data = True
-test= True
+test= False
 
 def run_one(parameters, tmax, *args, **kwds):
     '''
@@ -140,5 +140,5 @@ if __name__ == '__main__':
 	# export final data sheet
         final_data = olddata
         if export_data:
-            final_data.to_csv("manyruns_data_loop_cv_Ro.csv")
+            final_data.to_csv("manyruns_data_loop_cv_Ro_SAT2.csv")
                 
