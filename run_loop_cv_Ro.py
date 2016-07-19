@@ -8,7 +8,7 @@ import pandas
 import herd
 
 export_data = True
-test= False
+test= True
 
 def run_one(parameters, tmax, *args, **kwds):
     '''
