@@ -20,7 +20,6 @@ agestep = 0.1
 
 parameters = herd.Parameters()
 parameters.population_size = 10000
-parameters.recovery_infection_duration = 21 / 365
 
 gap_sizes = (None, 0, 3, 6, 9) # In months.  None is aseasonal.
 

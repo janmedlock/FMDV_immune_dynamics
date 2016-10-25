@@ -53,7 +53,7 @@ def solve(tmax, agemax, agestep, parameters, Y0 = None):
         return (integrate.trapz(parameters.transmission_rate * I, ages)
                 * susceptibility)
 
-    recovery_rate = 1 / parameters.recovery_infection_duration
+    recovery_rate = 1 / parameters.recovery_mean
 
     if Y0 is None:
         eigenpair = utility.find_dominant_eigenpair(parameters,

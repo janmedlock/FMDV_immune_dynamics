@@ -23,8 +23,8 @@ def rhs(Y, t, parameters, rvs):
           - force_of_infection * S)
     dI = (force_of_infection * S
           + numpy.log(0.95) * I \
-          - I / parameters.recovery_infection_duration)
-    dR = (I / parameters.recovery_infection_duration
+          - I / parameters.recovery_mean)
+    dR = (I / parameters.recovery_mean
           + numpy.log(0.95) * R)
 
     return (dM, dS, dI, dR)
@@ -52,7 +52,6 @@ if __name__ == '__main__':
 
     parameters = herd.Parameters()
     parameters.population_size = 10000
-    parameters.recovery_infection_duration = 21 / 365
 
     (t, M, S, I, R) = solve(tmax, parameters)
 
