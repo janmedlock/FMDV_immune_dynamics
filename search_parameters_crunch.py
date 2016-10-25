@@ -162,7 +162,7 @@ def plot_3D(X, Y, Z, C, title):
 
     set_axis(axes, 'x', 'population_size')
     set_axis(axes, 'y', 'maternal_immunity_duration')
-    set_axis(axes, 'z', 'recovery_infection_duration')
+    set_axis(axes, 'z', 'recovery_mean')
     
     if len(C) > 0:
         cbar = fig.colorbar(points)
@@ -178,7 +178,7 @@ def plot_average_extinction_time(average = 'mean'):
 
     X = extinction_times['population_size']
     Y = extinction_times['maternal_immunity_duration']
-    Z = extinction_times['recovery_infection_duration']
+    Z = extinction_times['recovery_mean']
     C = getattr(numpy, average)(extinction_times['extinction_times'], axis = 1)
 
     # Only keep those with average greater than 30 days
@@ -229,7 +229,7 @@ extinction_times = numpy.genfromtxt('search_parameters.csv',
                                     dtype = [
                                         ('population_size', int),
                                         ('maternal_immunity_duration', float),
-                                        ('recovery_infection_duration', float),
+                                        ('recovery_mean', float),
                                         ('extinction_times', float,
                                          (100, ))],
                                     invalid_raise = False)
