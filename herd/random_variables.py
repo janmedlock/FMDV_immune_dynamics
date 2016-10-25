@@ -5,7 +5,6 @@ from . import male
 from . import maternal_immunity_waning
 from . import mortality
 from . import recovery
-from . import transmission_rate
 
 
 class RandomVariables(object):
@@ -18,7 +17,6 @@ class RandomVariables(object):
         self.maternal_immunity_waning = maternal_immunity_waning.gen(params)
         self.mortality = mortality.gen(params)
         self.recovery = recovery.gen(params)
-        self.transmission_rate = transmission_rate.gen(params)
         self.birth = birth.gen(params)
         self.endemic_equilibrium = endemic_equilibrium.gen(params)
 

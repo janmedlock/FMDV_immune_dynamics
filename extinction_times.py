@@ -57,7 +57,6 @@ if __name__ == '__main__':
 
     p.population_size = 100
     p.infection_duration = 21 / 365
-    p.R0 = 10
     p.birth_seasonal_coefficient_of_variation = 1
 
     nruns = 10000

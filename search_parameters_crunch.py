@@ -155,14 +155,14 @@ def plot_3D(X, Y, Z, C, title):
     # axes.scatter(numpy.log10(X), numpy.log10(W), numpy.log10(Z),
     #              c = (0.5, 0.5, 0.5),
     #              linewidth = 0)
-    W = limits['R0'][0] * numpy.ones_like(Z)
+    W = limits['maternal_immunity_duration'][0] * numpy.ones_like(Z)
     axes.scatter(numpy.log10(X), numpy.log10(Y), numpy.log10(W),
                  c = (0.5, 0.5, 0.5),
                  linewidth = 0)
 
     set_axis(axes, 'x', 'population_size')
-    set_axis(axes, 'y', 'recovery_infection_duration')
-    set_axis(axes, 'z', 'R0')
+    set_axis(axes, 'y', 'maternal_immunity_duration')
+    set_axis(axes, 'z', 'recovery_infection_duration')
     
     if len(C) > 0:
         cbar = fig.colorbar(points)
@@ -177,8 +177,8 @@ def plot_average_extinction_time(average = 'mean'):
     title = '{} time to extinction (days)'.format(average.capitalize())
 
     X = extinction_times['population_size']
-    Y = extinction_times['recovery_infection_duration']
-    Z = extinction_times['R0']
+    Y = extinction_times['maternal_immunity_duration']
+    Z = extinction_times['recovery_infection_duration']
     C = getattr(numpy, average)(extinction_times['extinction_times'], axis = 1)
 
     # Only keep those with average greater than 30 days
@@ -199,8 +199,8 @@ def plot_persistance(years):
         '' if years == 1 else 's')
     
     X = extinction_times['population_size']
-    Y = extinction_times['infection_duration']
-    Z = extinction_times['R0']
+    Y = extinction_times['maternal_immunity_duration']
+    Z = extinction_times['infection_duration']
     C = find_proportion_over_x(extinction_times['extinction_times'],
                                365. * years)
 
@@ -228,8 +228,8 @@ extinction_times = numpy.genfromtxt('search_parameters.csv',
                                     skip_header = 1,
                                     dtype = [
                                         ('population_size', int),
+                                        ('maternal_immunity_duration', float),
                                         ('recovery_infection_duration', float),
-                                        ('R0', float),
                                         ('extinction_times', float,
                                          (100, ))],
                                     invalid_raise = False)
@@ -239,9 +239,9 @@ extinction_times['infection_duration'] *= 365
 extinction_times['extinction_times'] *= 365
 
 # Truncate to parameter ranges.
-ticks = {'population_size':    (100, 500, 1000, 5000, 10000),
-         'infection_duration': (1.6, 5, 10, 15, 21),
-         'R0':                 (1.2, 5, 10, 20, 30)}
+ticks = {'population_size':            (100, 500, 1000, 5000, 10000),
+         'maternal_immunity_duration': (0.25, 0.5, 0.75),
+         'infection_duration':         (1.6, 5, 10, 15, 21)}
 
 limits = {k: (v[0], v[-1]) for (k, v) in ticks.items()}
 
@@ -253,19 +253,20 @@ limits = {k: (v[0], v[-1]) for (k, v) in ticks.items()}
 
 
 parameters_ordered = ('population_size',
-                      'infection_duration',
-                      'R0')
+                      'maternal_immunity_duration',
+                      'infection_duration')
 
-parameters_labels = {'population_size':    'Population size',
-                     'infection_duration': 'Infection duration (days)',
-                     'R0':                 '$R_0$'}
+parameters_labels = {
+    'population_size':            'Population size',
+    'maternal_immunity_duration': 'Maternal immunity duration (days)',
+    'infection_duration':         'Infection duration (days)'}
 
 parameters_values = {k: numpy.unique(extinction_times[k])
                      for k in parameters_ordered}
 
 default = {'population_size': 100,
-           'infection_duration': 1.6 / 365 * 365,
-           'R0': 5}
+           'transmission_rate': 7.1,
+           'infection_duration': 1.6 / 365 * 365}
            
 
 # plot_slice(infection_duration = default['infection_duration'],

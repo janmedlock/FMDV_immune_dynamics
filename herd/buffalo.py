@@ -129,7 +129,7 @@ class Buffalo:
         assert self.is_susceptible()
 
         if (self.herd.number_infectious > 0):
-            force_of_infection = (self.herd.rvs.transmission_rate
+            force_of_infection = (self.herd.params.transmission_rate
                                   * self.herd.number_infectious)
 
             infection_time = self.herd.time + stats.expon.rvs(

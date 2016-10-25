@@ -13,7 +13,7 @@ def rhs(Y, t, parameters, rvs):
     (M, S, I, R) = Y
 
     B = (1. - parameters.male_probability_at_birth) * rvs.birth.scaling
-    force_of_infection = rvs.transmission_rate * I
+    force_of_infection = parameters.transmission_rate * I
     
     dM = (B * (S + I + R)
           - M / parameters.maternal_immunity_duration
@@ -53,7 +53,6 @@ if __name__ == '__main__':
     parameters = herd.Parameters()
     parameters.population_size = 10000
     parameters.recovery_infection_duration = 21 / 365
-    parameters.R0 = 10
 
     (t, M, S, I, R) = solve(tmax, parameters)
 

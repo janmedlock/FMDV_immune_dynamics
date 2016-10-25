@@ -1,14 +1,27 @@
 class Parameters(object):
-    def __init__(self, _set_defaults = True):
+    def __init__(self, SAT = 1, _set_defaults = True):
         'Initialize with default values.'
         if _set_defaults:
-            self.R0 = 4   # R0 = beta * N / (gamma + mortality)
-            self.birth_seasonal_coefficient_of_variation = 0.61
-            self.male_probability_at_birth = 0.5
-            self.maternal_immunity_duration = 0.5
-            self.population_size = 500
-            self.recovery_infection_duration = 4.35 / 365
             self.start_time = 0
+            self.male_probability_at_birth = 0.5
+
+            self.population_size = 500
+
+            self.birth_seasonal_coefficient_of_variation = 0.61
+
+            self.maternal_immunity_duration = 0.5
+
+            if SAT == 1:
+                self.transmission_rate = 7.1
+                self.recovery_infection_duration = 4.35 / 365
+            elif SAT == 2:
+                self.transmission_rate = 5.6
+                self.recovery_infection_duration = 4.35 / 365
+            elif SAT == 3:
+                self.transmission_rate = 3.6
+                self.recovery_infection_duration = 4.35 / 365
+            else:
+                raise ValueError("Unknown SAT '{}'!".format(SAT))
 
     def __repr__(self):
         'Make instances print nicely.'
