@@ -11,8 +11,7 @@
   sensible.
 
 * For talk:
-   + Use Simon's parameters for each SAT type
-   + Use natural birth timing distribution
+   + Add latent stage
    + Over herd sizes 100--1000
    + For maternal immunity waning between 3--9 months
    + Consider 1-d slices of herd size by maternal immunity waning time
