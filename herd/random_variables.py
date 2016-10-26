@@ -4,6 +4,7 @@ from . import endemic_equilibrium
 from . import male
 from . import maternal_immunity_waning
 from . import mortality
+from . import progression
 from . import recovery
 
 
