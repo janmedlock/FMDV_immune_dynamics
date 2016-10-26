@@ -8,23 +8,26 @@ from . import utility
 from . import birth
 
 
-def rhs(Y, t, AM, B, force_of_infection, recovery_rate):
-    (S, I, R) = numpy.hsplit(Y, 3)
+def rhs(Y, t, AM, B, force_of_infection, progression_rate, recovery_rate):
+    (S, E, I, R) = numpy.hsplit(Y, 4)
     
-    N = S + I + R
+    N = S + E + I + R
 
     lambda_ = force_of_infection(I)
 
     dS = (B(t).dot(N)
           + AM.dot(S)
           - lambda_ * S)
-    dI = (AM.dot(I)
+    dE = (AM.dot(E)
           + lambda_ * S
+          - progression_rate * E)
+    dI = (AM.dot(I)
+          + progression_rate * E
           - recovery_rate * I)
     dR = (AM.dot(R)
           + recovery_rate * I)
 
-    dY = numpy.hstack((dS, dI, dR))
+    dY = numpy.hstack((dS, dE, dI, dR))
 
     return dY
 
@@ -53,6 +56,8 @@ def solve(tmax, agemax, agestep, parameters, Y0 = None):
         return (integrate.trapz(parameters.transmission_rate * I, ages)
                 * susceptibility)
 
+    progression_rate = 1 / parameters.progression_mean
+
     recovery_rate = 1 / parameters.recovery_mean
 
     if Y0 is None:
@@ -64,37 +69,40 @@ def solve(tmax, agemax, agestep, parameters, Y0 = None):
 
         # Everyone under 2 susceptible (except for maternal immunity).
         S0 = numpy.where(ages < 2, N0, 0)
+        E0 = numpy.zeros_like(N0)
         # initial infections.
         I0 = 0.01 * S0
         S0 -= I0
         R0 = N0 - S0 - I0
 
-        Y0 = numpy.hstack((S0, I0, R0))
+        Y0 = numpy.hstack((S0, E0, I0, R0))
 
     t = numpy.linspace(0, tmax, 1001)
 
     (Y, info) = integrate.odeint(rhs, Y0, t,
                                  args = (AM, B,
-                                         force_of_infection, recovery_rate),
+                                         force_of_infection,
+                                         progression_rate,
+                                         recovery_rate),
                                  mxstep = 10000,
                                  full_output = True)
     if numpy.any(numpy.diff(info['tcur']) < -1e-16):
         raise RuntimeError('ODE solver failed!')
 
-    (S, I, R) = numpy.hsplit(Y, 3)
+    (S, E, I, R) = numpy.hsplit(Y, 4)
 
     # Split susceptibles into maternal immunity and not.
     mask = (ages < parameters.maternal_immunity_duration)
     M = numpy.where(mask[numpy.newaxis, :], S, 0)
     S -= M
 
-    return (t, ages, (M, S, I, R))
+    return (t, ages, (M, S, E, I, R))
 
 
 def get_period(t, ages, X, abserr = 1e-3, relerr = 1e-3,
                periodmax = 3):
-    (M, S, I, R) = X
-    Y = numpy.hstack((M + S, I, R))
+    (M, S, E, I, R) = X
+    Y = numpy.hstack((M + S, E, I, R))
     for period in range(1, periodmax + 1):
         i = numpy.argwhere(t <= t[-1] - period)[-1]
         if (numpy.linalg.norm(Y[i] - Y[-1])
@@ -110,15 +118,15 @@ def get_limit_cycle(parameters, agemax, agestep,
     from scipy import optimize
 
     print('Running burn-in...')
-    (t, ages, (M, S, I, R)) = solve(t_burnin, agemax, agestep, parameters)
+    (t, ages, (M, S, E, I, R)) = solve(t_burnin, agemax, agestep, parameters)
     print('Burn-in finished.')
 
-    Y0 = numpy.hstack((M[-1] + S[-1], I[-1], R[-1]))
+    Y0 = numpy.hstack((M[-1] + S[-1], E[-1], I[-1], R[-1]))
     tmax = special.factorial(periodmax)
     def f(Y0):
-        (t, ages, (M, S, I, R)) = solve(tmax, agemax, agestep, parameters,
-                                        Y0 = Y0)
-        return numpy.hstack((M[-1] + S[-1], I[-1], R[-1]))
+        (t, ages, (M, S, E, I, R)) = solve(tmax, agemax, agestep, parameters,
+                                           Y0 = Y0)
+        return numpy.hstack((M[-1] + S[-1], E[-1], I[-1], R[-1]))
 
     print('Running root solver...')
     sol = optimize.fixed_point(f, Y0, xtol = 1e-3, maxiter = 1000)
@@ -158,8 +166,8 @@ def _get_endemic_equilibrium(parameters, tmax, agemax, agestep):
 
         ICs = []
         for IC0 in ICs0:
-            (M0, S0, I0, R0) = IC0
-            Y0 = numpy.hstack((M0 + S0, I0, R0))
+            (M0, S0, E0, I0, R0) = IC0
+            Y0 = numpy.hstack((M0 + S0, E0, I0, R0))
             (t, ages, Y) = solve(parameters.start_time, agemax, agestep,
                                  parameters, Y0 = Y0)
             ICs.append([y[-1] for y in Y])

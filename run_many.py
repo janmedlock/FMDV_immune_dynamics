@@ -68,7 +68,7 @@ def make_plots(data, show = True):
 
     from herd import pde
 
-    (fig, ax) = pyplot.subplots(5, sharex = True)
+    (fig, ax) = pyplot.subplots(6, sharex = True)
     colors = itertools.cycle(seaborn.color_palette('husl', 8))
 
     (T, X) = zip(*(zip(*d) for d in data))
@@ -108,11 +108,12 @@ def make_plots(data, show = True):
 
     ax[0].set_ylabel('maternal immunity')
     ax[1].set_ylabel('susceptible')
-    ax[2].set_ylabel('infected')
-    ax[3].set_ylabel('recovered')
-    ax[4].set_ylabel('total')
+    ax[2].set_ylabel('exposed')
+    ax[3].set_ylabel('infected')
+    ax[4].set_ylabel('recovered')
+    ax[5].set_ylabel('total')
 
-    ax[4].set_xlabel('time (days)')
+    ax[5].set_xlabel('time (days)')
 
     for ax_ in ax:
         yl = ax_.get_ylim()

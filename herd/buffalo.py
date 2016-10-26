@@ -39,6 +39,8 @@ class Buffalo:
             # self.herd.number_infectious won't be correct.
             if not building_herd:
                 self.update_infection()
+        elif self.immune_status == 'exposed':
+            self.set_progression()
         elif self.immune_status == 'infectious':
             self.set_recovery()
         elif self.immune_status == 'recovered':
@@ -57,6 +59,9 @@ class Buffalo:
 
     def is_susceptible(self):
         return (self.immune_status == 'susceptible')
+
+    def is_exposed(self):
+        return (self.immune_status == 'exposed')
 
     def is_infectious(self):
         return (self.immune_status == 'infectious')
@@ -109,6 +114,15 @@ class Buffalo:
         self.events.add('maternal_immunity_waning',
                         waning_time)
 
+    def progression(self):
+        assert self.is_exposed()
+        self.change_immune_status_to('infectious')
+        self.events.remove('progression')
+
+    def set_progression(self):
+        self.events.add('progression',
+                        self.herd.time + self.herd.rvs.progression.rvs())
+
     def recovery(self):
         assert self.is_infectious()
         self.change_immune_status_to('recovered')
@@ -120,7 +134,7 @@ class Buffalo:
 
     def infection(self):
         assert self.is_susceptible()
-        self.change_immune_status_to('infectious')
+        self.change_immune_status_to('exposed')
         self.events.remove('infection')
         self.set_recovery()
 

@@ -71,7 +71,7 @@ class Herd(list):
     def get_stats(self):
         stats = [len(self.immune_status_lists[status])
                  for status in ('maternal immunity', 'susceptible',
-                                'infectious', 'recovered')]
+                                'exposed', 'infectious', 'recovered')]
 
         return [self.time, stats]
 

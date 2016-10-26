@@ -15,6 +15,7 @@ class gen(rv.RV):
 
         self.statuses = ('maternal immunity',
                          'susceptible',
+                         'exposed',
                          'infectious',
                          'recovered')
 
