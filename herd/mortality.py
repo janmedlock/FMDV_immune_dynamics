@@ -34,7 +34,7 @@ class gen(rv.RV, stats.rv_continuous):
         cdf_1_to_3 = 1 - 0.66 * 0.79 ** (age - 1)
         cdf_3_to_12 = 1 - 0.66 * 0.79 * 0.79 * 0.88 ** (age - 3)
         cdf_12_and_up = 1 - 0.66 * 0.79 ** 2 * 0.88 ** 9 * 0.66 ** (age - 12)
-	return numpy.where(age < 1, cdf_under_1,
+        return numpy.where(age < 1, cdf_under_1,
                            numpy.where(age < 3, cdf_1_to_3,
                                        numpy.where(age < 12, cdf_3_to_12,
                                                    cdf_12_and_up)))
