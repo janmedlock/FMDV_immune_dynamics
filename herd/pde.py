@@ -6,9 +6,12 @@ from scipy import integrate
 
 from . import utility
 from . import birth
+from . import transmission_rate
 
 
 def rhs(Y, t, AM, B, force_of_infection, progression_rate, recovery_rate):
+    print(t)
+
     (S, E, I, R) = numpy.hsplit(Y, 4)
     
     N = S + E + I + R
@@ -50,11 +53,11 @@ def solve(tmax, agemax, agestep, parameters, Y0 = None):
                    * birthRV.hazard(t, 0, ages - t))
         return Bval
 
+    transmissibility = transmission_rate.gen(parameters)
     susceptibility = numpy.where(ages >= parameters.maternal_immunity_duration,
                                  1, 0)
     def force_of_infection(I):
-        return (integrate.trapz(parameters.transmission_rate * I, ages)
-                * susceptibility)
+        return integrate.trapz(transmissibility * I, ages) * susceptibility
 
     progression_rate = 1 / parameters.progression_mean
 
@@ -170,13 +173,14 @@ def _get_endemic_equilibrium(parameters, tmax, agemax, agestep):
             Y0 = numpy.hstack((M0 + S0, E0, I0, R0))
             (t, ages, Y) = solve(parameters.start_time, agemax, agestep,
                                  parameters, Y0 = Y0)
-            ICs.append([y[-1] for y in Y])
+            # Make sure it's non-negative.
+            ICs.append([y[-1].clip(0, ) for y in Y])
 
     return (ages, ICs)
 
     
 def get_endemic_equilibrium(parameters, tmax = 200,
-                            agemax = 20, agestep = 0.01):
+                            agemax = 20, agestep = 0.1):
     # The PDE solutions simply scale multiplicatively with
     # population_size, so factor that out for more efficient caching.
     population_size = parameters.population_size

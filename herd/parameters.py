@@ -16,19 +16,19 @@ class Parameters(object):
                 self.progression_mean = 1.0 / 365
                 self.recovery_shape = 3.9
                 self.recovery_mean = 6.0 / 365
-                self.transmission_rate = 7.1 / 365
+                self.transmission_rate = 7.1 * 365
             elif SAT == 2:
                 self.progression_shape = 1.7
                 self.progression_mean = 1.9 / 365
                 self.recovery_shape = 3.4
                 self.recovery_mean = 4.8 / 365
-                self.transmission_rate = 5.6 / 365
+                self.transmission_rate = 5.6 * 365
             elif SAT == 3:
                 self.progression_shape = 1.6
                 self.progression_mean = 3.3 / 365
                 self.recovery_shape = 3.8
                 self.recovery_mean = 4.6 / 365
-                self.transmission_rate = 3.6 / 365
+                self.transmission_rate = 3.6 * 365
             else:
                 raise ValueError("Unknown SAT '{}'!".format(SAT))
 
