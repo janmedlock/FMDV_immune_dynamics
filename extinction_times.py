@@ -17,7 +17,7 @@ def find_extinction_times(nruns,
     extinction_times = [t[-1] if (x[-1][2] == 0) else None
                        for (t, x) in zip(T, X)]
 
-    return extinctionTimes
+    return extinction_times
 
 
 def ppf(D, q, a = 0):
