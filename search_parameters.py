@@ -37,20 +37,21 @@ def search_parameter(parameter_name, values, nruns, parameters, tmax,
 if __name__ == '__main__':
     import numpy
 
-    parameters = herd.Parameters()
-
     population_sizes = (100, 200, 500, 1000)
-    maternal_immunity_durations = (3 / 12, 6 / 12, 9 / 12)
+    birth_seasonal_coefficients_of_variation = (
+        0.61 * numpy.array([0, 0.1, 0.25, 0.5, 0.75, 1, 2, 3, 4]))
 
     nruns = 100
     tmax = numpy.inf
     debug = False
 
-    for ps in population_sizes:
-        parameters.population_size = ps
-        search_parameter('maternal_immunity_duration',
-                         maternal_immunity_durations,
-                         nruns,
-                         parameters,
-                         tmax,
-                         debug = debug)
+    for SAT in (1, 2, 3):
+        parameters = herd.Parameters(SAT = SAT)
+        for ps in population_sizes:
+            parameters.population_size = ps
+            search_parameter('birth_seasonal_coefficient_of_variation',
+                             birth_seasonal_coefficients_of_variation,
+                             nruns,
+                             parameters,
+                             tmax,
+                             debug = debug)

@@ -11,10 +11,6 @@
   sensible.
 
 * For talk:
-   + Add latent stage
    + Over herd sizes 100--1000
    + For maternal immunity waning between 3--9 months
    + Consider 1-d slices of herd size by maternal immunity waning time
-   + Estimate likelihood of persistence by acute transmission only
-     (with lifelong immunity after recovery)
-   + Graphs of I vs t for a few realizations

@@ -118,6 +118,7 @@ class Buffalo:
         assert self.is_exposed()
         self.change_immune_status_to('infectious')
         self.events.remove('progression')
+        self.set_recovery()
 
     def set_progression(self):
         self.events.add('progression',
@@ -136,7 +137,7 @@ class Buffalo:
         assert self.is_susceptible()
         self.change_immune_status_to('exposed')
         self.events.remove('infection')
-        self.set_recovery()
+        self.set_progression()
 
     # Fix me!
     def update_infection(self):
