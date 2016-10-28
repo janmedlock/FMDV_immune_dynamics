@@ -35,9 +35,9 @@ class Herd(list):
                 self.params.population_size)
             if len(status_ages['infectious']) > 0:
                 break
-            else:
-                print(
-                    'Initial infections = 0!  Re-sampling initial conditions.')
+            # else:
+            #     print(
+            #         'Initial infections = 0!  Resampling initial conditions.')
 
         for (immune_status, ages) in status_ages.items():
             for age in ages:
