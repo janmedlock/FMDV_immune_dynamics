@@ -46,7 +46,7 @@ if __name__ == '__main__':
     birth_seasonal_coefficients_of_variation = (
         0.61 * numpy.array([1, 0.75, 0.5, 2, 3, 0.25, 4, 0.1, 0]))
 
-    nruns = 100
+    nruns = 1000
     tmax = numpy.inf
     debug = False
 
