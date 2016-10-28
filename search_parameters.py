@@ -17,13 +17,15 @@ def search_parameter(parameter_name, values, nruns, parameters, tmax,
     filename = basename + '.csv'
 
     new = not os.path.exists(filename)
-    w = csv.writer(open(filename, 'a'))
+    fd = open(filename, 'a')
+    w = csv.writer(fd)
 
     paramkeys = sorted(parameters.__dict__.keys())
 
     if new:
         # Write header.
         w.writerow(paramkeys + ['extinction_times (years)'])
+        fd.flush()
 
     for v in values:
         setattr(parameters, parameter_name, v)
@@ -32,25 +34,28 @@ def search_parameter(parameter_name, values, nruns, parameters, tmax,
                                                      *args, **kwargs)
         w.writerow([getattr(parameters, k) for k in paramkeys]
                    + ets)
-    
+        fd.flush()
+
+    fd.close()
+
 
 if __name__ == '__main__':
     import numpy
 
     population_sizes = (100, 200, 500, 1000)
     birth_seasonal_coefficients_of_variation = (
-        0.61 * numpy.array([0, 0.1, 0.25, 0.5, 0.75, 1, 2, 3, 4]))
+        0.61 * numpy.array([1, 0.75, 0.5, 2, 3, 0.25, 4, 0.1, 0]))
 
     nruns = 100
     tmax = numpy.inf
     debug = False
 
-    for SAT in (1, 2, 3):
-        parameters = herd.Parameters(SAT = SAT)
-        for ps in population_sizes:
-            parameters.population_size = ps
-            search_parameter('birth_seasonal_coefficient_of_variation',
-                             birth_seasonal_coefficients_of_variation,
+    for bscov in birth_seasonal_coefficients_of_variation:
+        for SAT in (1, 2, 3):
+            parameters = herd.Parameters(SAT = SAT)
+            parameters.birth_seasonal_coefficient_of_variation = bscov
+            search_parameter('population_size',
+                             population_sizes,
                              nruns,
                              parameters,
                              tmax,
