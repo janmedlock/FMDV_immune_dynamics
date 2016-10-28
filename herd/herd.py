@@ -83,8 +83,13 @@ class Herd(list):
         else:
             return None
 
+    @property
+    def number_infected(self):
+        return (len(self.immune_status_lists['exposed'])
+                + len(self.immune_status_lists['infectious']))
+
     def stop(self):
-        return (self.number_infectious == 0)
+        return (self.number_infected == 0)
 
     def step(self, tmax = numpy.inf):
         self.update_infection_times()

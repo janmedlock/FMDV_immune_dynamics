@@ -5,6 +5,11 @@ import numpy
 import run_many
 
 
+def number_infected(x):
+    M, S, E, I, R = x
+    return (E + I)
+
+
 def find_extinction_times(nruns,
                           parameters,
                           tmax,
@@ -14,8 +19,8 @@ def find_extinction_times(nruns,
 
     (T, X) = zip(*(zip(*d) for d in data))
 
-    extinction_times = [t[-1] if (x[-1][2] == 0) else None
-                       for (t, x) in zip(T, X)]
+    extinction_times = [t[-1] if (number_infected(x[-1]) == 0) else None
+                        for (t, x) in zip(T, X)]
 
     return extinction_times
 
