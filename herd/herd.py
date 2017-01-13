@@ -33,7 +33,8 @@ class Herd(list):
         while True:
             status_ages = self.rvs.endemic_equilibrium.rvs(
                 self.params.population_size)
-            if len(status_ages['infectious']) > 0:
+            if (len(status_ages['exposed'])
+                + len(status_ages['infectious'])) > 0:
                 break
             # else:
             #     print(
