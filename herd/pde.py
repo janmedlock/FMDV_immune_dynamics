@@ -178,9 +178,7 @@ def _get_endemic_equilibrium(parameters, tmax, agemax, agestep):
 
     
 def get_endemic_equilibrium(parameters, tmax = 200,
-                            agemax = 20, agestep = 0.1):
-    # The agestep should be 0.01...
-    #
+                            agemax = 20, agestep = 0.01):
     # The PDE solutions simply scale multiplicatively with
     # population_size, so factor that out for more efficient caching.
     population_size = parameters.population_size
