@@ -4,7 +4,7 @@ from . import rv
 
 class gen(rv.RV):
     '''
-    Exponential waiting time to recrudesce from the recoverd class
+    Exponential waiting time to recrudesce from the chronic class
     with rate, 1/params.recrudescence.
     '''
 

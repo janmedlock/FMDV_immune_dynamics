@@ -15,7 +15,9 @@ class Parameters(object):
 
             self.chronic_duration = 4 # 1/rate leaving C to R
 
-            self.recrudescence = 1000  # 1/rate leaving R to S
+            self.recrudescence = 1000  # 1/rate leaving C to I
+
+            self.recovered_duration = 1000 # 1/ rate leaving R to S
 
             if SAT == 1:
                 self.progression_shape = 1.2

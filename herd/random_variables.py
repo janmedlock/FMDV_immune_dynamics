@@ -27,8 +27,9 @@ class RandomVariables(object):
         self.birth = birth.gen(params)
         self.endemic_equilibrium = endemic_equilibrium.gen(params)
         self.probability_chronic = probability_chronic.gen(params)  # prop I to C 
-        self.recrudescence = recrudescence.gen(params)  # 1/rate to recrudesce R to S
+        self.recrudescence = recrudescence.gen(params)  # 1/rate to recrudesce C to I
         self.chronic_duration = chronic_duration.gen(params) # 1/rate to recover C to R
+        self.recovered_duration = recovered_duration.gen(params) # 1/rate leaving R to S
 
     def __repr__(self):
         'Make instances print nicely.'
