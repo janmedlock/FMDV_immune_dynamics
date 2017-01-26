@@ -44,6 +44,7 @@ class Buffalo:
         elif self.immune_status == 'infectious':
             self.set_recovery()
         elif self.immune_status == 'recovered':
+            # Here need to add chronic immune status.
             pass
         else:
             raise ValueError('Unknown immune_status = {}!'.format(

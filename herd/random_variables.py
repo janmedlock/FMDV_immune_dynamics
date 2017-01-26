@@ -10,6 +10,7 @@ from . import transmission_rate
 from . import probability_chronic
 from . import recrudescence
 from . import chronic_duration
+from . import recovered_duration
 
 
 class RandomVariables(object):
