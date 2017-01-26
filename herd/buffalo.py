@@ -67,6 +67,12 @@ class Buffalo:
     def is_infectious(self):
         return (self.immune_status == 'infectious')
 
+    def is_chronic(self):   # NEW
+        return (self.immune_status == 'chronic')
+
+    def is_recovered(self):
+        return (self.immune_status == 'recovered')
+
     def set_sex(self):
         self.sex = 'male' if (self.herd.rvs.male.rvs() == 1) else 'female'
 
@@ -125,15 +131,55 @@ class Buffalo:
         self.events.add('progression',
                         self.herd.time + self.herd.rvs.progression.rvs())
 
+    ###################################################################
+    # NEW, Needs updated, if prob_chronic = 1, becomes chronic not recovered
     def recovery(self):
         assert self.is_infectious()
-        self.change_immune_status_to('recovered')
-        self.events.remove('recovery')
+        if (self.herd.rvs.probability_chronic.rvs() == 1):
+            print(self.identifier)
+            self.change_immune_status_to('recovered')
+            self.events.remove('recovery')
+            #self.change_immune_status_to('chronic')
+            #self.events.remove('chronic)
+        else:
+            self.change_immune_status_to('recovered')
+            self.events.remove('recovery')
 
     def set_recovery(self):
         self.events.add('recovery',
                         self.herd.time + self.herd.rvs.recovery.rvs())
 
+    def recrudescence(self):
+        assert self.is_chronic()
+        self.change_immune_status_to('infectious')
+        self.events.remove('recrudescence')
+        self.set_recovery()
+
+    def set_recrudescence(self):
+        self.events.add('recrudescence',
+                        self.herd.time + self.herd.rvs.recrudescence.rvs())
+
+    def immunity_waning(self):
+        assert self.is_recovered()
+        self.change_immune_status_to('susceptible')
+        self.events.remove('immunity_waning')
+        self.set_immunity_waning()
+    
+    def set_immunity_waning(self):
+        self.events.add('immunity_waning',
+                        self.herd.time + self.herd.rvs.immunity_waning.rvs())
+
+    def chronic_recovery(self):
+        assert self.is_chronic()
+        self.change_immune_status_to('recovered')
+        self.events.remove('chronic_recovery')
+        self.set_chronic_recovery()
+
+    def set_chronic_recovery(self):
+        self.events.add('chronic_recovery',
+                        self.herd.time + self.herd.rvs.immunity_waning.rvs())
+    ###################################################################
+    
     def infection(self):
         assert self.is_susceptible()
         self.change_immune_status_to('exposed')

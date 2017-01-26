@@ -9,8 +9,8 @@ class gen(rv.RV):
     '''
 
     def __init__(self, parameters, *args, **kwargs):
-        self.recovered_duration = parameters.recovered_duration
-        distn = stats.expon(scale = self.recovered_duration)
+        self.immunity_waning = parameters.immunity_waning
+        distn = stats.expon(scale = self.immunity_waning)
 
     def __repr__(self):
-        return rv.RV.__repr__(self, ('recovered_duration', ))
+        return rv.RV.__repr__(self, ('immunity_waning', ))

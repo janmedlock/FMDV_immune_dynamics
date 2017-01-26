@@ -10,8 +10,8 @@ class gen(rv.RV):
     '''
 
     def __init__(self, parameters, *args, **kwargs):
-        self.chronic_duration = parameters.chronic_duration
-        distn = stats.expon(scale = self.chronic_duration)
+        self.chronic_recovery = parameters.chronic_recovery
+        distn = stats.expon(scale = self.chronic_recovery)
 
     def __repr__(self):
-        return rv.RV.__repr__(self, ('chronic_duration', ))
+        return rv.RV.__repr__(self, ('chronic_recovery', ))

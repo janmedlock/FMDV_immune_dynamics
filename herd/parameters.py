@@ -13,11 +13,11 @@ class Parameters(object):
 
             self.probability_chronic = 0  # proportion leaving I that become C
 
-            self.chronic_duration = 4 # 1/rate leaving C to R
+            self.chronic_recovery = 4 # 1/rate leaving C to R
 
             self.recrudescence = 1000  # 1/rate leaving C to I
 
-            self.recovered_duration = 1000 # 1/ rate leaving R to S
+            self.immunity_waning = 1000 # 1/ rate leaving R to S
 
             if SAT == 1:
                 self.progression_shape = 1.2

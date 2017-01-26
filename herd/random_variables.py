@@ -9,8 +9,8 @@ from . import recovery
 from . import transmission_rate
 from . import probability_chronic
 from . import recrudescence
-from . import chronic_duration
-from . import recovered_duration
+from . import chronic_recovery
+from . import immunity_waning
 
 
 class RandomVariables(object):
@@ -23,14 +23,14 @@ class RandomVariables(object):
         self.maternal_immunity_waning = maternal_immunity_waning.gen(params)
         self.mortality = mortality.gen(params)
         self.progression = progression.gen(params)
-        self.recovery = recovery.gen(params)
+        self.recovery = recovery.gen(params) # waiting time I to R
         self.transmission_rate = transmission_rate.gen(params)
         self.birth = birth.gen(params)
         self.endemic_equilibrium = endemic_equilibrium.gen(params)
         self.probability_chronic = probability_chronic.gen(params)  # prop I to C 
-        self.recrudescence = recrudescence.gen(params)  # 1/rate to recrudesce C to I
-        self.chronic_duration = chronic_duration.gen(params) # 1/rate to recover C to R
-        self.recovered_duration = recovered_duration.gen(params) # 1/rate leaving R to S
+        self.recrudescence = recrudescence.gen(params)  # waiting time to recrudesce C to I
+        self.chronic_recovery = chronic_recovery.gen(params) # w.t. to recover C to R
+        self.immunity_waning = immunity_waning.gen(params) # w.t. leaving R to S
 
     def __repr__(self):
         'Make instances print nicely.'
