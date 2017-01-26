@@ -7,6 +7,9 @@ from . import mortality
 from . import progression
 from . import recovery
 from . import transmission_rate
+from . import probability_chronic
+from . import recrudescence
+from . import chronic_duration
 
 
 class RandomVariables(object):
@@ -23,6 +26,9 @@ class RandomVariables(object):
         self.transmission_rate = transmission_rate.gen(params)
         self.birth = birth.gen(params)
         self.endemic_equilibrium = endemic_equilibrium.gen(params)
+        self.probability_chronic = probability_chronic.gen(params)  # prop I to C 
+        self.recrudescence = recrudescence.gen(params)  # 1/rate to recrudesce R to S
+        self.chronic_duration = chronic_duration.gen(params) # 1/rate to recover C to R
 
     def __repr__(self):
         'Make instances print nicely.'

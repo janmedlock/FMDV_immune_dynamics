@@ -11,6 +11,12 @@ class Parameters(object):
 
             self.maternal_immunity_duration = 0.5
 
+            self.probability_chronic = 0  # proportion leaving I that become C
+
+            self.chronic_duration = 4 # 1/rate leaving C to R
+
+            self.recrudescence = 1000  # 1/rate leaving R to S
+
             if SAT == 1:
                 self.progression_shape = 1.2
                 self.progression_mean = 1.0 / 365
