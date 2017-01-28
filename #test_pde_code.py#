@@ -40,8 +40,9 @@ if __name__ == '__main__':
     numpy.random.seed(1)
 
     p = herd.Parameters(SAT = 1)
-    print(p)
+    herd.rvs.endemic_equilibrium.rvs
 
+    
     tmax = 1
     debug = False
 

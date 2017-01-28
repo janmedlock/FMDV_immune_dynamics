@@ -11,6 +11,9 @@ class gen(rv.RV):
     def __init__(self, parameters, *args, **kwargs):
         self.immunity_waning = parameters.immunity_waning
         distn = stats.expon(scale = self.immunity_waning)
+        super()._copyattrs(distn)
 
+    
     def __repr__(self):
-        return rv.RV.__repr__(self, ('immunity_waning', ))
+        return super().__repr__('immunity_waning')
+        #return rv.RV.__repr__(self, ('immunity_waning', ))

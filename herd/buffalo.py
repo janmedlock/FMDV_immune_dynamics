@@ -125,7 +125,11 @@ class Buffalo:
         assert self.is_exposed()
         self.change_immune_status_to('infectious')
         self.events.remove('progression')
-        self.set_recovery()
+        if (self.herd.rvs.probability_chronic.rvs() == 1):
+            self.set_recovery()
+            #self.set_chronic_progression()  # FIX THIS!!!!
+        else:
+            self.set_recovery()
 
     def set_progression(self):
         self.events.add('progression',
@@ -135,35 +139,29 @@ class Buffalo:
     # NEW, Needs updated, if prob_chronic = 1, becomes chronic not recovered
     def recovery(self):
         assert self.is_infectious()
-        if (self.herd.rvs.probability_chronic.rvs() == 1):
-            print(self.identifier)
-            self.change_immune_status_to('recovered')
-            self.events.remove('recovery')
-            #self.change_immune_status_to('chronic')
-            #self.events.remove('chronic)
-        else:
-            self.change_immune_status_to('recovered')
-            self.events.remove('recovery')
+        self.change_immune_status_to('recovered')
+        self.events.remove('recovery')
+        self.set_immunity_waning()
 
     def set_recovery(self):
         self.events.add('recovery',
                         self.herd.time + self.herd.rvs.recovery.rvs())
 
-    def recrudescence(self):
-        assert self.is_chronic()
-        self.change_immune_status_to('infectious')
-        self.events.remove('recrudescence')
-        self.set_recovery()
+    def chronic_progression(self):
+        assert self.is_infectious()
+        self.change_immune_status_to('chronic')
+        self.events.remove('chronic')
+        self.set_chronic_recovery()
 
-    def set_recrudescence(self):
-        self.events.add('recrudescence',
-                        self.herd.time + self.herd.rvs.recrudescence.rvs())
+    def set_chronic_progression(self):
+        self.events.add('chronic_progression',
+                        self.herd.time + self.herd.rvs.recovery.rvs())
 
     def immunity_waning(self):
         assert self.is_recovered()
         self.change_immune_status_to('susceptible')
         self.events.remove('immunity_waning')
-        self.set_immunity_waning()
+        self.update_infection()
     
     def set_immunity_waning(self):
         self.events.add('immunity_waning',
@@ -177,7 +175,8 @@ class Buffalo:
 
     def set_chronic_recovery(self):
         self.events.add('chronic_recovery',
-                        self.herd.time + self.herd.rvs.immunity_waning.rvs())
+                        self.herd.time + self.herd.rvs.chronic_recovery.rvs())
+                        
     ###################################################################
     
     def infection(self):
@@ -193,6 +192,9 @@ class Buffalo:
         if (self.herd.number_infectious > 0):
             force_of_infection = (self.herd.rvs.transmission_rate
                                   * self.herd.number_infectious)
+            # MAKE FOI include transmission from carriers, need to sum number_carriers!
+            # Rest can stay the same
+            # + self.herd.rvs.chronic_transmission_rate * self.herd.number_chronic
 
             infection_time = self.herd.time + stats.expon.rvs(
                 scale = 1 / force_of_infection)

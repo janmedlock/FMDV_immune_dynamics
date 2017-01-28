@@ -7,8 +7,8 @@ from . import mortality
 from . import progression
 from . import recovery
 from . import transmission_rate
+from . import chronic_transmission_rate
 from . import probability_chronic
-from . import recrudescence
 from . import chronic_recovery
 from . import immunity_waning
 
@@ -25,10 +25,10 @@ class RandomVariables(object):
         self.progression = progression.gen(params)
         self.recovery = recovery.gen(params) # waiting time I to R
         self.transmission_rate = transmission_rate.gen(params)
+        self.chronic_transmission_rate = chronic_transmission_rate.gen(params)
         self.birth = birth.gen(params)
         self.endemic_equilibrium = endemic_equilibrium.gen(params)
         self.probability_chronic = probability_chronic.gen(params)  # prop I to C 
-        self.recrudescence = recrudescence.gen(params)  # waiting time to recrudesce C to I
         self.chronic_recovery = chronic_recovery.gen(params) # w.t. to recover C to R
         self.immunity_waning = immunity_waning.gen(params) # w.t. leaving R to S
 
