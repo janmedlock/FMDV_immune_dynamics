@@ -13,10 +13,10 @@ def make_plot(data, show = True):
     from scipy import integrate
 
     (fig, ax) = pyplot.subplots()
-    seaborn.set_palette(seaborn.color_palette('deep', 5))
+    seaborn.set_palette(seaborn.color_palette('deep', 6))
 
     (t, x) = map(numpy.array, zip(*data))
-    for (j, l) in enumerate(('M', 'S', 'E', 'I', 'R')):
+    for (j, l) in enumerate(('M', 'S', 'E', 'I', 'C', 'R')):
         # if l in ('S', 'E', 'I'):
         if True:
             ax.step(365 * t, x[:, j], where = 'post', label = l)
@@ -40,7 +40,6 @@ if __name__ == '__main__':
     numpy.random.seed(1)
 
     p = herd.Parameters(SAT = 1)
-    print(p)
 
     tmax = 1
     debug = False

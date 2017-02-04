@@ -34,17 +34,18 @@ class Herd(list):
             status_ages = self.rvs.endemic_equilibrium.rvs(
                 self.params.population_size)
             if (len(status_ages['exposed'])
-                + len(status_ages['infectious'])) > 0:
+                + len(status_ages['infectious'])
+                + len(status_ages['chronic'])) > 0:
                 break
             # else:
             #     print(
             #         'Initial infections = 0!  Resampling initial conditions.')
-
+        print("in herd, immune status and ages at endemic eq set; next make buffalo")
         for (immune_status, ages) in status_ages.items():
             for age in ages:
                 self.append(buffalo.Buffalo(self, immune_status, age,
                                             building_herd = True))
-
+    
     def immune_status_append(self, b):
         self.immune_status_lists[b.immune_status].append(b)
 
@@ -72,7 +73,7 @@ class Herd(list):
     def get_stats(self):
         stats = [len(self.immune_status_lists[status])
                  for status in ('maternal immunity', 'susceptible',
-                                'exposed', 'infectious', 'recovered')]
+                                'exposed', 'infectious', 'chronic', 'recovered')]
 
         return [self.time, stats]
 
@@ -83,11 +84,12 @@ class Herd(list):
             return min(b.get_next_event() for b in self)
         else:
             return None
-
+# https://www.programiz.com/python-programming/property
     @property
     def number_infected(self):
         return (len(self.immune_status_lists['exposed'])
-                + len(self.immune_status_lists['infectious']))
+                + len(self.immune_status_lists['infectious'])
+                + len(self.immune_status_lists['chronic']))  # OK????????
 
     def stop(self):
         return (self.number_infected == 0)

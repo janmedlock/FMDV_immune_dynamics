@@ -2,6 +2,8 @@ from scipy import stats
 
 from . import events
 
+# NOTE: Need to update transmission rate from carriers 
+#(requires herd to calculate number_chronic)
 
 class Buffalo:
     'A single buffalo and the actions that can occur to it.'
@@ -13,7 +15,7 @@ class Buffalo:
 
         self.birth_date = self.herd.time - age
 
-        self.identifier = next(self.herd.identifiers)
+        self.identifier = next(self.herd.identifiers) # like an iterator?
 
         if self.herd.debug:
             if age == 0:
@@ -32,6 +34,7 @@ class Buffalo:
 
         self.set_mortality()
 
+# No modifications here- these fractions, I think, get specified in herd
         if self.immune_status == 'maternal immunity':
             self.set_maternal_immunity_waning()
         elif self.immune_status == 'susceptible':
@@ -44,7 +47,6 @@ class Buffalo:
         elif self.immune_status == 'infectious':
             self.set_recovery()
         elif self.immune_status == 'recovered':
-            # Here need to add chronic immune status.
             pass
         else:
             raise ValueError('Unknown immune_status = {}!'.format(
@@ -126,8 +128,8 @@ class Buffalo:
         self.change_immune_status_to('infectious')
         self.events.remove('progression')
         if (self.herd.rvs.probability_chronic.rvs() == 1):
-            self.set_recovery()
-            #self.set_chronic_progression()  # FIX THIS!!!!
+            #self.set_recovery() tested with recovery on only...           
+            self.set_chronic_progression()
         else:
             self.set_recovery()
 
@@ -192,6 +194,8 @@ class Buffalo:
         if (self.herd.number_infectious > 0):
             force_of_infection = (self.herd.rvs.transmission_rate
                                   * self.herd.number_infectious)
+            #force_of_infection_chronic = (self.herd.rvs.chronic_transmission_rate
+            #                      * self.herd.number_chronic
             # MAKE FOI include transmission from carriers, need to sum number_carriers!
             # Rest can stay the same
             # + self.herd.rvs.chronic_transmission_rate * self.herd.number_chronic

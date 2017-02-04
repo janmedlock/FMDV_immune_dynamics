@@ -17,6 +17,7 @@ class gen(rv.RV):
                          'susceptible',
                          'exposed',
                          'infectious',
+                         'chronic',
                          'recovered')
 
         self.weights = numpy.array([[integrate.trapz(x, ages) for x in Y]
