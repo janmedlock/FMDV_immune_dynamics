@@ -40,7 +40,7 @@ class Herd(list):
             # else:
             #     print(
             #         'Initial infections = 0!  Resampling initial conditions.')
-        print("in herd, immune status and ages at endemic eq set; next make buffalo")
+      
         for (immune_status, ages) in status_ages.items():
             for age in ages:
                 self.append(buffalo.Buffalo(self, immune_status, age,
@@ -62,13 +62,18 @@ class Herd(list):
 
     def update_infection_times(self):
         number_infectious_new = len(self.immune_status_lists['infectious'])
-
+        number_chronic_new = len(self.immune_status_lists['chronic'])
+        
         if ((not hasattr(self, 'number_infectious'))
             or (number_infectious_new != self.number_infectious)):
             self.number_infectious = number_infectious_new
 
-            for b in self.immune_status_lists['susceptible']:
-                b.update_infection()
+        if ((not hasattr(self, 'number_chronic'))
+            or (number_chronic_new != self.number_chronic)):
+            self.number_chronic = number_chronic_new
+            
+        for b in self.immune_status_lists['susceptible']:
+            b.update_infection()
 
     def get_stats(self):
         stats = [len(self.immune_status_lists[status])
@@ -114,7 +119,10 @@ class Herd(list):
             result.append(self.get_stats())
             if self.stop():
                 break
-
+            ######### Test for carriers!, NEW ##########
+            if self.number_chronic > 0:
+                print("error, some became chronic carriers")
+            
         if self.run_number is not None:
             t_last = result[-1][0]
             print('Simulation #{} ended at {:g} days.'.format(self.run_number,

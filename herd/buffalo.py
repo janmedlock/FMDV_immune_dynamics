@@ -164,6 +164,7 @@ class Buffalo:
         self.change_immune_status_to('susceptible')
         self.events.remove('immunity_waning')
         self.update_infection()
+        print('WARNING: Immunity waning')
     
     def set_immunity_waning(self):
         self.events.add('immunity_waning',
@@ -192,10 +193,19 @@ class Buffalo:
         assert self.is_susceptible()
 
         if (self.herd.number_infectious > 0):
+            #force_of_infection = (self.herd.rvs.transmission_rate
+            #                      * self.herd.number_infectious)
+            
             force_of_infection = (self.herd.rvs.transmission_rate
-                                  * self.herd.number_infectious)
+                                  * self.herd.number_infectious 
+                                  + self.herd.rvs.chronic_transmission_rate
+                                  * self.herd.number_chronic)
+            
+            ######NEW!!!!
             #force_of_infection_chronic = (self.herd.rvs.chronic_transmission_rate
             #                      * self.herd.number_chronic
+            
+            #foi = force_of_infection + force_of_infection_chronic
             # MAKE FOI include transmission from carriers, need to sum number_carriers!
             # Rest can stay the same
             # + self.herd.rvs.chronic_transmission_rate * self.herd.number_chronic

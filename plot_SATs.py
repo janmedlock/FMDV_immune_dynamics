@@ -94,7 +94,8 @@ def make_SIR_plots(show = True):
     ax[1].set_ylabel('susceptible')
     ax[2].set_ylabel('exposed')
     ax[3].set_ylabel('infected')
-    ax[4].set_ylabel('recovered')
+    ax[4].set_ylabel('chronic')  # added!
+    ax[5].set_ylabel('recovered')
 
     mid = (axes.shape[-1] - 1) // 2
     axes[-1, mid].set_xlabel('time (days)')
