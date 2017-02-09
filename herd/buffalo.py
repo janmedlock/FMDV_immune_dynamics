@@ -34,7 +34,6 @@ class Buffalo:
 
         self.set_mortality()
 
-# No modifications here- these fractions, I think, get specified in herd
         if self.immune_status == 'maternal immunity':
             self.set_maternal_immunity_waning()
         elif self.immune_status == 'susceptible':
@@ -45,9 +44,11 @@ class Buffalo:
         elif self.immune_status == 'exposed':
             self.set_progression()
         elif self.immune_status == 'infectious':
-            self.set_recovery()
+            self.set_recovery_or_progression()
+        elif self.immune_status == 'chronic':
+            self.set_chronic_progression()    
         elif self.immune_status == 'recovered':
-            pass
+            self.set_immunity_waning()
         else:
             raise ValueError('Unknown immune_status = {}!'.format(
                 self.immune_status))
@@ -127,8 +128,10 @@ class Buffalo:
         assert self.is_exposed()
         self.change_immune_status_to('infectious')
         self.events.remove('progression')
+        self.set_recovery_or_progression()
+        
+    def set_recovery_or_progression(self):  # CHECK IF COIN FLIP HAPPENS EVERY TIME OR ONCE?
         if (self.herd.rvs.probability_chronic.rvs() == 1):
-            #self.set_recovery() tested with recovery on only...           
             self.set_chronic_progression()
         else:
             self.set_recovery()
@@ -137,8 +140,6 @@ class Buffalo:
         self.events.add('progression',
                         self.herd.time + self.herd.rvs.progression.rvs())
 
-    ###################################################################
-    # NEW, Needs updated, if prob_chronic = 1, becomes chronic not recovered
     def recovery(self):
         assert self.is_infectious()
         self.change_immune_status_to('recovered')
