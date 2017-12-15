@@ -28,7 +28,7 @@ class gen(rv.RV, stats.rv_continuous):
 
     def _argcheck(self, time0, age0):
         return (age0 >= 0)
-        
+
     @numpy.vectorize
     def _logsf(self, time, time0, age0):
         result = integrate.quad(self.hazard, 0, time,

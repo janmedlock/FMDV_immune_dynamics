@@ -2,7 +2,7 @@ class Parameters(object):
     def __init__(self, _set_defaults = True):
         'Initialize with default values.'
         if _set_defaults:
-            self.R0 = 4   # initailly set to 10, Ro = beta * N/ (gamma + mortality) 
+            self.R0 = 4   # initailly set to 10, Ro = beta * N/ (gamma + mortality)
             self.birth_seasonal_coefficient_of_variation = 0.61  # initially set at 1
             self.male_probability_at_birth = 0.5
             self.maternal_immunity_duration = 0.5
