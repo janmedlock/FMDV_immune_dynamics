@@ -20,7 +20,6 @@ class RV(object):
         else:
             return '<{}: {}>'.format(clsname, ', '.join(paramstrs))
 
-
 class deterministic(RV, stats.rv_continuous):
     def __init__(self, paramname = '_scale', scale = 1, *args, **kwargs):
         self._scale = scale
@@ -35,7 +34,7 @@ class deterministic(RV, stats.rv_continuous):
 
     def _ppf(self, age):
         return self._scale * numpy.ones_like(age)
-    
+
     def _rvs(self):
         return self._scale * numpy.ones(self._size)
 
@@ -44,6 +43,9 @@ class deterministic(RV, stats.rv_continuous):
             return self._scale
         else:
             return 0
+
+    def hazard(self, age):
+        return numpy.ma.divide(self.pdf(age), self.sf(age)).filled(0)
 
     def __getattribute__(self, k):
         get = object.__getattribute__
@@ -67,6 +69,6 @@ class age_structured(RV):
 
     def rvs(self, *args, **kwargs):
         return self.ages[self._quantilerv.rvs(*args, **kwargs)]
-        
+
     def cdf(self, x):
         return numpy.where(self.ages <= x, self.proportion, 0).sum()
