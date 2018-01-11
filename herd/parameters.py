@@ -9,7 +9,19 @@ class Parameters(object):
 
             self.birth_seasonal_coefficient_of_variation = 0.61
 
-            self.maternal_immunity_duration = 0.5
+            self.maternal_immunity_duration_mean = 0.5
+            self.maternal_immunity_duration_shape = 350
+
+            # Proportion leaving I that become C.
+            self.probability_chronic = 0
+
+            # Duration in C before leaving to R.
+            self.chronic_recovery = 4
+
+            # Duration in R before returning to S.
+            self.immunity_waning_duration = 100000
+
+            self.chronic_transmission_rate = 0
 
             if SAT == 1:
                 self.progression_shape = 1.2

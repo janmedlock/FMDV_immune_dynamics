@@ -2,6 +2,8 @@ from scipy import stats
 
 from . import events
 
+# NOTE: Need to update transmission rate from carriers
+#(requires herd to calculate number_chronic)
 
 class Buffalo:
     'A single buffalo and the actions that can occur to it.'
@@ -13,7 +15,7 @@ class Buffalo:
 
         self.birth_date = self.herd.time - age
 
-        self.identifier = next(self.herd.identifiers)
+        self.identifier = next(self.herd.identifiers) # like an iterator?
 
         if self.herd.debug:
             if age == 0:
@@ -42,9 +44,11 @@ class Buffalo:
         elif self.immune_status == 'exposed':
             self.set_progression()
         elif self.immune_status == 'infectious':
-            self.set_recovery()
+            self.set_recovery_or_progression()
+        elif self.immune_status == 'chronic':
+            self.set_chronic_progression()
         elif self.immune_status == 'recovered':
-            pass
+            self.set_immunity_waning()
         else:
             raise ValueError('Unknown immune_status = {}!'.format(
                 self.immune_status))
@@ -65,6 +69,12 @@ class Buffalo:
 
     def is_infectious(self):
         return (self.immune_status == 'infectious')
+
+    def is_chronic(self):   # NEW
+        return (self.immune_status == 'chronic')
+
+    def is_recovered(self):
+        return (self.immune_status == 'recovered')
 
     def set_sex(self):
         self.sex = 'male' if (self.herd.rvs.male.rvs() == 1) else 'female'
@@ -106,11 +116,11 @@ class Buffalo:
         self.events.remove('maternal_immunity_waning')
 
     def set_maternal_immunity_waning(self):
-        waning_time = (self.birth_date
-                       + self.herd.rvs.maternal_immunity_waning.rvs())
-
-        assert waning_time >= self.herd.time
-
+        while True:
+            waning_time = (self.birth_date
+                           + self.herd.rvs.maternal_immunity_waning.rvs())
+            if waning_time >= self.herd.time:
+                break
         self.events.add('maternal_immunity_waning',
                         waning_time)
 
@@ -118,7 +128,14 @@ class Buffalo:
         assert self.is_exposed()
         self.change_immune_status_to('infectious')
         self.events.remove('progression')
-        self.set_recovery()
+        self.set_recovery_or_progression()
+
+    def set_recovery_or_progression(self):
+        # CHECK IF COIN FLIP HAPPENS EVERY TIME OR ONCE?
+        if (self.herd.rvs.probability_chronic.rvs() == 1):
+            self.set_chronic_progression()
+        else:
+            self.set_recovery()
 
     def set_progression(self):
         self.events.add('progression',
@@ -128,10 +145,44 @@ class Buffalo:
         assert self.is_infectious()
         self.change_immune_status_to('recovered')
         self.events.remove('recovery')
+        self.set_immunity_waning()
 
     def set_recovery(self):
         self.events.add('recovery',
                         self.herd.time + self.herd.rvs.recovery.rvs())
+
+    def chronic_progression(self):
+        assert self.is_infectious()
+        self.change_immune_status_to('chronic')
+        self.events.remove('chronic')
+        self.set_chronic_recovery()
+
+    def set_chronic_progression(self):
+        self.events.add('chronic_progression',
+                        self.herd.time + self.herd.rvs.recovery.rvs())
+
+    def immunity_waning(self):
+        assert self.is_recovered()
+        self.change_immune_status_to('susceptible')
+        self.events.remove('immunity_waning')
+        self.update_infection()
+        print('WARNING: Immunity waning')
+
+    def set_immunity_waning(self):
+        self.events.add('immunity_waning',
+                        self.herd.time + self.herd.rvs.immunity_waning.rvs())
+
+    def chronic_recovery(self):
+        assert self.is_chronic()
+        self.change_immune_status_to('recovered')
+        self.events.remove('chronic_recovery')
+        self.set_chronic_recovery()
+
+    def set_chronic_recovery(self):
+        self.events.add('chronic_recovery',
+                        self.herd.time + self.herd.rvs.chronic_recovery.rvs())
+
+    ###################################################################
 
     def infection(self):
         assert self.is_susceptible()
@@ -145,7 +196,9 @@ class Buffalo:
 
         if (self.herd.number_infectious > 0):
             force_of_infection = (self.herd.rvs.transmission_rate
-                                  * self.herd.number_infectious)
+                                  * self.herd.number_infectious
+                                  + self.herd.rvs.chronic_transmission_rate
+                                  * self.herd.number_chronic)
 
             infection_time = self.herd.time + stats.expon.rvs(
                 scale = 1 / force_of_infection)

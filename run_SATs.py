@@ -9,7 +9,7 @@ import pandas
 import herd
 import run_many
 
-export_data = True
+export_data = False
 
 def _build_ix(SAT, rep, t):
     return pandas.MultiIndex.from_arrays(([SAT] * len(t), [rep] * len(t), t),
@@ -17,7 +17,7 @@ def _build_ix(SAT, rep, t):
     
 
 def run_SATs(nruns = 100, tmax = numpy.inf, debug = False):
-    cols = ['M', 'S', 'E', 'I', 'R', 'Total']
+    cols = ['M', 'S', 'E', 'I', 'C', 'R', 'Total']
 
     sheets = []
     for SAT in (1, 2, 3):

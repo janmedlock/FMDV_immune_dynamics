@@ -55,7 +55,7 @@ class deterministic(RV, stats.rv_continuous):
             return get(self, k)
 
     def __repr__(self):
-        return RV.__repr__(self, (self._paramname, ))
+        return super().__repr__((self._paramname, ))
 
 
 class age_structured(RV):

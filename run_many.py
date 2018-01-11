@@ -68,8 +68,8 @@ def make_plots(data, show = True):
 
     from herd import pde
 
-    # (fig, ax) = pyplot.subplots(6, sharex = True)
-    (fig, ax) = pyplot.subplots(5, sharex = True)
+    (fig, ax) = pyplot.subplots(6, sharex = True)
+    #(fig, ax) = pyplot.subplots(5, sharex = True)
     colors = itertools.cycle(seaborn.color_palette('husl', 8))
 
     (T, X) = zip(*(zip(*d) for d in data))
@@ -111,8 +111,9 @@ def make_plots(data, show = True):
     ax[1].set_ylabel('susceptible')
     ax[2].set_ylabel('exposed')
     ax[3].set_ylabel('infected')
-    ax[4].set_ylabel('recovered')
-    # ax[5].set_ylabel('total')
+    ax[4].set_ylabel('chronic')
+    ax[5].set_ylabel('recovered')
+    # ax[6].set_ylabel('total')
 
     ax[-1].set_xlabel('time (days)')
 
@@ -137,7 +138,7 @@ def make_datasheet(data):
         n = x.sum(-1)
         rep = numpy.array([index]* len(t))
         x = numpy.column_stack((x, n, rep))
-        data = pandas.DataFrame(data=x, index=t, columns=['M', 'S', 'E', 'I', 'R', 'Total', 'Rep'])
+        data = pandas.DataFrame(data=x, index=t, columns=['M', 'S', 'E', 'I', 'C', 'R', 'Total', 'Rep'])
         appended_data.append(data)  
         index += 1      
     # Make a dataheet with the mean values of all the interations
@@ -145,7 +146,7 @@ def make_datasheet(data):
     N_mean = X_mean.sum(-1)
     rep = numpy.array(["mean"]* len(T_mean))
     X_mean = numpy.column_stack((X_mean, N_mean, rep))
-    mean_data = pandas.DataFrame(data=X_mean, index=T_mean, columns=['M', 'S', 'E', 'I', 'R', 'Total', 'Rep'])
+    mean_data = pandas.DataFrame(data=X_mean, index=T_mean, columns=['M', 'S', 'E', 'I', 'C', 'R', 'Total', 'Rep'])
     appended_data.append(mean_data)
     # Append them together in long format and save
     final_data = pandas.concat(appended_data)          
@@ -163,7 +164,7 @@ if __name__ == '__main__':
 
     numpy.random.seed(1)
 
-    p = herd.Parameters(SAT = 3)
+    p = herd.Parameters(SAT = 1)
 
     tmax = 1
     nruns = 100
