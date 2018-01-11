@@ -2,7 +2,7 @@ from scipy import stats
 
 from . import events
 
-# NOTE: Need to update transmission rate from carriers 
+# NOTE: Need to update transmission rate from carriers
 #(requires herd to calculate number_chronic)
 
 class Buffalo:
@@ -116,11 +116,11 @@ class Buffalo:
         self.events.remove('maternal_immunity_waning')
 
     def set_maternal_immunity_waning(self):
-        waning_time = (self.birth_date
-                       + self.herd.rvs.maternal_immunity_waning.rvs())
-
-        assert waning_time >= self.herd.time
-
+        while True:
+            waning_time = (self.birth_date
+                           + self.herd.rvs.maternal_immunity_waning.rvs())
+            if waning_time >= self.herd.time:
+                break
         self.events.add('maternal_immunity_waning',
                         waning_time)
 
