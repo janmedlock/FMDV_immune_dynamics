@@ -46,7 +46,7 @@ class Buffalo:
         elif self.immune_status == 'infectious':
             self.set_recovery_or_progression()
         elif self.immune_status == 'chronic':
-            self.set_chronic_progression()    
+            self.set_chronic_progression()
         elif self.immune_status == 'recovered':
             self.set_immunity_waning()
         else:
@@ -129,8 +129,9 @@ class Buffalo:
         self.change_immune_status_to('infectious')
         self.events.remove('progression')
         self.set_recovery_or_progression()
-        
-    def set_recovery_or_progression(self):  # CHECK IF COIN FLIP HAPPENS EVERY TIME OR ONCE?
+
+    def set_recovery_or_progression(self):
+        # CHECK IF COIN FLIP HAPPENS EVERY TIME OR ONCE?
         if (self.herd.rvs.probability_chronic.rvs() == 1):
             self.set_chronic_progression()
         else:
@@ -166,7 +167,7 @@ class Buffalo:
         self.events.remove('immunity_waning')
         self.update_infection()
         print('WARNING: Immunity waning')
-    
+
     def set_immunity_waning(self):
         self.events.add('immunity_waning',
                         self.herd.time + self.herd.rvs.immunity_waning.rvs())
@@ -180,9 +181,9 @@ class Buffalo:
     def set_chronic_recovery(self):
         self.events.add('chronic_recovery',
                         self.herd.time + self.herd.rvs.chronic_recovery.rvs())
-                        
+
     ###################################################################
-    
+
     def infection(self):
         assert self.is_susceptible()
         self.change_immune_status_to('exposed')
@@ -194,22 +195,10 @@ class Buffalo:
         assert self.is_susceptible()
 
         if (self.herd.number_infectious > 0):
-            #force_of_infection = (self.herd.rvs.transmission_rate
-            #                      * self.herd.number_infectious)
-            
             force_of_infection = (self.herd.rvs.transmission_rate
-                                  * self.herd.number_infectious 
+                                  * self.herd.number_infectious
                                   + self.herd.rvs.chronic_transmission_rate
                                   * self.herd.number_chronic)
-            
-            ######NEW!!!!
-            #force_of_infection_chronic = (self.herd.rvs.chronic_transmission_rate
-            #                      * self.herd.number_chronic
-            
-            #foi = force_of_infection + force_of_infection_chronic
-            # MAKE FOI include transmission from carriers, need to sum number_carriers!
-            # Rest can stay the same
-            # + self.herd.rvs.chronic_transmission_rate * self.herd.number_chronic
 
             infection_time = self.herd.time + stats.expon.rvs(
                 scale = 1 / force_of_infection)
