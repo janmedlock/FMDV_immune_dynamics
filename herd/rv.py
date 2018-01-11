@@ -20,6 +20,7 @@ class RV(object):
         else:
             return '<{}: {}>'.format(clsname, ', '.join(paramstrs))
 
+
 class deterministic(RV, stats.rv_continuous):
     def __init__(self, paramname = '_scale', scale = 1, *args, **kwargs):
         self._scale = scale
