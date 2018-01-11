@@ -104,10 +104,11 @@ def solve(tmax, agemax, agestep, parameters, Y0 = None):
         eigenvector = eigenpair[1][1]
         N0 = (eigenvector / integrate.trapz(eigenvector, ages)
               * parameters.population_size)
+        ### FIXME!!! for new gamma-distributed waning! ###
         # Everyone under 2 susceptible (except for maternal immunity).
         S0 = numpy.where(ages < 2, N0, 0)
         E0 = numpy.zeros_like(N0)
-        # initial infections.
+        # Initial infections.
         I0 = 0.01 * S0
         C0 = numpy.zeros_like(N0)
         S0 -= I0
