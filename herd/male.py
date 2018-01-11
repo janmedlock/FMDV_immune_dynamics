@@ -12,4 +12,4 @@ class gen(rv.RV):
         super()._copyattrs(distn)
 
     def __repr__(self):
-        return rv.RV.__repr__(self, ('male_probability_at_birth', ))
+        return super().__repr__(('male_probability_at_birth', ))

@@ -1,12 +1,12 @@
 from scipy import stats
 
 from . import rv
-#is_exp_duration = True
+
 
 class gen(rv.RV):
     '''
-    Exponential waiting time to recovery from chronic state with 1/rate
-    recovery_chronic_duration.
+    Exponential waiting time to recovery from chronic state with rate
+    1 / chronic_recovery.
     '''
 
     def __init__(self, parameters, *args, **kwargs):
@@ -14,4 +14,4 @@ class gen(rv.RV):
         distn = stats.expon(scale = self.chronic_recovery)
 
     def __repr__(self):
-        return rv.RV.__repr__(self, ('chronic_recovery', ))
+        return super().__repr__(('chronic_recovery', ))

@@ -28,7 +28,7 @@ class gen(rv.RV, stats.rv_continuous):
 
     def _argcheck(self, time0, age0):
         return (age0 >= 0)
-        
+
     @numpy.vectorize
     def _logsf(self, time, time0, age0):
         result = integrate.quad(self.hazard, 0, time,
@@ -66,4 +66,4 @@ class gen(rv.RV, stats.rv_continuous):
                                                   *args, **kwargs)
 
     def __repr__(self):
-        return rv.RV.__repr__(self, ('seasonal_coefficient_of_variation', ))
+        return super().__repr__(('seasonal_coefficient_of_variation', ))

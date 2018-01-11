@@ -4,16 +4,14 @@ from . import rv
 
 class gen(rv.RV):
     '''
-    Exponential waiting time until loss of immunity from 
+    Exponential waiting time until loss of immunity from
     recovered to susceptible.
     '''
 
     def __init__(self, parameters, *args, **kwargs):
-        self.immunity_waning = parameters.immunity_waning
-        distn = stats.expon(scale = self.immunity_waning)
+        self.immunity_waning_duration = parameters.immunity_waning_duration
+        distn = stats.expon(scale = self.immunity_waning_duration)
         super()._copyattrs(distn)
 
-    
     def __repr__(self):
-        return super().__repr__('immunity_waning')
-        #return rv.RV.__repr__(self, ('immunity_waning', ))
+        return super().__repr__(('immunity_waning_duration', ))

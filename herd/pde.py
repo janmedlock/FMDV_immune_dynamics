@@ -17,7 +17,7 @@ def rhs(Y, t, AM, B, force_of_infection,
         proportion_carriers, immunity_waning_rate,
         chronic_recovery_rate):
     (S, E, I, C, R) = numpy.hsplit(Y, 5)
-    
+
     N = S + E + I + C + R
 
     lambda_ = force_of_infection(I)
@@ -37,7 +37,7 @@ def rhs(Y, t, AM, B, force_of_infection,
           - recovery_rate * I)
     dC = (AM.dot(C)
           + proportion_carriers * recovery_rate * I
-          - chronic_recovery_rate * C)  
+          - chronic_recovery_rate * C)
     dR = (AM.dot(R)
           + (1 - proportion_carriers) * recovery_rate * I
           + chronic_recovery_rate * C
@@ -46,7 +46,6 @@ def rhs(Y, t, AM, B, force_of_infection,
     dY = numpy.hstack((dS, dE, dI, dC, dR))
 
     return dY
-
 
 
 def solve(tmax, agemax, agestep, parameters, Y0 = None):
@@ -60,7 +59,7 @@ def solve(tmax, agemax, agestep, parameters, Y0 = None):
     (ages, (B_bar, A, M)) = matrices
     print("Birth, Aging, & Mortality matricies built of length, ",
         len(ages), B_bar.get_shape(), A.get_shape(), M.get_shape())
-        
+
     AM = A - M
 
     birthRV = birth.gen(parameters)
@@ -70,16 +69,19 @@ def solve(tmax, agemax, agestep, parameters, Y0 = None):
         Bval[0] = ((1 - parameters.male_probability_at_birth)
                    * birthRV.hazard(t, 0, ages - t))
         return Bval
-    
+
     transmissibility = transmission_rate.gen(parameters)
     transmissibility_chronic = chronic_transmission_rate.gen(parameters)
-    susceptibility = numpy.where(ages >= parameters.maternal_immunity_duration,
-                                 1, 0)
-    #print("Transmissibility = ", transmissibility)
-    #print("Transmissibility for chronic = ", transmissibility_chronic)
-    #print("Susceptibility = ", susceptibility)
-    #print("Length susceptibility should equal ages, ", len(susceptibility))    
-    
+    ### FIXME!!! for new gamma-distributed waning! ###
+    susceptibility = numpy.where(
+        ages >= parameters.maternal_immunity_duration_mean,
+        1, 0)
+    # maternal_waning_time_survival_function(ages)
+    # print("Transmissibility = ", transmissibility)
+    # print("Transmissibility for chronic = ", transmissibility_chronic)
+    # print("Susceptibility = ", susceptibility)
+    # print("Length susceptibility should equal ages, ", len(susceptibility))
+
     def force_of_infection(I):
         return integrate.trapz(transmissibility * I, ages) * susceptibility
 
@@ -92,7 +94,7 @@ def solve(tmax, agemax, agestep, parameters, Y0 = None):
 
     chronic_recovery_rate = 1 / parameters.chronic_recovery
 
-    immunity_waning_rate = 1 / parameters.immunity_waning
+    immunity_waning_rate = 1 / parameters.immunity_waning_duration
 
     proportion_carriers = parameters.probability_chronic
 
@@ -126,14 +128,15 @@ def solve(tmax, agemax, agestep, parameters, Y0 = None):
                                          chronic_recovery_rate),
                                  mxstep = 10000,
                                  full_output = True)
-    print("Integrate ode worked!!")   
+    print("Integrate ode worked!!")
     if numpy.any(numpy.diff(info['tcur']) < -1e-16):
         raise RuntimeError('ODE solver failed!')
 
     (S, E, I, C, R) = numpy.hsplit(Y, 5)
     print("Split, integrated ode worked!!")
     # Split susceptibles into maternal immunity and not.
-    mask = (ages < parameters.maternal_immunity_duration)
+    ### FIXME!!! for new gamma-distributed waning! ###
+    mask = (ages < parameters.maternal_immunity_duration_mean)
     M = numpy.where(mask[numpy.newaxis, :], S, 0)
     S -= M
 
@@ -152,7 +155,8 @@ def get_period(t, ages, X, abserr = 1e-3, relerr = 1e-3,
     else:
         raise ValueError('period not found!')
 
-# only piece not run in test    
+
+# only piece not run in test
 def get_limit_cycle(parameters, agemax, agestep,
                     periodmax = 3, t_burnin = 100):
     from scipy import special
@@ -170,7 +174,8 @@ def get_limit_cycle(parameters, agemax, agestep,
         return numpy.hstack((M[-1] + S[-1], E[-1], I[-1], C[-1], R[-1]))
 
     print('Running root solver...')
-    sol = optimize.fixed_point(f, Y0, xtol = 1e-3, maxiter = 1000) # CHCK THIS PIECE
+    # CHECK THIS PIECE
+    sol = optimize.fixed_point(f, Y0, xtol = 1e-3, maxiter = 1000)
     print('Root solver finshed.')
 
     Y0 = sol.x
@@ -219,178 +224,11 @@ def _get_endemic_equilibrium(parameters, tmax, agemax, agestep):
             ICs.append([y[-1].clip(0, ) for y in Y])
 
     return (ages, ICs)
-# this decorator syntax is equivalent to defining the _get... 
-# utility.shelved(_get...) 
-# so when it is called in get_... its the 
+
 
 def get_endemic_equilibrium(parameters, tmax = 200,
                             agemax = 20, agestep = 0.01):
     # The agestep should be 0.01...
-    # The PDE solutions simply scale multiplicatively with
-    # population_size, so factor that out for more efficient caching.
-    population_size = parameters.population_size
-    del parameters.population_size
-    (ages, ICs) = _get_endemic_equilibrium(parameters,
-                                           tmax, agemax, agestep)
-    parameters.population_size = population_size
-
-    ICs_ = [[x * population_size for x in IC] for IC in ICs]
-    
-    return (ages, ICs_)
-    
-
-
-
-
-
-
-
-#####################################
-# ORIGINAL FUNCTTIONS:
-#####################################
-
-def rhs_old(Y, t, AM, B, force_of_infection, progression_rate,
-        recovery_rate):
-    (S, E, I, R) = numpy.hsplit(Y, 4)
-    
-    N = S + E + I + R
-
-    lambda_ = force_of_infection(I)
-
-    dS = (B(t).dot(N)
-          + AM.dot(S)
-          - lambda_ * S)
-    dE = (AM.dot(E)
-          + lambda_ * S
-          - progression_rate * E)
-    dI = (AM.dot(I)
-          + progression_rate * E
-          - recovery_rate * I)
-    dR = (AM.dot(R)
-          + recovery_rate * I)
-
-    dY = numpy.hstack((dS, dE, dI, dR))
-
-    return dY
-
-
-def solve_old(tmax, agemax, agestep, parameters, Y0 = None):
-    matrices = utility.build_matrices(parameters,
-                                      agemax = agemax,
-                                      agestep = agestep)
-    if not hasattr(parameters, 'population_size'):
-        parameters.population_size = 1.
-
-    (ages, (B_bar, A, M)) = matrices
-
-    AM = A - M
-
-    birthRV = birth.gen(parameters)
-    def B(t):
-        Bval = sparse.lil_matrix((len(ages), ) * 2)
-        Bval[0] = ((1 - parameters.male_probability_at_birth)
-                   * birthRV.hazard(t, 0, ages - t))
-        return Bval
-
-    transmissibility = transmission_rate.gen(parameters)
-    susceptibility = numpy.where(ages >= parameters.maternal_immunity_duration,
-                                 1, 0)
-    def force_of_infection(I):
-        return integrate.trapz(transmissibility * I, ages) * susceptibility
-
-    progression_rate = 1 / parameters.progression_mean
-
-    recovery_rate = 1 / parameters.recovery_mean
-
-    if Y0 is None:
-        eigenpair = utility.find_dominant_eigenpair(parameters,
-                                                    _matrices = matrices)
-        eigenvector = eigenpair[1][1]
-        N0 = (eigenvector / integrate.trapz(eigenvector, ages)
-              * parameters.population_size)
-
-        # Everyone under 2 susceptible (except for maternal immunity).
-        S0 = numpy.where(ages < 2, N0, 0)
-        E0 = numpy.zeros_like(N0)
-        # initial infections.
-        I0 = 0.01 * S0
-        S0 -= I0
-        R0 = N0 - S0 - I0
-
-        Y0 = numpy.hstack((S0, E0, I0, R0))
-
-    t = numpy.linspace(0, tmax, 1001)
-
-    (Y, info) = integrate.odeint(rhs, Y0, t,
-                                 args = (AM, B,
-                                         force_of_infection,
-                                         progression_rate,
-                                         recovery_rate),
-                                 mxstep = 10000,
-                                 full_output = True)
-    if numpy.any(numpy.diff(info['tcur']) < -1e-16):
-        raise RuntimeError('ODE solver failed!')
-
-    (S, E, I, R) = numpy.hsplit(Y, 4)
-
-    # Split susceptibles into maternal immunity and not.
-    mask = (ages < parameters.maternal_immunity_duration)
-    M = numpy.where(mask[numpy.newaxis, :], S, 0)
-    S -= M
-
-    return (t, ages, (M, S, E, I, R))
-
-
-def get_period_old(t, ages, X, abserr = 1e-3, relerr = 1e-3,
-               periodmax = 3):
-    (M, S, E, I, R) = X
-    Y = numpy.hstack((M + S, E, I, R))
-    for period in range(1, periodmax + 1):
-        i = numpy.argwhere(t <= t[-1] - period)[-1]
-        if (numpy.linalg.norm(Y[i] - Y[-1])
-            <= (abserr + relerr * numpy.linalg.norm(Y[-1]))):
-            return period
-    else:
-        raise ValueError('period not found!')
-    
-
-def get_limit_cycle_old(parameters, agemax, agestep,
-                    periodmax = 3, t_burnin = 100):
-    from scipy import special
-    from scipy import optimize
-
-    print('Running burn-in...')
-    (t, ages, (M, S, E, I, R)) = solve(t_burnin, agemax, agestep, parameters)
-    print('Burn-in finished.')
-
-    Y0 = numpy.hstack((M[-1] + S[-1], E[-1], I[-1], R[-1]))
-    tmax = special.factorial(periodmax)
-    def f(Y0):
-        (t, ages, (M, S, E, I, R)) = solve(tmax, agemax, agestep, parameters,
-                                           Y0 = Y0)
-        return numpy.hstack((M[-1] + S[-1], E[-1], I[-1], R[-1]))
-
-    print('Running root solver...')
-    sol = optimize.fixed_point(f, Y0, xtol = 1e-3, maxiter = 1000)
-    print('Root solver finshed.')
-
-    Y0 = sol.x
-    (t, ages, Y) = solve(tmax, agemax, agestep, parameters, Y0 = Y0)
-
-    period = get_period(t, ages, Y, periodmax = periodmax)
-
-    ICs = []
-    for j in range(period):
-        k = numpy.argwhere(t <= t[-1] - j)[-1, 0]
-        ICs.append([y[k] for y in Y])
-
-    return ICs
-
-
-def get_endemic_equilibrium_old(parameters, tmax = 200,
-                            agemax = 20, agestep = 0.1):
-    # The agestep should be 0.01...
-    #
     # The PDE solutions simply scale multiplicatively with
     # population_size, so factor that out for more efficient caching.
     population_size = parameters.population_size

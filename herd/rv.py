@@ -35,7 +35,7 @@ class deterministic(RV, stats.rv_continuous):
 
     def _ppf(self, age):
         return self._scale * numpy.ones_like(age)
-    
+
     def _rvs(self):
         return self._scale * numpy.ones(self._size)
 
@@ -53,7 +53,7 @@ class deterministic(RV, stats.rv_continuous):
             return get(self, k)
 
     def __repr__(self):
-        return RV.__repr__(self, (self._paramname, ))
+        return super().__repr__((self._paramname, ))
 
 
 class age_structured(RV):
@@ -67,6 +67,6 @@ class age_structured(RV):
 
     def rvs(self, *args, **kwargs):
         return self.ages[self._quantilerv.rvs(*args, **kwargs)]
-        
+
     def cdf(self, x):
         return numpy.where(self.ages <= x, self.proportion, 0).sum()
