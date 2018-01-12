@@ -17,7 +17,7 @@ def axclean(ax):
     for l in ('top', 'right'):
         ax.spines[l].set_visible(False)
     ax.xaxis.set_ticks_position('bottom')
-    ax.yaxis.set_ticks_position('left')            
+    ax.yaxis.set_ticks_position('left')
     ax.xaxis.set_minor_locator(ticker.AutoMinorLocator(2))
     ax.yaxis.set_minor_locator(ticker.AutoMinorLocator(2))
 

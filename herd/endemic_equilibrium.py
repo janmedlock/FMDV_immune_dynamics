@@ -15,7 +15,9 @@ class gen(rv.RV):
 
         self.statuses = ('maternal immunity',
                          'susceptible',
+                         'exposed',
                          'infectious',
+                         'chronic',
                          'recovered')
 
         self.weights = numpy.array([[integrate.trapz(x, ages) for x in Y]

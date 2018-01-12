@@ -45,6 +45,9 @@ class deterministic(RV, stats.rv_continuous):
         else:
             return 0
 
+    def hazard(self, age):
+        return numpy.ma.divide(self.pdf(age), self.sf(age)).filled(0)
+
     def __getattribute__(self, k):
         get = object.__getattribute__
         if k == get(self, '_paramname'):
@@ -53,7 +56,7 @@ class deterministic(RV, stats.rv_continuous):
             return get(self, k)
 
     def __repr__(self):
-        return RV.__repr__(self, (self._paramname, ))
+        return super().__repr__((self._paramname, ))
 
 
 class age_structured(RV):

@@ -66,4 +66,4 @@ class gen(rv.RV, stats.rv_continuous):
                                                   *args, **kwargs)
 
     def __repr__(self):
-        return rv.RV.__repr__(self, ('seasonal_coefficient_of_variation', ))
+        return super().__repr__(('seasonal_coefficient_of_variation', ))

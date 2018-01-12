@@ -33,11 +33,10 @@ class Herd(list):
         while True:
             status_ages = self.rvs.endemic_equilibrium.rvs(
                 self.params.population_size)
-            if len(status_ages['infectious']) > 0:
+            if (len(status_ages['exposed'])
+                + len(status_ages['infectious'])
+                + len(status_ages['chronic'])) > 0:
                 break
-            else:
-                print(
-                    'Initial infections = 0!  Re-sampling initial conditions.')
 
         for (immune_status, ages) in status_ages.items():
             for age in ages:
@@ -60,18 +59,23 @@ class Herd(list):
 
     def update_infection_times(self):
         number_infectious_new = len(self.immune_status_lists['infectious'])
+        number_chronic_new = len(self.immune_status_lists['chronic'])
 
         if ((not hasattr(self, 'number_infectious'))
             or (number_infectious_new != self.number_infectious)):
             self.number_infectious = number_infectious_new
 
-            for b in self.immune_status_lists['susceptible']:
-                b.update_infection()
+        if ((not hasattr(self, 'number_chronic'))
+            or (number_chronic_new != self.number_chronic)):
+            self.number_chronic = number_chronic_new
+
+        for b in self.immune_status_lists['susceptible']:
+            b.update_infection()
 
     def get_stats(self):
         stats = [len(self.immune_status_lists[status])
                  for status in ('maternal immunity', 'susceptible',
-                                'infectious', 'recovered')]
+                                'exposed', 'infectious', 'chronic', 'recovered')]
 
         return [self.time, stats]
 
@@ -83,8 +87,14 @@ class Herd(list):
         else:
             return None
 
+    @property
+    def number_infected(self):
+        return (len(self.immune_status_lists['exposed'])
+                + len(self.immune_status_lists['infectious'])
+                + len(self.immune_status_lists['chronic']))
+
     def stop(self):
-        return (self.number_infectious == 0)
+        return (self.number_infected == 0)
 
     def step(self, tmax = numpy.inf):
         self.update_infection_times()

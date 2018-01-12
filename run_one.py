@@ -13,11 +13,13 @@ def make_plot(data, show = True):
     from scipy import integrate
 
     (fig, ax) = pyplot.subplots()
-    seaborn.set_palette(seaborn.color_palette('husl', 4))
+    seaborn.set_palette(seaborn.color_palette('deep', 6))
 
     (t, x) = map(numpy.array, zip(*data))
-    for (j, l) in enumerate(('M', 'S', 'I', 'R')):
-        ax.step(365 * t, x[:, j], where = 'post', label = l)
+    for (j, l) in enumerate(('M', 'S', 'E', 'I', 'C', 'R')):
+        # if l in ('S', 'E', 'I'):
+        if True:
+            ax.step(365 * t, x[:, j], where = 'post', label = l)
 
     ax.set_xlabel('time (days)')
     ax.set_ylabel('number')
@@ -37,9 +39,7 @@ def make_datasheet(data):
 if __name__ == '__main__':
     numpy.random.seed(1)
 
-    p = herd.Parameters()
-    p.population_size = 1000
-    p.birth_seasonal_coefficient_of_variation = 1
+    p = herd.Parameters(SAT = 1)
 
     tmax = 1
     debug = False

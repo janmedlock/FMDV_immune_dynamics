@@ -1,14 +1,48 @@
 class Parameters(object):
-    def __init__(self, _set_defaults = True):
+    def __init__(self, SAT = 1, _set_defaults = True):
         'Initialize with default values.'
         if _set_defaults:
-            self.R0 = 4   # initailly set to 10, Ro = beta * N/ (gamma + mortality)
-            self.birth_seasonal_coefficient_of_variation = 0.61  # initially set at 1
-            self.male_probability_at_birth = 0.5
-            self.maternal_immunity_duration = 0.5
-            self.population_size = 500
-            self.recovery_infection_duration = 4.35/ 365 # 4.9 / 365   # initially set at 21/365
             self.start_time = 0
+            self.male_probability_at_birth = 0.5
+
+            self.population_size = 1000
+
+            self.birth_seasonal_coefficient_of_variation = 0.61
+
+            self.maternal_immunity_duration_mean = 0.5
+            self.maternal_immunity_duration_shape = 350
+
+            # Proportion leaving I that become C.
+            self.probability_chronic = 0
+
+            # Duration in C before leaving to R.
+            self.chronic_recovery = 4
+
+            # Duration in R before returning to S.
+            self.immunity_waning_duration = numpy.inf
+
+            self.chronic_transmission_rate = 0
+
+            if SAT == 1:
+                self.progression_shape = 1.2
+                self.progression_mean = 1.0 / 365
+                self.recovery_shape = 3.9
+                self.recovery_mean = 6.0 / 365
+                self.transmission_rate = 7.1 * 365
+            elif SAT == 2:
+                self.progression_shape = 1.7
+                self.progression_mean = 1.9 / 365
+                self.recovery_shape = 3.4
+                self.recovery_mean = 4.8 / 365
+                self.transmission_rate = 5.6 * 365
+            elif SAT == 3:
+                self.progression_shape = 1.6
+                self.progression_mean = 3.3 / 365
+                self.recovery_shape = 3.8
+                self.recovery_mean = 4.6 / 365
+                self.transmission_rate = 3.6 * 365
+            else:
+                raise ValueError("Unknown SAT '{}'!".format(SAT))
 
     def __repr__(self):
         'Make instances print nicely.'

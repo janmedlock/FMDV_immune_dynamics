@@ -5,6 +5,11 @@ import numpy
 import run_many
 
 
+def number_infected(x):
+    M, S, E, I, R = x
+    return (E + I)
+
+
 def find_extinction_times(nruns,
                           parameters,
                           tmax,
@@ -14,10 +19,10 @@ def find_extinction_times(nruns,
 
     (T, X) = zip(*(zip(*d) for d in data))
 
-    extinction_times = [t[-1] if (x[-1][2] == 0) else None
-                       for (t, x) in zip(T, X)]
+    extinction_times = [t[-1] if (number_infected(x[-1]) == 0) else None
+                        for (t, x) in zip(T, X)]
 
-    return extinctionTimes
+    return extinction_times
 
 
 def ppf(D, q, a = 0):
@@ -57,7 +62,6 @@ if __name__ == '__main__':
 
     p.population_size = 100
     p.infection_duration = 21 / 365
-    p.R0 = 10
     p.birth_seasonal_coefficient_of_variation = 1
 
     nruns = 10000

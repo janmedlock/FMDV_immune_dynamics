@@ -16,56 +16,33 @@ class gen(rv.RV, stats.rv_continuous):
                     age < 12, 0.88,
                     0.66)))
 
-	# inintial survival specification.  Modified 20-June-2016
-    #    return numpy.where(
-    #        age < 1, 0.66, numpy.where(
-    #            age < 12, 0.95,
-    #            0.5))
-
     def hazard(self, age):
         return - numpy.log(self.annualSurvival(age))
 
-    
-    # Code hashed out before 20 June. 
-    # def _cdf(self, age):
-    #     result = scipy.integrate.quad(self.hazard, 0, age,
-    #                                   limit = 100, full_output = 1)
-    #     I = result[0]
-    #     return 1. - numpy.exp(- I)
-
-	# CDF calculates probability of surviving until a given age.
     def _cdf(self, age):
-	    return numpy.where(
-            age < 1, 1 - 0.66 ** age, numpy.where(
-                age < 3, 1 - 0.66 * 0.79 ** (age - 1), numpy.where(
-                    age < 12, 1 - 0.66 * 0.79 * 0.79 * 0.88 ** (age - 3),
-                        1 - 0.66 * 0.79 * 0.79 * 0.88 ** 9.  * 0.66 ** (age - 12))))
-                        			
-	# initial survival CDF.  Modified 20-June-2016	
-    #    return numpy.where(
-    #        age < 1, 1 - 0.7**age, numpy.where(
-    #            age < 12, 1 - 0.7 * 0.95 ** (age - 1),
-    #            1 - 0.7 * 0.95 ** 11. * 0.5 ** (age - 12)))
-     
-    # Probability integral transformation.     
+        cdf_under_1 = 1 - 0.66 ** age
+        cdf_1_to_3 = 1 - 0.66 * 0.79 ** (age - 1)
+        cdf_3_to_12 = 1 - 0.66 * 0.79 * 0.79 * 0.88 ** (age - 3)
+        cdf_12_and_up = 1 - 0.66 * 0.79 ** 2 * 0.88 ** 9 * 0.66 ** (age - 12)
+        return numpy.where(age < 1, cdf_under_1,
+                           numpy.where(age < 3, cdf_1_to_3,
+                                       numpy.where(age < 12, cdf_3_to_12,
+                                                   cdf_12_and_up)))
+
+    # Inverse of CDF.
     def _ppf(self, q):
-        return numpy.where(   
-            q < 1 - 0.66, 
-            numpy.log(1 - q) / numpy.log(0.66), 
-            numpy.where(   			
-                q < 1 - 0.66 * 0.79 ** 2,   												
-                1 + (numpy.log(1 - q) - numpy.log(0.66)) / numpy.log(0.79), 
-                numpy.where(
-                    q < 1 - 0.66 * 0.79 * 0.79 * 0.88 ** 9,									
-                    3 + (numpy.log(1-q) - numpy.log(0.66) - 2 * numpy.log(0.79)) / numpy.log(0.88), 
-                    12 + (numpy.log(1-q) - numpy.log(0.66) - 2 * numpy.log(0.79) - 9 * numpy.log(0.66)) / numpy.log(0.66) )))
-                        
-     # Probability integral transformation, Modified 20-June-2016
-     #   return numpy.where(
-     #       q < 1 - 0.7,							# if
-     #       numpy.log(1 - q) / numpy.log(0.7),
-     #       numpy.where(							# elseif
-     #           q < 1 - 0.7 * 0.95 ** 11,			
-     #           1 + (numpy.log(1 - q) - numpy.log(0.7)) / numpy.log(0.95),
-     #           12 + (numpy.log(1 - q) - numpy.log(0.7)
-     #                 - 11 * numpy.log(0.95)) / numpy.log(0.5)))
+        q_1 = 1 - 0.66
+        ppf_under_1 = numpy.log(1 - q) / numpy.log(0.66)
+        q_3 = 1 - 0.66 * 0.79 ** 2
+        ppf_1_to_3 = 1 + (numpy.log(1 - q) - numpy.log(0.66)) / numpy.log(0.79)
+        q_12 = 1 - 0.66 * 0.79 * 0.79 * 0.88 ** 9
+        ppf_3_to_12 = (3 + (numpy.log(1 - q) - numpy.log(0.66)
+                            - 2 * numpy.log(0.79)) / numpy.log(0.88))
+        ppf_12_and_up = (12 + (numpy.log(1 - q) - numpy.log(0.66)
+                               - 2 * numpy.log(0.79) - 9 * numpy.log(0.66))
+                         / numpy.log(0.66))
+
+        return numpy.where(q < q_1, ppf_under_1,
+                           numpy.where(q < q_3, ppf_1_to_3,
+                                       numpy.where(q < q_12, ppf_3_to_12,
+                                                   ppf_12_and_up)))

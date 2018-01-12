@@ -6,10 +6,10 @@ class gen(rv.RV):
     'Whether an offspring is male is a Bernoulli RV.'
 
     def __init__(self, parameters, *args, **kwargs):
-        self.male_probability_at_birth = parameters.male_probability_at_birth
+        self.probability_chronic = parameters.probability_chronic
 
-        distn = stats.bernoulli(self.male_probability_at_birth)
+        distn = stats.bernoulli(self.probability_chronic)
         super()._copyattrs(distn)
 
     def __repr__(self):
-        return super().__repr__(('male_probability_at_birth', ))
+        return super().__repr__(('probability_chronic', ))

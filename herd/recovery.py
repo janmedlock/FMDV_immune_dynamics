@@ -5,15 +5,16 @@ from . import rv
 
 class gen(rv.RV):
     '''
-    Exponential waiting time to recovery with rate
-    recovery_infection_duration.
+    Gamma-distributed waiting time to recovery with rate
+    recovery_mean and shape recovery_shape.
     '''
 
     def __init__(self, parameters, *args, **kwargs):
-        self.infection_duration = parameters.recovery_infection_duration
-
-        distn = stats.expon(scale = self.infection_duration)
+        self.recovery_mean = parameters.recovery_mean
+        self.recovery_shape = parameters.recovery_shape
+        distn = stats.gamma(self.recovery_shape,
+                            scale = self.recovery_mean / self.recovery_shape)
         super()._copyattrs(distn)
 
     def __repr__(self):
-        return rv.RV.__repr__(self, ('infection_duration', ))
+        return super().__repr__(('recovery_mean', 'recovery_shape'))

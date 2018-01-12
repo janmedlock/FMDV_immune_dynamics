@@ -1,8 +1,15 @@
-* Figure out what to do with all the untracked files in orphans/.
+* Convolution plot to Erin.
+
+* Fix herd/pde.py to handle gamma-distributed waning of maternal immunity, etc.
+
+* Figure out what to do with all the untracked files in /orphans/ and /test/.
 
 * Consider storing all events for the herd in an efficient data structure
   (bisect) to avoid looping through the whole list.
 
 * Figure out how to do population stats.
-   
+
 * Figure out how to bin by month.
+
+* Do some sampling model to make sure the birth distribution is
+  sensible.
