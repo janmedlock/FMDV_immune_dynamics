@@ -2,8 +2,6 @@ from scipy import stats
 
 from . import events
 
-# NOTE: Need to update transmission rate from carriers
-#(requires herd to calculate number_chronic)
 
 class Buffalo:
     'A single buffalo and the actions that can occur to it.'
@@ -131,7 +129,6 @@ class Buffalo:
         self.set_recovery_or_progression()
 
     def set_recovery_or_progression(self):
-        # CHECK IF COIN FLIP HAPPENS EVERY TIME OR ONCE?
         if (self.herd.rvs.probability_chronic.rvs() == 1):
             self.set_chronic_progression()
         else:
@@ -181,8 +178,6 @@ class Buffalo:
     def set_chronic_recovery(self):
         self.events.add('chronic_recovery',
                         self.herd.time + self.herd.rvs.chronic_recovery.rvs())
-
-    ###################################################################
 
     def infection(self):
         assert self.is_susceptible()
