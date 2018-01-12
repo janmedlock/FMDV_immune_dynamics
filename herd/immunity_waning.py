@@ -2,6 +2,7 @@ from scipy import stats
 
 from . import rv
 
+
 class gen(rv.RV):
     '''
     Exponential waiting time until loss of immunity from

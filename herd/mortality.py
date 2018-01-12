@@ -19,16 +19,6 @@ class gen(rv.RV, stats.rv_continuous):
     def hazard(self, age):
         return - numpy.log(self.annualSurvival(age))
 
-    # This automatically computes the cdf from the hazard function above
-    # using numerical integration.  This is relavtively slow, so giving
-    # an explicit CDF is preferred.
-    # def _cdf(self, age):
-    #     result = scipy.integrate.quad(self.hazard, 0, age,
-    #                                   limit = 100, full_output = 1)
-    #     I = result[0]
-    #     return 1. - numpy.exp(- I)
-
-    # CDF calculates probability of surviving until a given age.
     def _cdf(self, age):
         cdf_under_1 = 1 - 0.66 ** age
         cdf_1_to_3 = 1 - 0.66 * 0.79 ** (age - 1)
@@ -38,8 +28,7 @@ class gen(rv.RV, stats.rv_continuous):
                            numpy.where(age < 3, cdf_1_to_3,
                                        numpy.where(age < 12, cdf_3_to_12,
                                                    cdf_12_and_up)))
-                        			
-    # Probability integral transformation.
+
     # Inverse of CDF.
     def _ppf(self, q):
         q_1 = 1 - 0.66

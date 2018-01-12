@@ -163,7 +163,6 @@ class Buffalo:
         self.change_immune_status_to('susceptible')
         self.events.remove('immunity_waning')
         self.update_infection()
-        print('WARNING: Immunity waning')
 
     def set_immunity_waning(self):
         self.events.add('immunity_waning',
