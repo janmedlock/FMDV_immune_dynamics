@@ -37,8 +37,6 @@ class Herd(list):
                 + len(status_ages['infectious'])
                 + len(status_ages['chronic'])) > 0:
                 break
-            # else:
-            #     print('Initial infections = 0!  Resampling initial conditions.')
 
         for (immune_status, ages) in status_ages.items():
             for age in ages:
@@ -88,12 +86,12 @@ class Herd(list):
             return min(b.get_next_event() for b in self)
         else:
             return None
-# https://www.programiz.com/python-programming/property
+
     @property
     def number_infected(self):
         return (len(self.immune_status_lists['exposed'])
                 + len(self.immune_status_lists['infectious'])
-                + len(self.immune_status_lists['chronic']))  # OK????????
+                + len(self.immune_status_lists['chronic']))
 
     def stop(self):
         return (self.number_infected == 0)
@@ -118,9 +116,6 @@ class Herd(list):
             result.append(self.get_stats())
             if self.stop():
                 break
-            ######### Test for carriers!, NEW ##########
-            if self.number_chronic > 0:
-                print("error, some became chronic carriers")
 
         if self.run_number is not None:
             t_last = result[-1][0]
