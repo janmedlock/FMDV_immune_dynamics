@@ -2,8 +2,6 @@
 
 * Fix herd/pde.py to handle gamma-distributed waning of maternal immunity, etc.
 
-* Recovery duration = inf.
-
 * Figure out what to do with all the untracked files in /orphans/ and /test/.
 
 * Consider storing all events for the herd in an efficient data structure

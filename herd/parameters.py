@@ -19,7 +19,7 @@ class Parameters(object):
             self.chronic_recovery = 4
 
             # Duration in R before returning to S.
-            self.immunity_waning_duration = 100000
+            self.immunity_waning_duration = numpy.inf
 
             self.chronic_transmission_rate = 0
 
