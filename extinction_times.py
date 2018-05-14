@@ -30,24 +30,23 @@ def ppf(D, q, a = 0):
     indices = numpy.ceil(numpy.asarray(q) * len(D) - 1).astype(int)
     return Daug[indices]
 
+
 def proportion_ge_x(D, x):
     return float(len(numpy.compress(numpy.asarray(D) >= x, D))) / float(len(D))
 
+
 def find_stats(extinction_times):
     mystats = {}
-    
     mystats['median'] = numpy.median(extinction_times)
     mystats['mean'] = numpy.mean(extinction_times)
-        
     mystats['q_90'] = ppf(extinction_times, 0.9)
     mystats['q_95'] = ppf(extinction_times, 0.95)
     mystats['q_99'] = ppf(extinction_times, 0.99)
-
     mystats['proportion >= 1'] = proportion_ge_x(extinction_times, 1)
     mystats['proportion >= 10'] = proportion_ge_x(extinction_times, 10)
-    
     return mystats
-    
+
+
 def show_stats(mystats):
     print('stats: {'
           + ',\n        '.join(['{} = {}'.format(k, v)
@@ -67,7 +66,7 @@ if __name__ == '__main__':
     nruns = 10000
     tmax = 5
     debug = False
-    
+
     extinction_times = find_extinction_times(nruns, p, tmax, debug = debug)
 
     mystats = find_stats(extinction_times)

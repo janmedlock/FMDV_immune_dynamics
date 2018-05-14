@@ -17,9 +17,7 @@ def make_plot(data, show = True):
 
     (t, x) = map(numpy.array, zip(*data))
     for (j, l) in enumerate(('M', 'S', 'E', 'I', 'C', 'R')):
-        # if l in ('S', 'E', 'I'):
-        if True:
-            ax.step(365 * t, x[:, j], where = 'post', label = l)
+        ax.step(365 * t, x[:, j], where = 'post', label = l)
 
     ax.set_xlabel('time (days)')
     ax.set_ylabel('number')

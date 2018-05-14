@@ -61,21 +61,23 @@ class Herd(list):
         number_infectious_new = len(self.immune_status_lists['infectious'])
         number_chronic_new = len(self.immune_status_lists['chronic'])
 
+        updated = False
         if ((not hasattr(self, 'number_infectious'))
             or (number_infectious_new != self.number_infectious)):
             self.number_infectious = number_infectious_new
-
+            updated = True
         if ((not hasattr(self, 'number_chronic'))
             or (number_chronic_new != self.number_chronic)):
             self.number_chronic = number_chronic_new
-
-        for b in self.immune_status_lists['susceptible']:
-            b.update_infection()
+            updated = True
+        if updated:
+            for b in self.immune_status_lists['susceptible']:
+                b.update_infection()
 
     def get_stats(self):
         stats = [len(self.immune_status_lists[status])
-                 for status in ('maternal immunity', 'susceptible',
-                                'exposed', 'infectious', 'chronic', 'recovered')]
+                 for status in ('maternal immunity', 'susceptible', 'exposed',
+                                'infectious', 'chronic', 'recovered')]
 
         return [self.time, stats]
 

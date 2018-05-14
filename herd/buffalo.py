@@ -13,7 +13,7 @@ class Buffalo:
 
         self.birth_date = self.herd.time - age
 
-        self.identifier = next(self.herd.identifiers) # like an iterator?
+        self.identifier = next(self.herd.identifiers)
 
         if self.herd.debug:
             if age == 0:
@@ -68,7 +68,7 @@ class Buffalo:
     def is_infectious(self):
         return (self.immune_status == 'infectious')
 
-    def is_chronic(self):   # NEW
+    def is_chronic(self):
         return (self.immune_status == 'chronic')
 
     def is_recovered(self):
@@ -128,25 +128,15 @@ class Buffalo:
         self.events.remove('progression')
         self.set_recovery_or_progression()
 
+    def set_progression(self):
+        self.events.add('progression',
+                        self.herd.time + self.herd.rvs.progression.rvs())
+
     def set_recovery_or_progression(self):
         if (self.herd.rvs.probability_chronic.rvs() == 1):
             self.set_chronic_progression()
         else:
             self.set_recovery()
-
-    def set_progression(self):
-        self.events.add('progression',
-                        self.herd.time + self.herd.rvs.progression.rvs())
-
-    def recovery(self):
-        assert self.is_infectious()
-        self.change_immune_status_to('recovered')
-        self.events.remove('recovery')
-        self.set_immunity_waning()
-
-    def set_recovery(self):
-        self.events.add('recovery',
-                        self.herd.time + self.herd.rvs.recovery.rvs())
 
     def chronic_progression(self):
         assert self.is_infectious()
@@ -158,16 +148,6 @@ class Buffalo:
         self.events.add('chronic_progression',
                         self.herd.time + self.herd.rvs.recovery.rvs())
 
-    def immunity_waning(self):
-        assert self.is_recovered()
-        self.change_immune_status_to('susceptible')
-        self.events.remove('immunity_waning')
-        self.update_infection()
-
-    def set_immunity_waning(self):
-        self.events.add('immunity_waning',
-                        self.herd.time + self.herd.rvs.immunity_waning.rvs())
-
     def chronic_recovery(self):
         assert self.is_chronic()
         self.change_immune_status_to('recovered')
@@ -177,6 +157,26 @@ class Buffalo:
     def set_chronic_recovery(self):
         self.events.add('chronic_recovery',
                         self.herd.time + self.herd.rvs.chronic_recovery.rvs())
+
+    def recovery(self):
+        assert self.is_infectious()
+        self.change_immune_status_to('recovered')
+        self.events.remove('recovery')
+        self.set_immunity_waning()
+
+    def set_recovery(self):
+        self.events.add('recovery',
+                        self.herd.time + self.herd.rvs.recovery.rvs())
+
+    def immunity_waning(self):
+        assert self.is_recovered()
+        self.change_immune_status_to('susceptible')
+        self.events.remove('immunity_waning')
+        self.update_infection()
+
+    def set_immunity_waning(self):
+        self.events.add('immunity_waning',
+                        self.herd.time + self.herd.rvs.immunity_waning.rvs())
 
     def infection(self):
         assert self.is_susceptible()
