@@ -69,7 +69,8 @@ class Herd(list):
         if ((not hasattr(self, 'number_chronic'))
             or (number_chronic_new != self.number_chronic)):
             self.number_chronic = number_chronic_new
-            updated = True
+            if (self.rvs.chronic_transmission_rate > 0):
+                updated = True
         if updated:
             for b in self.immune_status_lists['susceptible']:
                 b.update_infection()

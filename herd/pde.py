@@ -49,7 +49,6 @@ def rhs(Y, t, AM, B, force_of_infection,
 
 
 def solve(tmax, agemax, agestep, parameters, Y0 = None):
-    print("########## inside solve ########## ")
     matrices = utility.build_matrices(parameters,
                                       agemax = agemax,
                                       agestep = agestep)
@@ -57,13 +56,11 @@ def solve(tmax, agemax, agestep, parameters, Y0 = None):
         parameters.population_size = 1.
 
     (ages, (B_bar, A, M)) = matrices
-    print("Birth, Aging, & Mortality matricies built of length, ",
-        len(ages), B_bar.get_shape(), A.get_shape(), M.get_shape())
 
     AM = A - M
 
     birthRV = birth.gen(parameters)
-    print("birth.gen finished")
+
     def B(t):
         Bval = sparse.lil_matrix((len(ages), ) * 2)
         Bval[0] = ((1 - parameters.male_probability_at_birth)
@@ -76,11 +73,6 @@ def solve(tmax, agemax, agestep, parameters, Y0 = None):
     susceptibility = numpy.where(
         ages >= parameters.maternal_immunity_duration_mean,
         1, 0)
-    # maternal_waning_time_survival_function(ages)
-    # print("Transmissibility = ", transmissibility)
-    # print("Transmissibility for chronic = ", transmissibility_chronic)
-    # print("Susceptibility = ", susceptibility)
-    # print("Length susceptibility should equal ages, ", len(susceptibility))
 
     def force_of_infection(I):
         return integrate.trapz(transmissibility * I, ages) * susceptibility
@@ -157,7 +149,7 @@ def get_period(t, ages, X, abserr = 1e-3, relerr = 1e-3,
         raise ValueError('period not found!')
 
 
-# only piece not run in test
+# Only piece not run in test.
 def get_limit_cycle(parameters, agemax, agestep,
                     periodmax = 3, t_burnin = 100):
     from scipy import special
@@ -175,7 +167,6 @@ def get_limit_cycle(parameters, agemax, agestep,
         return numpy.hstack((M[-1] + S[-1], E[-1], I[-1], C[-1], R[-1]))
 
     print('Running root solver...')
-    # CHECK THIS PIECE
     sol = optimize.fixed_point(f, Y0, xtol = 1e-3, maxiter = 1000)
     print('Root solver finshed.')
 
