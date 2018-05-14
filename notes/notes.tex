@@ -56,34 +56,7 @@ antibodies, infection, and recovery.
 
 \begin{figure}
   \centering
-  \begin{tikzpicture}[
-    thick,
-    compartment/.style = {circle,
-      draw,
-      minimum width = {width("$M$") + 10pt}}
-    ]
-
-    \node at (0, 0) [compartment, name = M] {$M$};
-    \node at (3, 0) [compartment, name = S] {$S$};
-    \node at (6, 0) [compartment, name = I] {$I$};
-    \node at (9, 0) [compartment, name = R] {$R$};
-
-    \draw [->] (M) to node [above] {waning} (S);
-    \draw [->] (S) to node [above] {infection} (I);
-    \draw [->] (I) to node [above] {recovery} (R);
-
-    \draw [->] (S) to [out = 135, in = 45]
-    node [sloped, above, pos = 0.2] {birth} (M);
-    \draw [->] (I) to [out = 135, in = 45]
-    node [sloped, above, pos = 0.2] {birth} (M);
-    \draw [->] (R) to [out = 135, in = 45]
-    node [sloped, above, pos = 0.2] {birth} (M);
-    
-    \draw [->] (M) to node [right] {death} +(0, -1.5);
-    \draw [->] (S) to node [right] {death} +(0, -1.5);
-    \draw [->] (I) to node [right] {death} +(0, -1.5);
-    \draw [->] (R) to node [right] {death} +(0, -1.5);
-  \end{tikzpicture}
+  \input{diagram.tex}
   \caption{Model diagram.}
   \label{fig:diagram}
 \end{figure}
