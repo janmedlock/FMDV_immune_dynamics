@@ -1,3 +1,6 @@
+import numpy
+
+
 class Parameters(object):
     def __init__(self, SAT = 1, _set_defaults = True):
         'Initialize with default values.'
