@@ -8,6 +8,9 @@ class RV(object):
             if not hasattr(self, x) and not x.startswith('__'):
                 setattr(self, x, getattr(obj, x))
 
+    def hazard(self, age):
+        return numpy.exp(self.logpdf(age) - self.logsf(age))
+
     def __repr__(self, params = ()):
         cls = self.__class__
         clsname = '{}.{}'.format(self.__module__, self.__class__.__name__)
@@ -44,9 +47,6 @@ class deterministic(RV, stats.rv_continuous):
             return self._scale
         else:
             return 0
-
-    def hazard(self, age):
-        return numpy.ma.divide(self.pdf(age), self.sf(age)).filled(0)
 
     def __getattribute__(self, k):
         get = object.__getattribute__

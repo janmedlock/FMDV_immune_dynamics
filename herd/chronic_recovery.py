@@ -11,7 +11,7 @@ class gen(rv.RV):
 
     def __init__(self, parameters, *args, **kwargs):
         self.chronic_recovery = parameters.chronic_recovery
-        distn = stats.expon(scale = self.chronic_recovery)
+        distn = stats.expon(scale=self.chronic_recovery)
 
     def __repr__(self):
         return super().__repr__(('chronic_recovery', ))

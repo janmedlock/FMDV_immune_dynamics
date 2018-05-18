@@ -1,6 +1,5 @@
 from . import parameters
 from . import birth
-from . import endemic_equilibrium
 from . import male
 from . import maternal_immunity_waning
 from . import mortality
@@ -28,7 +27,6 @@ class RandomVariables(object):
         self.transmission_rate = transmission_rate.gen(params)
         self.chronic_transmission_rate = chronic_transmission_rate.gen(params)
         self.birth = birth.gen(params)
-        self.endemic_equilibrium = endemic_equilibrium.gen(params)
         # proportion I to C
         self.probability_chronic = probability_chronic.gen(params)
         # waiting time to recover C to R

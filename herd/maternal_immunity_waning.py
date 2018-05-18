@@ -1,5 +1,4 @@
 from scipy import stats
-
 from . import rv
 
 
@@ -16,8 +15,8 @@ class gen(rv.RV):
         self.maternal_immunity_duration_shape \
             = parameters.maternal_immunity_duration_shape
         dist = stats.gamma(self.maternal_immunity_duration_shape,
-                           scale = (self.maternal_immunity_duration_mean
-                                    / self.maternal_immunity_duration_shape))
+                           scale=(self.maternal_immunity_duration_mean
+                                  / self.maternal_immunity_duration_shape))
         super()._copyattrs(dist)
 
     def __repr__(self):

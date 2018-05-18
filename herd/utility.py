@@ -16,11 +16,11 @@ class shelved:
         ...
 
     The cache key is repr(parameters).
-    '''    
+    '''
 
     def __init__(self, func):
         self.func = func
-        
+
         # Put the cache file in the same directory as the caller.
         mydir = os.path.dirname(inspect.getfile(self.func))
         # Name the cache file func.__name__ + '.db'
