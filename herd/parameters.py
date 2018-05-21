@@ -7,22 +7,15 @@ class Parameters(object):
         if _set_defaults:
             self.start_time = 0
             self.male_probability_at_birth = 0.5
-
             self.population_size = 1000
-
             self.birth_seasonal_coefficient_of_variation = 0.61
-
             # Proportion leaving I that become C.
             self.probability_chronic = 0
-
             # Duration in C before leaving to R.
             self.chronic_recovery = 4
-
             # Duration in R before returning to S.
             self.immunity_waning_duration = numpy.inf
-
             self.chronic_transmission_rate = 0
-
             if SAT == 1:
                 self.progression_shape = 1.2
                 self.progression_mean = 1.0 / 365
@@ -62,30 +55,23 @@ class Parameters(object):
         assert r_.startswith('<')
         assert r_.endswith('>')
         r = r_[1 : -1]
-
         l = r.find(':')
         name = r[ : l]
-
         # Can be different depending on how the module is imported.
         clsname = '{}.{}'.format(cls.__module__, cls.__name__)
         assert (name == clsname)
-
         paramstr_ = r[l + 2 : ]
         assert paramstr_.startswith('{')
         assert paramstr_.endswith('}')
         paramstr = paramstr_[1 : -1]
-
         p = cls(_set_defaults = set_defaults)
         for s in paramstr.split(', '):
             (k_, vstr) = s.split(': ')
             assert k_.startswith("'")
             assert k_.endswith("'")
             k = k_[1 : -1]
-
             v = float(vstr)
             if int(v) == v:
                 v = int(v)
-
             setattr(p, k, v)
-
         return p
