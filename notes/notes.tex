@@ -35,7 +35,11 @@
     co-infection at individual and population scales} \\
   Appendix 3: Model development and analysis}
 
-\author{FIXME}
+\author{Anna Jolles \and Erin Gorsich \and Simon Gubbins
+  \and Brianna Beechler \and Peter Buss \and Bryan Charleston
+  \and Nick Juleff \and Lin-Mari deKlerk-Lorist \and Francois Maree
+  \and Eva Perez-Martin \and OL van Schalkwyk \and Katherine Scott
+  \and Jan Medlock}
 
 \newcommand{\comment}[1]{\textbf{[#1]}}
 \DeclareMathOperator{\diag}{diag}
@@ -131,7 +135,27 @@ Assuming that the mortality hazard is constant throughout a year gives
 the hazard
 \begin{equation}
   h_{\text{mortality}}(a)
-  = - \log \Prob\{\text{Survival for $\unit[1]{yr}$}\}.
+  = - \log \Prob\{\text{Survival for $\unit[1]{yr}$}\},
+\end{equation}
+and the survival
+\begin{equation}
+  \begin{split}
+    S_{\text{mortality}}(a)
+    =
+    \begin{cases}
+      0.66^a
+      & \text{if $a < 1$},
+      \\
+      0.66 \cdot 0.79^{a - 1}
+      & \text{if $1 \leq a < 3$},
+      \\
+      0.66 \cdot 0.79^2 \cdot 0.88^{a - 3}
+      & \text{if $3 \leq a < 12$},
+      \\
+      0.66 \cdot 0.79^2 \cdot 0.88^9 \cdot 0.66^{a - 12}
+      & \text{if $a \geq 12$}.
+    \end{cases}
+  \end{split}
 \end{equation}
 
 
@@ -176,7 +200,7 @@ with
 and $\{x\}$ is the fractional part of $x$.  The magnitude of the
 seasonal variation is captured by the coefficient of variation $c_v$.
 The annual mean $\mu$ was chosen so that the population achieves the
-mean growth rate $r = 0$.  (See \autoref{no_infection}.)
+mean growth rate $r = 0$.  (See \autoref{stable_age_structure}.)
 
 % The survival function for $t$ years until the next birth, given age
 % $a_0$ at the current time $t_0$ is
@@ -337,8 +361,8 @@ $\mu_{\text{chronic recovery}}$.
 \section{Initial conditions}
 
 A sample of size $N$ from the stable age structure was used to
-initialize the population.  (See \autoref{no_infection}.)  The sex of
-each buffalo was randomly selected with probability
+initialize the population.  (See \autoref{stable_age_structure}.)  The
+sex of each buffalo was randomly selected with probability
 $p_{\text{male birth}}$ of being male.  The simulations were started
 at $t = 0$ with $2$ initial infections in randomly chosen members of
 the population.
@@ -347,29 +371,34 @@ the population.
 \begin{figure}
   \centering
   \input{distributions.pgf}
-  \caption{Hazards and survivals for the model events.}
+  \caption{Hazards and survivals for the model events.
+    \textbf{Add stable age distribution?}}
   \label{fig:distributions}
 \end{figure}
 
 
-\clearpage
 \section{Stable age structure}
-\label{no_infection}
+\label{stable_age_structure}
 
-In the absence of infection, the mean number of female births $B(t)$
+The mean rate of female births $B(t)$
 follows the Lotka equation
 \begin{equation}
   \label{lotka}
   \begin{split}
     B(t) =&
-    \int_0^t B(t - a) S_{\text{mortality}}(a) h_{\text{birth}}(t, a) \md a
+    (1 - p_{\text{male birth}}) \bigg[
+      \int_0^t B(t - a)
+      S_{\text{mortality}}(a)
+      h_{\text{birth}}(t, a) \md a
     \\
-    & {} +
-    \int_0^{\infty} n_0(a) \frac{S_{\text{mortality}}(a +
-      t)}{S_{\text{mortality}}(a)} h_{\text{birth}}(t, a + t) \md a,
+    & \quad\quad\quad\quad\quad\quad\quad {} +
+      \int_0^{\infty} n_0(a)
+      \frac{S_{\text{mortality}}(a + t)}{S_{\text{mortality}}(a)}
+      h_{\text{birth}}(t, a + t) \md a
+    \bigg],
   \end{split}
 \end{equation}
-where $n_0(a)$ is the number of age $a$ females at time $t = 0$
+where $n_0(a)$ is the density of age $a$ females at time $t = 0$
 \citetext{\citealp[Chapter VI, Section 29 on
   pp.~159--161]{harris_1963};
   \citealp[Chapter 20 on pp.~353--364]{kot_01}}.
@@ -377,25 +406,25 @@ where $n_0(a)$ is the number of age $a$ females at time $t = 0$
 % integral in \eqref{lotka}---becomes negligible, so
 % \begin{equation}
 %   B(t) =
-%   \int_0^t B(t - a) \hat{h}_{\text{birth}}(t, a) \md a
+%   (1 - p_{\text{male birth}}) \int_0^t B(t - a) \hat{h}_{\text{birth}}(t, a) \md a
 % \end{equation}
 % for large $t$,
 % where
 % \begin{equation}
-%   \hat{h}_{\text{birth}}(t, a) = 
-%   S_{\text{mortality}}(a) 
+%   \hat{h}_{\text{birth}}(t, a) =
+%   S_{\text{mortality}}(a)
 %   h_{\text{birth}}(t, a).
 % \end{equation}
 % Alternately,
 % \begin{equation}
 %   B(t)
 %   =
-%   \int_0^{t}
+%   (1 - p_{\text{male birth}}) \int_0^{t}
 %   B(u)
 %   \hat{h}_{\text{birth}}(t, t - u)
 %   \md u.
 % \end{equation}
-Given $B(t)$, the mean number of females of age $a$ is
+Given $B(t)$, the mean density of females of age $a$ is
 \begin{equation}
   n(t, a) =
   \begin{cases}
@@ -407,14 +436,16 @@ Given $B(t)$, the mean number of females of age $a$ is
     & \text{if $a > t$}.
   \end{cases}
 \end{equation}
-The mean number of females of age $a$ satisifies the McKendrick--von
+The mean density of females of age $a$ satisifies the McKendrick--von
 Foerster equation
 \begin{equation}
   \begin{split}
     \frac{\partial n}{\partial t} + \frac{\partial n}{\partial a}
     &= - h_{\text{death}}(a) n(t, a),
     \\
-    n(t, 0) &= \int_0^t n(t, a) h_{\text{birth}}(t, a) \md a,
+    n(t, 0) &=
+    (1 - p_{\text{male birth}})
+    \int_0^t n(t, a) h_{\text{birth}}(t, a) \md a,
     \\
     n(0, a) &= n_0(a).
   \end{split}
@@ -487,7 +518,8 @@ where
 \begin{equation}
   \begin{split}
     \bar{\mat{B}} &=
-    \int_{t_0}^{t_0 + 1} \mat{B}(t) \md t =
+    \int_{t_0}^{t_0 + 1} \mat{B}(t) \md t\\
+    &=
     (1 - p_{\text{male birth}})
     \begin{bmatrix}
       \cdots & \bar{h}_{\text{birth}}(\vec{a}) & \dots
@@ -500,28 +532,14 @@ where
       \\
       \cdots & 0 & \cdots
     \end{bmatrix},
-    \\
-    \bar{h}_{\text{birth}}(a) &=
-    \int_{t_0}^{t_0 + 1} h_{\text{birth}}(t, a + t) \md t
-    \\
-    &=
-    \begin{cases}
-      0 & \text{if $a < 3$},
-      \\
-      \alpha \left(
-        a - 3 + \frac{\sigma}{2 \pi}
-        \left[
-          \sin\left(2\pi t_0\right)
-          - \sin\left(2 \pi (t_0 - a)\right)
-        \right]
-      \right)
-      & \text{if $3 \leq a < 4$},
-      \\
-      \alpha & \text{if $a \geq 4$}.
-    \end{cases}
   \end{split}
 \end{equation}
-Assuming the stable age distribution so that
+and
+\begin{equation}
+  \bar{h}_{\text{birth}}(a) =
+  \int_{t_0}^{t_0 + 1} h_{\text{birth}}(t, a + t) \md t.
+\end{equation}
+Assuming the population is at the stable age distribution so that
 \begin{equation}
   \vec{n}(t_0 + 1) = \me^r \vec{n}(t_0)
 \end{equation}
@@ -537,8 +555,8 @@ We numerically computed the eigenvalue and eigenvector by using age
 steps $\Delta a = 0.01$, maximum age $a_{\text{max}} = 20$
 (probability of survival $S_{\text{mortality}}(20) = 0.0016$), and a
 standard eigenvalue solver
-\citep[\texttt{numpy.linalg.eig},][]{scipy}.  We then used a standard
-root-finding algorithm
+\citep[\texttt{scipy.sparse.linalg.eigs},][]{scipy}.  We then used a
+standard root-finding algorithm
 \citep[\texttt{scipy.optimize.fsolve},][]{scipy} to find the value of
 the mean birth hazard $\mu \approx 0.443$ that gave growth rate
 $r = 0$.  Halving the age step to $\Delta a = 0.005$ gave a value of
@@ -908,7 +926,7 @@ $1.7 \times 10^{-12}$.
 % $c_v \in \left[0, \frac{1}{2}\right]$, which we took to be
 % $\frac{1}{2}$ by default.  The annual mean $\mu$ was chosen so that
 % the population achieves the mean growth rate $r = 0$ in the absence of
-% infection.  (See \autoref{no_infection}.)
+% infection.  (See \autoref{stable_age_structure}.)
 
 % The survival function is then
 % \begin{equation}
