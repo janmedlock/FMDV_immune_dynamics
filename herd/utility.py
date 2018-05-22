@@ -91,9 +91,9 @@ def _find_growth_rate(parameters, matrices, birth_scaling):
 
 
 @_shelved
-def _find_birth_scaling(parameters, matrices=None):
+def _find_birth_scaling(parameters, matrices=None, *args, **kwargs):
     if matrices is None:
-        matrices = _build_matrices(parameters_, *args, **kwargs)
+        matrices = _build_matrices(parameters, *args, **kwargs)
     def _objective(val):
         birth_scaling, = val
         return _find_growth_rate(parameters, matrices, birth_scaling)
@@ -105,7 +105,8 @@ def _find_birth_scaling(parameters, matrices=None):
     return birth_scaling
 
 def find_birth_scaling(parameters, *args, **kwargs):
-    return _find_birth_scaling(_BirthMortalityParameters(parameters))
+    return _find_birth_scaling(_BirthMortalityParameters(parameters),
+                               *args, **kwargs)
 
 
 @_shelved
