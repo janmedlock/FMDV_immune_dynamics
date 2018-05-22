@@ -10,6 +10,7 @@ from . import chronic_transmission_rate
 from . import probability_chronic
 from . import chronic_recovery
 from . import immunity_waning
+from . import initial_conditions
 
 
 class RandomVariables(object):
@@ -32,6 +33,7 @@ class RandomVariables(object):
         self.chronic_recovery = chronic_recovery.gen(params)
         # waiting time leaving R to S
         self.immunity_waning = immunity_waning.gen(params)
+        self.initial_conditions = initial_conditions.gen(params)
 
     def __repr__(self):
         'Make instances print nicely.'

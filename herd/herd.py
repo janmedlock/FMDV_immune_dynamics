@@ -14,7 +14,7 @@ class Herd(list):
     simulate.
     '''
 
-    def __init__(self, params = None, debug = False, run_number = None):
+    def __init__(self, params=None, debug=False, run_number=None):
         if params is None:
             self.params = parameters.Parameters()
         else:
@@ -31,7 +31,7 @@ class Herd(list):
 
         # Loop until we get a non-zero number of initial infections.
         while True:
-            status_ages = self.rvs.endemic_equilibrium.rvs(
+            status_ages = self.rvs.initial_conditions.rvs(
                 self.params.population_size)
             if (len(status_ages['exposed'])
                 + len(status_ages['infectious'])
@@ -41,7 +41,7 @@ class Herd(list):
         for (immune_status, ages) in status_ages.items():
             for age in ages:
                 self.append(buffalo.Buffalo(self, immune_status, age,
-                                            building_herd = True))
+                                            building_herd=True))
 
     def immune_status_append(self, b):
         self.immune_status_lists[b.immune_status].append(b)
@@ -99,7 +99,7 @@ class Herd(list):
     def stop(self):
         return (self.number_infected == 0)
 
-    def step(self, tmax = numpy.inf):
+    def step(self, tmax=numpy.inf):
         self.update_infection_times()
         event = self.get_next_event()
 
