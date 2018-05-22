@@ -9,7 +9,8 @@ from scipy import integrate, optimize, sparse
 class _BirthMortalityParameters:
     '''Container to extract birth & mortality parameters from `parameters`.'''
     _attrs = ('birth_seasonal_coefficient_of_variation',
-              'male_probability_at_birth')
+              'male_probability_at_birth',
+              'start_time')
     def __init__(self, parameters):
         for a in self._attrs:
             setattr(self, a, getattr(parameters, a))
@@ -51,7 +52,7 @@ def _build_matrices(parameters, agemax=20, agestep=0.01):
     da = numpy.diff(ages)
     # Aging
     A = sparse.lil_matrix((len(ages), ) * 2)
-    A.setdiag(- numpy.hstack((1 / da, 1 / da[-1])))
+    A.setdiag(- numpy.hstack((1 / da, 0)))
     A.setdiag(1 / da, -1)
     # Mortality
     from . import mortality
@@ -64,24 +65,17 @@ def _build_matrices(parameters, agemax=20, agestep=0.01):
     B_bar = sparse.lil_matrix((len(ages), ) * 2)
     # The first row, B_bar[0], is the mean, over a year,
     # of the birth rates times the probability of female birth.
-    def b(j):
-        def bj(t):
-            return ((1 - parameters.male_probability_at_birth)
-                    * birthRV.hazard(t, 0, ages[j] - t))
-        return bj
+    def b(t, j):
+        return ((1 - parameters.male_probability_at_birth)
+                * birthRV.hazard(t, parameters.start_time, ages[j] - t))
     for j in range(len(ages)):
-        B_bar[0, j], _ = integrate.quadrature(b(j), 0, 1, maxiter=1000)
+        B_bar[0, j], _ = integrate.quad(b, 0, 1, args=(j, ), limit=100)
     return (ages, (B_bar, A, M))
 
 
-def _find_dominant_eigenpair(parameters,
-                             _birth_scaling=1, _matrices=None,
-                             *args, **kwargs):
-    if _matrices is None:
-        _matrices = _build_matrices(parameters,
-                                    *args, **kwargs)
-    (ages, (B_bar, A, M)) = _matrices
-    G = _birth_scaling * B_bar + A - M
+def _find_dominant_eigenpair(parameters, matrices, birth_scaling):
+    (ages, (B_bar, A, M)) = matrices
+    G = birth_scaling * B_bar + A - M
     # Find the largest real eigenvalue.
     [L, V] = sparse.linalg.eigs(G, k=1, which='LR',
                                 maxiter=int(1e5))
@@ -91,48 +85,36 @@ def _find_dominant_eigenpair(parameters,
     return (l0, (ages, v0))
 
 
-def _find_growth_rate(parameters, *args, **kwargs):
-    r, _ = _find_dominant_eigenpair(parameters, *args, **kwargs)
+def _find_growth_rate(parameters, matrices, birth_scaling):
+    r, _ = _find_dominant_eigenpair(parameters, matrices, birth_scaling)
     return r
 
 
 @_shelved
-def _find_stable_age_structure(parameters,
-                               _matrices=None, _birth_scaling=None,
-                               *args, **kwargs):
-    if _matrices is None:
-        _matrices = _build_matrices(parameters, *args, **kwargs)
-    if _birth_scaling is None:
-        _birth_scaling = _find_birth_scaling(parameters,
-                                             _matrices=_matrices,
-                                             *args, **kwargs)
-    _, v = _find_dominant_eigenpair(parameters,
-                                    _birth_scaling=_birth_scaling,
-                                    _matrices=_matrices,
-                                    *args, **kwargs)
+def _find_birth_scaling(parameters, matrices):
+    def _objective(val):
+        birth_scaling, = val
+        return _find_growth_rate(parameters, matrices, birth_scaling)
+    initial_guess = 1
+    opt, _, ier, mesg = optimize.fsolve(_objective, initial_guess,
+                                        full_output=True)
+    birth_scaling, = opt
+    assert ier == 1, mesg
+    return birth_scaling
+
+def find_birth_scaling(parameters, *args, **kwargs):
+    parameters_ = _BirthMortalityParameters(parameters)
+    matrices = _build_matrices(parameters_, *args, **kwargs)
+    return _find_birth_scaling(parameters_, matrices)
+
+
+@_shelved
+def _find_stable_age_structure(parameters, *args, **kwargs):
+    matrices = _build_matrices(parameters, *args, **kwargs)
+    birth_scaling = _find_birth_scaling(parameters, matrices)
+    _, v = _find_dominant_eigenpair(parameters, matrices, birth_scaling)
     return v
 
 def find_stable_age_structure(parameters, *args, **kwargs):
     return _find_stable_age_structure(_BirthMortalityParameters(parameters),
                                       *args, **kwargs)
-
-
-@_shelved
-def _find_birth_scaling(parameters,
-                        _birth_scaling=1, _matrices=None,
-                        *args, **kwargs):
-    if _matrices is None:
-        _matrices = _build_matrices(parameters, *args, **kwargs)
-    def _objective(z):
-        return _find_growth_rate(parameters,
-                                 _birth_scaling=numpy.asscalar(z),
-                                 _matrices=_matrices,
-                                 *args, **kwargs)
-    birth_scaling, _, ier, mesg = optimize.fsolve(_objective, _birth_scaling,
-                                                  full_output=True)
-    assert ier == 1, mesg
-    return numpy.asscalar(birth_scaling)
-
-def find_birth_scaling(parameters, *args, **kwargs):
-    return _find_birth_scaling(_BirthMortalityParameters(parameters),
-                               *args, **kwargs)

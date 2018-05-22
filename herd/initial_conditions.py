@@ -5,6 +5,7 @@ from . import maternal_immunity_waning
 
 
 class _RVs:
+    '''The random variables needed by `gen.rvs()`.'''
     def __init__(self, parameters):
         self.age_structure = age_structure.gen(parameters)
         self.maternal_immunity_waning = maternal_immunity_waning.gen(parameters)
