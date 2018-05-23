@@ -1,7 +1,8 @@
 import numpy
-from scipy import integrate, stats
+from scipy import optimize, stats
 
 from . import rv
+from . import utility
 
 
 def fracpart(x):
@@ -23,6 +24,27 @@ def get_gap_size_from_seasonal_coefficient_of_variation(c_v):
         return 12 * (1 - 4 / 3 / (1 + c_v ** 2))
 
 
+# `start_time` doesn't matter since we're integrating a 1-year-periodic
+# function over 1 year.
+@utility.shelved('birth_seasonal_coefficient_of_variation',
+                 'male_probability_at_birth')
+def find_birth_scaling(parameters, _matrices=None, *args, **kwargs):
+    if _matrices is None:
+        _, _matrices = utility.build_ages_and_matrices(parameters,
+                                                       *args, **kwargs)
+    def objective(val, *matrices):
+        birth_scaling, = val
+        r, _ = utility.find_dominant_eigenpair(birth_scaling, *matrices)
+        return r
+    initial_guess = 1
+    opt, _, ier, mesg = optimize.fsolve(objective, initial_guess,
+                                        args=_matrices,
+                                        full_output=True)
+    birth_scaling, = opt
+    assert ier == 1, mesg
+    return birth_scaling
+
+
 class gen(rv.RV, stats.rv_continuous):
     def __init__(self, parameters, _find_birth_scaling=True, *args, **kwargs):
         self.seasonal_coefficient_of_variation \
@@ -41,8 +63,7 @@ class gen(rv.RV, stats.rv_continuous):
         return super().__repr__(('seasonal_coefficient_of_variation', ))
 
     def find_birth_scaling(self, parameters, *args, **kwargs):
-        from . import utility
-        self.scaling = utility.find_birth_scaling(parameters, *args, **kwargs)
+        self.scaling = find_birth_scaling(parameters, *args, **kwargs)
 
     def _getparams(self):
         if self.seasonal_coefficient_of_variation < 1 / numpy.sqrt(3):
