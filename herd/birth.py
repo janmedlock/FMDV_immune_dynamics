@@ -51,9 +51,9 @@ class gen(rv.RV, stats.rv_continuous):
         self.seasonal_coefficient_of_variation \
             = parameters.birth_seasonal_coefficient_of_variation
         if _find_scaling:
-            self.scaling = find_scaling(parameters, *args, **kwargs)
+            self._scaling = find_scaling(parameters, *args, **kwargs)
         else:
-            self.scaling = 1
+            self._scaling = 1
         super().__init__(self, name='birth', a=0, shapes='time0, age0',
                          *args, **kwargs)
 
@@ -82,30 +82,30 @@ class gen(rv.RV, stats.rv_continuous):
         # 0 if current age (age0 + time) < 4
         # else: alpha if (time + time0 - beta / 2) mod 1 <= beta
         #       else: 0
-        return self.scaling * numpy.where(age0 + time < 4, 0,
-                                          numpy.where(tau <= 0.5, fdown, fup))
+        haz = numpy.where(age0 + time < 4, 0, numpy.where(tau <= 0.5, fdown, fup))
+        return self._scaling * haz
 
     def _logsf(self, time, time0, age0):
         (alpha, beta) = self._getparams()
         c = numpy.clip(4 - age0, 0, numpy.inf) + time0
         d = time + time0
         if beta < 1:
-            H1 = (1 - beta / 2) * (numpy.floor(d) - numpy.floor(c) - 1)
-            H2 = numpy.where(fracpart(c) < 1 / 2,
+            G1 = (1 - beta / 2) * (numpy.floor(d) - numpy.floor(c) - 1)
+            G2 = numpy.where(fracpart(c) < 1 / 2,
                              1 / 2 * (1 - beta / 2) +
                              (1 / 2 - fracpart(c))
                              * (1 - beta / 2 - beta * fracpart(c)),
                              (1 - fracpart(c))
                              * (1 - beta * fracpart(c)))
-            H3 = numpy.where(fracpart(d) < 1 / 2,
+            G3 = numpy.where(fracpart(d) < 1 / 2,
                              fracpart(d) * (1 - beta * fracpart(d)),
                              1 / 2 * (1 - beta / 2)
                              + (fracpart(d) - 1 / 2)
                              * (1 - 3 / 2 * beta + beta * fracpart(d)))
-            H = H1 + H2 + H3
+            G = G1 + G2 + G3
         else:
-            H4 = 1 / 2 / beta * (numpy.floor(d) - numpy.floor(c) - 1)
-            H5 = numpy.where(fracpart(c) < 1 / 2 / beta,
+            G4 = 1 / 2 / beta * (numpy.floor(d) - numpy.floor(c) - 1)
+            G5 = numpy.where(fracpart(c) < 1 / 2 / beta,
                              1 / 4 / beta
                              + beta * (1 / 2 / beta - fracpart(c)) ** 2,
                              numpy.where(fracpart(c) < 1 - 1 / 2 / beta,
@@ -113,18 +113,16 @@ class gen(rv.RV, stats.rv_continuous):
                                          (1 - fracpart(c))
                                          * (1 - beta
                                             * (1 - fracpart(c)))))
-            H6 = numpy.where(fracpart(d) < 1 / 2 / beta,
+            G6 = numpy.where(fracpart(d) < 1 / 2 / beta,
                              fracpart(d) * (1 - beta * fracpart(d)),
                              numpy.where(fracpart(d) < 1 - 1 / 2 / beta,
                                          1 / 4 / beta,
                                          1 / 4 / beta
                                          + beta * (fracpart(d) - 1
                                                    + 1 / 2 / beta) ** 2))
-            H = H4 + H5 + H6
-        H = self.scaling * numpy.where(time < 4 - age0,
-                                       0,
-                                       alpha * H)
-        return (- H)
+            G = G4 + G5 + G6
+        H = numpy.where(time < 4 - age0, 0, alpha * G)
+        return -(self._scaling * H)
 
     def _sf(self, time, time0, age0):
         return numpy.exp(self._logsf(time, time0, age0))
