@@ -17,8 +17,7 @@ class gen(rv.RV, stats.rv_continuous):
          for (interval, value) in _annual_survival.items()}).sort_index()
 
     def __init__(self, parameters, *args, **kwargs):
-        stats.rv_continuous.__init__(self, name='mortality',
-                                     a=0, *args, **kwargs)
+        stats.rv_continuous.__init__(self, name='mortality', a=0, *args, **kwargs)
 
     def hazard(self, age):
         return -numpy.log(self._annual_survival[age])
