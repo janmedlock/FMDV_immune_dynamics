@@ -465,7 +465,7 @@ gives
   \begin{split}
     \frac{\md \vec{n}}{\md t} &=
     \left[\mat{B}(t)
-      - \mat{M}
+      + \mat{M}
       + \mat{A}\right] \vec{n},
   \end{split}
 \end{equation}
@@ -488,7 +488,7 @@ with
     \end{bmatrix},
     \\
     \mat{M} &=
-    \operatorname{diag}\left(h_{\text{mortality}}(\vec{a})\right),
+    \operatorname{diag}\left(- h_{\text{mortality}}(\vec{a})\right),
     \\
     \mat{A} &=
     \frac{1}{\Delta a}
@@ -512,7 +512,7 @@ with
 Solving this from $t_0$ to $t_0 + 1$ gives
 \begin{equation}
   \vec{n}(t_0 + 1) = \vec{n}(t_0)
-  \exp\left(\bar{\mat{B}} - \mat{M} + \mat{A}\right)
+  \exp\left(\bar{\mat{B}} + \mat{M} + \mat{A}\right)
 \end{equation}
 where
 \begin{equation}
@@ -549,10 +549,10 @@ Assuming the population is at the stable age distribution so that
 \end{equation}
 gives
 \begin{equation}
-  r = \lambda_0\left(\bar{\mat{B}} - \mat{M} + \mat{A}\right),
+  r = \lambda_0\left(\bar{\mat{B}} + \mat{M} + \mat{A}\right),
 \end{equation}
 where $\lambda_0(\mat{X})$ is the eigenvalue of $\mat{X}$ with largest
-magnitude.  The eigenvector corresponding to this eigenvalue is the
+real part.  The eigenvector corresponding to this eigenvalue is the
 stable age distribution $\vec{n}_{\text{stable}}$.
 
 We numerically computed the eigenvalue and eigenvector by using age

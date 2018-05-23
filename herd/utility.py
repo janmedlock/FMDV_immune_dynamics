@@ -13,29 +13,35 @@ from . import mortality
 
 def build_ages_and_matrices(parameters, agemax=25, agestep=0.01):
     ages = numpy.arange(0, agemax + agestep / 2, agestep)
-    # Aging
-    A = sparse.lil_matrix((len(ages), ) * 2)
-    da = numpy.diff(ages)
-    A.setdiag(- numpy.hstack((1 / da, 0)))
-    A.setdiag(1 / da, -1)
-    # Mortality
-    M = sparse.lil_matrix((len(ages), ) * 2)
-    mortalityRV = mortality.gen(parameters)
-    M.setdiag(mortalityRV.hazard(ages))
+    N = len(ages)
     # Birth
-    B_bar = sparse.lil_matrix((len(ages), ) * 2)
     # The first row, B_bar[0], is the mean, over a year,
     # of the birth rates times the probability of female birth.
+    # The mean integral is the cumulative hazard, which is -logsf.
     birthRV = birth.gen(parameters, _scaling=1)
-    B_bar[0] = ((1 - parameters.male_probability_at_birth)
-                * (- birthRV.logsf(1, parameters.start_time, ages)))
-    return (ages, (B_bar, A, M))
+    cumulative_hazard = -birthRV.logsf(1, parameters.start_time, ages)
+    mean_birth_rate = ((1 - parameters.male_probability_at_birth)
+                       * cumulative_hazard)
+    # The index values of the first row (0, j).
+    indexes = (numpy.zeros(N), numpy.arange(N))
+    # Use CSR for fast multiply.
+    B_bar = sparse.csr_matrix((mean_birth_rate, indexes), shape=(N, N))
+    # Mortality and aging
+    mortalityRV = mortality.gen(parameters)
+    mortality_rate = mortalityRV.hazard(ages)
+    # Don't fall out of the last age group.
+    aging_rate = numpy.hstack((1 / numpy.diff(ages), 0))
+    offsets, diags = zip((0, - mortality_rate - aging_rate), # Diagonal, offset 0.
+                         (-1, aging_rate[: -1]))         # Subdiagonal, offset -1.
+    # Use CSR for consistency with B_bar.
+    MA = sparse.diags(diags, offsets, format='csr')
+    return (ages, (B_bar, MA))
 
 
-def find_dominant_eigenpair(birth_scaling, B_bar, A, M):
-    G = birth_scaling * B_bar + A - M
-    # Find the largest real eigenvalue.
-    L, V = sparse.linalg.eigs(G, k=1, which='LR', maxiter=int(1e5))
+def find_dominant_eigenpair(birth_scaling, B_bar, MA):
+    G = birth_scaling * B_bar + MA
+    # Find the eigenvalue with largest real part.
+    L, V = sparse.linalg.eigs(G, k=1, which='LR', maxiter=100000)
     V /= V.sum(axis=0)
     l0, v0 = map(numpy.squeeze, (L, V))
     l0, v0 = map(numpy.real_if_close, (l0, v0))
