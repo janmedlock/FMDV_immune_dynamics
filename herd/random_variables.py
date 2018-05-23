@@ -13,7 +13,7 @@ from . import immunity_waning
 from . import initial_conditions
 
 
-class RandomVariables(object):
+class RandomVariables:
     def __init__(self, params = None):
         if params is None:
             params = parameters.Parameters()

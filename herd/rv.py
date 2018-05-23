@@ -2,7 +2,7 @@ import numpy
 from scipy import stats
 
 
-class RV(object):
+class RV:
     def _copyattrs(self, obj):
         for x in dir(obj):
             if not hasattr(self, x) and not x.startswith('__'):

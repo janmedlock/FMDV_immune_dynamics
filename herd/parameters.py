@@ -1,7 +1,7 @@
 import numpy
 
 
-class Parameters(object):
+class Parameters:
     def __init__(self, SAT = 1, _set_defaults = True):
         'Initialize with default values.'
         if _set_defaults:
