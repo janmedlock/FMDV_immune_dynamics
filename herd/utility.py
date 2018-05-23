@@ -26,7 +26,7 @@ def build_ages_and_matrices(parameters, agemax=25, agestep=0.01):
     B_bar = sparse.lil_matrix((len(ages), ) * 2)
     # The first row, B_bar[0], is the mean, over a year,
     # of the birth rates times the probability of female birth.
-    birthRV = birth.gen(parameters, _find_scaling=False)
+    birthRV = birth.gen(parameters, _scaling=1)
     B_bar[0] = ((1 - parameters.male_probability_at_birth)
                 * (- birthRV.logsf(1, parameters.start_time, ages)))
     return (ages, (B_bar, A, M))

@@ -28,7 +28,7 @@ def get_gap_size_from_seasonal_coefficient_of_variation(c_v):
 # function over 1 year.
 @utility.shelved('birth_seasonal_coefficient_of_variation',
                  'male_probability_at_birth')
-def find_scaling(parameters, _matrices=None, *args, **kwargs):
+def _find_scaling(parameters, _matrices=None, *args, **kwargs):
     '''Find the birth scaling that gives population growth rate r = 0.'''
     if _matrices is None:
         _, _matrices = utility.build_ages_and_matrices(parameters,
@@ -47,13 +47,12 @@ def find_scaling(parameters, _matrices=None, *args, **kwargs):
 
 
 class gen(rv.RV, stats.rv_continuous):
-    def __init__(self, parameters, _find_scaling=True, *args, **kwargs):
+    def __init__(self, parameters, _scaling=None, *args, **kwargs):
         self.seasonal_coefficient_of_variation \
             = parameters.birth_seasonal_coefficient_of_variation
-        if _find_scaling:
-            self._scaling = find_scaling(parameters, *args, **kwargs)
-        else:
-            self._scaling = 1
+        if _scaling is None:
+            _scaling = _find_scaling(parameters, *args, **kwargs)
+        self._scaling = _scaling
         super().__init__(self, name='birth', a=0, shapes='time0, age0',
                          *args, **kwargs)
 
