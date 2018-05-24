@@ -1,8 +1,8 @@
 import numpy
-from scipy import optimize, stats
+from scipy import stats
 
 from . import rv
-from . import utility
+from . import eigen
 
 
 def fracpart(x):
@@ -24,34 +24,12 @@ def get_gap_size_from_seasonal_coefficient_of_variation(c_v):
         return 12 * (1 - 4 / 3 / (1 + c_v ** 2))
 
 
-# `start_time` doesn't matter since we're integrating a 1-year-periodic
-# function over 1 year.
-@utility.shelved('birth_seasonal_coefficient_of_variation',
-                 'female_probability_at_birth')
-def _find_scaling(parameters, matrices=None, *args, **kwargs):
-    '''Find the birth scaling that gives population growth rate r = 0.'''
-    if matrices is None:
-        _, matrices = utility.build_ages_and_matrices(parameters,
-                                                      *args, **kwargs)
-    def objective(val, matrices):
-        scaling, = val
-        r, _ = utility.find_dominant_eigenpair(scaling, *matrices)
-        return r
-    initial_guess = 1
-    opt, _, ier, mesg = optimize.fsolve(objective, initial_guess,
-                                        args=(matrices, ),
-                                        full_output=True)
-    scaling, = opt
-    assert ier == 1, mesg
-    return scaling
-
-
 class gen(rv.RV, stats.rv_continuous):
     def __init__(self, parameters, _scaling=None, *args, **kwargs):
         self.seasonal_coefficient_of_variation \
             = parameters.birth_seasonal_coefficient_of_variation
         if _scaling is None:
-            _scaling = _find_scaling(parameters, *args, **kwargs)
+            _scaling = eigen.find_birth_scaling(parameters, *args, **kwargs)
         self._scaling = _scaling
         super().__init__(self, name='birth', a=0, shapes='time0, age0',
                          *args, **kwargs)
@@ -81,7 +59,8 @@ class gen(rv.RV, stats.rv_continuous):
         # 0 if current age (age0 + time) < 4
         # else: alpha if (time + time0 - beta / 2) mod 1 <= beta
         #       else: 0
-        haz = numpy.where(age0 + time < 4, 0, numpy.where(tau <= 0.5, fdown, fup))
+        haz = numpy.where(age0 + time < 4, 0,
+                          numpy.where(tau <= 0.5, fdown, fup))
         return self._scaling * haz
 
     def _logsf(self, time, time0, age0):

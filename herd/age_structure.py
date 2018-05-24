@@ -1,25 +1,11 @@
 import numpy
 
-from . import birth
 from . import rv
-from . import utility
-
-
-@utility.shelved('birth_seasonal_coefficient_of_variation',
-                 'female_probability_at_birth',
-                 'start_time')
-def _find_stable(parameters, *args, **kwargs):
-    '''Find the stable age structure.'''
-    ages, matrices = utility.build_ages_and_matrices(parameters,
-                                                     *args, **kwargs)
-    scaling = birth._find_scaling(parameters, matrices=matrices)
-    r, v = utility.find_dominant_eigenpair(scaling, *matrices)
-    # The growth rate should be 0.
-    assert numpy.isclose(r, 0)
-    return (ages, v)
+from . import eigen
 
 
 class gen(rv.age_structured):
     def __init__(self, parameters, *args, **kwargs):
-        ages, proportion = _find_stable(parameters, *args, **kwargs)
+        ages, proportion = eigen.find_stable_age_structure(parameters,
+                                                           *args, **kwargs)
         super().__init__(ages, proportion, *args, **kwargs)
