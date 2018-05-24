@@ -22,20 +22,19 @@ def build_ages_and_matrices(parameters, agemax=25, agestep=0.01):
     cumulative_hazard = -birthRV.logsf(1, parameters.start_time, ages)
     mean_birth_rate = ((1 - parameters.male_probability_at_birth)
                        * cumulative_hazard)
-    # The index values of the first row (0, j).
-    indexes = (numpy.zeros(N), numpy.arange(N))
-    # Use CSR for fast multiply.
-    B_bar = sparse.csr_matrix((mean_birth_rate, indexes), shape=(N, N))
+    B_bar = sparse.lil_matrix((N, N))
+    B_bar[0] = mean_birth_rate
     # Mortality and aging
     mortalityRV = mortality.gen(parameters)
     mortality_rate = mortalityRV.hazard(ages)
     # Don't fall out of the last age group.
     aging_rate = numpy.hstack((1 / numpy.diff(ages), 0))
-    offsets, diags = zip((0, - mortality_rate - aging_rate), # Diagonal, offset 0.
-                         (-1, aging_rate[: -1]))         # Subdiagonal, offset -1.
-    # Use CSR for consistency with B_bar.
-    MA = sparse.diags(diags, offsets, format='csr')
-    return (ages, (B_bar, MA))
+    MA = sparse.dia_matrix((N, N))
+    MA.setdiag(- mortality_rate - aging_rate, 0)
+    MA.setdiag(aging_rate[: -1], -1)
+    # Convert to CSR for fast multiply.
+    matrices = [X.asformat('csr') for X in (B_bar, MA)]
+    return (ages, matrices)
 
 
 def find_dominant_eigenpair(birth_scaling, B_bar, MA):
@@ -46,6 +45,9 @@ def find_dominant_eigenpair(birth_scaling, B_bar, MA):
     l0, v0 = map(numpy.squeeze, (L, V))
     l0, v0 = map(numpy.real_if_close, (l0, v0))
     assert numpy.isreal(l0), 'Complex dominant eigenvalue: {}'.format(l0)
+    assert all(numpy.isreal(v0)), 'Complex dominant eigenvector: {}'.format(v0)
+    assert all(v0 >= 0), \
+        'Negative component of the dominant eigenvector: {}'.format(v0)
     return (l0, v0)
 
 

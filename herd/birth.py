@@ -28,18 +28,18 @@ def get_gap_size_from_seasonal_coefficient_of_variation(c_v):
 # function over 1 year.
 @utility.shelved('birth_seasonal_coefficient_of_variation',
                  'male_probability_at_birth')
-def _find_scaling(parameters, _matrices=None, *args, **kwargs):
+def _find_scaling(parameters, matrices=None, *args, **kwargs):
     '''Find the birth scaling that gives population growth rate r = 0.'''
-    if _matrices is None:
-        _, _matrices = utility.build_ages_and_matrices(parameters,
-                                                       *args, **kwargs)
-    def objective(val, *matrices):
+    if matrices is None:
+        _, matrices = utility.build_ages_and_matrices(parameters,
+                                                      *args, **kwargs)
+    def objective(val, matrices):
         scaling, = val
         r, _ = utility.find_dominant_eigenpair(scaling, *matrices)
         return r
     initial_guess = 1
     opt, _, ier, mesg = optimize.fsolve(objective, initial_guess,
-                                        args=_matrices,
+                                        args=(matrices, ),
                                         full_output=True)
     scaling, = opt
     assert ier == 1, mesg
