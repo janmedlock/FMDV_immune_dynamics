@@ -38,16 +38,17 @@ def _build_G(birth_scaling, B_bar, T):
 
 
 def find_dominant_eigenpair(A, which='LR'):
-    '''Find the dominant eigenvalue & eigenvector of A.
+    '''Find the dominant eigenvalue & eigenvector of A using
+    `scipy.sparse.linalg.eigs()`.
     `which='LR'` gets the eigenvalue with largest real part.
     `which='LM'` gets the eigenvalue with largest magnitude.'''
     # The solver just spins with inf/NaN entries.
     assert numpy.isfinite(A[A.nonzero()]).all(), 'A has inf/NaN entries.'
     L, V = sparse.linalg.eigs(A, k=1, which=which, maxiter=100000)
-    V /= V.sum(axis=0)
-    l0, v0 = map(numpy.squeeze, (L, V))
-    l0, v0 = map(numpy.real_if_close, (l0, v0))
+    l0 = numpy.real_if_close(L[0])
     assert numpy.isreal(l0), 'Complex dominant eigenvalue: {}'.format(l0)
+    v0 = V[:, 0]
+    v0 = numpy.real_if_close(v0 / v0.sum())
     assert all(numpy.isreal(v0)), 'Complex dominant eigenvector: {}'.format(v0)
     assert all((numpy.real(v0) >= 0) | numpy.isclose(v0, 0)), \
         'Negative component in the dominant eigenvector: {}'.format(v0)
