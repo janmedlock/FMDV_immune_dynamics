@@ -1,6 +1,6 @@
 from . import parameters
 from . import birth
-from . import male
+from . import female
 from . import maternal_immunity_waning
 from . import mortality
 from . import progression
@@ -18,7 +18,7 @@ class RandomVariables:
         if params is None:
             params = parameters.Parameters()
         self.parameters = params
-        self.male = male.gen(params)
+        self.female = female.gen(params)
         self.maternal_immunity_waning = maternal_immunity_waning.gen(params)
         self.mortality = mortality.gen(params)
         self.progression = progression.gen(params)

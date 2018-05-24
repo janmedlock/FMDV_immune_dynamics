@@ -6,11 +6,12 @@ from . import utility
 
 
 @utility.shelved('birth_seasonal_coefficient_of_variation',
-                 'male_probability_at_birth',
+                 'female_probability_at_birth',
                  'start_time')
 def _find_stable(parameters, *args, **kwargs):
     '''Find the stable age structure.'''
-    ages, matrices = utility.build_ages_and_matrices(parameters, *args, **kwargs)
+    ages, matrices = utility.build_ages_and_matrices(parameters,
+                                                     *args, **kwargs)
     scaling = birth._find_scaling(parameters, matrices=matrices)
     r, v = utility.find_dominant_eigenpair(scaling, *matrices)
     # The growth rate should be 0.

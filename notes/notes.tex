@@ -309,8 +309,8 @@ mean growth rate $r = 0$.  (See \autoref{stable_age_structure}.)
 %   & & \text{for $m \in \{0, 1, 2, \ldots\}$}.
 % \end{align}
 
-On birth, the newborn is male with probability
-$p_{\text{male birth}} = 0.5$ or otherwise female.
+On birth, the newborn is female with probability
+$p_{\text{female birth}} = 0.5$ or otherwise male.
 
 
 \section{Waning}
@@ -363,7 +363,7 @@ $\mu_{\text{chronic recovery}}$.
 A sample of size $N$ from the stable age structure was used to
 initialize the population.  (See \autoref{stable_age_structure}.)  The
 sex of each buffalo was randomly selected with probability
-$p_{\text{male birth}}$ of being male.
+$p_{\text{female birth}}$ of being female.
 % The simulations were started at $t = 0$ with $2$ initial infections
 % in randomly chosen members of the population.
 
@@ -386,12 +386,12 @@ follows the Lotka equation
   \label{lotka}
   \begin{split}
     B(t) =&
-    (1 - p_{\text{male birth}}) \bigg[
+    p_{\text{female birth}} \bigg[
       \int_0^t B(t - a)
       S_{\text{mortality}}(a)
       h_{\text{birth}}(t, a) \md a
     \\
-    & \quad\quad\quad\quad\quad\quad\quad {} +
+    & \quad\quad\quad\quad\quad {} +
       \int_0^{\infty} n_0(a)
       \frac{S_{\text{mortality}}(a + t)}{S_{\text{mortality}}(a)}
       h_{\text{birth}}(t, a + t) \md a
@@ -406,7 +406,8 @@ where $n_0(a)$ is the density of age $a$ females at time $t = 0$
 % integral in \eqref{lotka}---becomes negligible, so
 % \begin{equation}
 %   B(t) =
-%   (1 - p_{\text{male birth}}) \int_0^t B(t - a) \hat{h}_{\text{birth}}(t, a) \md a
+%   p_{\text{female birth}} \int_0^t B(t - a)
+%   \hat{h}_{\text{birth}}(t, a) \md a
 % \end{equation}
 % for large $t$,
 % where
@@ -419,7 +420,7 @@ where $n_0(a)$ is the density of age $a$ females at time $t = 0$
 % \begin{equation}
 %   B(t)
 %   =
-%   (1 - p_{\text{male birth}}) \int_0^{t}
+%   p_{\text{female birth}} \int_0^{t}
 %   B(u)
 %   \hat{h}_{\text{birth}}(t, t - u)
 %   \md u.
@@ -444,7 +445,7 @@ Foerster equation
     &= - h_{\text{death}}(a) n(t, a),
     \\
     n(t, 0) &=
-    (1 - p_{\text{male birth}})
+    p_{\text{female birth}}
     \int_0^t n(t, a) h_{\text{birth}}(t, a) \md a,
     \\
     n(0, a) &= n_0(a).
@@ -453,8 +454,8 @@ Foerster equation
 
 Discretizing in $a$ by setting
 \begin{equation}
-  \label{eq:11}
-  \vec{a} = \left[0, \Delta a, 2 \Delta a, \cdots, a_{\text{max}} \right]^{\mT}
+  \vec{a}
+  = \left[0, \Delta a, 2 \Delta a, \cdots, a_{\text{max}} \right]^{\mT}
 \end{equation}
 and
 \begin{equation}
@@ -463,18 +464,15 @@ and
 gives
 \begin{equation}
   \begin{split}
-    \frac{\md \vec{n}}{\md t} &=
-    \left[\mat{B}(t)
-      + \mat{M}
-      + \mat{A}\right] \vec{n},
+    \frac{\md \vec{n}}{\md t}
+    &= \big(\mat{B}(t) + \mat{T}\big) \vec{n},
   \end{split}
 \end{equation}
 with
 \begin{equation}
   \begin{split}
     \mat{B}(t)
-    &=
-    (1 - p_{\text{male birth}})
+    &= p_{\text{female birth}}
     \begin{bmatrix}
       \cdots & h_{\text{birth}}(t, \vec{a}) & \dots
       \\
@@ -487,11 +485,14 @@ with
       \cdots & 0 & \cdots
     \end{bmatrix},
     \\
-    \mat{M} &=
-    \operatorname{diag}\left(- h_{\text{mortality}}(\vec{a})\right),
+    \mat{T}
+    &= \mat{M} + \mat{A},
     \\
-    \mat{A} &=
-    \frac{1}{\Delta a}
+    \mat{M}
+    &= \operatorname{diag}\left(- h_{\text{mortality}}(\vec{a})\right),
+    \\
+    \mat{A}
+    &= \frac{1}{\Delta a}
     \begin{bmatrix}
       -1 & 0 & 0 & 0 & \cdots & 0 & 0
       \\
@@ -506,13 +507,13 @@ with
       0  & \cdots & \cdots & 0 & 1 & - 1 & 0
       \\
       0  & \cdots & \cdots & \cdots & 0 & 1 & 0
-    \end{bmatrix},
+    \end{bmatrix}.
   \end{split}
 \end{equation}
 Solving this from $t_0$ to $t_0 + 1$ gives
 \begin{equation}
-  \vec{n}(t_0 + 1) = \vec{n}(t_0)
-  \exp\left(\bar{\mat{B}} + \mat{M} + \mat{A}\right)
+  \vec{n}(t_0 + 1)
+  = \me^{\bar{\mat{B}} + \mat{T}} \vec{n}(t_0)
 \end{equation}
 where
 \begin{equation}
@@ -520,7 +521,7 @@ where
     \bar{\mat{B}} &=
     \int_{t_0}^{t_0 + 1} \mat{B}(t) \md t\\
     &=
-    (1 - p_{\text{male birth}})
+    p_{\text{female birth}}
     \begin{bmatrix}
       \cdots & \bar{h}_{\text{birth}}(\vec{a}) & \dots
       \\

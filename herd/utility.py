@@ -20,8 +20,7 @@ def build_ages_and_matrices(parameters, agemax=25, agestep=0.01):
     # The mean integral is the cumulative hazard, which is -logsf.
     birthRV = birth.gen(parameters, _scaling=1)
     cumulative_hazard = -birthRV.logsf(1, parameters.start_time, ages)
-    mean_birth_rate = ((1 - parameters.male_probability_at_birth)
-                       * cumulative_hazard)
+    mean_birth_rate = parameters.female_probability_at_birth * cumulative_hazard
     B_bar = sparse.lil_matrix((N, N))
     B_bar[0] = mean_birth_rate
     # Mortality and aging
@@ -29,16 +28,16 @@ def build_ages_and_matrices(parameters, agemax=25, agestep=0.01):
     mortality_rate = mortalityRV.hazard(ages)
     # Don't fall out of the last age group.
     aging_rate = numpy.hstack((1 / numpy.diff(ages), 0))
-    MA = sparse.dia_matrix((N, N))
-    MA.setdiag(- mortality_rate - aging_rate, 0)
-    MA.setdiag(aging_rate[: -1], -1)
+    T = sparse.dia_matrix((N, N))
+    T.setdiag(- mortality_rate - aging_rate, 0)
+    T.setdiag(aging_rate[: -1], -1)
     # Convert to CSR for fast multiply.
-    matrices = [X.asformat('csr') for X in (B_bar, MA)]
+    matrices = [X.asformat('csr') for X in (B_bar, T)]
     return (ages, matrices)
 
 
-def find_dominant_eigenpair(birth_scaling, B_bar, MA):
-    G = birth_scaling * B_bar + MA
+def find_dominant_eigenpair(birth_scaling, B_bar, T):
+    G = birth_scaling * B_bar + T
     # Find the eigenvalue with largest real part.
     L, V = sparse.linalg.eigs(G, k=1, which='LR', maxiter=100000)
     V /= V.sum(axis=0)

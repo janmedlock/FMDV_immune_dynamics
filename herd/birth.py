@@ -27,7 +27,7 @@ def get_gap_size_from_seasonal_coefficient_of_variation(c_v):
 # `start_time` doesn't matter since we're integrating a 1-year-periodic
 # function over 1 year.
 @utility.shelved('birth_seasonal_coefficient_of_variation',
-                 'male_probability_at_birth')
+                 'female_probability_at_birth')
 def _find_scaling(parameters, matrices=None, *args, **kwargs):
     '''Find the birth scaling that gives population growth rate r = 0.'''
     if matrices is None:

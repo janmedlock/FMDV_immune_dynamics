@@ -6,7 +6,7 @@ class Parameters:
         'Initialize with default values.'
         if _set_defaults:
             self.start_time = 0
-            self.male_probability_at_birth = 0.5
+            self.female_probability_at_birth = 0.5
             self.population_size = 1000
             self.birth_seasonal_coefficient_of_variation = 0.61
             # Proportion leaving I that become C.

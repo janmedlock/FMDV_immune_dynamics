@@ -75,7 +75,7 @@ class Buffalo:
         return (self.immune_status == 'recovered')
 
     def set_sex(self):
-        self.sex = 'male' if (self.herd.rvs.male.rvs() == 1) else 'female'
+        self.sex = 'female' if (self.herd.rvs.female.rvs() == 1) else 'male'
 
     def change_immune_status_to(self, new_immune_status):
         self.herd.immune_status_remove(self)
