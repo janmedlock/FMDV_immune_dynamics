@@ -1,4 +1,4 @@
-from contextlib import contextmanager
+from collections import defaultdict
 from functools import wraps
 from inspect import getfile
 from os.path import splitext
@@ -11,9 +11,19 @@ class Shelved:
     '''Decorator to memoize results and store to disk.
     The cache key is derived from the `getattr(Parameters, p)`
     for `p` in `parameters_to_keep`.'''
+    class Locks(defaultdict):
+        '''A `collections.defaultdict()` inside another `defaultdict()`.
+        The inner `defaultdict()` returns a `threading.Lock()`.'''
+        class LocksInner(defaultdict):
+            '''A `collections.defaultdict()` that returns a `threading.Lock()`.'''
+            def __init__(self, *args, **kwargs):
+                super().__init__(Lock, *args, **kwargs)
+        def __init__(self, *args, **kwargs):
+            super().__init__(self.LocksInner, *args, **kwargs)
+
     def __init__(self, *parameters_to_keep):
         self.parameters_to_keep = parameters_to_keep
-        self.lock = {}
+        self.lock = self.Locks()
 
     def get_key(self, parameters):
         '''Build the key string from `parameters`.'''
@@ -31,32 +41,29 @@ class Shelved:
         root, _ = splitext(getfile(func))
         return '{}.{}'.format(root, func.__name__)
 
-    @contextmanager
-    def get_shelf(self, func):
-        '''Acquire the lock and open the shelf file.'''
-        f = self.get_cache_file(func)
-        print('Acquiring lock.')
-        with self.lock[f], shelve.open(f, protocol=HIGHEST_PROTOCOL) as shelf:
-            print('Lock acquired.')
-            yield shelf
-        print('Lock released.')
+    @staticmethod
+    def get_func_name(func):
+        '''Get `func.__module__`.`func.__name__`.'''
+        return '{}.{}()'.format(func.__module__, func.__name__)
 
     def cached_call(self, func, parameters, *args, **kwargs):
         '''Memoized version of `func`.'''
-        with self.get_shelf(func) as shelf:
+        cache_file = self.get_cache_file(func)
+        with shelve.open(cache_file, protocol=HIGHEST_PROTOCOL) as shelf:
             key = self.get_key(parameters)
-            try:
-                val = shelf[key]
-            except (KeyError, ValueError, TypeError):
-                func_name = '{}.{}()'.format(func.__module__, func.__name__)
-                print('{} not in {} cache.  Computing...'.format(key, func_name))
-                val = shelf[key] = func(parameters, *args, **kwargs)
-                print('\tFinished computing {}.'.format(func_name))
+            with self.lock[cache_file][key]:
+                try:
+                    val = shelf[key]
+                except (KeyError, ValueError, TypeError):
+                    func_name = self.get_func_name(func)
+                    print('{} not in {} cache.  Computing...'.format(key,
+                                                                     func_name))
+                    val = shelf[key] = func(parameters, *args, **kwargs)
+                    print('\tFinished computing {}.'.format(func_name))
         return val
 
     def __call__(self, func):
         '''Build the wrapper memoization function.'''
-        self.lock[self.get_cache_file(func)] = Lock()
         @wraps(func)
         def wrapped(parameters, *args, **kwargs):
             return self.cached_call(func, parameters, *args, **kwargs)
