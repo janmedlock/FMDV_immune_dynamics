@@ -510,20 +510,31 @@ with
     \end{bmatrix}.
   \end{split}
 \end{equation}
-Solving this from $t_0$ to $t_0 + 1$ gives
+Solving this from $t_0$ to $t$ gives
+\begin{equation}
+  \begin{split}
+    \vec{n}(t)
+    &= \exp\left(\int_{t_0}^t \mat{B}(s) + \mat{T}\;\mathrm{d}s\right)
+    \vec{n}(t_0)\\
+    &= \exp\left(\int_{t_0}^t \mat{B}(s) \mathrm{d}s
+      + \mat{T} (t - t_0)\right)
+    \vec{n}(t_0).
+  \end{split}
+\end{equation}
+In particular, at $t = t_0 + 1$ we have
 \begin{equation}
   \vec{n}(t_0 + 1)
-  = \me^{\bar{\mat{B}} + \mat{T}} \vec{n}(t_0)
+  = \me^{\bar{\mat{B}}(t_0) + \mat{T}} \vec{n}(t_0)
 \end{equation}
 where
 \begin{equation}
   \begin{split}
-    \bar{\mat{B}} &=
+    \bar{\mat{B}}(t_0) &=
     \int_{t_0}^{t_0 + 1} \mat{B}(t) \md t\\
     &=
     p_{\text{female birth}}
     \begin{bmatrix}
-      \cdots & \bar{h}_{\text{birth}}(\vec{a}) & \dots
+      \cdots & \bar{h}_{\text{birth}}(t_0, \vec{a}) & \dots
       \\
       \cdots & 0 & \cdots
       \\
@@ -538,7 +549,7 @@ where
 and
 \begin{equation}
   \begin{split}
-    \bar{h}_{\text{birth}}(a)
+    \bar{h}_{\text{birth}}(t_0, a)
     &= \int_{t_0}^{t_0 + 1} h_{\text{birth}}(t, a + t) \md t \\
     &= \int_0^1 h_{\text{birth}}(t, a + t) \md t \\
     &= - \log S_{\text{birth}}(1, a).
@@ -546,15 +557,17 @@ and
 \end{equation}
 Assuming the population is at the stable age distribution so that
 \begin{equation}
-  \vec{n}(t_0 + 1) = \me^r \vec{n}(t_0)
+  \vec{n}(t_0 + 1)
+  = \me^{\bar{\mat{B}}(t_0) + \mat{T}} \vec{n}_{\text{stable}}(t_0)
+ = \me^r \vec{n}_{\text{stable}}(t_0)
 \end{equation}
 gives
 \begin{equation}
-  r = \lambda_0\left(\bar{\mat{B}} + \mat{M} + \mat{A}\right),
+  r = \lambda_0\left(\bar{\mat{B}}(t_0) + \mat{T}\right),
 \end{equation}
 where $\lambda_0(\mat{X})$ is the eigenvalue of $\mat{X}$ with largest
 real part.  The eigenvector corresponding to this eigenvalue is the
-stable age distribution $\vec{n}_{\text{stable}}$.
+stable age distribution $\vec{n}_{\text{stable}}(t_0)$.
 
 We numerically computed the eigenvalue and eigenvector by using age
 steps $\Delta a = 0.01$, maximum age $a_{\text{max}} = 25$
