@@ -2,13 +2,15 @@ import numpy
 
 
 class Parameters:
-    def __init__(self, SAT = 1, _set_defaults = True):
+    def __init__(self, SAT=1, _set_defaults=True):
         'Initialize with default values.'
         if _set_defaults:
             self.start_time = 0
             self.female_probability_at_birth = 0.5
             self.population_size = 1000
-            self.birth_seasonal_coefficient_of_variation = 0.61
+            # self.birth_seasonal_coefficient_of_variation = 0.505  # First year.
+            # self.birth_seasonal_coefficient_of_variation = 0.984  # Second year.
+            self.birth_seasonal_coefficient_of_variation = 0.613  # Both years.
             # Proportion leaving I that become C.
             self.probability_chronic = 0
             # Duration in C before leaving to R.
@@ -51,7 +53,7 @@ class Parameters:
         return '<{}: {{{}}}>'.format(clsname, ', '.join(paramreprs))
 
     @classmethod
-    def from_repr(cls, r_, set_defaults = True):
+    def from_repr(cls, r_, set_defaults=True):
         assert r_.startswith('<')
         assert r_.endswith('>')
         r = r_[1 : -1]
@@ -64,7 +66,7 @@ class Parameters:
         assert paramstr_.startswith('{')
         assert paramstr_.endswith('}')
         paramstr = paramstr_[1 : -1]
-        p = cls(_set_defaults = set_defaults)
+        p = cls(_set_defaults=set_defaults)
         for s in paramstr.split(', '):
             (k_, vstr) = s.split(': ')
             assert k_.startswith("'")
