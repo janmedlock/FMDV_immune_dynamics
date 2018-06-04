@@ -2,7 +2,7 @@ import numpy
 from scipy import stats
 
 from . import rv
-from . import eigen
+from .eigen import find_birth_scaling
 
 
 def fracpart(x):
@@ -29,7 +29,7 @@ class gen(rv.RV, stats.rv_continuous):
         self.seasonal_coefficient_of_variation \
             = parameters.birth_seasonal_coefficient_of_variation
         if _scaling is None:
-            _scaling = eigen.find_birth_scaling(parameters, *args, **kwargs)
+            _scaling = find_birth_scaling(parameters, *args, **kwargs)
         self._scaling = _scaling
         super().__init__(self, name='birth', a=0, shapes='time0, age0',
                          *args, **kwargs)
