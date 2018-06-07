@@ -21,19 +21,13 @@ def integrand_cdf(s, t, maternal_immunity_waning, birth, t0, a0):
 
 @numpy.vectorize
 def convolution(t, maternal_immunity_waning, birth, t0, a0):
-    if isinstance(maternal_immunity_waning, herd.rv.deterministic):
-        return numpy.where((t >= t0) & (t < t0 + 1),
-                           birth.hazard(t - maternal_immunity_waning._scale,
-                                        t0, a0),
-                           0)
-    else:
-        pdf, _ = integrate.quad(integrand_pdf, 0, t,
-                                args = (t, maternal_immunity_waning,
-                                        birth, t0, a0))
-        cdf, _ = integrate.quad(integrand_cdf, 0, t,
-                                args = (t, maternal_immunity_waning,
-                                        birth, t0, a0))
-        return numpy.ma.divide(pdf, 1 - cdf).filled(0)
+    pdf, _ = integrate.quad(integrand_pdf, 0, t,
+                            args = (t, maternal_immunity_waning,
+                                    birth, t0, a0))
+    cdf, _ = integrate.quad(integrand_cdf, 0, t,
+                            args = (t, maternal_immunity_waning,
+                                    birth, t0, a0))
+    return numpy.ma.divide(pdf, 1 - cdf).filled(0)
 
 
 def hazard(t, pdf):

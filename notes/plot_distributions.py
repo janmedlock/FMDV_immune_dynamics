@@ -22,7 +22,6 @@ def get_RV(RVs, name, all_=False):
     else:
         return {sat: getattr(v, name) for sat, v in RVs.items()}
 
-# Shrink fontsizes.
 width = 390 / 72.27
 height = 0.6 * width
 rc = {'figure.figsize': (width, height),
@@ -57,7 +56,7 @@ with pyplot.rc_context(rc=rc):
     t = numpy.linspace(0, t_max, 1001)
     j += 1
     for sat, v in RV.items():
-        axes_hazards[j].plot(t, v.hazard(t, 0, 4 - t), color=colors[sat])
+        axes_hazards[j].plot(t, v.hazard(t, 4 + t), color=colors[sat])
         axes_survivals[j].plot(t, v.sf(t, 0, 4), color=colors[sat])
     axes_hazards[j].set_title(title)
     axes_survivals[j].set_xlabel(xlabel)
@@ -127,4 +126,4 @@ with pyplot.rc_context(rc=rc):
     fig.tight_layout(rect=(0, 0.07, 1, 1))
 
     fig.savefig('distributions.pgf')
-    pyplot.close(fig)
+    pyplot.show()

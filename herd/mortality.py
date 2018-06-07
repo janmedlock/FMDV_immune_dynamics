@@ -1,11 +1,10 @@
 import numpy
 import pandas
-from scipy import integrate, stats
 
 from . import rv
 
 
-class gen(rv.RV, stats.rv_continuous):
+class gen(rv.RV):
     # {(a, b): s} is the annual survival for ages [a, b).
     _annual_survival = {(0, 1): 0.66,
                         (1, 3): 0.79,
@@ -16,13 +15,13 @@ class gen(rv.RV, stats.rv_continuous):
         {pandas.Interval(*interval, closed='left'): value
          for (interval, value) in _annual_survival.items()}).sort_index()
 
-    def __init__(self, parameters, *args, **kwargs):
-        stats.rv_continuous.__init__(self, name='mortality', a=0, *args, **kwargs)
+    def __init__(self, parameters):
+        pass
 
     def hazard(self, age):
         return -numpy.log(self._annual_survival[age])
 
-    def _logsf(self, age):
+    def logsf(self, age):
         '''Logarithm of the survival function.'''
         logsf = numpy.zeros_like(age)
         for (interval, value) in self._annual_survival.items():
@@ -34,11 +33,11 @@ class gen(rv.RV, stats.rv_continuous):
             logsf += (a - interval.left) * numpy.log(value)
         return logsf
 
-    def _sf(self, age):
+    def sf(self, age):
         '''Survival function.'''
-        return numpy.exp(self._logsf(age))
+        return numpy.exp(self.logsf(age))
 
-    def _isf(self, q):
+    def isf(self, q):
         '''Inverse survival function.'''
         logq = numpy.asarray(numpy.log(q))
         isf = numpy.zeros_like(q)
@@ -53,18 +52,22 @@ class gen(rv.RV, stats.rv_continuous):
             logq_max = logq_min
         return isf
 
-    def _cdf(self, age):
+    def cdf(self, age):
         '''Cumulative distribution function.'''
-        return 1 - self._sf(age)
+        return 1 - self.sf(age)
 
-    def _ppf(self, q):
+    def ppf(self, q):
         '''Percent point function, the inverse of the CDF.'''
-        return self._isf(1 - q)
+        return self.isf(1 - q)
 
-    def _logpdf(self, age):
+    def logpdf(self, age):
         '''Logarithm of the probability density function.'''
-        return numpy.log(self.hazard(age)) + self._logsf(age)
+        return numpy.log(self.hazard(age)) + self.logsf(age)
 
-    def _pdf(self, age):
+    def pdf(self, age):
         '''Probability density function.'''
-        return numpy.exp(self._logpdf(age))
+        return numpy.exp(self.logpdf(age))
+
+    def rvs(self, size=None):
+        U = numpy.random.random_sample(size=size)
+        return self.ppf(U)

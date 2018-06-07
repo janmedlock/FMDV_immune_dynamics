@@ -169,136 +169,140 @@ time:
   \begin{cases}
     0 & \text{if $a < 4$},
     \\
-    \mu \alpha \max\left(1 - 2 \beta \{t\}, 0\right)
-    & \text{if $a \geq 4$ and $\{t\} < \frac{1}{2}$},
-    \\
-    \mu \alpha \max\left(1 - 2 \beta (1 - \{t\}), 0\right)
-    & \text{if $a \geq 4$ and $\{t\} \geq \frac{1}{2}$},
+    \mu \alpha \max\big(1 - \beta (1 - |1 - 2 \{t - \tau\}|), 0\big)
+    & \text{if $a \geq 4$},
   \end{cases}
 \end{equation}
 with
 \begin{equation}
   \alpha =
   \begin{cases}
-    1 + c_v \sqrt{3}
-    & \text{if $c_v < \frac{1}{\sqrt{3}}$},
+    1 + c_{\text{v}} \sqrt{3}
+    & \text{if $c_{\text{v}} < \frac{1}{\sqrt{3}}$},
     \\
-    \frac{3}{2} \left(1 + c_v^2\right)
-    & \text{if $c_v \geq \frac{1}{\sqrt{3}}$},
+    \frac{3}{2} \left(1 + c_{\text{v}}^2\right)
+    & \text{if $c_{\text{v}} \geq \frac{1}{\sqrt{3}}$},
   \end{cases}
 \end{equation}
 \begin{equation}
   \beta =
   \begin{cases}
-    \frac{2 c_v \sqrt{3}}{1 + c_v \sqrt{3}}
-    & \text{if $c_v < \frac{1}{\sqrt{3}}$},
+    \frac{2 c_{\text{v}} \sqrt{3}}{1 + c_{\text{v}} \sqrt{3}}
+    & \text{if $c_{\text{v}} < \frac{1}{\sqrt{3}}$},
     \\
-    \frac{3}{4} \left(1 + c_v^2\right)
-    & \text{if $c_v \geq \frac{1}{\sqrt{3}}$},
+    \frac{3}{4} \left(1 + c_{\text{v}}^2\right)
+    & \text{if $c_{\text{v}} \geq \frac{1}{\sqrt{3}}$},
   \end{cases}
 \end{equation}
-and $\{x\}$ is the fractional part of $x$.  The magnitude of the
-seasonal variation is captured by the coefficient of variation $c_v$.
-The annual mean $\mu$ was chosen so that the population achieves the
-mean growth rate $r = 0$.  (See \autoref{stable_age_structure}.)
+and $\{x\}$ is the fractional part of $x$
+(\autoref{fig:birth_hazard}).  The magnitude of the seasonal variation
+is captured by the coefficient of variation $c_{\text{v}}$.  The time of year
+of the peak birth hazard is $\tau$.  The annual mean $\mu$ was chosen
+so that the population achieves the mean growth rate $r = 0$.  (See
+\autoref{stable_age_structure}.)
 
-% The survival function for $t$ years until the next birth, given age
-% $a_0$ at the current time $t_0$ is
-% \begin{equation}
-%   S_{\text{birth}}(t, t_0, a_0) = \exp\left(- H(t, t_0, a_0)\right),
-% \end{equation}
-% where the cumulative hazard is
-% \begin{align}
-%   H(t, t_0, a_0) &=
-%   \begin{cases}
-%     0 & \text{if $a_0 + t - t_0 < 4$},
-%     \\
-%     \mu \alpha \left(H_1 + H_2  + H_3\right)
-%     & \text{if $a_0 + t - t_0 \geq 4$ and $c_v < \frac{1}{\sqrt{3}}$},
-%     \\
-%     \mu \alpha \left(H_4 + H_5 + H_6\right)
-%     & \text{if $a_0 + t - t_0 \geq 4$ and $c_v \geq \frac{1}{\sqrt{3}}$},
-%   \end{cases}
-%   \\
-%   H_1 &= \left(1 - \frac{\beta}{2}\right)
-%   \left(\lfloor d \rfloor - \lfloor c \rfloor - 1\right),
-%   \\
-%   H_2 &=
-%   \begin{cases}
-%     \frac{1}{2} \left(1 - \frac{\beta}{2}\right)
-%     + \left(\frac{1}{2} - \{c\}\right)
-%     \left[1 - \beta
-%       + \beta \left(\frac{1}{2} - \{c\}\right)\right]
-%     & \text{if $\{c\} < \frac{1}{2}$},
-%     \\
-%     \left(1 - \{c\}\right)
-%     \left[1 - \beta + \beta \left(1 - \{c\}\right)\right]
-%     & \text{if $\{c\} \geq \frac{1}{2}$},
-%   \end{cases}
-%   \\
-%   H_3 &=
-%   \begin{cases}
-%     \{d\}\left(1 - \beta \{d\}\right)
-%     & \text{if $\{d\} < \frac{1}{2}$},
-%     \\
-%     \frac{1}{2} \left(1 - \frac{\beta}{2}\right)
-%     + \left(\{d\} - \frac{1}{2}\right)
-%     \left[1 - \beta
-%       + \beta \left(\{d\} - \frac{1}{2}\right)\right]
-%     & \text{if $\{d\} \geq \frac{1}{2}$},
-%     \end{cases}
-%   \\
-%   H_4 &= \frac{1}{2 \beta}
-%   \left(\lfloor d \rfloor - \lfloor c \rfloor - 1\right),
-%   \\
-%   H_5 &=
-%   \begin{cases}
-%     \frac{1}{4 \beta}
-%     + \beta \left(\frac{1}{2 \beta} - \{c\}\right)^2
-%     & \text{if $\{c\} < \frac{1}{2 \beta}$},
-%     \\
-%     \frac{1}{4 \beta}
-%     & \text{if $\frac{1}{2 \beta} \leq \{c\} < 1 - \frac{1}{2 \beta}$},
-%     \\
-%     \left(1 - \{c\}\right) \left[1 -
-%       \beta \left(1 - \{c\}\right)\right]
-%     & \text{if $\{c\} \geq 1 - \frac{1}{2 \beta}$}
-%   \end{cases},
-%   \\
-%   H_6 &=
-%   \begin{cases}
-%     \{d\} \left[1 - \beta \{d\}\right]
-%     & \text{if $\{d\} < \frac{1}{2 \beta}$},
-%     \\
-%     \frac{1}{4 \beta}
-%     & \text{if $\frac{1}{2 \beta} \leq \{d\} <
-%       1 - \frac{1}{2 \beta}$},
-%     \\
-%     \frac{1}{4 \beta}
-%     + \beta
-%     \left[\{d\} - \left(1 - \frac{1}{2 \beta}\right)\right]^2
-%     & \text{if $\{d\} \geq 1 - \frac{1}{2 \beta}$},
-%   \end{cases}
-%   \\
-%   c &= \max(4 - a_0, 0) + t_0,
-%   \\
-%   d &= t + t_0,
-% \end{align}
-% and $\lfloor x \rfloor$ is the floor function,
-% i.e.~$\lfloor x \rfloor = x - \{x\}$.
+\begin{figure}
+  \centering
+  \input{birth_hazard.pgf}
+  \caption{Model birth hazards for ages 4 years and older.}
+  \label{fig:birth_hazard}
+\end{figure}
 
-% There is no explicit inverse survival function.  Instead, the inverse
-% was found numerically using a root-finding algorithm \citep{scipy}.
+The cumulative hazard for $t$ years, given age $a_0$ at the current
+time $t_0$ is
+\begin{equation}
+  H_{\text{birth}}(t, t_0, a_0) =
+  \begin{cases}
+    0 & \text{if $a_0 + t < 4$},
+    \\
+    \mu \left(H_0 + H_1  + H_2\right)
+    & \text{if $a_0 + t \geq 4$ and $c_{\text{v}} < \frac{1}{\sqrt{3}}$},
+    \\
+    \mu \left(H_0 + H_3 + H_4\right)
+    & \text{if $a_0 + t \geq 4$ and $c_{\text{v}} \geq \frac{1}{\sqrt{3}}$},
+  \end{cases}
+\end{equation}
+with
+\begin{equation}
+  \begin{split}
+    c &= t_0 + \max(4 - a_0, 0) - \tau,
+    \\
+    d &= t_0 + t - \tau,
+    \\
+    H_0 &= \lfloor d \rfloor - \lfloor c \rfloor - 1,
+    \\
+    H_1 &=
+    \begin{cases}
+      \frac{1}{2}
+      + \alpha \left(\frac{1}{2} - \{c\}\right)
+      \left[1 - \beta
+        + \beta \left(\frac{1}{2} - \{c\}\right)\right]
+      & \text{if $\{c\} < \frac{1}{2}$},
+      \\
+      \alpha \left(1 - \{c\}\right)
+      \left[1 - \beta + \beta \left(1 - \{c\}\right)\right]
+      & \text{if $\{c\} \geq \frac{1}{2}$},
+    \end{cases}
+    \\
+    H_2 &=
+    \begin{cases}
+      \alpha \{d\}\left(1 - \beta \{d\}\right)
+      & \text{if $\{d\} < \frac{1}{2}$},
+      \\
+      \frac{1}{2}
+      + \alpha \left(\{d\} - \frac{1}{2}\right)
+      \left[1 - \beta
+        + \beta \left(\{d\} - \frac{1}{2}\right)\right]
+      & \text{if $\{d\} \geq \frac{1}{2}$},
+    \end{cases}
+    \\
+    H_3 &=
+    \begin{cases}
+      \frac{1}{2} + \alpha \beta \left(\frac{1}{2 \beta} - \{c\}\right)^2
+      & \text{if $\{c\} < \frac{1}{2 \beta}$},
+      \\
+      \frac{1}{2}
+      & \text{if $\frac{1}{2 \beta} \leq \{c\} < 1 - \frac{1}{2 \beta}$},
+      \\
+      \alpha \left(1 - \{c\}\right) \left[1 -
+        \beta \left(1 - \{c\}\right)\right]
+      & \text{if $\{c\} \geq 1 - \frac{1}{2 \beta}$},
+    \end{cases}
+    \\
+    H_4 &=
+    \begin{cases}
+      \alpha \{d\} \left[1 - \beta \{d\}\right]
+      & \text{if $\{d\} < \frac{1}{2 \beta}$},
+      \\
+      \frac{1}{2}
+      & \text{if $\frac{1}{2 \beta} \leq \{d\} <
+        1 - \frac{1}{2 \beta}$},
+      \\
+      \frac{1}{2}
+      + \alpha \beta
+      \left[\{d\} - \left(1 - \frac{1}{2 \beta}\right)\right]^2
+      & \text{if $\{d\} \geq 1 - \frac{1}{2 \beta}$},
+    \end{cases}
+  \end{split}
+\end{equation}
+and $\lfloor x \rfloor$ is the floor function,
+i.e.~$\lfloor x \rfloor = x - \{x\}$.
+The survival function for $t$ years, given age
+$a_0$ at the current time $t_0$ is then
+\begin{equation}
+  S_{\text{birth}}(t, t_0, a_0) = \exp\left(- H_{\text{birth}}(t, t_0, a_0)\right).
+\end{equation}
+The probability density function for births time $t$ later, given age
+$a_0$ at $t_0$, is
+\begin{align}
+  f_{\text{birth}}(t, t_0, a_0) =
+  h_{\text{birth}}(t_0 + t, a_0 + t)
+  S_{\text{birth}}(t, t_0, a_0).
+\end{align}
 
-% The probability density function for births time $t$ later, given age
-% $a_0$ at $t_0$ is
-% \begin{align}
-%   f_{\text{birth}}(t, t_0, a_0) &=
-%   h_{\text{birth}}(t, a_0 + t) S_{\text{birth}}(t, t_0, a_0).
-% \end{align}
-% Multiplying by $N(t_0, a_0)$, the density of females aged $a_0$ at
-% $t_0$, and integrating over $a_0$ gives the expected number of
-% births time $t$ later:
+% Multiplying the probability density by $N(t_0, a_0)$, the density of
+% females aged $a_0$ at $t_0$, and integrating over $a_0$ gives the
+% expected number of births time $t$ later:
 % \begin{equation}
 %   b(t, t_0) = \int_0^{\infty} f_{\text{birth}}(t, t_0, a_0) N(t_0, a_0) \md a_0.
 % \end{equation}
@@ -380,8 +384,7 @@ $p_{\text{female birth}}$ of being female.
 \section{Stable age structure}
 \label{stable_age_structure}
 
-The mean rate of female births $B(t)$
-follows the Lotka equation
+The mean rate of female births $B(t)$ follows the Lotka equation
 \begin{equation}
   \label{lotka}
   \begin{split}
@@ -524,17 +527,17 @@ Solving this from $t_0$ to $t$ gives
 In particular, at $t = t_0 + 1$ we have
 \begin{equation}
   \vec{n}(t_0 + 1)
-  = \me^{\bar{\mat{B}}(t_0) + \mat{T}} \vec{n}(t_0)
+  = \me^{\bar{\mat{B}} + \mat{T}} \vec{n}(t_0)
 \end{equation}
 where
 \begin{equation}
   \begin{split}
-    \bar{\mat{B}}(t_0) &=
+    \bar{\mat{B}} &=
     \int_{t_0}^{t_0 + 1} \mat{B}(t) \md t\\
     &=
     p_{\text{female birth}}
     \begin{bmatrix}
-      \cdots & \bar{h}_{\text{birth}}(t_0, \vec{a}) & \dots
+      \cdots & \bar{h}_{\text{birth}}(\vec{a}) & \dots
       \\
       \cdots & 0 & \cdots
       \\
@@ -549,21 +552,23 @@ where
 and
 \begin{equation}
   \begin{split}
-    \bar{h}_{\text{birth}}(t_0, a)
+    \bar{h}_{\text{birth}}(a)
     &= \int_{t_0}^{t_0 + 1} h_{\text{birth}}(t, a + t) \md t \\
     &= \int_0^1 h_{\text{birth}}(t, a + t) \md t \\
-    &= - \log S_{\text{birth}}(1, a).
+    &= - \log S_{\text{birth}}(1, a),
   \end{split}
 \end{equation}
+because $h_{\text{birth}}(t, a + t)$ is periodic.  \textbf{Is this
+  right because of $h(t, a) = 0$ for $a < 4$?}
 Assuming the population is at the stable age distribution so that
 \begin{equation}
   \vec{n}(t_0 + 1)
-  = \me^{\bar{\mat{B}}(t_0) + \mat{T}} \vec{n}_{\text{stable}}(t_0)
+  = \me^{\bar{\mat{B}} + \mat{T}} \vec{n}_{\text{stable}}(t_0)
  = \me^r \vec{n}_{\text{stable}}(t_0)
 \end{equation}
 gives
 \begin{equation}
-  r = \lambda_0\left(\bar{\mat{B}}(t_0) + \mat{T}\right),
+  r = \lambda_0\left(\bar{\mat{B}} + \mat{T}\right),
 \end{equation}
 where $\lambda_0(\mat{X})$ is the eigenvalue of $\mat{X}$ with largest
 real part.  The eigenvector corresponding to this eigenvalue is the

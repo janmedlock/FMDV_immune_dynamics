@@ -5,11 +5,12 @@ class Parameters:
     def __init__(self, SAT=1, _set_defaults=True):
         'Initialize with default values.'
         if _set_defaults:
-            self.start_time = 0
-            self.female_probability_at_birth = 0.5
             self.population_size = 1000
-            # self.birth_seasonal_coefficient_of_variation = 0.505  # First year.
-            # self.birth_seasonal_coefficient_of_variation = 0.984  # Second year.
+            self.start_time = 0.5  # 01 June, 6 months after birth peak.
+            self.female_probability_at_birth = 0.5
+            self.birth_peak_time_of_year = 0  # 01 January.
+            # self.birth_seasonal_coefficient_of_variation = 0.505  # 1st year.
+            # self.birth_seasonal_coefficient_of_variation = 0.984  # 2nd year.
             self.birth_seasonal_coefficient_of_variation = 0.613  # Both years.
             # Proportion leaving I that become C.
             self.probability_chronic = 0

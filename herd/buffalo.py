@@ -56,6 +56,7 @@ class Buffalo:
         if self.sex == 'female':
             self.update_give_birth()
 
+    @property
     def age(self):
         return (self.herd.time - self.birth_date)
 
@@ -105,7 +106,7 @@ class Buffalo:
         self.events.update('give_birth',
                            self.herd.time
                            + self.herd.rvs.birth.rvs(self.herd.time,
-                                                     self.age()))
+                                                     self.age))
 
     def maternal_immunity_waning(self):
         assert self.immune_status == 'maternal immunity'
