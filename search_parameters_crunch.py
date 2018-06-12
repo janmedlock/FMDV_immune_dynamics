@@ -96,7 +96,7 @@ def plot_slice(**kwds):
 #                               numpy.floor(logb) + 1)
 
 #     minor_exps = numpy.arange(numpy.floor(loga), numpy.ceil(logb) + 1)
-#     minor_subs = numpy.arange(1, base, base / float(minors))
+#     minor_subs = numpy.arange(1, base, base / minors)
 #     minor_locs = numpy.log10(numpy.outer(base ** minor_exps, minor_subs).flatten())
 #     minor_locs = numpy.compress((minor_locs >= loga)
 #                                & (minor_locs <= logb),
