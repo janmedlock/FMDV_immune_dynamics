@@ -19,6 +19,7 @@
 \renewcommand{\vec}[1]{\mathbf{#1}}
 \newcommand{\mat}[1]{\mathbf{#1}}
 \DeclareMathOperator{\Prob}{Prob}
+\DeclareMathOperator{\diag}{diag}
 \newcommand{\md}{\mathrm{d}}
 \newcommand{\me}{\mathrm{e}}
 \newcommand{\mT}{\mathrm{T}}
@@ -42,7 +43,6 @@
   \and Jan Medlock}
 
 \newcommand{\comment}[1]{\textbf{[#1]}}
-\DeclareMathOperator{\diag}{diag}
 
 \begin{document}
 
@@ -449,7 +449,7 @@ Foerster equation
     \\
     n(t, 0) &=
     p_{\text{female birth}}
-    \int_0^t n(t, a) h_{\text{birth}}(t, a) \md a,
+    \int_0^{+\infty} n(t, a) h_{\text{birth}}(t, a) \md a,
     \\
     n(0, a) &= n_0(a).
   \end{split}
@@ -513,66 +513,7 @@ with
     \end{bmatrix}.
   \end{split}
 \end{equation}
-Solving this from $t_0$ to $t$ gives
-\begin{equation}
-  \begin{split}
-    \vec{n}(t)
-    &= \exp\left(\int_{t_0}^t \mat{B}(s) + \mat{T}\;\mathrm{d}s\right)
-    \vec{n}(t_0)\\
-    &= \exp\left(\int_{t_0}^t \mat{B}(s) \mathrm{d}s
-      + \mat{T} (t - t_0)\right)
-    \vec{n}(t_0).
-  \end{split}
-\end{equation}
-In particular, at $t = t_0 + 1$ we have
-\begin{equation}
-  \vec{n}(t_0 + 1)
-  = \me^{\bar{\mat{B}} + \mat{T}} \vec{n}(t_0)
-\end{equation}
-where
-\begin{equation}
-  \begin{split}
-    \bar{\mat{B}} &=
-    \int_{t_0}^{t_0 + 1} \mat{B}(t) \md t\\
-    &=
-    p_{\text{female birth}}
-    \begin{bmatrix}
-      \cdots & \bar{h}_{\text{birth}}(\vec{a}) & \dots
-      \\
-      \cdots & 0 & \cdots
-      \\
-      \cdots & 0 & \cdots
-      \\
-      & \vdots &
-      \\
-      \cdots & 0 & \cdots
-    \end{bmatrix},
-  \end{split}
-\end{equation}
-and
-\begin{equation}
-  \begin{split}
-    \bar{h}_{\text{birth}}(a)
-    &= \int_{t_0}^{t_0 + 1} h_{\text{birth}}(t, a + t) \md t \\
-    &= \int_0^1 h_{\text{birth}}(t, a + t) \md t \\
-    &= - \log S_{\text{birth}}(1, a),
-  \end{split}
-\end{equation}
-because $h_{\text{birth}}(t, a + t)$ is periodic.  \textbf{Is this
-  right because of $h(t, a) = 0$ for $a < 4$?}
-Assuming the population is at the stable age distribution so that
-\begin{equation}
-  \vec{n}(t_0 + 1)
-  = \me^{\bar{\mat{B}} + \mat{T}} \vec{n}_{\text{stable}}(t_0)
- = \me^r \vec{n}_{\text{stable}}(t_0)
-\end{equation}
-gives
-\begin{equation}
-  r = \lambda_0\left(\bar{\mat{B}} + \mat{T}\right),
-\end{equation}
-where $\lambda_0(\mat{X})$ is the eigenvalue of $\mat{X}$ with largest
-real part.  The eigenvector corresponding to this eigenvalue is the
-stable age distribution $\vec{n}_{\text{stable}}(t_0)$.
+\comment{Monodromy matrix, etc...}
 
 We numerically computed the eigenvalue and eigenvector by using age
 steps $\Delta a = 0.01$, maximum age $a_{\text{max}} = 25$
