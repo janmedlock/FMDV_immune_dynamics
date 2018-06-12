@@ -23,7 +23,7 @@ class gen(rv.RV):
 
     def logsf(self, age):
         '''Logarithm of the survival function.'''
-        logsf = numpy.zeros_like(age)
+        logsf = numpy.zeros(numpy.shape(age))
         for (interval, value) in self._annual_survival.items():
             a = numpy.clip(age, interval.left, interval.right)
             # (a - interval.left) is
@@ -40,7 +40,7 @@ class gen(rv.RV):
     def isf(self, q):
         '''Inverse survival function.'''
         logq = numpy.asarray(numpy.log(q))
-        isf = numpy.zeros_like(q)
+        isf = numpy.zeros(numpy.shape(q))
         logq_max = logq_min = 0
         for (interval, value) in self._annual_survival.items():
             logq_min += (interval.right - interval.left) * numpy.log(value)
