@@ -40,7 +40,9 @@ months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
 
 def xticks_months(ax, t, t0):
     every = 3 # months
-    xticks = numpy.arange(t[0], t[-1] + every, every)
+    xticks = numpy.arange(t[0], t[-1], every)
+    if not numpy.isclose(xticks[-1], t[-1]):
+        xticks = numpy.hstack((xticks, t[-1]))
     ax.set_xticks(xticks)
     month0 = int(t0 % 12)
     months_ = (months[month0:] + months[:month0])[::every]
