@@ -35,28 +35,28 @@ def _build_ages_and_monodromy_args(parameters, agemax=25, agestep=0.01):
     return (ages, args)
 
 
-def _monodromy_ODEs(psi, t, birth_scaling, N, birth_rate, B, T):
-    Psi = psi.reshape((N, N))
+def _monodromy_ODEs(phi, t, birth_scaling, N, birth_rate, B, T):
+    Phi = phi.reshape((N, N))
     B[0] = birth_scaling * birth_rate(t)
-    dPsi_dt = (B + T) @ Psi
-    return dPsi_dt.reshape(-1)
+    dPhi_dt = (B + T) @ Phi
+    return dPhi_dt.reshape(-1)
 
 
 def _find_monodromy_matrix(birth_scaling, start_time, N, birth_rate, B, T):
-    Psi0 = numpy.eye(N)
-    psi0 = Psi0.reshape(-1)
+    Phi0 = numpy.eye(N)
+    phi0 = Phi0.reshape(-1)
     # Solve over 1 year, the period of the birth rate.
     t = (start_time, start_time + 1)
     args = (birth_scaling, N, birth_rate, B, T)
-    psi = integrate.odeint(_monodromy_ODEs, psi0, t, args=args,
+    phi = integrate.odeint(_monodromy_ODEs, phi0, t, args=args,
                            mxstep=100000)[-1]
-    Psi = psi.reshape((N, N))
-    return Psi
+    Phi = phi.reshape((N, N))
+    return Phi
 
 
 def _find_growth_rate(birth_scaling, *args):
-    Psi = _find_monodromy_matrix(birth_scaling, *args)
-    R = dominant_eigen.find(Psi, which='LM', return_eigenvector=False)
+    Phi = _find_monodromy_matrix(birth_scaling, *args)
+    R = dominant_eigen.find(Phi, which='LM', return_eigenvector=False)
     return numpy.log(R)
 
 
@@ -85,8 +85,8 @@ def find_stable_age_structure(parameters, *args, **kwargs):
     '''Find the stable age structure.'''
     birth_scaling = find_birth_scaling(parameters, *args, **kwargs)
     (ages, args) = _build_ages_and_monodromy_args(parameters, *args, **kwargs)
-    Psi = _find_monodromy_matrix(birth_scaling, *args)
-    R, v = dominant_eigen.find(Psi, which='LM', return_eigenvector=True)
+    Phi = _find_monodromy_matrix(birth_scaling, *args)
+    R, v = dominant_eigen.find(Phi, which='LM', return_eigenvector=True)
     assert numpy.isclose(numpy.log(R), 0, atol=1e-6), 'Nonzero growth rate.'
     v /= integrate.trapz(v, ages)
     return (ages, v)
