@@ -16,59 +16,61 @@ class _Solver:
     the population growth rate and the stable age structure.
     '''
     def __init__(self, parameters, agemax=25, agestep=0.01):
-        self.parameters = parameters
+        self._parameters = parameters
         self.ages = numpy.arange(0, agemax, agestep)
         if not numpy.isclose(self.ages[-1], agemax):
             self.ages = numpy.hstack((self.ages, agemax))
-        self.N = len(self.ages)
-        self.period = 1
+        self._N = len(self.ages)
+        self._period = 1
         # Birth
         # The first row, B[0], is the birth hazard
         # times the probability of female birth.
-        self.birthRV = birth.gen(self.parameters, _scaling=1)
-        B = sparse.lil_matrix((self.N, self.N))
+        self._birthRV = birth.gen(self._parameters, _scaling=1)
+        B = sparse.lil_matrix((self._N, self._N))
         # Establish sparsity pattern.  This row will get updated at each time.
         B[0] = 1
         # Mortality and aging
-        mortalityRV = mortality.gen(self.parameters)
+        mortalityRV = mortality.gen(self._parameters)
         mortality_rate = mortalityRV.hazard(self.ages)
         # No aging out of the last age group.
         aging_rate = numpy.hstack((1 / numpy.diff(self.ages), 0))
-        T = sparse.dia_matrix((self.N, self.N))
+        T = sparse.dia_matrix((self._N, self._N))
         T.setdiag(- mortality_rate - aging_rate, 0)
         T.setdiag(aging_rate[: -1], -1)
         # Convert to CSR for fast multiply.
-        self.B = B.asformat('csr')
-        self.T = T.asformat('csr')
+        self._B = B.asformat('csr')
+        self._T = T.asformat('csr')
         # Initial guess for eigenvector.
-        self.v0_guess = mortalityRV.sf(self.ages)
+        self._v0 = mortalityRV.sf(self.ages)
 
     def _ODEs(self, phi, t, birth_scaling):
         '''The right-hand side of the matrix ODE for vector `phi`,
         a flattened version of the fundamental solution matrix `Phi`.'''
+        # Update the birth rate for time `t`.
+        self._B[0] = (birth_scaling
+                      * self._parameters.female_probability_at_birth
+                      * self._birthRV.hazard(t, self.ages))
         # Convert from vector to matrix.
-        Phi = phi.reshape((self.N, ) * 2)
-        # Update the birth rate at the current time `t`.
-        self.B[0] = (birth_scaling
-                     * self.parameters.female_probability_at_birth
-                     * self.birthRV.hazard(t, self.ages))
+        Phi = phi.reshape((self._N, ) * 2)
         # Compute the deriviative.
-        dPhi_dt = (self.B + self.T) @ Phi
+        dPhi_dt = (self._B + self._T) @ Phi
         # Convert from matrix to vector.
         return dPhi_dt.reshape(-1)
 
     def _find_monodromy(self, birth_scaling):
         '''Find the fundamental solution over one period.'''
-        t = (self.parameters.start_time,
-             self.parameters.start_time + self.period)
-        Phi0 = numpy.eye(self.N)
+        t = (self._parameters.start_time,
+             self._parameters.start_time + self._period)
+        Phi0 = numpy.eye(self._N)
         # Convert from matrix to vector.
         phi0 = Phi0.reshape(-1)
-        phiT = integrate.odeint(self._ODEs, phi0, t,
-                                args=(birth_scaling, ),
-                                mxstep=100000)[-1]
+        phi, info = integrate.odeint(self._ODEs, phi0, t,
+                                     args=(birth_scaling, ),
+                                     full_output=True,
+                                     mxstep=100000)
+        assert info['message'] == 'Integration successful.', info['message']
         # Convert from vector to matrix.
-        PhiT = phiT.reshape((self.N, ) * 2)
+        PhiT = phi[-1].reshape((self._N, ) * 2)
         return PhiT
 
     def _find_dominant_eigen(self, birth_scaling, return_eigenvector=True):
@@ -79,20 +81,16 @@ class _Solver:
         # Finding the matrix B = log(Phi(T)) / T is very expensive,
         # so we'll find the dominant eigenvalue and eigenvector of Phi(T)
         # and convert.
-        eigen = dominant_eigen.find(PhiT, which='LM',
-                                    return_eigenvector=return_eigenvector,
-                                    v0=self.v0_guess)
-        if return_eigenvector:
-            rho0, v0 = eigen
-        else:
-            rho0 = eigen
+        rho0, v0 = dominant_eigen.find(PhiT, which='LM', v0=self._v0)
+        # Try to speed up the next call of the eigenvalue solver.
+        self._v0 = v0
         # rho0 is the dominant (largest magnitude) Floquet multiplier.
         # mu0 is the dominant (largest real part) Floquet exponent.
         # They are related by rho0 = exp(mu0 * T).
-        # v0 is the common eigenvector.
-        mu0 = numpy.log(rho0) / self.period
+        mu0 = numpy.log(rho0) / self._period
         if return_eigenvector:
-            # Normalize to integrate to 1.
+            # v0 is the eigenvector for both rho0 and mu0.
+            # Normalize it to integrate to 1.
             v0 /= integrate.trapz(v0, self.ages)
             return (mu0, v0)
         else:
@@ -120,8 +118,7 @@ class _Solver:
         '''Find the stable age structure.'''
         if birth_scaling is None:
             birth_scaling = self.find_birth_scaling()
-        r, v = self._find_dominant_eigen(birth_scaling,
-                                         return_eigenvector=True)
+        r, v = self._find_dominant_eigen(birth_scaling)
         assert numpy.isclose(r, 0, atol=1e-6), 'Nonzero growth rate.'
         return (self.ages, v)
 
