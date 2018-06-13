@@ -15,13 +15,14 @@ class _Solver:
     Its dominant eigenvalue and eigenvector give
     the population growth rate and the stable age structure.
     '''
+    _period = 1
+
     def __init__(self, parameters, agemax=25, agestep=0.01):
         self._parameters = parameters
         self.ages = numpy.arange(0, agemax, agestep)
         if not numpy.isclose(self.ages[-1], agemax):
             self.ages = numpy.hstack((self.ages, agemax))
         self._N = len(self.ages)
-        self._period = 1
         # Birth
         # The first row, B[0], is the birth hazard
         # times the probability of female birth.
@@ -123,8 +124,8 @@ class _Solver:
         return (self.ages, v)
 
 
-# The functions below are slow to compute, so we cache the values to
-# disk with `shelved.Shelved()` so we only need to compute them once.
+# The functions below are slow to compute, so the values are cached to
+# disk with `shelved.Shelved()` so they are only computed once.
 
 
 @Shelved('birth_seasonal_coefficient_of_variation',
