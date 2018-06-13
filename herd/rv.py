@@ -23,9 +23,9 @@ class RV:
 
 
 class age_structured(RV):
-    def __init__(self, ages, proportion, *args, **kwargs):
+    def __init__(self, ages, density, *args, **kwargs):
         self._ages = ages
-        self._proportion = proportion
+        self._proportion = density / density.sum()
         dages = numpy.hstack((numpy.diff(self._ages),
                               self._ages[-1] - self._ages[-2]))
         self._density = self._proportion / dages
