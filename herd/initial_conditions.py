@@ -1,3 +1,4 @@
+import numpy
 from scipy import stats
 
 from . import age_structure
@@ -17,7 +18,7 @@ class gen:
         status_ages = {}
         # Who has maternal antibodies.
         prob_M = self.maternal_immunity_waningRV.sf(ages)
-        is_M = stats.bernoulli.rvs(prob_M).astype(bool)
+        is_M = numpy.asarray(stats.bernoulli.rvs(prob_M), dtype=bool)
         status_ages['maternal immunity'] = ages[is_M]
         ages = ages[~is_M]
         # Figure out who is S and who is C/R.
