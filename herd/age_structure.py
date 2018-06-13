@@ -1,7 +1,7 @@
 import numpy
 
 from . import rv
-from .eigen import find_stable_age_structure
+from .floquet import find_stable_age_structure
 
 
 class gen(rv.age_structured):

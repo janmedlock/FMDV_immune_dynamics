@@ -2,7 +2,7 @@ import numpy
 from scipy import optimize
 
 from . import rv
-from .eigen import find_birth_scaling
+from .floquet import find_birth_scaling
 
 
 def fracpart(x):

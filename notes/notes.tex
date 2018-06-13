@@ -466,10 +466,9 @@ and
 \end{equation}
 gives
 \begin{equation}
-  \begin{split}
-    \frac{\md \vec{n}}{\md t}
-    &= \big(\mat{B}(t) + \mat{T}\big) \vec{n},
-  \end{split}
+  \label{ODE}
+  \frac{\md \vec{n}}{\md t}
+  = \big(\mat{B}(t) + \mat{T}\big) \vec{n}(t),
 \end{equation}
 with
 \begin{equation}
@@ -513,19 +512,47 @@ with
     \end{bmatrix}.
   \end{split}
 \end{equation}
-\comment{Monodromy matrix, etc...}
 
-We numerically computed the eigenvalue and eigenvector by using age
-steps $\Delta a = 0.01$, maximum age $a_{\text{max}} = 25$
-(probability of survival $S_{\text{mortality}}(25) = 0.0006$), and a
-standard eigenvalue solver
-\citep[\texttt{scipy.sparse.linalg.eigs},][]{scipy}.  We then used a
-standard root-finding algorithm
-\citep[\texttt{scipy.optimize.fsolve},][]{scipy} to find the value of
-the mean birth hazard $\mu \approx 0.862$ that gave growth rate
-$r = 0$.  Halving the age step to $\Delta a = 0.005$ gave a relative
-error for $\mu$ of $2 \times 10^{-4}$ and doubling the maximum age to
-$a_{\text{max}} = 50$ gave a relative error of $5 \times 10^{-13}$.
+The monodromy matrix $\mat{\Phi}(T)$ of the ODE approximation
+\eqref{ODE} satisfies
+\begin{equation}
+  \begin{split}
+    \frac{\md \mat{\Phi}}{\md t}
+    &= \big(\mat{B}(t) + \mat{T}\big) \mat{\Phi}(t),
+    \\
+    \mat{\Phi}(0) &= \mat{I},
+  \end{split}
+\end{equation}
+where $\mat{I}$ is the identity matrix and the period $T = \unit[1]{y}$
+is the period of $\mat{B}(t)$ \citep{parker_1992}.
+The monodromy matrix projects the population forward at integer
+multiples of the period:
+\begin{align}
+  \vec{n}(k T) &= \big[\mat{\Phi}(T)\big]^k \vec{n}(0),
+  & \text{for $k = 0, 1, 2, \ldots$}.
+\end{align}
+The dominant eigenvalue $\rho_0$ of $\mat{\Phi}(T)$, i.e.~the
+eigenvalue with largest magnitude, gives the population growth rate
+\begin{equation}
+  r = \frac{1}{T} \log \rho_0,
+\end{equation}
+and the corresponding right eigenvector is the stable age structure.
+
+We numerically computed the population growth rate and stable age
+structure by using age steps $\Delta a = 0.01$,
+maximum age $a_{\text{max}} = 25$
+(probability of survival $S_{\text{mortality}}(25) \approx 0.0006$),
+finding the monodromy matrix by numerically solving \eqref{ODE}, and
+then finding its dominant eigenvalue and corresponding eigenvector.
+We then used a root-finding algorithm to find the value of the mean
+birth hazard $\mu \approx 0.9375$
+that gave growth rate $r = 0$.
+Halving the age step to $\Delta a = 0.005$
+gave a relative error for $\mu$ of $2 \times 10^{-4}$
+and doubling the maximum age to $a_{\text{max}} = 50$
+gave a relative error of $5 \times 10^{-13}$.
+These computations were done in Python 3.6.5 \citep{python} using the
+NumPy \citep{numpy} and SciPy \citep{scipy} libraries.
 
 
 \bibliography{journal_abbreviations,math_epi}
