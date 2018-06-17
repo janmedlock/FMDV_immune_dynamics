@@ -28,6 +28,7 @@ def find(A, which='LR', return_eigenvector=True, maxiter=100000,
             'Complex dominant eigenvector: {}'.format(v0)
         assert all((numpy.real(v0) >= 0) | numpy.isclose(v0, 0)), \
             'Negative component in the dominant eigenvector: {}'.format(v0)
+        v0 = v0.clip(0, numpy.inf)
         return (l0, v0)
     else:
         return l0
