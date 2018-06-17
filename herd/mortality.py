@@ -19,7 +19,7 @@ class gen(rv.RV):
         pass
 
     def hazard(self, age):
-        return -numpy.log(self._annual_survival[age])
+        return -numpy.log(numpy.asarray(self._annual_survival[age]))
 
     def logsf(self, age):
         '''Logarithm of the survival function.'''
