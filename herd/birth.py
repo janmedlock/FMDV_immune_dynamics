@@ -139,3 +139,22 @@ class gen(rv.RV):
     def rvs(self, time0, age0, size=None):
         U = numpy.random.random_sample(size=size)
         return self.ppf(U, time0, age0)
+
+
+class _BirthParams:
+    '''Dummy parameters for the birth random variable.'''
+    def __init__(self, birth_peak_time_of_year,
+                 birth_seasonal_coefficient_of_variation):
+        self.birth_peak_time_of_year = birth_peak_time_of_year
+        self.birth_seasonal_coefficient_of_variation \
+            = birth_seasonal_coefficient_of_variation
+
+
+def _from_param_values(birth_peak_time_of_year,
+                       birth_seasonal_coefficient_of_variation,
+                       *args, **kwargs):
+    '''Build a `gen()` instance from parameter values
+    instead of a `Parameters()` object.'''
+    parameters = _BirthParams(birth_peak_time_of_year,
+                              birth_seasonal_coefficient_of_variation)
+    return gen(parameters, *args, **kwargs)

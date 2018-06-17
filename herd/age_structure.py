@@ -7,12 +7,9 @@ from .floquet import find_stable_age_structure
 
 class gen(rv.RV):
     def __init__(self, parameters, *args, **kwargs):
-        self._ages, density = find_stable_age_structure(parameters,
-                                                        *args, **kwargs)
-        self._proportion = density / density.sum()
-        dages = numpy.hstack((numpy.diff(self._ages),
-                              self._ages[-1] - self._ages[-2]))
-        self._density = self._proportion / dages
+        self._density, self._ages = find_stable_age_structure(parameters,
+                                                              *args, **kwargs)
+        self._proportion = self._density / self._density.sum()
         self._quantilerv = stats.rv_discrete(
             values = (range(len(self._proportion)), self._proportion),
             *args, **kwargs)

@@ -71,3 +71,17 @@ class gen(rv.RV):
     def rvs(self, size=None):
         U = numpy.random.random_sample(size=size)
         return self.ppf(U)
+
+
+class _MortalityParams:
+    '''Dummy parameters for the mortality random variable.'''
+    def __init__(self):
+        # There are no parameters.
+        pass
+
+
+def _from_param_values():
+    '''Build a `gen()` instance from parameter values
+    instead of a `Parameters()` object.'''
+    parameters = _MortalityParams()
+    return gen(parameters)
