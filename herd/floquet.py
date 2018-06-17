@@ -1,10 +1,21 @@
 import numpy
-from scipy import integrate, optimize, sparse
+from scipy.integrate import trapz
+from scipy.optimize import brentq
+from scipy.sparse import lil_matrix
 
 from . import birth
 from . import mortality
 from . import dominant_eigen
 from .shelved import Shelved
+
+
+def _arange(start, stop, step, endpoint=False):
+    '''`numpy.arange()` that can optionally include the right endpoint `stop`.'''
+    val = numpy.arange(start, stop, step)
+    if endpoint:
+        if not numpy.isclose(val[-1], stop):
+            val = numpy.hstack((val, stop))
+    return val
 
 
 class _Solver:
@@ -14,65 +25,67 @@ class _Solver:
     Phi(0) = I.
     Its dominant eigenvalue and eigenvector give
     the population growth rate and the stable age structure.
+    The ODEs are solved using a Crank–Nicolson method.
     '''
     _period = 1
 
     def __init__(self, parameters, agemax=25, agestep=0.01):
         self._parameters = parameters
-        self.ages = numpy.arange(0, agemax, agestep)
-        if not numpy.isclose(self.ages[-1], agemax):
-            self.ages = numpy.hstack((self.ages, agemax))
-        self._N = len(self.ages)
-        # Birth
-        # The first row, B[0], is the birth hazard
-        # times the probability of female birth.
+        self.ages = _arange(0, agemax, agestep, endpoint=True)
         self._birthRV = birth.gen(self._parameters, _scaling=1)
-        B = sparse.lil_matrix((self._N, self._N))
-        # Establish sparsity pattern.  This row will get updated at each time.
-        B[0] = 1
-        # Mortality and aging
         mortalityRV = mortality.gen(self._parameters)
         mortality_rate = mortalityRV.hazard(self.ages)
-        # No aging out of the last age group.
-        aging_rate = numpy.hstack((1 / numpy.diff(self.ages), 0))
-        T = sparse.dia_matrix((self._N, self._N))
-        T.setdiag(- mortality_rate - aging_rate, 0)
-        T.setdiag(aging_rate[: -1], -1)
-        # Convert to CSR for fast multiply.
-        self._B = B.asformat('csr')
-        self._T = T.asformat('csr')
         # Initial guess for eigenvector.
         self._v0 = mortalityRV.sf(self.ages)
-
-    def _ODEs(self, phi, t, birth_scaling):
-        '''The right-hand side of the matrix ODE for vector `phi`,
-        a flattened version of the fundamental solution matrix `Phi`.'''
-        # Update the birth rate for time `t`.
-        self._B[0] = (birth_scaling
-                      * self._parameters.female_probability_at_birth
-                      * self._birthRV.hazard(t, self.ages))
-        # Convert from vector to matrix.
-        Phi = phi.reshape((self._N, ) * 2)
-        # Compute the deriviative.
-        dPhi_dt = (self._B + self._T) @ Phi
-        # Convert from matrix to vector.
-        return dPhi_dt.reshape(-1)
+        # The Crank–Nicolson method
+        # (u_j^i - u_{j - 2}^{i - 2}) / 2 / dt
+        # = - d_{j - 1} * (u_j^i + u_{j - 2}^{i - 2}) / 2,
+        # gives
+        # u_j^i = (1 - dt * d_{j - 1}) / (1 + dt * d_{j - 1})
+        #         * u_{j - 2}^{i - 2}.
+        tstart = self._parameters.start_time
+        tstep = agestep
+        self._t = _arange(tstart, tstart + self._period, tstep, endpoint=True)
+        # In the ODE solver, T2 gets multiplied by Phi[i - 2].
+        T2 = lil_matrix((len(self.ages), ) * 2)
+        diag2 = (1 - tstep * mortality_rate) / (1 + tstep * mortality_rate)
+        T2.setdiag(diag2[1 : -1], -2)
+        T2[-1, -1] = diag2[-1]  # Last age group doesn't age out.
+        # For ages j = 1 and N - 1, use implicit Euler.
+        # T1 gets multiplied by Phi[i - 1].
+        T1 = lil_matrix((len(self.ages), ) * 2)
+        diag1 = 1 / (1 + tstep * mortality_rate)
+        T1[1, 0] = diag1[1]
+        T1[-1, -2] = diag1[-1]  # Next to last age group doesn't age out.
+        # Implicit Euler for the first time step.
+        # T_euler gets multiplied by Phi[i - 1].
+        T_euler = lil_matrix((len(self.ages), ) * 2)
+        T_euler.setdiag(diag1[1 : ], -1)
+        T_euler[-1, -1] = diag1[-1]  # Last age group doesn't age out.
+        # Convert to CSR for fast multiply.
+        self._T2 = T2.asformat('csr')
+        self._T1 = T1.asformat('csr')
+        self._T_euler = T_euler.asformat('csr')
 
     def _find_monodromy(self, birth_scaling):
         '''Find the fundamental solution over one period.'''
-        t = (self._parameters.start_time,
-             self._parameters.start_time + self._period)
-        Phi0 = numpy.eye(self._N)
-        # Convert from matrix to vector.
-        phi0 = Phi0.reshape(-1)
-        phi, info = integrate.odeint(self._ODEs, phi0, t,
-                                     args=(birth_scaling, ),
-                                     full_output=True,
-                                     mxstep=100000)
-        assert info['message'] == 'Integration successful.', info['message']
-        # Convert from vector to matrix.
-        PhiT = phi[-1].reshape((self._N, ) * 2)
-        return PhiT
+        Phi = numpy.zeros((len(self._t), ) + (len(self.ages), ) * 2)
+        Phi[0] = numpy.eye(len(self.ages))
+        for (i, t_i) in enumerate(self._t[1 : ], 1):
+            # Aging & mortality.
+            if i == 1:
+                # Use implicit Euler for the first time step.
+                Phi[i] = self._T_euler @ Phi[i - 1]
+            else:
+                # Crank–Nicolson with implicit Euler for j = 1, -1.
+                Phi[i] = (self._T2 @ Phi[i - 2] + self._T1 @ Phi[i - 1])
+            # Birth.
+            # Composite trapezoid rule at t = t_i.
+            b = (birth_scaling
+                 * self._parameters.female_probability_at_birth
+                 * self._birthRV.hazard(t_i, self.ages))
+            Phi[i, 0] = trapz(b[:, numpy.newaxis] * Phi[i], self.ages, axis=1)
+        return Phi[-1]
 
     def _find_dominant_eigen(self, birth_scaling, return_eigenvector=True):
         '''Find the dominant Floquet exponent
@@ -92,7 +105,7 @@ class _Solver:
         if return_eigenvector:
             # v0 is the eigenvector for both rho0 and mu0.
             # Normalize it to integrate to 1.
-            v0 /= integrate.trapz(v0, self.ages)
+            v0 /= trapz(v0, self.ages)
             return (mu0, v0)
         else:
             return mu0
@@ -113,7 +126,7 @@ class _Solver:
         while self._find_growth_rate(b) < 0:
             a = b
             b *= 2
-        return optimize.brentq(self._find_growth_rate, a, b)
+        return brentq(self._find_growth_rate, a, b)
 
     def find_stable_age_structure(self, birth_scaling=None):
         '''Find the stable age structure.'''

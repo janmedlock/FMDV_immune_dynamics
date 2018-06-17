@@ -455,6 +455,9 @@ Foerster equation
   \end{split}
 \end{equation}
 
+\comment{Crank--Nicolson on characteristics, after Iannelli,
+  Martcheva, \& Milner.}
+
 Discretizing in $a$ by setting
 \begin{equation}
   \vec{a}
@@ -545,8 +548,7 @@ maximum age $a_{\text{max}} = 25$
 finding the monodromy matrix by numerically solving \eqref{ODE}, and
 then finding its dominant eigenvalue and corresponding eigenvector.
 We then used a root-finding algorithm to find the value of the mean
-birth hazard $\mu \approx 0.9375$
-that gave growth rate $r = 0$.
+birth hazard $\mu \approx 0.9915$ that gave growth rate $r = 0$.
 Halving the age step to $\Delta a = 0.005$
 gave a relative error for $\mu$ of $8 \times 10^{-4}$
 and doubling the maximum age to $a_{\text{max}} = 50$
