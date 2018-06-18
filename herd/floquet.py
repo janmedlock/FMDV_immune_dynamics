@@ -121,20 +121,20 @@ class _MonodromySolver:
             self.parameters.birth_seasonal_coefficient_of_variation,
             _scaling=birth_scaling)
         birth_rate = birthRV.hazard
-        for (i, t_i) in enumerate(self.t[1 : ], 1):
+        for (k, t_k) in enumerate(self.t[1 : ], 1):
             # Aging & mortality.
-            if i == 1:
+            if k == 1:
                 # Use implicit Euler for the first time step.
-                self.Phi[i] = self.T_euler @ self.Phi[i - 1]
+                self.Phi[k] = self.T_euler @ self.Phi[k - 1]
             else:
                 # Crank–Nicolson with implicit Euler for j = 1, -1.
-                self.Phi[i] = (self.T2 @ self.Phi[i - 2]
-                               + self.T1 @ self.Phi[i - 1])
+                self.Phi[k] = (self.T2 @ self.Phi[k - 2]
+                               + self.T1 @ self.Phi[k - 1])
             # Birth.
-            # Composite trapezoid rule at t = t_i.
+            # Composite trapezoid rule at t = t_k.
             b = (self.parameters.female_probability_at_birth
-                 * birth_rate(t_i, self.ages))
-            self.Phi[i, 0] = (self.T_int * b) @ self.Phi[i]
+                 * birth_rate(t_k, self.ages))
+            self.Phi[k, 0] = (self.T_int * b) @ self.Phi[k]
         return self.Phi[-1]
 
 
@@ -204,3 +204,9 @@ def find_stable_age_structure(parameters, agemax=_agemax, agestep=_agestep):
                                       agemax, agestep)
     assert numpy.isclose(r, 0), 'Nonzero growth rate r={:g}.'.format(r)
     return (v, ages)
+
+
+def fill_cache(parameters, agemax=_agemax, agestep=_agestep):
+    '''Fill the cache so that subsequent calls to `find_birth_scaling()`
+    and `find_stable_age_structure()` just read from the cache.'''
+    find_birth_scaling(parameters, agemax, agestep)
