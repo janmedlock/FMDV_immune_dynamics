@@ -66,50 +66,47 @@ class _MonodromySolver:
         # = - d_{i - 1} * (u_i^k + u_{i - 2}^{k - 2}) / 2,
         # for i = 2, 3, ...,
         # with implicit Euler for i = 1,
-        # (u_1^k - u_0^{k - 1}) / dt = - d_1 * u_1^k,
-        # Let
+        # (u_1^k - u_0^{k - 1}) / dt = - d_1 * u_1^k.
+        # This can be written as
+        # u^k = T_2 @ u^{k - 2} + T_1 @ u^{k - 1},
+        # with
         # T_2[i, i - 2] = (1 - dt * d_{i - 1}) / (1 + dt * d_{i - 1}),
         # for i = 2, 3, ...,
-        # and
-        # T_1[1, 0] = 1 / (1 + dt * d_i).
-        # To prevent the last age group from aging out of the population,
-        # we set
-        # T2[-1, -1] = (1 - dt * d_{-1}) / (1 + dt * d_{-1}).
-        # To prevent the next to last age group from aging out,
-        # T1[-1, -2] = 1 / (1 + dt * d_{-1}).
-        # Then
-        # u^k = T_2 @ u^{k - 2} + T_1 @ u^{k - 1}.
         T2 = sparse.lil_matrix((len(self.ages), len(self.ages)))
         diag2 = ((1 - tstep * mortality_rate(self.ages))
                  / (1 + tstep * mortality_rate(self.ages)))
         T2.setdiag(diag2[1 : -1], -2)
+        # and, to prevent the last age group from aging out of the population,
+        # T2[-1, -1] = (1 - dt * d_{-1}) / (1 + dt * d_{-1}),
         T2[-1, -1] = diag2[-1]
         self.T2 = T2.tocsr()
+        # T_1[1, 0] = 1 / (1 + dt * d_i),
         T1 = sparse.lil_matrix((len(self.ages), len(self.ages)))
         diag1 = 1 / (1 + tstep * mortality_rate(self.ages))
         T1[1, 0] = diag1[1]
+        # and, to prevent the next to last age group from aging out,
+        # T1[-1, -2] = 1 / (1 + dt * d_{-1}).
         T1[-1, -2] = diag1[-1]
         self.T1 = T1.tocsr()
         # Implicit Euler for the first time step.
         # The first time step, k = 1, uses implicit Euler:
         # (u_i^k - u_{i - 1}^{k - 1}) / dt = - d_i * u_i^k.
-        # Let
-        # T_euler[i, i - 1] = 1 / (1 + dt * d_i).
-        # To prevent the last age group from aging out of the population,
-        # we set
-        # T_euler[-1, -1] = 1 / (1 + dt * d_{-1})
-        # Then
-        # u^1 = T_euler @ u^0.
+        # This can be written as
+        # u^1 = T_euler @ u^0,
+        # with
+        # T_euler[i, i - 1] = 1 / (1 + dt * d_i),
         T_euler = sparse.lil_matrix((len(self.ages), len(self.ages)))
         T_euler.setdiag(diag1[1 : ], -1)
+        # and, to prevent the last age group from aging out of the population,
+        # T_euler[-1, -1] = 1 / (1 + dt * d_{-1})
         T_euler[-1, -1] = diag1[-1]
         self.T_euler = T_euler.tocsr()
         # The trapezoid rule for the birth integral for i = 0,
         # u_0^k = \sum_j (b_j^k u_j^k + b_{j + 1}^k u_{j + 1}^k) / 2 / da.
-        # Let
+        # This can be written as
+        # u_0^k = (T_int * b^k) @ u^k,
+        # with
         # T_int = [0.5, 1, 1, ..., 1, 1, 0.5].
-        # Then
-        # u_0^k = (T_int * b^k) @ u^k.
         self.T_int = (numpy.hstack((0.5, numpy.ones(len(self.ages) - 2), 0.5))
                       / agestep)
         self.Phi = numpy.zeros((len(self.t), len(self.ages), len(self.ages)))
