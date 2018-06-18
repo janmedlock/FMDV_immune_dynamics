@@ -1,28 +1,24 @@
 import os.path
 
-from joblib import Memory
+import joblib
 import numpy
-from scipy.integrate import trapz
-from scipy.optimize import brentq
-from scipy.sparse import lil_matrix
+from scipy import integrate, optimize, sparse
 
 from . import birth
 from . import mortality
+from . import parameters
 from . import dominant_eigen
-
-
-_agemax = 35
-_agestep = 0.01
 
 
 # Some of the functions below are very slow, so the values are cached to
 # disk with `joblib.Memory()` so they are only computed once.
 _cachedir = os.path.join(os.path.dirname(__file__), '__cache__')
-_cache = Memory(_cachedir, verbose=1)
+_cache = joblib.Memory(_cachedir, verbose=1)
 
 
 def _arange(start, stop, step, endpoint=False):
-    '''`numpy.arange()` that can optionally include the right endpoint `stop`.'''
+    '''`numpy.arange()` that can optionally include
+    the right endpoint `stop`.'''
     val = numpy.arange(start, stop, step)
     if endpoint:
         if not numpy.isclose(val[-1], stop):
@@ -32,7 +28,7 @@ def _arange(start, stop, step, endpoint=False):
 
 def _normalize(v, ages):
     '''Normalize v so that it integrates to 1.'''
-    return v / trapz(v, ages)
+    return v / integrate.trapz(v, ages)
 
 
 class _MonodromySolver:
@@ -43,30 +39,26 @@ class _MonodromySolver:
     The PDE is solved using the Crank–Nicolson method on characteristics.'''
     period = 1
 
-    @staticmethod
-    def build_args(parameters, agemax, agestep):
+    class Parameters(parameters.Parameters):
         '''Convert `herd.parameters.Parameters()` object `parameters` to
         the arguments needed by `_MonodromySolver()`.
-        This two-step process, `build_args()` then `__init__()`,
-        sets the keys for caching.'''
-        return (parameters.birth_peak_time_of_year,
-                parameters.birth_seasonal_coefficient_of_variation,
-                parameters.female_probability_at_birth,
-                parameters.start_time,
-                agemax, agestep)
+        This two-step process, `_MonodromySolver.Parameters()`
+        then `_MonodromySolver()`, sets the keys for caching.'''
+        def __init__(self, parameters):
+            self.birth_peak_time_of_year = parameters.birth_peak_time_of_year
+            self.birth_seasonal_coefficient_of_variation \
+                = parameters.birth_seasonal_coefficient_of_variation
+            self.female_probability_at_birth \
+                = parameters.female_probability_at_birth
+            self.start_time = parameters.start_time
 
-    def __init__(self, birth_peak_time_of_year,
-                 birth_seasonal_coefficient_of_variation,
-                 female_probability_at_birth, start_time,
-                 agemax, agestep):
-        self.birth_peak_time_of_year = birth_peak_time_of_year
-        self.birth_seasonal_coefficient_of_variation \
-            = birth_seasonal_coefficient_of_variation
-        self.female_probability_at_birth = female_probability_at_birth
+    def __init__(self, msparameters, agemax, agestep):
+        self.parameters = msparameters
         self.ages = _arange(0, agemax, agestep, endpoint=True)
         tstep = agestep
-        self.t = _arange(start_time, start_time + self.period, tstep,
-                         endpoint=True)
+        self.t = _arange(self.parameters.start_time,
+                         self.parameters.start_time + self.period,
+                         tstep, endpoint=True)
         mortalityRV = mortality._from_param_values()
         mortality_rate = mortalityRV.hazard
         # The Crank–Nicolson method is
@@ -87,13 +79,13 @@ class _MonodromySolver:
         # T1[-1, -2] = 1 / (1 + dt * d_{-1}).
         # Then
         # u^k = T_2 @ u^{k - 2} + T_1 @ u^{k - 1}.
-        T2 = lil_matrix((len(self.ages), len(self.ages)))
+        T2 = sparse.lil_matrix((len(self.ages), len(self.ages)))
         diag2 = ((1 - tstep * mortality_rate(self.ages))
                  / (1 + tstep * mortality_rate(self.ages)))
         T2.setdiag(diag2[1 : -1], -2)
         T2[-1, -1] = diag2[-1]
         self.T2 = T2.tocsr()
-        T1 = lil_matrix((len(self.ages), len(self.ages)))
+        T1 = sparse.lil_matrix((len(self.ages), len(self.ages)))
         diag1 = 1 / (1 + tstep * mortality_rate(self.ages))
         T1[1, 0] = diag1[1]
         T1[-1, -2] = diag1[-1]
@@ -108,7 +100,7 @@ class _MonodromySolver:
         # T_euler[-1, -1] = 1 / (1 + dt * d_{-1})
         # Then
         # u^1 = T_euler @ u^0.
-        T_euler = lil_matrix((len(self.ages), len(self.ages)))
+        T_euler = sparse.lil_matrix((len(self.ages), len(self.ages)))
         T_euler.setdiag(diag1[1 : ], -1)
         T_euler[-1, -1] = diag1[-1]
         self.T_euler = T_euler.tocsr()
@@ -125,8 +117,8 @@ class _MonodromySolver:
 
     def solve(self, birth_scaling):
         birthRV = birth._from_param_values(
-            self.birth_peak_time_of_year,
-            self.birth_seasonal_coefficient_of_variation,
+            self.parameters.birth_peak_time_of_year,
+            self.parameters.birth_seasonal_coefficient_of_variation,
             _scaling=birth_scaling)
         birth_rate = birthRV.hazard
         for (i, t_i) in enumerate(self.t[1 : ], 1):
@@ -140,18 +132,19 @@ class _MonodromySolver:
                                + self.T1 @ self.Phi[i - 1])
             # Birth.
             # Composite trapezoid rule at t = t_i.
-            b = self.female_probability_at_birth * birth_rate(t_i, self.ages)
+            b = (self.parameters.female_probability_at_birth
+                 * birth_rate(t_i, self.ages))
             self.Phi[i, 0] = (self.T_int * b) @ self.Phi[i]
         return self.Phi[-1]
 
 
-@_cache.cache(verbose=0, ignore=['solver'])
-def _find_dominant_eigen(solver, birth_scaling, *args):
-    '''Find the dominant Floquet exponent
-    (the one with the largest real part)
+@_cache.cache(ignore=['solver'], verbose=0)
+def _find_dominant_eigen(birth_scaling, msparameters, agemax, agestep,
+                         solver=None):
+    '''Find the dominant Floquet exponent (the one with the largest real part)
     and its corresponding eigenvector.'''
     if solver is None:
-        solver = _MonodromySolver(*args)
+        solver = _MonodromySolver(msparameters, agemax, agestep)
     PhiT = solver.solve(birth_scaling)
     # Finding the matrix B = log(Phi(T)) / T is very expensive,
     # so we'll find the dominant eigenvalue and eigenvector of Phi(T)
@@ -166,40 +159,48 @@ def _find_dominant_eigen(solver, birth_scaling, *args):
     return (mu0, v0, solver.ages)
 
 
-def _find_growth_rate(birth_scaling, solver, *args):
+def _find_growth_rate(birth_scaling, msparameters, agemax, agestep, solver):
     '''Find the population growth rate.'''
-    mu0, _, _ = _find_dominant_eigen(solver, birth_scaling, *args)
+    mu0, _, _ = _find_dominant_eigen(birth_scaling, msparameters,
+                                     agemax, agestep, solver)
     return mu0
 
 
 @_cache.cache
-def _find_birth_scaling(*args):
+def _find_birth_scaling(msparameters, agemax, agestep):
     '''Find the birth scaling that gives population growth rate r = 0.'''
     # Reuse the solver to avoid setup/teardown.
-    solver = _MonodromySolver(*args)
+    solver = _MonodromySolver(msparameters, agemax, agestep)
+    args = (msparameters, agemax, agestep, solver)
     a = 0
     # We know that at the lower limit a = 0,
     # `_find_growth_rate(0, ...) < 0`,
     # so we need to find an upper limit `b`
     # with `_find_growth_rate(b, ...) >= 0`.
     b = 1
-    while _find_growth_rate(b, solver, *args) < 0:
+    while _find_growth_rate(b, *args) < 0:
         a = b
         b *= 2
-    return brentq(_find_growth_rate, a, b, args=((solver, ) + args))
+    return optimize.brentq(_find_growth_rate, a, b, args=args)
+
+
+# Default values.
+_agemax = 35
+_agestep = 0.01
 
 
 def find_birth_scaling(parameters, agemax=_agemax, agestep=_agestep):
     '''Find the birth scaling that gives population growth rate r = 0.'''
     # Call the cached version.
-    args = _MonodromySolver.build_args(parameters, agemax, agestep)
-    return _find_birth_scaling(*args)
+    msparameters = _MonodromySolver.Parameters(parameters)
+    return _find_birth_scaling(msparameters, agemax, agestep)
 
 
 def find_stable_age_structure(parameters, agemax=_agemax, agestep=_agestep):
     '''Find the stable age structure.'''
-    args = _MonodromySolver.build_args(parameters, agemax, agestep)
-    birth_scaling = _find_birth_scaling(*args)
-    r, v, ages = _find_dominant_eigen(None, birth_scaling, *args)
+    msparameters = _MonodromySolver.Parameters(parameters)
+    birth_scaling = _find_birth_scaling(msparameters, agemax, agestep)
+    r, v, ages = _find_dominant_eigen(birth_scaling, msparameters,
+                                      agemax, agestep)
     assert numpy.isclose(r, 0), 'Nonzero growth rate r={:g}.'.format(r)
     return (v, ages)
