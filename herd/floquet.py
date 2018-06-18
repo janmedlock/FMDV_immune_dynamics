@@ -37,27 +37,28 @@ class _MonodromySolver:
     Phi(t, 0) = \int_0^{inf} b(t, a) Phi(t, a) da
     Phi(0, a) = I.
     The PDE is solved using the Crank–Nicolson method on characteristics.'''
-    period = 1
-
     class Parameters(parameters.Parameters):
         '''Convert `herd.parameters.Parameters()` object `parameters` to
         the arguments needed by `_MonodromySolver()`.
         This two-step process, `_MonodromySolver.Parameters()`
         then `_MonodromySolver()`, sets the keys for caching.'''
+        period = 1
+
         def __init__(self, parameters):
-            self.birth_peak_time_of_year = parameters.birth_peak_time_of_year
+            self.birth_peak_time_of_year = (parameters.birth_peak_time_of_year
+                                            % self.period)
             self.birth_seasonal_coefficient_of_variation \
                 = parameters.birth_seasonal_coefficient_of_variation
             self.female_probability_at_birth \
                 = parameters.female_probability_at_birth
-            self.start_time = parameters.start_time
+            self.start_time = parameters.start_time % self.period
 
     def __init__(self, msparameters, agemax, agestep):
         self.parameters = msparameters
         self.ages = _arange(0, agemax, agestep, endpoint=True)
         tstep = agestep
         self.t = _arange(self.parameters.start_time,
-                         self.parameters.start_time + self.period,
+                         self.parameters.start_time + self.parameters.period,
                          tstep, endpoint=True)
         mortalityRV = mortality._from_param_values()
         mortality_rate = mortalityRV.hazard
@@ -153,7 +154,7 @@ def _find_dominant_eigen(birth_scaling, msparameters, agemax, agestep,
     # rho0 is the dominant (largest magnitude) Floquet multiplier.
     # mu0 is the dominant (largest real part) Floquet exponent.
     # They are related by rho0 = exp(mu0 * T).
-    mu0 = numpy.log(rho0) / solver.period
+    mu0 = numpy.log(rho0) / solver.parameters.period
     # v0 is the eigenvector for both rho0 and mu0.
     v0 = _normalize(v0, solver.ages)
     return (mu0, v0, solver.ages)
