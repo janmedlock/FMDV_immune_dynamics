@@ -45,7 +45,7 @@ class _MonodromySolver:
         period = 1
 
         def __init__(self, parameters):
-            # Relative to parameters.start_time
+            # Relative to `parameters.start_time`.
             self.birth_peak_time_of_year = ((parameters.birth_peak_time_of_year
                                              - parameters.start_time)
                                             % self.period)
