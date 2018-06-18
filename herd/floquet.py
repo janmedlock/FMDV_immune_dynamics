@@ -59,6 +59,10 @@ class _MonodromySolver:
         self.ages = _arange(0, agemax, agestep, endpoint=True)
         tstep = agestep
         self.t = _arange(0, self.parameters.period, tstep, endpoint=True)
+        # The fundamental solution.
+        self.Phi = numpy.empty((len(self.t), len(self.ages), len(self.ages)))
+        # Initial condition is the identity matrix.
+        self.Phi[0] = numpy.eye(len(self.ages))
         mortalityRV = mortality._from_param_values()
         mortality_rate = mortalityRV.hazard
         # The Crank–Nicolson method is
@@ -68,49 +72,50 @@ class _MonodromySolver:
         # with implicit Euler for i = 1,
         # (u_1^k - u_0^{k - 1}) / dt = - d_1 * u_1^k.
         # This can be written as
-        # u^k = T_2 @ u^{k - 2} + T_1 @ u^{k - 1},
+        # u^k = M_2 @ u^{k - 2} + M_1 @ u^{k - 1},
+        M_crank_nicolson_2 = sparse.lil_matrix((len(self.ages),
+                                                len(self.ages)))
+        M_crank_nicolson_1 = sparse.lil_matrix((len(self.ages),
+                                                len(self.ages)))
         # with
-        # T_2[i, i - 2] = (1 - dt * d_{i - 1}) / (1 + dt * d_{i - 1}),
-        # for i = 2, 3, ...,
-        T2 = sparse.lil_matrix((len(self.ages), len(self.ages)))
+        # M_2[i, i - 2] = (1 - dt * d_{i - 1}) / (1 + dt * d_{i - 1});
         diag2 = ((1 - tstep * mortality_rate(self.ages))
                  / (1 + tstep * mortality_rate(self.ages)))
-        T2.setdiag(diag2[1 : -1], -2)
-        # and, to prevent the last age group from aging out of the population,
-        # T2[-1, -1] = (1 - dt * d_{-1}) / (1 + dt * d_{-1}),
-        T2[-1, -1] = diag2[-1]
-        self.T2 = T2.tocsr()
-        # T_1[1, 0] = 1 / (1 + dt * d_i),
-        T1 = sparse.lil_matrix((len(self.ages), len(self.ages)))
+        M_crank_nicolson_2.setdiag(diag2[1 : -1], -2)
+        # to prevent the last age group from aging out of the population,
+        # M_2[-1, -1] = (1 - dt * d_{-1}) / (1 + dt * d_{-1});
+        M_crank_nicolson_2[-1, -1] = diag2[-1]
+        # M_1[1, 0] = 1 / (1 + dt * d_i);
         diag1 = 1 / (1 + tstep * mortality_rate(self.ages))
-        T1[1, 0] = diag1[1]
+        M_crank_nicolson_1[1, 0] = diag1[1]
         # and, to prevent the next to last age group from aging out,
-        # T1[-1, -2] = 1 / (1 + dt * d_{-1}).
-        T1[-1, -2] = diag1[-1]
-        self.T1 = T1.tocsr()
-        # Implicit Euler for the first time step.
+        # M_1[-1, -2] = 1 / (1 + dt * d_{-1}).
+        M_crank_nicolson_1[-1, -2] = diag1[-1]
+        self.M_crank_nicolson_2 = M_crank_nicolson_2.tocsr()
+        self.M_crank_nicolson_1 = M_crank_nicolson_1.tocsr()
         # The first time step, k = 1, uses implicit Euler:
         # (u_i^k - u_{i - 1}^{k - 1}) / dt = - d_i * u_i^k.
         # This can be written as
-        # u^1 = T_euler @ u^0,
+        # u^1 = M @ u^0,
+        M_implicit_euler = sparse.lil_matrix((len(self.ages),
+                                              len(self.ages)))
         # with
-        # T_euler[i, i - 1] = 1 / (1 + dt * d_i),
-        T_euler = sparse.lil_matrix((len(self.ages), len(self.ages)))
-        T_euler.setdiag(diag1[1 : ], -1)
+        # M[i, i - 1] = 1 / (1 + dt * d_i),
+        M_implicit_euler.setdiag(diag1[1 : ], -1)
         # and, to prevent the last age group from aging out of the population,
-        # T_euler[-1, -1] = 1 / (1 + dt * d_{-1})
-        T_euler[-1, -1] = diag1[-1]
-        self.T_euler = T_euler.tocsr()
+        # M[-1, -1] = 1 / (1 + dt * d_{-1}).
+        M_implicit_euler[-1, -1] = diag1[-1]
+        self.M_implicit_euler = M_implicit_euler.tocsr()
         # The trapezoid rule for the birth integral for i = 0,
         # u_0^k = \sum_j (b_j^k u_j^k + b_{j + 1}^k u_{j + 1}^k) / 2 / da.
         # This can be written as
-        # u_0^k = (T_int * b^k) @ u^k,
+        # u_0^k = (v * b^k) @ u^k,
         # with
-        # T_int = [0.5, 1, 1, ..., 1, 1, 0.5].
-        self.T_int = (numpy.hstack((0.5, numpy.ones(len(self.ages) - 2), 0.5))
-                      / agestep)
-        self.Phi = numpy.zeros((len(self.t), len(self.ages), len(self.ages)))
-        self.Phi[0] = numpy.eye(len(self.ages))
+        # v = [0.5, 1, 1, ..., 1, 1, 0.5] / da.
+        self.v_trapezoid = (numpy.hstack((0.5,
+                                          numpy.ones(len(self.ages) - 2),
+                                          0.5))
+                            / agestep)
 
     def solve(self, birth_scaling):
         birthRV = birth._from_param_values(
@@ -122,16 +127,16 @@ class _MonodromySolver:
             # Aging & mortality.
             if k == 1:
                 # Use implicit Euler for the first time step.
-                self.Phi[k] = self.T_euler @ self.Phi[k - 1]
+                self.Phi[k] = self.M_implicit_euler @ self.Phi[k - 1]
             else:
                 # Crank–Nicolson with implicit Euler for i = 1, -1.
-                self.Phi[k] = (self.T2 @ self.Phi[k - 2]
-                               + self.T1 @ self.Phi[k - 1])
+                self.Phi[k] = (self.M_crank_nicolson_2 @ self.Phi[k - 2]
+                               + self.M_crank_nicolson_1 @ self.Phi[k - 1])
             # Birth.
             # Composite trapezoid rule at t = t_k.
             b = (self.parameters.female_probability_at_birth
                  * birth_rate(t_k, self.ages))
-            self.Phi[k, 0] = (self.T_int * b) @ self.Phi[k]
+            self.Phi[k, 0] = (self.v_trapezoid * b) @ self.Phi[k]
         return self.Phi[-1]
 
 
