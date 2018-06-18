@@ -1,3 +1,4 @@
+from collections import deque
 import os.path
 
 import joblib
@@ -31,6 +32,19 @@ def _normalize(v, ages):
     return v / integrate.trapz(v, ages)
 
 
+def solution_cycle(N, size):
+    '''The generator returned yields sequences that store the solution at
+    times t_n, t_{n - 1}, t_{n - 2}, ..., t_{n - N + 1}.  The
+    generator cycles so that the solution at the current time step is
+    in `solution[0]`, the previous time step is in `solution[1]`, 2
+    time steps ago is in `solution[2]`, and so on, up to `N`.  Each
+    `solution[n]` has size `size`.'''
+    solution = deque(numpy.empty(size) for _ in range(N))
+    while True:
+        yield solution
+        solution.rotate()
+
+
 class _MonodromySolver:
     '''Find the monodromy matrix Phi(period) by solving
     (d/dt + d/da) Phi = - d(a) Phi,
@@ -59,20 +73,16 @@ class _MonodromySolver:
         self.ages = _arange(0, agemax, agestep, endpoint=True)
         tstep = agestep
         self.t = _arange(0, self.parameters.period, tstep, endpoint=True)
-        # The fundamental solution.
-        self.Phi = numpy.empty((len(self.t), len(self.ages), len(self.ages)))
-        # Initial condition is the identity matrix.
-        self.Phi[0] = numpy.eye(len(self.ages))
         mortalityRV = mortality._from_param_values()
         mortality_rate = mortalityRV.hazard
         # The Crank–Nicolson method is
-        # (u_i^k - u_{i - 2}^{k - 2}) / 2 / dt
-        # = - d_{i - 1} * (u_i^k + u_{i - 2}^{k - 2}) / 2,
+        # (u_i^n - u_{i - 2}^{n - 2}) / 2 / dt
+        # = - d_{i - 1} * (u_i^n + u_{i - 2}^{n - 2}) / 2,
         # for i = 2, 3, ...,
         # with implicit Euler for i = 1,
-        # (u_1^k - u_0^{k - 1}) / dt = - d_1 * u_1^k.
+        # (u_1^n - u_0^{n - 1}) / dt = - d_1 * u_1^n.
         # This can be written as
-        # u^k = M_2 @ u^{k - 2} + M_1 @ u^{k - 1},
+        # u^n = M_2 @ u^{n - 2} + M_1 @ u^{n - 1},
         M_crank_nicolson_2 = sparse.lil_matrix((len(self.ages),
                                                 len(self.ages)))
         M_crank_nicolson_1 = sparse.lil_matrix((len(self.ages),
@@ -91,10 +101,11 @@ class _MonodromySolver:
         # and, to prevent the next to last age group from aging out,
         # M_1[-1, -2] = 1 / (1 + dt * d_{-1}).
         M_crank_nicolson_1[-1, -2] = diag1[-1]
+        # Convert to CSR for fast multiply.
         self.M_crank_nicolson_2 = M_crank_nicolson_2.tocsr()
         self.M_crank_nicolson_1 = M_crank_nicolson_1.tocsr()
-        # The first time step, k = 1, uses implicit Euler:
-        # (u_i^k - u_{i - 1}^{k - 1}) / dt = - d_i * u_i^k.
+        # The first time step, n = 1, uses implicit Euler:
+        # (u_i^n - u_{i - 1}^{n - 1}) / dt = - d_i * u_i^n.
         # This can be written as
         # u^1 = M @ u^0,
         M_implicit_euler = sparse.lil_matrix((len(self.ages),
@@ -105,11 +116,12 @@ class _MonodromySolver:
         # and, to prevent the last age group from aging out of the population,
         # M[-1, -1] = 1 / (1 + dt * d_{-1}).
         M_implicit_euler[-1, -1] = diag1[-1]
+        # Convert to CSR for fast multiply.
         self.M_implicit_euler = M_implicit_euler.tocsr()
         # The trapezoid rule for the birth integral for i = 0,
-        # u_0^k = \sum_j (b_j^k u_j^k + b_{j + 1}^k u_{j + 1}^k) / 2 / da.
+        # u_0^n = \sum_j (b_j^n u_j^n + b_{j + 1}^n u_{j + 1}^n) / 2 / da.
         # This can be written as
-        # u_0^k = (v * b^k) @ u^k,
+        # u_0^n = (v * b^n) @ u^n,
         # with
         # v = [0.5, 1, 1, ..., 1, 1, 0.5] / da.
         self.v_trapezoid = (numpy.hstack((0.5,
@@ -118,26 +130,82 @@ class _MonodromySolver:
                             / agestep)
 
     def solve(self, birth_scaling):
+        # The Crank–Nicolson method needs the solution at the 3 times:
+        # the current time step and the 2 previous time steps.
+        # The fundamental solution is a len(ages) x len(ages) matrix.
+        Phi_cycle = solution_cycle(3, (len(self.ages), len(self.ages)))
+        # Set up birth rate.
         birthRV = birth._from_param_values(
             self.parameters.birth_peak_time_of_year,
             self.parameters.birth_seasonal_coefficient_of_variation,
             _scaling=birth_scaling)
         birth_rate = birthRV.hazard
-        for (k, t_k) in enumerate(self.t[1 : ], 1):
-            # Aging & mortality.
-            if k == 1:
-                # Use implicit Euler for the first time step.
-                self.Phi[k] = self.M_implicit_euler @ self.Phi[k - 1]
+        # Avoid lookups in the loop.
+        ages = self.ages
+        n_ages = len(ages)
+        t = self.t
+        female_probability_at_birth \
+            = self.parameters.female_probability_at_birth
+        M_crank_nicolson_2 = self.M_crank_nicolson_2
+        M_crank_nicolson_1 = self.M_crank_nicolson_1
+        M_implicit_euler = self.M_implicit_euler
+        v_trapezoid = self.v_trapezoid
+        for (n, (t_n, Phi)) in enumerate(zip(t, Phi_cycle)):
+            # `Phi[0]`, `Phi[1]`, and `Phi[2]` are the solution
+            # at t_n, t_{n - 1}, and t_{n - 2}, respectively.
+            # `solution_cycle` keeps them in sync as `t_n` is incremented.
+            if n == 0:
+                # Initial condition is the identity matrix.
+                # Phi[0][:] = numpy.eye(n_ages)
+                # Avoid building a new matrix.
+                Phi[0][:] = 0
+                Phi[0][numpy.diag_indices_from(Phi[0])] = 1
             else:
-                # Crank–Nicolson with implicit Euler for i = 1, -1.
-                self.Phi[k] = (self.M_crank_nicolson_2 @ self.Phi[k - 2]
-                               + self.M_crank_nicolson_1 @ self.Phi[k - 1])
-            # Birth.
-            # Composite trapezoid rule at t = t_k.
-            b = (self.parameters.female_probability_at_birth
-                 * birth_rate(t_k, self.ages))
-            self.Phi[k, 0] = (self.v_trapezoid * b) @ self.Phi[k]
-        return self.Phi[-1]
+                # Aging & mortality.
+                if n == 1:
+                    # Use implicit Euler for the first time step.
+                    # Phi[0][:] = M_implicit_euler @ Phi[1]
+                    # Avoid building a new matrix.
+                    Phi[0][:] = 0
+                    # Phi[0] += M_implicit_euler @ Phi[1]
+                    sparse._sparsetools.csr_matvecs(n_ages, n_ages, n_ages,
+                                                    M_implicit_euler.indptr,
+                                                    M_implicit_euler.indices,
+                                                    M_implicit_euler.data,
+                                                    Phi[1].ravel(),
+                                                    Phi[0].ravel())
+                else:
+                    # Crank–Nicolson with implicit Euler for i = 1, -1.
+                    # Phi[0][:] = (M_crank_nicolson_2 @ Phi[2]
+                    #              + M_crank_nicolson_1 @ Phi[1])
+                    # Avoid building a new matrix.
+                    Phi[0][:] = 0
+                    # Phi[0] += M_crank_nicolson_2 @ Phi[2]
+                    sparse._sparsetools.csr_matvecs(n_ages, n_ages, n_ages,
+                                                    M_crank_nicolson_2.indptr,
+                                                    M_crank_nicolson_2.indices,
+                                                    M_crank_nicolson_2.data,
+                                                    Phi[2].ravel(),
+                                                    Phi[0].ravel())
+                    # Phi[0] += M_crank_nicolson_1 @ Phi[1]
+                    sparse._sparsetools.csr_matvecs(n_ages, n_ages, n_ages,
+                                                    M_crank_nicolson_1.indptr,
+                                                    M_crank_nicolson_1.indices,
+                                                    M_crank_nicolson_1.data,
+                                                    Phi[1].ravel(),
+                                                    Phi[0].ravel())
+                # Birth.
+                # Composite trapezoid rule at t = t_n.
+                # b = female_probability_at_birth * birth_rate(t_n, ages))
+                # Avoid building a new vector.
+                b = birth_rate(t_n, ages)
+                b *= female_probability_at_birth
+                # Top row, i.e. age 0, newborns.
+                # Phi[0][0] = (v_trapezoid * b) @ Phi[0]
+                # Avoid building a new vector.
+                numpy.matmul((v_trapezoid * b), Phi[0], out=Phi[0][0])
+        # Return the solution at the final time.
+        return Phi[0]
 
 
 @_cache.cache(ignore=['solver'], verbose=0)
