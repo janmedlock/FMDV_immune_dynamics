@@ -45,21 +45,20 @@ class _MonodromySolver:
         period = 1
 
         def __init__(self, parameters):
-            self.birth_peak_time_of_year = (parameters.birth_peak_time_of_year
+            # Relative to parameters.start_time
+            self.birth_peak_time_of_year = ((parameters.birth_peak_time_of_year
+                                             - parameters.start_time)
                                             % self.period)
             self.birth_seasonal_coefficient_of_variation \
                 = parameters.birth_seasonal_coefficient_of_variation
             self.female_probability_at_birth \
                 = parameters.female_probability_at_birth
-            self.start_time = parameters.start_time % self.period
 
     def __init__(self, msparameters, agemax, agestep):
         self.parameters = msparameters
         self.ages = _arange(0, agemax, agestep, endpoint=True)
         tstep = agestep
-        self.t = _arange(self.parameters.start_time,
-                         self.parameters.start_time + self.parameters.period,
-                         tstep, endpoint=True)
+        self.t = _arange(0, self.parameters.period, tstep, endpoint=True)
         mortalityRV = mortality._from_param_values()
         mortality_rate = mortalityRV.hazard
         # The Crank–Nicolson method is
