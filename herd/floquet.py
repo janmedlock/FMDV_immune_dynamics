@@ -127,7 +127,7 @@ class _MonodromySolver:
                 # Use implicit Euler for the first time step.
                 self.Phi[k] = self.T_euler @ self.Phi[k - 1]
             else:
-                # Crank–Nicolson with implicit Euler for j = 1, -1.
+                # Crank–Nicolson with implicit Euler for i = 1, -1.
                 self.Phi[k] = (self.T2 @ self.Phi[k - 2]
                                + self.T1 @ self.Phi[k - 1])
             # Birth.
