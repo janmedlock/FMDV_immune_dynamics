@@ -163,7 +163,8 @@ class _MonodromySolver:
         '''Calculate the birth integral
         B(t) = \int_0^{inf} b(t, a) U(t, a) da
         using the composite trapezoid rule.
-        The result is stored in U[0].'''
+        The result is stored in `U[0]`, the first row of `U`,
+        i.e. age 0.'''
         # The simple version is
         # `U[0] = (v_trapezoid * b) @ U`
         # but avoid building new vectors.
