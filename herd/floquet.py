@@ -38,7 +38,7 @@ class _MonodromySolver:
     # depends on the solution at t_{n - 1} and t_{n - 2}.
     order = 2
     # `herd.birth.gen.hazard` is the only time-dependent function.
-    period = herd.birth._period
+    period = birth._period
 
     class Parameters(parameters.Parameters):
         '''Build a `herd.parameters.Parameters()`-like object that

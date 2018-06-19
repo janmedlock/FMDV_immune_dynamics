@@ -2,7 +2,9 @@ import numpy
 from scipy import optimize
 
 from . import rv
-from .floquet import find_birth_scaling
+# To avoid an import loop caused by `_period`,
+# the import is inside `gen()` below.
+# from .floquet import find_birth_scaling
 
 
 # Annual period.
@@ -32,6 +34,9 @@ def get_gap_size_from_seasonal_coefficient_of_variation(c_v):
 
 
 class gen(rv.RV):
+    # To avoid an import loop caused by `_period`, the import is here.
+    from .floquet import find_birth_scaling
+
     def __init__(self, parameters, _scaling=None, *args, **kwargs):
         self.peak_time_of_year = parameters.birth_peak_time_of_year
         self.seasonal_coefficient_of_variation \

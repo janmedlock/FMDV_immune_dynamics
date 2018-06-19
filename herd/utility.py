@@ -12,7 +12,6 @@ def arange(*args, dtype=None, endpoint=False):
         start, stop, step = args
     elif len(args) == 4:
         if dtype is not None:
-            msg = (
             raise TypeError('`dtype` is specified as both positional'
                             ' and keyword arguments.')
         start, stop, step, dtype = args
