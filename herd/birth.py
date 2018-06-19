@@ -5,8 +5,14 @@ from . import rv
 from .floquet import find_birth_scaling
 
 
+# Annual period.
+# WARNING: Most of the code below has not been checked to see if it
+#          works correctly with _period != 1.
+_period = 1
+
+
 def fracpart(x):
-    return numpy.ma.mod(x, 1)
+    return numpy.ma.mod(x, _period)
 
 
 def get_seasonal_coefficient_of_variation_from_gap_size(g):

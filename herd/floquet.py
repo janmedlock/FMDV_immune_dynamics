@@ -8,26 +8,17 @@ from scipy.optimize import brentq
 from scipy.sparse import lil_matrix
 from scipy.sparse._sparsetools import csr_matvecs
 
+from . import utility
+from . import dominant_eigen
 from . import birth
 from . import mortality
 from . import parameters
-from . import dominant_eigen
 
 
 # Some of the functions below are very slow, so the values are cached to
 # disk with `joblib.Memory()` so that they are only computed once.
 _cachedir = os.path.join(os.path.dirname(__file__), '__cache__')
 _cache = Memory(_cachedir, verbose=1)
-
-
-def _arange(start, stop, step, endpoint=False):
-    '''`numpy.arange()` that can optionally include
-    the right endpoint `stop`.'''
-    val = numpy.arange(start, stop, step)
-    if endpoint:
-        if not numpy.isclose(val[-1], stop):
-            val = numpy.hstack((val, stop))
-    return val
 
 
 class _MonodromySolver:
@@ -43,7 +34,11 @@ class _MonodromySolver:
     >>> solver = _MonodromySolver(msparameters, agemax, agestep)
     >>> PhiT = solver.solve(birth_scaling)
     where `parameters` is a `herd.parameters.Parameters()` instance.'''
-    period = 1
+    # Crank–Nicolson is 2nd order because the solution at t_n
+    # depends on the solution at t_{n - 1} and t_{n - 2}.
+    order = 2
+    # `herd.birth.gen.hazard` is the only time-dependent function.
+    period = herd.birth._period
 
     class Parameters(parameters.Parameters):
         '''Build a `herd.parameters.Parameters()`-like object that
@@ -67,10 +62,10 @@ class _MonodromySolver:
 
     def __init__(self, msparameters, agemax, agestep):
         self.parameters = msparameters
-        self.ages = _arange(0, agemax, agestep, endpoint=True)
+        self.ages = utility.arange(0, agemax, agestep, endpoint=True)
         n_ages = len(self.ages)
         tstep = agestep
-        self.t = _arange(0, self.period, tstep, endpoint=True)
+        self.t = utility.arange(0, self.period, tstep, endpoint=True)
         # Set up mortality rate.
         mortalityRV = mortality.from_param_values()
         mortality_rate = mortalityRV.hazard
@@ -126,24 +121,20 @@ class _MonodromySolver:
                             * agestep
                             * numpy.hstack((0.5, numpy.ones(n_ages - 2), 0.5)))
 
-    def solution_cycle(self):
+    @classmethod
+    def SolutionCycle(cls, size):
         '''The generator returned yields sequences that store
-        the solution at times t_n, t_{n - 1}, and t_{n - 2}.
+        the solution at times t_n, t_{n - 1}, ..., t_{n - order}.
         The generator cycles so that the solution at
         the current time step is in `solution[0]`,
-        the previous time step is in `solution[1]`, and
-        2 time steps ago is in `solution[2]`.
-        This is effectively just moving pointers around in a cycle,
+        the previous time step is in `solution[1]`, ...
+        `order` time steps ago is in `solution[order]`.
+        This is effectively just moving references around in a cycle,
         so no new arrays get built as the solver iterates in time.'''
-        # The initial condition for the fundamental solution is the
-        # identity matrix.
-        initial_condition = numpy.eye(len(self.ages))
-        # The solution at t_0 plus empty arrays for
-        # t_{n - 1} and t_{n - 2}, which will be filled
-        # later by the solver.
-        solution = deque([initial_condition]
-                         + [numpy.empty_like(initial_condition)
-                            for _ in range(2)])
+        # One array for the current time step, plus one for each order
+        # of the solver.
+        solution = deque(numpy.empty(size, dtype=float)
+                         for _ in range(1 + cls.order))
         while True:
             yield solution
             solution.rotate()
@@ -179,8 +170,6 @@ class _MonodromySolver:
 
     def solve(self, birth_scaling):
         '''Find the monodromy matrix Phi(T), where T is the period.'''
-        # Set up solution.
-        solution_cycle = self.solution_cycle()
         # Set up birth rate.
         birthRV = birth.from_param_values(
             self.parameters.birth_normalized_peak_time_of_year,
@@ -197,17 +186,37 @@ class _MonodromySolver:
         v_trapezoid = self.v_trapezoid
         matvecs = self.matvecs
         do_births = self.do_births
+        # Set up solution.
+        # `solution_cycle()` returns a generator that yields
+        # `solution`, a length-3 sequence 3 with
+        # `solution[0]` storing the solution at the current time step,
+        # `solution[1]` storing the solution at the previous time step, and
+        # `solution[2]` storing the solution 2 time steps ago.
+        # Iterating `solution_cycle()` in sync with iterating through
+        # the elements of `t` rearranges the elements of the yielded
+        # `solution` so that its elements stay in the above order
+        # at each time step:
+        # the old `solution[0]` becomes the new `solution[1]`;
+        # the old `solution[1]` becomes the new `solution[2]`; and
+        # the old `solution[2]` is recycled to `solution[0]`,
+        # ready to be set to the value of the solution at the new time step.
+        # The fundamental solution is a `n_ages` x `n_ages` matrix.
+        solution_cycle = self.SolutionCycle((n_ages, n_ages))
         ###########
         ## n = 0 ##
         ###########
-        solution = next(solution_cycle)
+        (t_n, solution) = (t[0], next(solution_cycle))
+        # The initial condition for the fundamental solution is the
+        # identity matrix.
+        solution[0][:] = 0
+        numpy.fill_diagonal(solution[0], 1)
         if len(t) <= 1:
             return solution[0]
         # `len(t) > 1` is guaranteed below.
         ###########
         ## n = 1 ##
         ###########
-        solution = next(solution_cycle)
+        (t_n, solution) = (t[1], next(solution_cycle))
         # The simple version is
         # `solution[0][:] = M_implicit_euler @ solution[1]`
         # but avoid building a new matrix.
@@ -215,7 +224,7 @@ class _MonodromySolver:
         # solution[0] += M_implicit_euler @ solution[1]
         matvecs(M_implicit_euler, solution[1], solution[0], n_ages)
         # Birth.
-        do_births(birth_rate(t[1], ages), solution[0], v_trapezoid)
+        do_births(birth_rate(t_n, ages), solution[0], v_trapezoid)
         ###################
         ## n = 2, 3, ... ##
         ###################
