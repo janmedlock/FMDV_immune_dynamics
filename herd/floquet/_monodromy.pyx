@@ -59,7 +59,7 @@ def mssolve(numpy.ndarray[numpy.float_t, ndim=1] ages,
             numpy.ndarray[numpy.float_t, ndim=1] v_trapezoid,
             birth_rate):
     '''The core of the monodromy solver.'''
-    cdef Py_ssize_t n_ages = ages.size
+    cdef Py_ssize_t n_ages = len(ages)
     cdef list loc = list(range(3))
     # `solution` stores the solution at times
     # t_n, t_{n - 1}, and t_{n - 2} in
@@ -75,7 +75,7 @@ def mssolve(numpy.ndarray[numpy.float_t, ndim=1] ages,
     # identity matrix.
     solution[loc[0]] = 0
     solution[loc[0]][numpy.diag_indices(n_ages)] = 1
-    if t.size == 1:
+    if len(t) <= 1:
         return solution[loc[0]]
     # `len(t) > 1` is guaranteed below.
     ###########
