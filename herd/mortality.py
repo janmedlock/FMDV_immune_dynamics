@@ -80,7 +80,7 @@ class _MortalityParams:
         pass
 
 
-def _from_param_values():
+def from_param_values():
     '''Build a `gen()` instance from parameter values
     instead of a `Parameters()` object.'''
     parameters = _MortalityParams()

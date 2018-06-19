@@ -1,9 +1,12 @@
 from collections import deque
 import os.path
 
-import joblib
+from joblib import Memory
 import numpy
-from scipy import integrate, optimize, sparse
+from scipy.integrate import trapz
+from scipy.optimize import brentq
+from scipy.sparse import lil_matrix
+from scipy.sparse._sparsetools import csr_matvecs
 
 from . import birth
 from . import mortality
@@ -12,9 +15,9 @@ from . import dominant_eigen
 
 
 # Some of the functions below are very slow, so the values are cached to
-# disk with `joblib.Memory()` so they are only computed once.
+# disk with `joblib.Memory()` so that they are only computed once.
 _cachedir = os.path.join(os.path.dirname(__file__), '__cache__')
-_cache = joblib.Memory(_cachedir, verbose=1)
+_cache = Memory(_cachedir, verbose=1)
 
 
 def _arange(start, stop, step, endpoint=False):
@@ -27,42 +30,31 @@ def _arange(start, stop, step, endpoint=False):
     return val
 
 
-def _normalize(v, ages):
-    '''Normalize v so that it integrates to 1.'''
-    return v / integrate.trapz(v, ages)
-
-
-def solution_cycle(N, size):
-    '''The generator returned yields sequences that store the solution at
-    times t_n, t_{n - 1}, t_{n - 2}, ..., t_{n - N + 1}.  The
-    generator cycles so that the solution at the current time step is
-    in `solution[0]`, the previous time step is in `solution[1]`, 2
-    time steps ago is in `solution[2]`, and so on, up to `N`.  Each
-    `solution[n]` has size `size`.'''
-    solution = deque(numpy.empty(size) for _ in range(N))
-    while True:
-        yield solution
-        solution.rotate()
-
-
 class _MonodromySolver:
     '''Find the monodromy matrix Phi(period) by solving
     (d/dt + d/da) Phi = - d(a) Phi,
     Phi(t, 0) = \int_0^{inf} b(t, a) Phi(t, a) da
     Phi(0, a) = I.
-    The PDE is solved using the Crank–Nicolson method on characteristics.'''
-    class Parameters(parameters.Parameters):
-        '''Convert `herd.parameters.Parameters()` object `parameters` to
-        the arguments needed by `_MonodromySolver()`.
-        This two-step process, `_MonodromySolver.Parameters()`
-        then `_MonodromySolver()`, sets the keys for caching.'''
-        period = 1
+    The PDE is solved using the Crank–Nicolson method on characteristics.
+    So that the cache keys only depend on the relevant parts of
+    `herd.parameters.Parameters()` and so that the setup can be reused in
+    `_find_birth_scaling()`, the solver is called in 3 steps:
+    >>> msparameters = _MonodromySolver.Parameters(parameters)
+    >>> solver = _MonodromySolver(msparameters, agemax, agestep)
+    >>> PhiT = solver.solve(birth_scaling)
+    where `parameters` is a `herd.parameters.Parameters()` instance.'''
+    period = 1
 
+    class Parameters(parameters.Parameters):
+        '''Build a `herd.parameters.Parameters()`-like object that
+        only has the parameters needed by `_MonodromySolver()`
+        so that it can be efficiently cached.'''
         def __init__(self, parameters):
-            # Relative to `parameters.start_time`.
-            self.birth_peak_time_of_year = ((parameters.birth_peak_time_of_year
-                                             - parameters.start_time)
-                                            % self.period)
+            # Relative to `parameters.start_time` and then
+            # modulo `period` so that it is in [0, period).
+            self.birth_normalized_peak_time_of_year = (
+                (parameters.birth_peak_time_of_year - parameters.start_time)
+                % _MonodromySolver.period)
             self.birth_seasonal_coefficient_of_variation \
                 = parameters.birth_seasonal_coefficient_of_variation
             self.female_probability_at_birth \
@@ -71,9 +63,11 @@ class _MonodromySolver:
     def __init__(self, msparameters, agemax, agestep):
         self.parameters = msparameters
         self.ages = _arange(0, agemax, agestep, endpoint=True)
+        n_ages = len(self.ages)
         tstep = agestep
-        self.t = _arange(0, self.parameters.period, tstep, endpoint=True)
-        mortalityRV = mortality._from_param_values()
+        self.t = _arange(0, self.period, tstep, endpoint=True)
+        # Set up mortality rate.
+        mortalityRV = mortality.from_param_values()
         mortality_rate = mortalityRV.hazard
         # The Crank–Nicolson method is
         # (u_i^n - u_{i - 2}^{n - 2}) / 2 / dt
@@ -83,10 +77,8 @@ class _MonodromySolver:
         # (u_1^n - u_0^{n - 1}) / dt = - d_1 * u_1^n.
         # This can be written as
         # u^n = M_2 @ u^{n - 2} + M_1 @ u^{n - 1},
-        M_crank_nicolson_2 = sparse.lil_matrix((len(self.ages),
-                                                len(self.ages)))
-        M_crank_nicolson_1 = sparse.lil_matrix((len(self.ages),
-                                                len(self.ages)))
+        M_crank_nicolson_2 = lil_matrix((n_ages, n_ages))
+        M_crank_nicolson_1 = lil_matrix((n_ages, n_ages))
         # with
         # M_2[i, i - 2] = (1 - dt * d_{i - 1}) / (1 + dt * d_{i - 1});
         diag2 = ((1 - tstep * mortality_rate(self.ages))
@@ -101,113 +93,154 @@ class _MonodromySolver:
         # and, to prevent the next to last age group from aging out,
         # M_1[-1, -2] = 1 / (1 + dt * d_{-1}).
         M_crank_nicolson_1[-1, -2] = diag1[-1]
-        # Convert to CSR for fast multiply.
+        # Convert to CSR for fast left multiplication.
         self.M_crank_nicolson_2 = M_crank_nicolson_2.tocsr()
         self.M_crank_nicolson_1 = M_crank_nicolson_1.tocsr()
         # The first time step, n = 1, uses implicit Euler:
         # (u_i^n - u_{i - 1}^{n - 1}) / dt = - d_i * u_i^n.
         # This can be written as
         # u^1 = M @ u^0,
-        M_implicit_euler = sparse.lil_matrix((len(self.ages),
-                                              len(self.ages)))
+        M_implicit_euler = lil_matrix((n_ages, n_ages))
         # with
         # M[i, i - 1] = 1 / (1 + dt * d_i),
         M_implicit_euler.setdiag(diag1[1 : ], -1)
         # and, to prevent the last age group from aging out of the population,
         # M[-1, -1] = 1 / (1 + dt * d_{-1}).
         M_implicit_euler[-1, -1] = diag1[-1]
-        # Convert to CSR for fast multiply.
+        # Convert to CSR for fast left multiplication.
         self.M_implicit_euler = M_implicit_euler.tocsr()
         # The trapezoid rule for the birth integral for i = 0,
         # u_0^n = \sum_j (b_j^n u_j^n + b_{j + 1}^n u_{j + 1}^n) / 2 / da.
         # This can be written as
         # u_0^n = (v * b^n) @ u^n,
         # with
-        # v = [0.5, 1, 1, ..., 1, 1, 0.5] / da.
-        self.v_trapezoid = (numpy.hstack((0.5,
-                                          numpy.ones(len(self.ages) - 2),
-                                          0.5))
-                            / agestep)
+        # v = 1 / da * [0.5, 1, 1, ..., 1, 1, 0.5].
+        # Put `female_probability_at_birth` in there, too, for
+        # simplicity & efficiency.
+        self.v_trapezoid = (self.parameters.female_probability_at_birth
+                            / agestep
+                            * numpy.hstack((0.5, numpy.ones(n_ages - 2), 0.5)))
+
+    def solution_cycle(self):
+        '''The generator returned yields sequences that store
+        the solution at times t_n, t_{n - 1}, and t_{n - 2}.
+        The generator cycles so that the solution at
+        the current time step is in `solution[0]`,
+        the previous time step is in `solution[1]`, and
+        2 time steps ago is in `solution[2]`.
+        This is effectively just moving pointers around in a cycle,
+        so no new arrays get built as the solver iterates in time.'''
+        # The initial condition for the fundamental solution is the
+        # identity matrix.
+        initial_condition = numpy.eye(len(self.ages))
+        # The solution at t_0 plus empty arrays for
+        # t_{n - 1} and t_{n - 2}, which will be filled
+        # later by the solver.
+        solution = deque([initial_condition]
+                         + [numpy.empty_like(initial_condition)
+                            for _ in range(2)])
+        while True:
+            yield solution
+            solution.rotate()
+
+    @staticmethod
+    def matvecs(A, B, C, n):
+        '''Compute the matrix multiplication `C += A @ B`, where
+        `A` is a `scipy.sparse.csr_matrix()`,
+        `B` and `C` are `numpy.array()`s,
+        and all 3 matrices are `n` x `n`.'''
+        # Use the private function
+        # `scipy.sparse._sparsetools.csr_matvecs()` so we can specify
+        # the output array `C` to avoid the building of a new matrix
+        # for the output.
+        csr_matvecs(n, n,  # The shape of A.
+                    n,     # The number of columns in B & C.
+                    A.indptr, A.indices, A.data,
+                    B.ravel(), C.ravel())
+
+    @staticmethod
+    def do_births(b, U, v_trapezoid):
+        '''Calculate the birth integral
+        B(t) = \int_0^{inf} b(t, a) U(t, a) da
+        using the composite trapezoid rule.
+        The result is stored in U[0].'''
+        # The simple version is
+        # `U[0] = (v_trapezoid * b) @ U`
+        # but avoid building new vectors.
+        b *= v_trapezoid
+        # This is slightly faster than `numpy.dot(b, U, out=U[0])`
+        b.dot(U, out=U[0])
 
     def solve(self, birth_scaling):
-        # The Crank–Nicolson method needs the solution at the 3 times:
-        # the current time step and the 2 previous time steps.
-        # The fundamental solution is a len(ages) x len(ages) matrix.
-        Phi_cycle = solution_cycle(3, (len(self.ages), len(self.ages)))
+        '''Find the monodromy matrix Phi(T), where T is the period.'''
+        # Set up solution.
+        solution_cycle = self.solution_cycle()
         # Set up birth rate.
-        birthRV = birth._from_param_values(
-            self.parameters.birth_peak_time_of_year,
+        birthRV = birth.from_param_values(
+            self.parameters.birth_normalized_peak_time_of_year,
             self.parameters.birth_seasonal_coefficient_of_variation,
             _scaling=birth_scaling)
         birth_rate = birthRV.hazard
-        # Avoid lookups in the loop.
+        # Avoid lookups in the loop below.
         ages = self.ages
         n_ages = len(ages)
         t = self.t
-        female_probability_at_birth \
-            = self.parameters.female_probability_at_birth
         M_crank_nicolson_2 = self.M_crank_nicolson_2
         M_crank_nicolson_1 = self.M_crank_nicolson_1
         M_implicit_euler = self.M_implicit_euler
         v_trapezoid = self.v_trapezoid
-        for (n, (t_n, Phi)) in enumerate(zip(t, Phi_cycle)):
-            # `Phi[0]`, `Phi[1]`, and `Phi[2]` are the solution
-            # at t_n, t_{n - 1}, and t_{n - 2}, respectively.
-            # `solution_cycle` keeps them in sync as `t_n` is incremented.
-            if n == 0:
-                # Initial condition is the identity matrix.
-                # Phi[0][:] = numpy.eye(n_ages)
-                # Avoid building a new matrix.
-                Phi[0][:] = 0
-                Phi[0][numpy.diag_indices_from(Phi[0])] = 1
-            else:
-                # Aging & mortality.
-                if n == 1:
-                    # Use implicit Euler for the first time step.
-                    # Phi[0][:] = M_implicit_euler @ Phi[1]
-                    # Avoid building a new matrix.
-                    Phi[0][:] = 0
-                    # Phi[0] += M_implicit_euler @ Phi[1]
-                    sparse._sparsetools.csr_matvecs(n_ages, n_ages, n_ages,
-                                                    M_implicit_euler.indptr,
-                                                    M_implicit_euler.indices,
-                                                    M_implicit_euler.data,
-                                                    Phi[1].ravel(),
-                                                    Phi[0].ravel())
-                else:
-                    # Crank–Nicolson with implicit Euler for i = 1, -1.
-                    # Phi[0][:] = (M_crank_nicolson_2 @ Phi[2]
-                    #              + M_crank_nicolson_1 @ Phi[1])
-                    # Avoid building a new matrix.
-                    Phi[0][:] = 0
-                    # Phi[0] += M_crank_nicolson_2 @ Phi[2]
-                    sparse._sparsetools.csr_matvecs(n_ages, n_ages, n_ages,
-                                                    M_crank_nicolson_2.indptr,
-                                                    M_crank_nicolson_2.indices,
-                                                    M_crank_nicolson_2.data,
-                                                    Phi[2].ravel(),
-                                                    Phi[0].ravel())
-                    # Phi[0] += M_crank_nicolson_1 @ Phi[1]
-                    sparse._sparsetools.csr_matvecs(n_ages, n_ages, n_ages,
-                                                    M_crank_nicolson_1.indptr,
-                                                    M_crank_nicolson_1.indices,
-                                                    M_crank_nicolson_1.data,
-                                                    Phi[1].ravel(),
-                                                    Phi[0].ravel())
-                # Birth.
-                # Composite trapezoid rule at t = t_n.
-                # b = female_probability_at_birth * birth_rate(t_n, ages))
-                # Avoid building a new vector.
-                b = birth_rate(t_n, ages)
-                b *= female_probability_at_birth
-                # Top row, i.e. age 0, newborns.
-                # Phi[0][0] = (v_trapezoid * b) @ Phi[0]
-                # Avoid building a new vector.
-                numpy.matmul((v_trapezoid * b), Phi[0], out=Phi[0][0])
+        matvecs = self.matvecs
+        do_births = self.do_births
+        ###########
+        ## n = 0 ##
+        ###########
+        solution = next(solution_cycle)
+        # Short circuit, so that `len(t) > 0` is guaranteed below.
+        if len(t) == 0:
+            return solution[0]
+        ###########
+        ## n = 1 ##
+        ###########
+        solution = next(solution_cycle)
+        # The simple version is
+        # `solution[0][:] = M_implicit_euler @ solution[1]`
+        # but avoid building a new matrix.
+        solution[0][:] = 0
+        # solution[0] += M_implicit_euler @ solution[1]
+        matvecs(M_implicit_euler, solution[1], solution[0], n_ages)
+        # Birth.
+        do_births(birth_rate(t[1], ages), solution[0], v_trapezoid)
+        ###################
+        ## n = 2, 3, ... ##
+        ###################
+        for (n, (t_n, solution)) in enumerate(zip(t[2 : ], solution_cycle), 2):
+            # Aging & mortality.
+            # The simple version is
+            # `solution[0][:] = (M_crank_nicolson_2 @ solution[2]
+            #                    + M_crank_nicolson_1 @ solution[1])`
+            # but avoid building a new matrix.
+            solution[0][:] = 0
+            # solution[0] += M_crank_nicolson_2 @ solution[2]
+            matvecs(M_crank_nicolson_2, solution[2], solution[0], n_ages)
+            # solution[0] += M_crank_nicolson_1 @ solution[1]
+            matvecs(M_crank_nicolson_1, solution[1], solution[0], n_ages)
+            # Birth.
+            do_births(birth_rate(t_n, ages), solution[0], v_trapezoid)
         # Return the solution at the final time.
-        return Phi[0]
+        return solution[0]
 
 
+def _normalize_to_density(v, ages):
+    '''Normalize `v` in place so that its integral over ages is 1.'''
+    v /= trapz(v, ages)
+
+
+# This function is very slow because it calls
+# `_MonodromySolver.solve()`, which is very slow, and
+# `dominant_eigen.find()`, which is somewhat slow, so it is cached.
+# Caching also allows the eigenvector to be retrieved from the cache
+# by `find_stable_birth_structure()` after the eigenvalue is computed
+# in `find_birth_scaling()`.
 @_cache.cache(ignore=['solver'], verbose=0)
 def _find_dominant_eigen(birth_scaling, msparameters, agemax, agestep,
                          solver=None):
@@ -223,9 +256,9 @@ def _find_dominant_eigen(birth_scaling, msparameters, agemax, agestep,
     # rho0 is the dominant (largest magnitude) Floquet multiplier.
     # mu0 is the dominant (largest real part) Floquet exponent.
     # They are related by rho0 = exp(mu0 * T).
-    mu0 = numpy.log(rho0) / solver.parameters.period
+    mu0 = numpy.log(rho0) / solver.period
     # v0 is the eigenvector for both rho0 and mu0.
-    v0 = _normalize(v0, solver.ages)
+    _normalize_to_density(v0, solver.ages)
     return (mu0, v0, solver.ages)
 
 
@@ -236,10 +269,13 @@ def _find_growth_rate(birth_scaling, msparameters, agemax, agestep, solver):
     return mu0
 
 
+# This function is extremely slow because, through
+# `_find_growth_rate()` and `scipy.optimize.brentq()`, it repeatedly
+# calls `_find_dominant_eigen()`, which is very slow, so it is cached.
 @_cache.cache
 def _find_birth_scaling(msparameters, agemax, agestep):
     '''Find the birth scaling that gives population growth rate r = 0.'''
-    # Reuse the solver to avoid setup/teardown.
+    # Reuse the solver to avoid multiple setup/teardown.
     solver = _MonodromySolver(msparameters, agemax, agestep)
     args = (msparameters, agemax, agestep, solver)
     a = 0
@@ -251,7 +287,7 @@ def _find_birth_scaling(msparameters, agemax, agestep):
     while _find_growth_rate(b, *args) < 0:
         a = b
         b *= 2
-    return optimize.brentq(_find_growth_rate, a, b, args=args)
+    return brentq(_find_growth_rate, a, b, args=args)
 
 
 # Default values.
@@ -274,9 +310,3 @@ def find_stable_age_structure(parameters, agemax=_agemax, agestep=_agestep):
                                       agemax, agestep)
     assert numpy.isclose(r, 0), 'Nonzero growth rate r={:g}.'.format(r)
     return (v, ages)
-
-
-def fill_cache(parameters, agemax=_agemax, agestep=_agestep):
-    '''Fill the cache so that subsequent calls to `find_birth_scaling()`
-    and `find_stable_age_structure()` just read from the cache.'''
-    find_birth_scaling(parameters, agemax, agestep)

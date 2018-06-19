@@ -150,9 +150,9 @@ class _BirthParams:
             = birth_seasonal_coefficient_of_variation
 
 
-def _from_param_values(birth_peak_time_of_year,
-                       birth_seasonal_coefficient_of_variation,
-                       *args, **kwargs):
+def from_param_values(birth_peak_time_of_year,
+                      birth_seasonal_coefficient_of_variation,
+                      *args, **kwargs):
     '''Build a `gen()` instance from parameter values
     instead of a `Parameters()` object.'''
     parameters = _BirthParams(birth_peak_time_of_year,
