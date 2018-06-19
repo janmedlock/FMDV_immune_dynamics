@@ -296,19 +296,22 @@ def _find_birth_scaling(msparameters, agemax, agestep):
     return brentq(_find_growth_rate, a, b, args=args)
 
 
-# Default values.
-_agemax = 35
-_agestep = 0.01
+_agemax_default = 35
+_agestep_default = 0.01
 
 
-def find_birth_scaling(parameters, agemax=_agemax, agestep=_agestep):
+def find_birth_scaling(parameters,
+                       agemax=_agemax_default,
+                       agestep=_agestep_default):
     '''Find the birth scaling that gives population growth rate r = 0.'''
     # Call the cached version.
     msparameters = _MonodromySolver.Parameters(parameters)
     return _find_birth_scaling(msparameters, agemax, agestep)
 
 
-def find_stable_age_structure(parameters, agemax=_agemax, agestep=_agestep):
+def find_stable_age_structure(parameters,
+                              agemax=_agemax_default,
+                              agestep=_agestep_default):
     '''Find the stable age structure.'''
     msparameters = _MonodromySolver.Parameters(parameters)
     birth_scaling = _find_birth_scaling(msparameters, agemax, agestep)
