@@ -13,5 +13,5 @@
 *.synctex.gz
 *.png
 *.pgf
-/herd/*.db
+/herd/__cache__/
 /Erin/

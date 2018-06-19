@@ -50,15 +50,20 @@ class _MonodromySolver:
         only has the parameters needed by `_MonodromySolver()`
         so that it can be efficiently cached.'''
         def __init__(self, parameters):
-            # Relative to `parameters.start_time` and then
-            # modulo `period` so that it is in [0, period).
-            self.birth_normalized_peak_time_of_year = (
+            # Generally, the values of these parameters should be
+            # floats, so explicitly convert them so the cache doesn't
+            # get duplicated keys for the float and int representation
+            # of the same number, e.g. `float(0)` and `int(0)`.
+            # Normalize `parameters.birth_peak_time_of_year` by making
+            # it relative to `parameters.start_time` and then modulo
+            # `period` so that it is in [0, period).
+            self.birth_normalized_peak_time_of_year = float(
                 (parameters.birth_peak_time_of_year - parameters.start_time)
                 % _MonodromySolver.period)
-            self.birth_seasonal_coefficient_of_variation \
-                = parameters.birth_seasonal_coefficient_of_variation
-            self.female_probability_at_birth \
-                = parameters.female_probability_at_birth
+            self.birth_seasonal_coefficient_of_variation = float(
+                parameters.birth_seasonal_coefficient_of_variation)
+            self.female_probability_at_birth = float(
+                parameters.female_probability_at_birth)
 
     def __init__(self, msparameters, agemax, agestep):
         self.parameters = msparameters
@@ -110,15 +115,15 @@ class _MonodromySolver:
         # Convert to CSR for fast left multiplication.
         self.M_implicit_euler = M_implicit_euler.tocsr()
         # The trapezoid rule for the birth integral for i = 0,
-        # u_0^n = \sum_j (b_j^n u_j^n + b_{j + 1}^n u_{j + 1}^n) / 2 / da.
+        # u_0^n = \sum_j (b_j^n u_j^n + b_{j + 1}^n u_{j + 1}^n) * da / 2.
         # This can be written as
         # u_0^n = (v * b^n) @ u^n,
         # with
-        # v = 1 / da * [0.5, 1, 1, ..., 1, 1, 0.5].
+        # v = da * [0.5, 1, 1, ..., 1, 1, 0.5].
         # Put `female_probability_at_birth` in there, too, for
         # simplicity & efficiency.
         self.v_trapezoid = (self.parameters.female_probability_at_birth
-                            / agestep
+                            * agestep
                             * numpy.hstack((0.5, numpy.ones(n_ages - 2), 0.5)))
 
     def solution_cycle(self):
@@ -196,9 +201,9 @@ class _MonodromySolver:
         ## n = 0 ##
         ###########
         solution = next(solution_cycle)
-        # Short circuit, so that `len(t) > 0` is guaranteed below.
-        if len(t) == 0:
+        if len(t) <= 1:
             return solution[0]
+        # `len(t) > 1` is guaranteed below.
         ###########
         ## n = 1 ##
         ###########
@@ -214,7 +219,7 @@ class _MonodromySolver:
         ###################
         ## n = 2, 3, ... ##
         ###################
-        for (n, (t_n, solution)) in enumerate(zip(t[2 : ], solution_cycle), 2):
+        for (t_n, solution) in zip(t[2 : ], solution_cycle):
             # Aging & mortality.
             # The simple version is
             # `solution[0][:] = (M_crank_nicolson_2 @ solution[2]
