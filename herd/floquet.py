@@ -202,9 +202,10 @@ class _MonodromySolver:
         # ready to be set to the value of the solution at the new time step.
         # The fundamental solution is a `n_ages` x `n_ages` matrix.
         solution_cycle = self.SolutionCycle((n_ages, n_ages))
-        ###########
+        ################################################
+        ## Begin iteratively solving over time steps. ##
+        ################################################
         ## n = 0 ##
-        ###########
         (t_n, solution) = (t[0], next(solution_cycle))
         # The initial condition for the fundamental solution is the
         # identity matrix.
@@ -213,9 +214,7 @@ class _MonodromySolver:
         if len(t) <= 1:
             return solution[0]
         # `len(t) > 1` is guaranteed below.
-        ###########
         ## n = 1 ##
-        ###########
         (t_n, solution) = (t[1], next(solution_cycle))
         # The simple version is
         # `solution[0][:] = M_implicit_euler @ solution[1]`
@@ -225,9 +224,7 @@ class _MonodromySolver:
         matvecs(M_implicit_euler, solution[1], solution[0], n_ages)
         # Birth.
         do_births(birth_rate(t_n, ages), solution[0], v_trapezoid)
-        ###################
         ## n = 2, 3, ... ##
-        ###################
         for (t_n, solution) in zip(t[2 : ], solution_cycle):
             # Aging & mortality.
             # The simple version is
