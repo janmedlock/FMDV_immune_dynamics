@@ -4,20 +4,20 @@ import numpy
 def arange(*args, dtype=None, endpoint=False):
     '''`numpy.arange([start, ] stop, [step, ] dtype=None)`
     that can also optionally include the endpoint `stop`.'''
-        if len(args) == 1:
-            stop, = args
-        elif len(args) == 2:
-            start, stop = args
-        elif len(args) == 3:
-            start, stop, step = args
-        elif len(args) == 4:
-            if dtype is not None:
-                msg = (
-                raise TypeError('`dtype` is specified as both positional'
-                                ' and keyword arguments.')
-            start, stop, step, dtype = args
-        else:
-            raise TypeError('_arange() requires 1–4 positional arguments.')
+    if len(args) == 1:
+        stop, = args
+    elif len(args) == 2:
+        start, stop = args
+    elif len(args) == 3:
+        start, stop, step = args
+    elif len(args) == 4:
+        if dtype is not None:
+            msg = (
+            raise TypeError('`dtype` is specified as both positional'
+                            ' and keyword arguments.')
+        start, stop, step, dtype = args
+    else:
+        raise TypeError('_arange() requires 1–4 positional arguments.')
     val = numpy.arange(start, stop, step, dtype=dtype)
     if endpoint:
         # `stop` could already be at the end of `val`
