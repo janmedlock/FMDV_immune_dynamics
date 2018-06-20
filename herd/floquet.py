@@ -62,8 +62,9 @@ class _MonodromySolver:
 
     def __init__(self, msparameters, agemax, agestep):
         self.parameters = msparameters
+        # Build the objects needed by the solver.
         self.ages = utility.arange(0, agemax, agestep, endpoint=True)
-        n_ages = len(self.ages)
+        n_ages = self.ages.size
         tstep = agestep
         self.t = utility.arange(0, self.period, tstep, endpoint=True)
         # Set up mortality rate.
@@ -178,7 +179,7 @@ class _MonodromySolver:
         birth_rate = birthRV.hazard
         # Avoid lookups in the loop below.
         ages = self.ages
-        n_ages = len(ages)
+        n_ages = ages.size
         t = self.t
         M_crank_nicolson_2 = self.M_crank_nicolson_2
         M_crank_nicolson_1 = self.M_crank_nicolson_1
@@ -200,20 +201,25 @@ class _MonodromySolver:
         # the old `solution[1]` becomes the new `solution[2]`; and
         # the old `solution[2]` is recycled to `solution[0]`,
         # ready to be set to the value of the solution at the new time step.
-        # The fundamental solution is a `n_ages` x `n_ages` matrix.
+        # The fundamental solution is an `n_ages` x `n_ages` matrix.
         solution_cycle = self.SolutionCycle((n_ages, n_ages))
+        # `b` will store the birth rate.
+        b = numpy.empty(n_ages)
         ################################################
         ## Begin iteratively solving over time steps. ##
         ################################################
+        if t.size == 0:
+            return None
+        # `t.size > 0` is guaranteed below.
         ## n = 0 ##
         (t_n, solution) = (t[0], next(solution_cycle))
         # The initial condition for the fundamental solution is the
         # identity matrix.
         solution[0][:] = 0
         numpy.fill_diagonal(solution[0], 1)
-        if len(t) <= 1:
+        if t.size == 1:
             return solution[0]
-        # `len(t) > 1` is guaranteed below.
+        # `t.size > 1` is guaranteed below.
         ## n = 1 ##
         (t_n, solution) = (t[1], next(solution_cycle))
         # The simple version is
@@ -223,7 +229,8 @@ class _MonodromySolver:
         # solution[0] += M_implicit_euler @ solution[1]
         matvecs(M_implicit_euler, solution[1], solution[0], n_ages)
         # Birth.
-        do_births(birth_rate(t_n, ages), solution[0], v_trapezoid)
+        birth_rate(t_n, ages, out=b)
+        do_births(b, solution[0], v_trapezoid)
         ## n = 2, 3, ... ##
         for (t_n, solution) in zip(t[2 : ], solution_cycle):
             # Aging & mortality.
@@ -237,7 +244,8 @@ class _MonodromySolver:
             # solution[0] += M_crank_nicolson_1 @ solution[1]
             matvecs(M_crank_nicolson_1, solution[1], solution[0], n_ages)
             # Birth.
-            do_births(birth_rate(t_n, ages), solution[0], v_trapezoid)
+            birth_rate(t_n, ages, out=b)
+            do_births(b, solution[0], v_trapezoid)
         # Return the solution at the final time.
         return solution[0]
 
