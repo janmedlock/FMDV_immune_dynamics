@@ -1,14 +1,13 @@
-from scipy import stats
+from scipy.stats import bernoulli
 
-from . import rv
+from herd.rv import RV
 
-class gen(rv.RV):
-    'Whether an offspring is female is a Bernoulli RV.'
-
+class gen(RV):
+    '''Whether an offspring is female is a Bernoulli RV.'''
     def __init__(self, parameters, *args, **kwargs):
         self.female_probability_at_birth \
             = parameters.female_probability_at_birth
-        distn = stats.bernoulli(self.female_probability_at_birth)
+        distn = bernoulli(self.female_probability_at_birth)
         super()._copyattrs(distn)
 
     def __repr__(self):

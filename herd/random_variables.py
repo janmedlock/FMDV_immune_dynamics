@@ -1,22 +1,22 @@
-from . import parameters
-from . import birth
-from . import female
-from . import maternal_immunity_waning
-from . import mortality
-from . import progression
-from . import recovery
-from . import transmission_rate
-from . import chronic_transmission_rate
-from . import probability_chronic
-from . import chronic_recovery
-from . import immunity_waning
-from . import initial_conditions
+from herd.parameters import Parameters
+from herd import birth
+from herd import chronic_recovery
+from herd import chronic_transmission_rate
+from herd import female
+from herd import immunity_waning
+from herd import initial_conditions
+from herd import maternal_immunity_waning
+from herd import mortality
+from herd import probability_chronic
+from herd import progression
+from herd import recovery
+from herd import transmission_rate
 
 
 class RandomVariables:
     def __init__(self, params = None):
         if params is None:
-            params = parameters.Parameters()
+            params = Parameters()
         self.parameters = params
         self.female = female.gen(params)
         self.maternal_immunity_waning = maternal_immunity_waning.gen(params)
@@ -37,8 +37,8 @@ class RandomVariables:
 
     def __repr__(self):
         'Make instances print nicely.'
-        # Like Parameters, but with module & class changed.
+        # Like `Parameters()`, but with module & class changed.
         clsname = '{}.{}'.format(self.__module__, self.__class__.__name__)
-        params_clsname = '{}.{}'.format(parameters.Parameters.__module__,
-                                        parameters.Parameters.__name__)
+        params_clsname = '{}.{}'.format(Parameters.__module__,
+                                        Parameters.__name__)
         return repr(self.parameters).replace(params_clsname, clsname)

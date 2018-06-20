@@ -1,16 +1,14 @@
 #!/usr/bin/python3
 
-import itertools
+from itertools import cycle
 
-from matplotlib import pyplot
-from matplotlib import ticker
+from matplotlib import pyplot, ticker
 import numpy
 import pandas
 from scipy import integrate
-from scipy import stats
 import seaborn
 
-import herd
+from herd import Parameters, RandomVariables
 
 
 def integrand_pdf(s, t, maternal_immunity_waning, birth, t0, a0):
@@ -46,7 +44,7 @@ def xticks_months(ax, t, t0):
     ax.set_xticks(xticks)
     month0 = int(t0 % 12)
     months_ = (months[month0:] + months[:month0])[::every]
-    xticklabels = itertools.cycle(months_)
+    xticklabels = cycle(months_)
     xticklabels = [next(xticklabels) for _ in range(len(xticks))]
     ax.set_xticklabels(xticklabels)
 
@@ -60,8 +58,8 @@ if __name__ == '__main__':
 
     df = pandas.DataFrame()
 
-    parameters = herd.parameters.Parameters()
-    rvs = herd.RandomVariables(parameters)
+    parameters = Parameters()
+    rvs = RandomVariables(parameters)
 
     # For births, to remove age dependence.
     a0 = 4

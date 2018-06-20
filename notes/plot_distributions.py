@@ -1,13 +1,11 @@
 #!/usr/bin/python3
-
 import numpy
 from matplotlib import lines, pyplot, ticker
 import seaborn
 
 import sys
 sys.path.append('..')
-from herd.parameters import Parameters
-from herd.random_variables import RandomVariables
+from herd import Parameters, RandomVariables
 
 RVs = {'SAT{}'.format(sat): RandomVariables(Parameters(SAT=sat))
        for sat in range(1, 3 + 1)}

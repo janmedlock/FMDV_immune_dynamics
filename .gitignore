@@ -13,5 +13,5 @@
 *.synctex.gz
 *.png
 *.pgf
-/herd/__cache__/
+/herd/floquet/__cache__/
 /Erin/

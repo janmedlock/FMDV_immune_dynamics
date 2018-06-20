@@ -8,11 +8,11 @@ from scipy.optimize import brentq
 from scipy.sparse import lil_matrix
 from scipy.sparse._sparsetools import csr_matvecs
 
-from . import utility
-from . import dominant_eigen
-from . import birth
-from . import mortality
-from . import parameters
+from herd import birth
+from herd import mortality
+from herd import parameters
+from herd import utility
+from herd.floquet import dominant_eigen
 
 
 # Some of the functions below are very slow, so the values are cached to

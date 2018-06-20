@@ -1,4 +1,4 @@
-import numpy
+from numpy import inf
 
 
 class Parameters:
@@ -17,7 +17,7 @@ class Parameters:
             # Duration in C before leaving to R.
             self.chronic_recovery = 4
             # Duration in R before returning to S.
-            self.immunity_waning_duration = numpy.inf
+            self.immunity_waning_duration = inf
             self.chronic_transmission_rate = 0
             if SAT == 1:
                 self.progression_shape = 1.2

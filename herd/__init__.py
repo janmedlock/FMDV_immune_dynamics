@@ -1,3 +1,3 @@
-from .herd import *
-from .parameters import *
-from .random_variables import *
+from herd.herd import *
+from herd.parameters import *
+from herd.random_variables import *

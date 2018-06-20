@@ -1,11 +1,11 @@
 import numpy
 from scipy import stats
 
-from . import rv
-from .floquet import find_stable_age_structure
+from herd.rv import RV
+from herd.floquet import find_stable_age_structure
 
 
-class gen(rv.RV):
+class gen(RV):
     def __init__(self, parameters, *args, **kwargs):
         self._density, self._ages = find_stable_age_structure(parameters,
                                                               *args, **kwargs)

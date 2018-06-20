@@ -1,33 +1,30 @@
-import collections
-import itertools
+from collections import defaultdict
+from itertools import count
 
-import numpy
+from numpy import inf
 
-from . import buffalo
-from . import parameters
-from . import random_variables
+from herd.buffalo import Buffalo
+from herd.parameters import Parameters
+from herd.random_variables import RandomVariables
 
 
 class Herd(list):
-    '''
-    A herd of buffaloes, the things that can happen to them, and code to
-    simulate.
-    '''
-
+    '''A herd of buffaloes, the things that can happen to them, and code to
+    simulate.'''
     def __init__(self, params=None, debug=False, run_number=None):
         if params is None:
-            self.params = parameters.Parameters()
+            self.params = Parameters()
         else:
             self.params = params
 
         self.debug = debug
         self.run_number = run_number
 
-        self.rvs = random_variables.RandomVariables(self.params)
+        self.rvs = RandomVariables(self.params)
 
         self.time = self.params.start_time
-        self.immune_status_lists = collections.defaultdict(list)
-        self.identifiers = itertools.count(0)
+        self.immune_status_lists = defaultdict(list)
+        self.identifiers = count(0)
 
         # Loop until we get a non-zero number of initial infections.
         while True:
@@ -40,8 +37,8 @@ class Herd(list):
 
         for (immune_status, ages) in status_ages.items():
             for age in ages:
-                self.append(buffalo.Buffalo(self, immune_status, age,
-                                            building_herd=True))
+                self.append(Buffalo(self, immune_status, age,
+                                    building_herd=True))
 
     def immune_status_append(self, b):
         self.immune_status_lists[b.immune_status].append(b)
@@ -99,7 +96,7 @@ class Herd(list):
     def stop(self):
         return (self.number_infected == 0)
 
-    def step(self, tmax=numpy.inf):
+    def step(self, tmax=inf):
         self.update_infection_times()
         event = self.get_next_event()
 

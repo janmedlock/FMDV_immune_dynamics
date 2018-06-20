@@ -1,14 +1,11 @@
 from scipy import stats
 
-from . import rv
+from herd.rv import RV
 
 
-class gen(rv.RV):
-    '''
-    Exponential waiting time to recovery from chronic state with rate
-    1 / chronic_recovery.
-    '''
-
+class gen(RV):
+    '''Exponential waiting time to recovery from chronic state with rate
+    1 / chronic_recovery.'''
     def __init__(self, parameters, *args, **kwargs):
         self.chronic_recovery = parameters.chronic_recovery
         distn = stats.expon(scale=self.chronic_recovery)

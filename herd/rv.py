@@ -1,14 +1,15 @@
-import numpy
+from numpy import exp
 
 
 class RV:
+    '''A generic random variable.'''
     def _copyattrs(self, obj):
         for x in dir(obj):
             if not hasattr(self, x) and not x.startswith('__'):
                 setattr(self, x, getattr(obj, x))
 
     def hazard(self, age):
-        return numpy.exp(self.logpdf(age) - self.logsf(age))
+        return exp(self.logpdf(age) - self.logsf(age))
 
     def __repr__(self, params = ()):
         cls = self.__class__

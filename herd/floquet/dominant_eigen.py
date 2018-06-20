@@ -1,5 +1,5 @@
 import numpy
-from scipy import sparse
+from scipy.sparse.linalg import eigs
 
 
 def find(A, which='LR', return_eigenvector=True, maxiter=100000,
@@ -12,9 +12,9 @@ def find(A, which='LR', return_eigenvector=True, maxiter=100000,
     # The solver just spins with inf/NaN entries.
     # I think this check handles dense & sparse matrices, etc.
     assert numpy.isfinite(A[numpy.nonzero(A)]).all(), 'A has inf/NaN entries.'
-    result = sparse.linalg.eigs(A, k=1, which=which, maxiter=maxiter,
-                                return_eigenvectors=return_eigenvector,
-                                *args, **kwargs)
+    result = eigs(A, k=1, which=which, maxiter=maxiter,
+                  return_eigenvectors=return_eigenvector,
+                  *args, **kwargs)
     if return_eigenvector:
         L, V = result
     else:

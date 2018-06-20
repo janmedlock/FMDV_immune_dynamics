@@ -1,19 +1,19 @@
 #!/usr/bin/python3
-
 import numpy
 from matplotlib import lines, pyplot, ticker
 import seaborn
 
 import sys
 sys.path.append('..')
-import herd
+from herd import Parameters
 from herd import birth
+
 
 tau = 1 / 4
 mu = 1
 CVs = (1 / 3, 1)
 
-parameters = herd.Parameters()
+parameters = Parameters()
 parameters.birth_peak_time_of_year = tau
 
 t = numpy.linspace(0, 2, 1001)
@@ -30,26 +30,26 @@ with pyplot.rc_context(rc=rc):
     for (CV, color) in zip(CVs, colors):
         parameters.birth_seasonal_coefficient_of_variation = CV
         birthRV = birth.gen(parameters, _scaling=mu)
-        alpha = birthRV._alpha
-        beta = birthRV._beta
         sign = '<' if (CV < 1 / numpy.sqrt(3)) else '>'
         label = r'$c_{{\mathrm{{v}}}} {} 1 / \sqrt{{3}}$'.format(sign)
         axes.plot(t, birthRV.hazard(t, 4), color=color, label=label,
                   clip_on=False)
         if CV < 1 / numpy.sqrt(3):
-            yticks.extend([mu * alpha * (1 - beta), mu * alpha])
+            yticks.extend([mu * birthRV._alpha * (1 - birthRV._beta),
+                           mu * birthRV._alpha])
             yticklabels.extend(
                 [r'$\left(1 - c_{\mathrm{v}} \sqrt{3}\right) \mu$',
                  r'$\left(1 + c_{\mathrm{v}} \sqrt{3}\right) \mu$'])
-            axes.vlines(tau + 0.5,
-                        0, numpy.clip(mu * alpha * (1 - beta), 0, numpy.inf),
+            axes.vlines(tau + 0.5, 0,
+                        numpy.clip(mu * birthRV._alpha * (1 - birthRV._beta),
+                                   0, numpy.inf),
                         linestyle='dotted', clip_on=False)
         else:
-            yticks.extend([mu * alpha])
+            yticks.extend([mu * birthRV._alpha])
             yticklabels.append(
                 r'$\frac{3}{2} \left(1 + c_{\mathrm{v}}^2\right) \mu$')
             axes.vlines(tau,
-                        0, mu * alpha,
+                        0, mu * birthRV._alpha,
                         linestyle='dotted', clip_on=False)
     xticks = list(range(int(t[-1]) + 1))
     xticklabels = [r'${}$'.format(x) for x in xticks]

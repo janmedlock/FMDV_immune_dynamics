@@ -1,6 +1,6 @@
 from scipy import stats
 
-from . import events
+from herd.events import Events
 
 
 class Buffalo:
@@ -28,7 +28,7 @@ class Buffalo:
                     age,
                     immune_status))
 
-        self.events = events.Events(self)
+        self.events = Events(self)
 
         self.set_mortality()
 
