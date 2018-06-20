@@ -13,8 +13,8 @@ from . import rv
 _period = 1
 
 
-def fracpart(x):
-    return numpy.ma.mod(x, _period)
+def fracpart(x, out=None):
+    return numpy.ma.mod(x, _period, out=out)
 
 
 def get_seasonal_coefficient_of_variation_from_gap_size(g):
@@ -41,6 +41,18 @@ class gen(rv.RV):
         self.peak_time_of_year = parameters.birth_peak_time_of_year
         self.seasonal_coefficient_of_variation \
             = parameters.birth_seasonal_coefficient_of_variation
+        if self.seasonal_coefficient_of_variation < 1 / numpy.sqrt(3):
+            self._alpha = (1 + numpy.sqrt(3)
+                           * self.seasonal_coefficient_of_variation)
+            self._beta = (2 * numpy.sqrt(3)
+                          * self.seasonal_coefficient_of_variation
+                          / (1 + numpy.sqrt(3)
+                             * self.seasonal_coefficient_of_variation))
+        else:
+            self._alpha = (3 / 2
+                           * (1 + self.seasonal_coefficient_of_variation ** 2))
+            self._beta = (3 / 4
+                          * (1 + self.seasonal_coefficient_of_variation ** 2))
         if _scaling is None:
             _scaling = find_birth_scaling(parameters, *args, **kwargs)
         self._scaling = _scaling
@@ -50,62 +62,77 @@ class gen(rv.RV):
         return super().__repr__(('peak_time_of_year',
                                  'seasonal_coefficient_of_variation'))
 
-    def _getparams(self):
-        if self.seasonal_coefficient_of_variation < 1 / numpy.sqrt(3):
-            alpha = 1 + numpy.sqrt(3) * self.seasonal_coefficient_of_variation
-            beta = (2 * numpy.sqrt(3) * self.seasonal_coefficient_of_variation
-                    / (1 + numpy.sqrt(3)
-                       * self.seasonal_coefficient_of_variation))
-        else:
-            alpha = 3 * (1 + self.seasonal_coefficient_of_variation ** 2) / 2
-            beta = 3 * (1 + self.seasonal_coefficient_of_variation ** 2) / 4
-        return (alpha, beta)
-
-    def hazard(self, time, age):
+    def hazard(self, time, age, out=None):
         # age is the age at t = time.
-        (alpha, beta) = self._getparams()
-        tau = fracpart(time - self.peak_time_of_year)
-        haz = alpha * (1 - beta * (1 - numpy.abs(1 - 2 * tau)))
-        haz = numpy.clip(haz, 0, numpy.inf)
-        # 0 if current age (age0 + time) < 4.
-        haz = numpy.where(age >= 4, haz, 0)
-        return self._scaling * haz
+        time, age = numpy.broadcast_arrays(time, age)
+        if out is None:
+            out = numpy.empty(time.shape)
+        # Without building intermediate arrays, compute
+        # `tau = fracpart(time - self.peak_time_of_year)`.
+        out[:] = time - self.peak_time_of_year
+        fracpart(out, out=out)
+        # Now out = fracpart(time - self.peak_time_of_year)
+        #         = tau.
+        # Without building intermediate arrays, compute
+        # `out = self._alpha * (1 - self._beta * (1 - numpy.abs(1 - 2 * tau)))`.
+        out *= 2
+        out -= 1
+        numpy.abs(out, out=out)
+        # Now out = abs(2 * tau - 1)
+        #         = abs(1 - 2 * tau).
+        out -= 1
+        out *= self._beta
+        out += 1
+        # Now out = 1 + beta * (abs(2 * tau - 1) - 1)
+        #         = 1 - beta * (1 - abs(2 * tau - 1)).
+        out *= self._alpha
+        # Now out = alpha * (1 - beta * (1 - abs(2 * tau - 1)))
+        # In one step:
+        # * If the hazard is negative, set it to 0.
+        # * If age < 4, set the hazard to 0.
+        out[(out < 0) | (age < 4)] = 0
+        # Scale the hazard.
+        out *= self._scaling
+        return out
 
     def logsf(self, time, time0, age0):
         # age0 is the age at t = time0.
-        (alpha, beta) = self._getparams()
         c = time0 + numpy.clip(4 - age0, 0, numpy.inf) - self.peak_time_of_year
         d = time0 + time - self.peak_time_of_year
         H0 = numpy.floor(d) - numpy.floor(c) - 1
-        if beta < 1:
+        if self._beta < 1:
             H1 = numpy.where(
                 fracpart(c) < 1 / 2,
-                1 / 2 + (alpha * (1 / 2 - fracpart(c))
-                         * (1 - beta + beta * (1 / 2 - fracpart(c)))),
-                alpha * (1 - fracpart(c))
-                * (1 - beta + beta * (1 - fracpart(c))))
+                1 / 2 + (self._alpha * (1 / 2 - fracpart(c))
+                         * (1 - self._beta
+                            + self._beta * (1 / 2 - fracpart(c)))),
+                self._alpha * (1 - fracpart(c))
+                * (1 - self._beta + self._beta * (1 - fracpart(c))))
             H2 = numpy.where(
                 fracpart(d) < 1 / 2,
-                alpha * fracpart(d) * (1 - beta * fracpart(d)),
-                1 / 2 + (alpha * (fracpart(d) - 1 / 2)
-                         * (1 - beta + beta * (fracpart(d) - 1 / 2))))
+                self._alpha * fracpart(d) * (1 - self._beta * fracpart(d)),
+                1 / 2 + (self._alpha * (fracpart(d) - 1 / 2)
+                         * (1 - self._beta
+                            + self._beta * (fracpart(d) - 1 / 2))))
             H = H0 + H1 + H2
         else:
             H3 = numpy.where(
-                fracpart(c) < 1 / 2 / beta,
-                1 / 2 + alpha * beta * (1 / 2 / beta - fracpart(c)) ** 2,
+                fracpart(c) < 1 / 2 / self._beta,
+                1 / 2 + self._alpha * self._beta * (1 / 2 / self._beta
+                                                    - fracpart(c)) ** 2,
                 numpy.where(
-                    fracpart(c) < 1 - 1 / 2 / beta,
+                    fracpart(c) < 1 - 1 / 2 / self._beta,
                     1 / 2,
-                    alpha * (1 - fracpart(c)) * (1 - beta * (1 - fracpart(c)))))
+                    self._alpha * (1 - fracpart(c))
+                    * (1 - self._beta * (1 - fracpart(c)))))
             H4 = numpy.where(
-                fracpart(d) < 1 / 2 / beta,
-                alpha * fracpart(d) * (1 - beta * fracpart(d)),
+                fracpart(d) < 1 / 2 / self._beta,
+                self._alpha * fracpart(d) * (1 - self._beta * fracpart(d)),
                 numpy.where(
-                    fracpart(d) < 1 - 1 / 2 / beta,
+                    fracpart(d) < 1 - 1 / 2 / self._beta,
                     1 / 2,
-                    1 / 2 + (alpha * beta
-                             * (fracpart(d) - (1 - 1 / 2 / beta)) ** 2)))
+                    1 / 2 + (self._alpha * self._beta
+                             * (fracpart(d) - (1 - 1 / 2 / self._beta)) ** 2)))
             H = H0 + H3 + H4
         H = numpy.where(time < 4 - age0, 0, H)
         return -(self._scaling * H)
