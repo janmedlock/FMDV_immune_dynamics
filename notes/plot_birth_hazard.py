@@ -30,7 +30,8 @@ with pyplot.rc_context(rc=rc):
     for (CV, color) in zip(CVs, colors):
         parameters.birth_seasonal_coefficient_of_variation = CV
         birthRV = birth.gen(parameters, _scaling=mu)
-        alpha, beta = birthRV._getparams()
+        alpha = birthRV._alpha
+        beta = birthRV._beta
         sign = '<' if (CV < 1 / numpy.sqrt(3)) else '>'
         label = r'$c_{{\mathrm{{v}}}} {} 1 / \sqrt{{3}}$'.format(sign)
         axes.plot(t, birthRV.hazard(t, 4), color=color, label=label,
