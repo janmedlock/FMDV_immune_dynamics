@@ -25,16 +25,12 @@ So that the cache keys only depend on the relevant parts of
 >>> PhiT = solver.solve(birth_scaling)
 where `parameters` is a `herd.parameters.Parameters()` instance.'''
 
-
 from numpy import hstack, ones
 from scipy.sparse import lil_matrix
 
-from herd import birth
-from herd import mortality
-from herd import parameters
+from herd import birth, mortality, parameters
 from herd.utility import arange
-from herd.floquet import floquet
-from herd.floquet import _monodromy
+from herd.floquet import floquet, _monodromy
 
 
 class Parameters(parameters.Parameters):

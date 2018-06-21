@@ -2,6 +2,7 @@ from scipy.stats import bernoulli
 
 from herd.rv import RV
 
+
 class gen(RV):
     '''Whether an offspring is female is a Bernoulli RV.'''
     def __init__(self, parameters, *args, **kwargs):

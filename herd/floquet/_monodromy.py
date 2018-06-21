@@ -1,34 +1,10 @@
 '''The core of the solver.  This is split out so it can be
 re-implemented in Cython etc for speed.'''
 
-
 from collections import deque
 
-from numpy import empty, fill_diagonal
+import numpy
 from scipy.sparse._sparsetools import csr_matvecs
-
-
-# Crank–Nicolson is 2nd order because the solution at t_n
-# depends on the solution at t_{n - 1} and t_{n - 2}.
-_order = 2
-
-
-def _SolutionCycle(size):
-    '''The generator returned yields sequences that store
-    the solution at times t_n, t_{n - 1}, ..., t_{n - order}.
-    The generator cycles so that the solution at
-    the current time step is in `solution[0]`,
-    the previous time step is in `solution[1]`, ...
-    `order` time steps ago is in `solution[order]`.
-    This is effectively just moving references around in a cycle,
-    so no new arrays get built as the solver iterates in time.'''
-    # One array for the current time step, plus one for each order
-    # of the solver.
-    solution = deque(empty(size, dtype=float)
-                     for _ in range(1 + _order))
-    while True:
-        yield solution
-        solution.rotate()
 
 
 def _matvecs(A, B, C, n):
@@ -60,28 +36,37 @@ def _do_births(b, U, v_trapezoid):
     b.dot(U, out=U[0])
 
 
+# Crank–Nicolson is 2nd order because the solution at t_n
+# depends on the solution at t_{n - 1} and t_{n - 2}.
+_order = 2
+
+
 def solve(ages, t, M_crank_nicolson_2, M_crank_nicolson_1,
           M_implicit_euler, v_trapezoid, birth_rate):
     n_ages = ages.size
     # Set up solution.
-    # `solution_cycle()` returns a generator that yields
-    # `solution`, a length-3 sequence 3 with
+    # `solution` is a length-3 sequence 3 with
     # `solution[0]` storing the solution at the current time step,
     # `solution[1]` storing the solution at the previous time step, and
     # `solution[2]` storing the solution 2 time steps ago.
-    # Iterating `solution_cycle()` in sync with iterating through
-    # the elements of `t` rearranges the elements of the yielded
+    # Calling `solution.rotate()` in sync with iterating through
+    # the elements of `t` rearranges the elements of
     # `solution` so that its elements stay in the above order
     # at each time step:
     # the old `solution[0]` becomes the new `solution[1]`;
     # the old `solution[1]` becomes the new `solution[2]`; and
-    # the old `solution[2]` is recycled to `solution[0]`,
-    # ready to be set to the value of the solution at the new time step.
+    # the old `solution[2]` becomes the new `solution[0]`,
+    # recycled and ready to be set to the value of the solution at the
+    # new time step.
     # The fundamental solution is an `n_ages` x `n_ages` matrix.
-    solution_cycle = _SolutionCycle((n_ages, n_ages))
+    # One matrix for the current time step,
+    # plus one for each order of the solver.
+    # The fundamental solution is an `n_ages` x `n_ages` matrix.
+    solution = deque(numpy.empty((n_ages, n_ages))
+                     for _ in range(1 + _order))
     # To avoid repeated array creation, `b_n` will store the birth
     # rate at each time step.
-    b_n = empty(n_ages)
+    b_n = numpy.empty(n_ages)
     ################################################
     ## Begin iteratively solving over time steps. ##
     ################################################
@@ -89,16 +74,17 @@ def solve(ages, t, M_crank_nicolson_2, M_crank_nicolson_1,
         return None
     # `t.size > 0` is guaranteed below.
     ## n = 0 ##
-    (t_n, solution) = (t[0], next(solution_cycle))
+    t_n = t[0]
     # The initial condition for the fundamental solution is the
     # identity matrix.
     solution[0][:] = 0
-    fill_diagonal(solution[0], 1)
+    numpy.fill_diagonal(solution[0], 1)
     if t.size == 1:
         return solution[0]
     # `t.size > 1` is guaranteed below.
     ## n = 1 ##
-    (t_n, solution) = (t[1], next(solution_cycle))
+    t_n = t[1]
+    solution.rotate()
     # The simple version is
     # `solution[0][:] = M_implicit_euler @ solution[1]`
     # but avoid building a new matrix.
@@ -109,7 +95,8 @@ def solve(ages, t, M_crank_nicolson_2, M_crank_nicolson_1,
     birth_rate(t_n, ages, out=b_n)
     _do_births(b_n, solution[0], v_trapezoid)
     ## n = 2, 3, ... ##
-    for (t_n, solution) in zip(t[2 : ], solution_cycle):
+    for t_n in t[2 : ]:
+        solution.rotate()
         # Aging & mortality.
         # The simple version is
         # `solution[0][:] = (M_crank_nicolson_2 @ solution[2]

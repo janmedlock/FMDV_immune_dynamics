@@ -6,8 +6,7 @@ from scipy.integrate import trapz
 from scipy.optimize import brentq
 
 from herd import birth
-from herd.floquet import dominant_eigen
-from herd.floquet import monodromy
+from herd.floquet import dominant_eigen, monodromy
 
 
 # `herd.birth.gen.hazard` is the only time-dependent function.

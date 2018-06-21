@@ -1,5 +1,5 @@
 import numpy
-from scipy import stats
+from scipy.stats import rv_discrete
 
 from herd.rv import RV
 from herd.floquet import find_stable_age_structure
@@ -10,7 +10,7 @@ class gen(RV):
         self._density, self._ages = find_stable_age_structure(parameters,
                                                               *args, **kwargs)
         self._proportion = self._density / self._density.sum()
-        self._quantilerv = stats.rv_discrete(
+        self._quantilerv = rv_discrete(
             values = (range(len(self._proportion)), self._proportion),
             *args, **kwargs)
 

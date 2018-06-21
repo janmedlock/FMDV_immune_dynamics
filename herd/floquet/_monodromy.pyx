@@ -1,4 +1,7 @@
 #cython: boundscheck=False, wraparound=False
+
+'''The core of the solver.'''
+
 from collections import deque
 
 import numpy
@@ -6,13 +9,13 @@ cimport numpy
 from scipy.sparse._sparsetools import csr_matvecs
 
 
-cdef inline void matvecs(A,
-                         double[:, ::1] B,
-                         double[:, ::1] C,
-                         Py_ssize_t n):
+cdef inline void _matvecs(A,
+                          double[:, ::1] B,
+                          double[:, ::1] C,
+                          Py_ssize_t n):
     '''Compute the matrix multiplication `C += A @ B`, where
     `A` is a `scipy.sparse.csr_matrix()`,
-    `B` and `C` are `numpy.array()`s,
+    `B` and `C` are `numpy.ndarray()`s,
     and all 3 matrices are `n` x `n`.'''
     # Use the private function
     # `scipy.sparse._sparsetools.csr_matvecs()` so we can specify
@@ -24,9 +27,9 @@ cdef inline void matvecs(A,
                 numpy.ravel(B), numpy.ravel(C))
 
 
-cdef inline void do_births(double[:] b,
-                           double[:, ::1] U,
-                           double[:] v_trapezoid) nogil:
+cdef inline void _do_births(double[:] b,
+                            double[:, ::1] U,
+                            double[:] v_trapezoid) nogil:
     '''Calculate the birth integral
     B(t) = \int_0^{inf} b(t, a) U(t, a) da
     using the composite trapezoid rule.
@@ -46,17 +49,17 @@ cdef inline void do_births(double[:] b,
 _order = 2
 
 
-def mssolve(double[:] ages,
-            double[:] t,
-            M_crank_nicolson_2,
-            M_crank_nicolson_1,
-            M_implicit_euler,
-            double[:] v_trapezoid,
-            birth_rate):
+def solve(double[:] ages,
+          double[:] t,
+          M_crank_nicolson_2,
+          M_crank_nicolson_1,
+          M_implicit_euler,
+          double[:] v_trapezoid,
+          birth_rate):
     '''The core of the monodromy solver.'''
     cdef Py_ssize_t n_ages = ages.size
     # Set up solution.
-    # `solution`, a length-3 sequence 3 with
+    # `solution` is a length-3 sequence 3 with
     # `solution[0]` storing the solution at the current time step,
     # `solution[1]` storing the solution at the previous time step, and
     # `solution[2]` storing the solution 2 time steps ago.
@@ -74,8 +77,9 @@ def mssolve(double[:] ages,
     # plus one for each order of the solver.
     solution = deque(numpy.empty((n_ages, n_ages))
                      for _ in range(1 + _order))
-    # `b` will store the birth rate.
-    cdef numpy.ndarray[numpy.float_t, ndim=1] b = numpy.empty(n_ages)
+    # To avoid repeated array creation, `b_n` will store the birth
+    # rate at each time step.
+    cdef numpy.ndarray[numpy.float_t, ndim=1] b_n = numpy.empty(n_ages)
     cdef double t_n
     ################################################
     ## Begin iteratively solving over time steps. ##
@@ -100,10 +104,10 @@ def mssolve(double[:] ages,
     # but avoid building a new matrix.
     solution[0][:] = 0
     # solution[0] += M_implicit_euler @ solution[1]
-    matvecs(M_implicit_euler, solution[1], solution[0], n_ages)
+    _matvecs(M_implicit_euler, solution[1], solution[0], n_ages)
     # Birth.
-    birth_rate(t_n, ages, out=b)
-    do_births(b, solution[0], v_trapezoid)
+    birth_rate(t_n, ages, out=b_n)
+    _do_births(b_n, solution[0], v_trapezoid)
     ## n = 2, 3, ... ##
     for t_n in t[2 : ]:
         solution.rotate()
@@ -114,11 +118,11 @@ def mssolve(double[:] ages,
         # but avoid building a new matrix.
         solution[0][:] = 0
         # solution[0] += M_crank_nicolson_2 @ solution[2]
-        matvecs(M_crank_nicolson_2, solution[2], solution[0], n_ages)
+        _matvecs(M_crank_nicolson_2, solution[2], solution[0], n_ages)
         # solution[0] += M_crank_nicolson_1 @ solution[1]
-        matvecs(M_crank_nicolson_1, solution[1], solution[0], n_ages)
+        _matvecs(M_crank_nicolson_1, solution[1], solution[0], n_ages)
         # Birth.
-        birth_rate(t_n, ages, out=b)
-        do_births(b, solution[0], v_trapezoid)
+        birth_rate(t_n, ages, out=b_n)
+        _do_births(b_n, solution[0], v_trapezoid)
     # Return the solution at the final time.
     return solution[0]

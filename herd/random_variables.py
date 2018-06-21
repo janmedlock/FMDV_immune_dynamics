@@ -1,16 +1,8 @@
 from herd.parameters import Parameters
-from herd import birth
-from herd import chronic_recovery
-from herd import chronic_transmission_rate
-from herd import female
-from herd import immunity_waning
-from herd import initial_conditions
-from herd import maternal_immunity_waning
-from herd import mortality
-from herd import probability_chronic
-from herd import progression
-from herd import recovery
-from herd import transmission_rate
+from herd import (birth, chronic_recovery, chronic_transmission_rate, female,
+                  immunity_waning, initial_conditions,
+                  maternal_immunity_waning, mortality, probability_chronic,
+                  progression, recovery, transmission_rate)
 
 
 class RandomVariables:

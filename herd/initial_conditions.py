@@ -1,8 +1,7 @@
 from numpy import asarray
 from scipy.stats import bernoulli
 
-from herd import age_structure
-from herd import maternal_immunity_waning
+from herd import age_structure, maternal_immunity_waning
 
 
 class gen:

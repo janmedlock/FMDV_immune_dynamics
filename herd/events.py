@@ -1,8 +1,8 @@
-import functools
+from functools import total_ordering
 
 
 # Use __lt__ and __eq__ to generate all the other comparisons
-@functools.total_ordering
+@total_ordering
 class Event:
     def __init__(self, time, fcn, identifier):
         self.time = time
