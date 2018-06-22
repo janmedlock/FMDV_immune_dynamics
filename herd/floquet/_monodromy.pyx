@@ -6,7 +6,28 @@ from collections import deque
 
 import numpy
 cimport numpy
-from scipy.sparse._sparsetools import csr_matvecs
+
+
+cdef inline void csr_matvecs(Py_ssize_t n_row,
+                             Py_ssize_t n_col,
+                             Py_ssize_t n_vecs,
+                             int[:] A_indptr,
+                             int[:] A_indices,
+                             double[:] A_data,
+                             double[:, ::1] B,
+                             double[:, ::1] C) nogil:
+    '''Compute the matrix multiplication `C += A @ B`, where
+    `A` is an `n_row` x `n_col` `scipy.sparse.csr_matrix()`,
+    `B` is an `n_col` x `n_vecs` `numpy.ndarray()`
+    and `C` is an `n_row` x `n_vecs` `numpy.ndarray()`.'''
+    cdef Py_ssize_t i, jj, j, k
+    cdef double a
+    for i in range(n_row):
+        for jj in range(A_indptr[i], A_indptr[i + 1]):
+            j = A_indices[jj]
+            a = A_data[jj]
+            for k in range(n_vecs):
+                C[i, k] += a * B[j, k]
 
 
 cdef inline void _matvecs(A,
@@ -17,14 +38,12 @@ cdef inline void _matvecs(A,
     `A` is a `scipy.sparse.csr_matrix()`,
     `B` and `C` are `numpy.ndarray()`s,
     and all 3 matrices are `n` x `n`.'''
-    # Use the private function
-    # `scipy.sparse._sparsetools.csr_matvecs()` so we can specify
-    # the output array `C` to avoid the building of a new matrix
-    # for the output.
+    # Pull the Python attributes out of `A`
+    # and call the helper function.
     csr_matvecs(n, n,  # The shape of A.
                 n,     # The number of columns in B & C.
                 A.indptr, A.indices, A.data,
-                numpy.ravel(B), numpy.ravel(C))
+                B, C)
 
 
 cdef inline void _do_births(double[:] b,
