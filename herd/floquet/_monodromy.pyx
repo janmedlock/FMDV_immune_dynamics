@@ -8,47 +8,46 @@ import numpy
 cimport numpy
 
 
-cdef inline void csr_matvecs(Py_ssize_t n_row,
-                             Py_ssize_t n_col,
-                             Py_ssize_t n_vecs,
-                             int[:] A_indptr,
-                             int[:] A_indices,
-                             double[:] A_data,
-                             double[:, ::1] B,
+cdef inline void csr_matvecs(const int[:] A_indptr,
+                             const int[:] A_indices,
+                             const double[:] A_data,
+                             const double[:, ::1] B,
                              double[:, ::1] C) nogil:
     '''Compute the matrix multiplication `C += A @ B`, where
     `A` is an `n_row` x `n_col` `scipy.sparse.csr_matrix()`,
     `B` is an `n_col` x `n_vecs` `numpy.ndarray()`
     and `C` is an `n_row` x `n_vecs` `numpy.ndarray()`.'''
+    cdef Py_ssize_t n_col, n_row, n_vecs
+    n_row, n_vecs = C.shape[0 : 2]
+    n_col = B.shape[0]
+    cdef Py_ssize_t B_inc, C_inc
+    B_inc = B.strides[1]
+    C_inc = C.strides[1]
     cdef Py_ssize_t i, jj, j, k
     cdef double a
     for i in range(n_row):
         for jj in range(A_indptr[i], A_indptr[i + 1]):
-            j = A_indices[jj]
+            # C[i, :] += A_data[jj] * B[A_indices[jj], :]
             a = A_data[jj]
+            j = A_indices[jj]
             for k in range(n_vecs):
                 C[i, k] += a * B[j, k]
 
 
 cdef inline void _matvecs(A,
-                          double[:, ::1] B,
-                          double[:, ::1] C,
-                          Py_ssize_t n):
+                          const double[:, ::1] B,
+                          double[:, ::1] C):
     '''Compute the matrix multiplication `C += A @ B`, where
     `A` is a `scipy.sparse.csr_matrix()`,
-    `B` and `C` are `numpy.ndarray()`s,
-    and all 3 matrices are `n` x `n`.'''
-    # Pull the Python attributes out of `A`
-    # and call the helper function.
-    csr_matvecs(n, n,  # The shape of A.
-                n,     # The number of columns in B & C.
-                A.indptr, A.indices, A.data,
-                B, C)
+    `B` and `C` are `numpy.ndarray()`s.'''
+    # Extract the required Python attributes of `A`
+    # and then call the pure-C helper function.
+    csr_matvecs(A.indptr, A.indices, A.data, B, C)
 
 
-cdef inline void _do_births(double[:] b,
-                            double[:, ::1] U,
-                            double[:] v_trapezoid) nogil:
+cdef inline void _do_births(const double[:] v_trapezoid,
+                            const double[:] b,
+                            double[:, ::1] U) nogil:
     '''Calculate the birth integral
     B(t) = \int_0^{inf} b(t, a) U(t, a) da
     using the composite trapezoid rule.
@@ -58,9 +57,12 @@ cdef inline void _do_births(double[:] b,
     # `U[0] += (v_trapezoid * b) @ U`
     # but avoid building new vectors.
     cdef Py_ssize_t i, j
+    cdef double b_v
     for i in range(U.shape[0]):
+        # U[0, :] += b[i] * v_trapezoid[i] * U[i, :]
+        b_v = b[i] * v_trapezoid[i]
         for j in range(U.shape[1]):
-            U[0, j] += b[i] * v_trapezoid[i] * U[i, j]
+            U[0, j] += b_v * U[i, j]
 
 
 # Crank–Nicolson is 2nd order because the solution at t_n
@@ -68,12 +70,12 @@ cdef inline void _do_births(double[:] b,
 _order = 2
 
 
-def solve(double[:] ages,
-          double[:] t,
+def solve(const double[:] ages,
+          const double[:] t,
           M_crank_nicolson_2,
           M_crank_nicolson_1,
           M_implicit_euler,
-          double[:] v_trapezoid,
+          const double[:] v_trapezoid,
           birth_rate):
     '''The core of the monodromy solver.'''
     cdef Py_ssize_t n_ages = ages.size
@@ -123,10 +125,10 @@ def solve(double[:] ages,
     # but avoid building a new matrix.
     solution[0][:] = 0
     # solution[0] += M_implicit_euler @ solution[1]
-    _matvecs(M_implicit_euler, solution[1], solution[0], n_ages)
+    _matvecs(M_implicit_euler, solution[1], solution[0])
     # Birth.
     birth_rate(t_n, ages, out=b_n)
-    _do_births(b_n, solution[0], v_trapezoid)
+    _do_births(v_trapezoid, b_n, solution[0])
     ## n = 2, 3, ... ##
     for t_n in t[2 : ]:
         solution.rotate()
@@ -137,11 +139,11 @@ def solve(double[:] ages,
         # but avoid building a new matrix.
         solution[0][:] = 0
         # solution[0] += M_crank_nicolson_2 @ solution[2]
-        _matvecs(M_crank_nicolson_2, solution[2], solution[0], n_ages)
+        _matvecs(M_crank_nicolson_2, solution[2], solution[0])
         # solution[0] += M_crank_nicolson_1 @ solution[1]
-        _matvecs(M_crank_nicolson_1, solution[1], solution[0], n_ages)
+        _matvecs(M_crank_nicolson_1, solution[1], solution[0])
         # Birth.
         birth_rate(t_n, ages, out=b_n)
-        _do_births(b_n, solution[0], v_trapezoid)
+        _do_births(v_trapezoid, b_n, solution[0])
     # Return the solution at the final time.
     return solution[0]

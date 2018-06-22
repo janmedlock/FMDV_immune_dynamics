@@ -110,11 +110,14 @@ def find_birth_scaling(parameters,
 # function.
 def find_stable_age_structure(parameters,
                               agemax=_agemax_default,
-                              agestep=_agestep_default):
+                              agestep=_agestep_default,
+                              _birth_scaling=None):
     '''Find the stable age structure.'''
     solver_parameters = monodromy.Parameters(parameters)
-    birth_scaling = _find_birth_scaling(solver_parameters, agemax, agestep)
-    r, v, ages = _find_dominant_eigen(birth_scaling, solver_parameters,
+    if _birth_scaling is None:
+        _birth_scaling = _find_birth_scaling(solver_parameters,
+                                             agemax, agestep)
+    r, v, ages = _find_dominant_eigen(_birth_scaling, solver_parameters,
                                       agemax, agestep)
     assert numpy.isclose(r, 0), 'Nonzero growth rate r={:g}.'.format(r)
     return (v, ages)

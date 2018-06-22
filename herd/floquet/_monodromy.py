@@ -7,22 +7,22 @@ import numpy
 from scipy.sparse._sparsetools import csr_matvecs
 
 
-def _matvecs(A, B, C, n):
+def _matvecs(A, B, C):
     '''Compute the matrix multiplication `C += A @ B`, where
     `A` is a `scipy.sparse.csr_matrix()`,
-    `B` and `C` are `numpy.ndarray()`s,
-    and all 3 matrices are `n` x `n`.'''
+    `B` and `C` are `numpy.ndarray()`s.'''
     # Use the private function
     # `scipy.sparse._sparsetools.csr_matvecs()` so we can specify
     # the output array `C` to avoid the building of a new matrix
     # for the output.
-    csr_matvecs(n, n,  # The shape of A.
-                n,     # The number of columns in B & C.
+    n_row, n_vecs = C.shape
+    n_col, _ = B.shape
+    csr_matvecs(n_row, n_col, n_vecs,
                 A.indptr, A.indices, A.data,
                 B.ravel(), C.ravel())
 
 
-def _do_births(b, U, v_trapezoid):
+def _do_births(v_trapezoid, b, U):
     '''Calculate the birth integral
     B(t) = \int_0^{inf} b(t, a) U(t, a) da
     using the composite trapezoid rule.
@@ -90,10 +90,10 @@ def solve(ages, t, M_crank_nicolson_2, M_crank_nicolson_1,
     # but avoid building a new matrix.
     solution[0][:] = 0
     # solution[0] += M_implicit_euler @ solution[1]
-    _matvecs(M_implicit_euler, solution[1], solution[0], n_ages)
+    _matvecs(M_implicit_euler, solution[1], solution[0])
     # Birth.
     birth_rate(t_n, ages, out=b_n)
-    _do_births(b_n, solution[0], v_trapezoid)
+    _do_births(v_trapezoid, b_n, solution[0])
     ## n = 2, 3, ... ##
     for t_n in t[2 : ]:
         solution.rotate()
@@ -104,11 +104,11 @@ def solve(ages, t, M_crank_nicolson_2, M_crank_nicolson_1,
         # but avoid building a new matrix.
         solution[0][:] = 0
         # solution[0] += M_crank_nicolson_2 @ solution[2]
-        _matvecs(M_crank_nicolson_2, solution[2], solution[0], n_ages)
+        _matvecs(M_crank_nicolson_2, solution[2], solution[0])
         # solution[0] += M_crank_nicolson_1 @ solution[1]
-        _matvecs(M_crank_nicolson_1, solution[1], solution[0], n_ages)
+        _matvecs(M_crank_nicolson_1, solution[1], solution[0])
         # Birth.
         birth_rate(t_n, ages, out=b_n)
-        _do_births(b_n, solution[0], v_trapezoid)
+        _do_births(v_trapezoid, b_n, solution[0])
     # Return the solution at the final time.
     return solution[0]

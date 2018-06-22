@@ -1,11 +1,11 @@
 NAME := _monodromy
-
 EXT += $(shell python3-config --extension-suffix)
+MODULE := $(NAME)$(EXT)
+
 CFLAGS := $(shell python3-config --cflags)
 CFLAGS += -fPIC
-LDFLAGS := $(shell python3-config --ldflags)
 
-MODULE := $(NAME)$(EXT)
+LDFLAGS := $(shell python3-config --ldflags)
 
 
 default: $(MODULE)
