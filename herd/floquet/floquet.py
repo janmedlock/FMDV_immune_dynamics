@@ -26,7 +26,7 @@ def _normalize_to_density(v, ages):
 # to disk with `joblib.Memory()` so that they are only computed once.
 # Set up the cache in a subdirectory of the directory that this source
 # file is in.
-_cachedir = os.path.join(os.path.dirname(__file__), '__cache__')
+_cachedir = os.path.join(os.path.dirname(__file__), '_cache')
 _cache = Memory(_cachedir, verbose=1)
 
 

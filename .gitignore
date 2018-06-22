@@ -13,5 +13,6 @@
 *.synctex.gz
 *.png
 *.pgf
-/herd/floquet/__cache__/
+/herd/floquet/_cache/
+/herd/floquet/_monodromy*.so
 /Erin/
