@@ -8,7 +8,7 @@ import numpy
 cimport numpy
 
 
-cdef extern from 'cblas.h':
+cdef extern from '<cblas.h>':
     cdef void cblas_daxpy(int n, double alpha, double *x, int incx,
                           double *y, int incy) nogil
 
@@ -22,10 +22,10 @@ cdef inline void csr_matvecs(const int[::1] A_indptr,
     `A` is an `n_row` x `n_col` `scipy.sparse.csr_matrix()`,
     `B` is an `n_col` x `n_vecs` `numpy.ndarray()`
     and `C` is an `n_row` x `n_vecs` `numpy.ndarray()`.'''
-    cdef Py_ssize_t n_row, n_vecs
+    cdef ssize_t n_row, n_vecs
     # `C.shape` has a bunch of trailing `0`s.
     n_row, n_vecs = C.shape[: 2]
-    cdef Py_ssize_t i, jj
+    cdef ssize_t i, jj
     for i in range(n_row):
         for jj in range(A_indptr[i], A_indptr[i + 1]):
             # C[i, :] += A_data[jj] * B[A_indices[jj], :].
@@ -62,7 +62,7 @@ cdef inline void _do_births(const double[::1] v_trapezoid,
     # The simple version is
     # `U[0] += (v_trapezoid * b) @ U`
     # but avoid building new vectors.
-    cdef Py_ssize_t n_ages, i
+    cdef ssize_t n_ages, i
     n_ages = U.shape[1]
     for i in range(U.shape[0]):
         # U[0, :] += b[i] * v_trapezoid[i] * U[i, :].
@@ -88,7 +88,7 @@ def solve(const double[::1] ages,
           const double[::1] v_trapezoid,
           birth_rate):
     '''The core of the monodromy solver.'''
-    cdef Py_ssize_t n_ages = ages.size
+    cdef ssize_t n_ages = ages.size
     # Set up solution.
     # `solution` is a length-3 sequence 3 with
     # `solution[0]` storing the solution at the current time step,
