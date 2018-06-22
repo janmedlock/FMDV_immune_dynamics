@@ -10,14 +10,14 @@ cimport numpy
 
 cdef extern from 'cblas.h':
     cdef void cblas_daxpy(int n, double alpha, double *x, int incx,
-                          double *y, int incy)
+                          double *y, int incy) nogil
 
 
 cdef inline void csr_matvecs(const int[::1] A_indptr,
                              const int[::1] A_indices,
                              const double[::1] A_data,
                              const double[:, ::1] B,
-                             double[:, ::1] C):
+                             double[:, ::1] C) nogil:
     '''Compute the matrix multiplication `C += A @ B`, where
     `A` is an `n_row` x `n_col` `scipy.sparse.csr_matrix()`,
     `B` is an `n_col` x `n_vecs` `numpy.ndarray()`
