@@ -42,8 +42,9 @@ cdef inline void _matvecs(A,
                           const double[:, ::1] B,
                           double[:, ::1] C):
     '''Compute the matrix multiplication `C += A @ B`, where
-    `A` is a `scipy.sparse.csr_matrix()`,
-    `B` and `C` are `numpy.ndarray()`s.'''
+    `A` is an `n_row` x `n_col` `scipy.sparse.csr_matrix()`,
+    `B` is an `n_col` x `n_vecs` `numpy.ndarray()`
+    and `C` is an `n_row` x `n_vecs` `numpy.ndarray()`.'''
     # Extract the required Python attributes of `A`, which requires
     # the GIL, and then call the pure-C helper function without the
     # GIL.

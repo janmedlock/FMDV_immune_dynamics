@@ -9,8 +9,9 @@ from scipy.sparse._sparsetools import csr_matvecs
 
 def _matvecs(A, B, C):
     '''Compute the matrix multiplication `C += A @ B`, where
-    `A` is a `scipy.sparse.csr_matrix()`,
-    `B` and `C` are `numpy.ndarray()`s.'''
+    `A` is an `n_row` x `n_col` `scipy.sparse.csr_matrix()`,
+    `B` is an `n_col` x `n_vecs` `numpy.ndarray()`
+    and `C` is an `n_row` x `n_vecs` `numpy.ndarray()`.'''
     # Use the private function
     # `scipy.sparse._sparsetools.csr_matvecs()` so we can specify
     # the output array `C` to avoid the building of a new matrix
