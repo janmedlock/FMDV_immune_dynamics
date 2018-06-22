@@ -28,11 +28,12 @@ cdef inline void csr_matvecs(const int[::1] A_indptr,
     cdef Py_ssize_t i, jj
     for i in range(n_row):
         for jj in range(A_indptr[i], A_indptr[i + 1]):
-            # C[i, :] += A_data[jj] * B[A_indices[jj], :]
+            # C[i, :] += A_data[jj] * B[A_indices[jj], :].
             # `1`s are strides of `B[j, :]` and `C[i, :]`,
             # which are enforced by `double[:, ::1]`
             # in the function arguments.
-            cblas_daxpy(n_vecs, A_data[jj],
+            cblas_daxpy(n_vecs,
+                        A_data[jj],
                         &B[A_indices[jj], 0], 1,
                         &C[i, 0], 1)
 
@@ -43,8 +44,9 @@ cdef inline void _matvecs(A,
     '''Compute the matrix multiplication `C += A @ B`, where
     `A` is a `scipy.sparse.csr_matrix()`,
     `B` and `C` are `numpy.ndarray()`s.'''
-    # Extract the required Python attributes of `A`
-    # and then call the pure-C helper function.
+    # Extract the required Python attributes of `A`, which requires
+    # the GIL, and then call the pure-C helper function without the
+    # GIL.
     csr_matvecs(A.indptr, A.indices, A.data, B, C)
 
 
@@ -59,13 +61,17 @@ cdef inline void _do_births(const double[::1] v_trapezoid,
     # The simple version is
     # `U[0] += (v_trapezoid * b) @ U`
     # but avoid building new vectors.
-    cdef Py_ssize_t i, j
-    cdef double b_v
+    cdef Py_ssize_t n_ages, i
+    n_ages = U.shape[1]
     for i in range(U.shape[0]):
-        # U[0, :] += b[i] * v_trapezoid[i] * U[i, :]
-        b_v = b[i] * v_trapezoid[i]
-        for j in range(U.shape[1]):
-            U[0, j] += b_v * U[i, j]
+        # U[0, :] += b[i] * v_trapezoid[i] * U[i, :].
+        # `1`s are strides of `U[i, :]` and `U[0, :]`,
+        # which is enforced by `double[:, ::1]`
+        # in the function arguments.
+        cblas_daxpy(n_ages,
+                    b[i] * v_trapezoid[i],
+                    &U[i, 0], 1,
+                    &U[0, 0], 1)
 
 
 # Crank–Nicolson is 2nd order because the solution at t_n
