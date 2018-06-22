@@ -6,6 +6,7 @@ CFLAGS := $(shell python3-config --cflags)
 CFLAGS += -fPIC
 
 LDFLAGS := $(shell python3-config --ldflags)
+LDFLAGS += -lblas
 
 
 default: $(MODULE)

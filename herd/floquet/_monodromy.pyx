@@ -8,30 +8,33 @@ import numpy
 cimport numpy
 
 
-cdef inline void csr_matvecs(const int[:] A_indptr,
-                             const int[:] A_indices,
-                             const double[:] A_data,
+cdef extern from 'cblas.h':
+    cdef void cblas_daxpy(int n, double alpha, double *x, int incx,
+                          double *y, int incy)
+
+
+cdef inline void csr_matvecs(const int[::1] A_indptr,
+                             const int[::1] A_indices,
+                             const double[::1] A_data,
                              const double[:, ::1] B,
-                             double[:, ::1] C) nogil:
+                             double[:, ::1] C):
     '''Compute the matrix multiplication `C += A @ B`, where
     `A` is an `n_row` x `n_col` `scipy.sparse.csr_matrix()`,
     `B` is an `n_col` x `n_vecs` `numpy.ndarray()`
     and `C` is an `n_row` x `n_vecs` `numpy.ndarray()`.'''
-    cdef Py_ssize_t n_col, n_row, n_vecs
-    n_row, n_vecs = C.shape[0 : 2]
-    n_col = B.shape[0]
-    cdef Py_ssize_t B_inc, C_inc
-    B_inc = B.strides[1]
-    C_inc = C.strides[1]
-    cdef Py_ssize_t i, jj, j, k
-    cdef double a
+    cdef Py_ssize_t n_row, n_vecs
+    # `C.shape` has a bunch of trailing `0`s.
+    n_row, n_vecs = C.shape[: 2]
+    cdef Py_ssize_t i, jj
     for i in range(n_row):
         for jj in range(A_indptr[i], A_indptr[i + 1]):
             # C[i, :] += A_data[jj] * B[A_indices[jj], :]
-            a = A_data[jj]
-            j = A_indices[jj]
-            for k in range(n_vecs):
-                C[i, k] += a * B[j, k]
+            # `1`s are strides of `B[j, :]` and `C[i, :]`,
+            # which are enforced by `double[:, ::1]`
+            # in the function arguments.
+            cblas_daxpy(n_vecs, A_data[jj],
+                        &B[A_indices[jj], 0], 1,
+                        &C[i, 0], 1)
 
 
 cdef inline void _matvecs(A,
@@ -45,8 +48,8 @@ cdef inline void _matvecs(A,
     csr_matvecs(A.indptr, A.indices, A.data, B, C)
 
 
-cdef inline void _do_births(const double[:] v_trapezoid,
-                            const double[:] b,
+cdef inline void _do_births(const double[::1] v_trapezoid,
+                            const double[::1] b,
                             double[:, ::1] U) nogil:
     '''Calculate the birth integral
     B(t) = \int_0^{inf} b(t, a) U(t, a) da
@@ -70,12 +73,12 @@ cdef inline void _do_births(const double[:] v_trapezoid,
 _order = 2
 
 
-def solve(const double[:] ages,
-          const double[:] t,
+def solve(const double[::1] ages,
+          const double[::1] t,
           M_crank_nicolson_2,
           M_crank_nicolson_1,
           M_implicit_euler,
-          const double[:] v_trapezoid,
+          const double[::1] v_trapezoid,
           birth_rate):
     '''The core of the monodromy solver.'''
     cdef Py_ssize_t n_ages = ages.size
