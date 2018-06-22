@@ -9,8 +9,11 @@ cimport numpy
 
 
 cdef extern from '<cblas.h>':
-    cdef void cblas_daxpy(int n, double alpha, double *x, int incx,
-                          double *y, int incy) nogil
+    # y[:] += alpha * x[:] + y[:].
+    cdef void cblas_daxpy(int n,
+                          double alpha,
+                          double *x, int x_stride,
+                          double *y, int y_stride) nogil
 
 
 cdef inline void csr_matvecs(const int[::1] A_indptr,
@@ -22,16 +25,20 @@ cdef inline void csr_matvecs(const int[::1] A_indptr,
     `A` is an `n_row` x `n_col` `scipy.sparse.csr_matrix()`,
     `B` is an `n_col` x `n_vecs` `numpy.ndarray()`
     and `C` is an `n_row` x `n_vecs` `numpy.ndarray()`.'''
+    # We don't need `n_col` explicitly, because it is handled by the
+    # values in `A_indicies`.
     cdef ssize_t n_row, n_vecs
     # `C.shape` has a bunch of trailing `0`s.
+    # It's specified as 2-d in the function arguments.
     n_row, n_vecs = C.shape[: 2]
     cdef ssize_t i, jj
     for i in range(n_row):
+        # Loop over the non-zero entries in row[i],
+        # A[i, A_indices[jj]] = A_data[jj].
         for jj in range(A_indptr[i], A_indptr[i + 1]):
             # C[i, :] += A_data[jj] * B[A_indices[jj], :].
-            # `1`s are strides of `B[j, :]` and `C[i, :]`,
-            # which are enforced by `double[:, ::1]`
-            # in the function arguments.
+            # The `1` strides of `B[j, :]` and `C[i, :]` are enforced
+            # by `double[:, ::1]` in the function arguments.
             cblas_daxpy(n_vecs,
                         A_data[jj],
                         &B[A_indices[jj], 0], 1,
@@ -58,19 +65,25 @@ cdef inline void _do_births(const double[::1] v_trapezoid,
     B(t) = \int_0^{inf} b(t, a) U(t, a) da
     using the composite trapezoid rule.
     The result is stored in `U[0]`, the first row of `U`,
-    i.e. age 0.'''
+    i.e. age 0.  `v_trapezoid` and `b` have length `n_ages`.
+    `U` has shape `n_ages` x `n_cols`.'''
     # The simple version is
     # `U[0] += (v_trapezoid * b) @ U`
     # but avoid building new vectors.
-    cdef ssize_t n_ages, i
-    n_ages = U.shape[1]
-    for i in range(U.shape[0]):
-        # U[0, :] += b[i] * v_trapezoid[i] * U[i, :].
-        # `1`s are strides of `U[i, :]` and `U[0, :]`,
-        # which is enforced by `double[:, ::1]`
-        # in the function arguments.
-        cblas_daxpy(n_ages,
-                    b[i] * v_trapezoid[i],
+    # Writing this as a loop for `b *= v_trapezoid`
+    # and then `cblas_dgemv()` for `U[0] += b @ U`
+    # doesn't speed things up because that loops twice over `b`.
+    cdef ssize_t n_ages, n_col
+    # `U.shape` has a bunch of trailing `0`s.
+    # It's specified as 2-d in the function arguments.
+    n_ages, n_col = U.shape[: 2]
+    cdef ssize_t i
+    for i in range(n_ages):
+        # U[0, :] += (v_trapezoid[i] * b[i]) * U[i, :].
+        # The `1` strides of `U[i, :]` and `U[0, :]` are enforced by
+        # `double[:, ::1]` in the function arguments.
+        cblas_daxpy(n_col,
+                    v_trapezoid[i] * b[i],
                     &U[i, 0], 1,
                     &U[0, 0], 1)
 

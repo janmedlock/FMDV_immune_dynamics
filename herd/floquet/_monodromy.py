@@ -28,7 +28,8 @@ def _do_births(v_trapezoid, b, U):
     B(t) = \int_0^{inf} b(t, a) U(t, a) da
     using the composite trapezoid rule.
     The result is stored in `U[0]`, the first row of `U`,
-    i.e. age 0.'''
+    i.e. age 0.  `v_trapezoid` and `b` have length `n_ages`.
+    `U` has shape `n_ages` x `n_cols`.'''
     # The simple version is
     # `U[0] = (v_trapezoid * b) @ U`
     # but avoid building new vectors.
