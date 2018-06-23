@@ -1,5 +1,4 @@
-*.pyc
-.auto
+.auto/
 *.aux
 *.bbl
 *.bcf
@@ -13,6 +12,7 @@
 *.synctex.gz
 *.png
 *.pgf
+__pycache__/
 /herd/floquet/_cache/
 /herd/floquet/_monodromy*.so
 /Erin/
