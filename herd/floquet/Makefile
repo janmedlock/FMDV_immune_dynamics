@@ -1,6 +1,9 @@
-NAME := _monodromy
+NAME := monodromy
 EXT += $(shell python3-config --extension-suffix)
 MODULE := $(NAME)$(EXT)
+
+# Suppress NPY_NO_DEPRECATED_API #warning.
+CPPFLAGS := -Wno-cpp
 
 CFLAGS := $(shell python3-config --cflags)
 CFLAGS += -fPIC

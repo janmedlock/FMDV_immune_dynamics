@@ -14,5 +14,5 @@
 *.pgf
 __pycache__/
 /herd/floquet/_cache/
-/herd/floquet/_monodromy*.so
+/herd/floquet/monodromy*.so
 /Erin/
