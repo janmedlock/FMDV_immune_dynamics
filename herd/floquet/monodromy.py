@@ -90,12 +90,14 @@ class _Solution:
         self._front = 0
 
     def __getitem__(self, i):
+        '''Get the solution `i` time steps ago.'''
         j = (i + self._front) % self._array.shape[0]
         return self._array[j]
 
     def update(self):
         '''Move the entries forward one position,
         wrapping the last entry to the front.'''
+        # Decrement `_front` by 1 and wrap around if it's negative.
         self._front = (self._front - 1) % self._array.shape[0]
 
 
@@ -124,6 +126,7 @@ class Solver:
     def _set_initial_condition(self, t_n, solution, birth_rate, temp):
         '''The initial condition for the fundamental solution is the
         identity matrix.'''
+        # Avoid creating a new matrix, like `numpy.eye()` does.
         solution[0][:] = 0
         numpy.fill_diagonal(solution[0], 1)
 
@@ -136,9 +139,9 @@ class Solver:
         v = da * [0.5, 1, 1, ..., 1, 1, 0.5].
         Put `female_probability_at_birth` in there, too, for
         simplicity & efficiency.'''
-        self._v_trapezoid = (agestep
-                             * self.params.female_probability_at_birth
-                             * numpy.ones(self.ages.shape[0]))
+        self._v_trapezoid = numpy.empty(self.ages.shape[0])
+        self._v_trapezoid[:] = (agestep
+                                * self.params.female_probability_at_birth)
         self._v_trapezoid[[0, -1]] /= 2
 
     def _step_births(self, t_n, solution, birth_rate, temp):
@@ -169,6 +172,7 @@ class Solver:
         self._M_implicit_euler = _CSR_Matrix(M)
 
     def _step_implicit_euler(self, t_n, solution, birth_rate, temp):
+        '''Do an implicit Euler step.'''
         # The simple version is
         # `solution[0][:] = M @ solution[1]`
         # but avoid building a new matrix.
@@ -208,6 +212,7 @@ class Solver:
         self._init_implicit_euler(tstep, mortalityRV)
 
     def _step_crank_nicolson(self, t_n, solution, birth_rate, temp):
+        '''Do a Crank–Nicolson step.'''
         # The simple version is
         # `solution[0] = M_2 @ solution[2] + M_1 @ solution[1]`
         # but avoid building a new matrix.
@@ -218,8 +223,8 @@ class Solver:
         self._M_crank_nicolson_1.matvecs(solution[1], solution[0])
         self._step_births(t_n, solution, birth_rate, temp)
 
-    def _solve(self, solution, birth_rate, temp):
-        '''The core of the solver.'''
+    def _iterate(self, solution, birth_rate, temp):
+        '''The core of the solver, iterating over `self._t`.'''
         if self._t.shape[0] == 0: return None
         ## n = 0 ##
         t_n = self._t[0]
@@ -249,4 +254,4 @@ class Solver:
             self.params.birth_seasonal_coefficient_of_variation,
             _scaling=birth_scaling)
         temp = numpy.empty(self.ages.shape[0])
-        return self._solve(solution, birthRV.hazard, temp)
+        return self._iterate(solution, birthRV.hazard, temp)

@@ -37,6 +37,7 @@ from herd import birth, mortality, parameters, utility
 from herd.floquet.period import period
 
 
+# Functions from BLAS.
 cdef extern from '<cblas.h>':
     # y[:] += alpha * x[:] + y[:].
     cdef void cblas_daxpy(const int n,
@@ -47,8 +48,9 @@ cdef extern from '<cblas.h>':
                           const int y_stride) nogil
 
 
-# TODO: Make into functions since we don't need a Python class.
 cdef class _CSR_Matrix:
+    '''`scipy.sparse.csr_matrix()` but with attributes
+    in C for speed.'''
     cdef:
         ssize_t[2] shape
         int[:] indptr
@@ -96,10 +98,6 @@ cdef class Parameters:
     # Don't use `__cinit__()` because these need to be pickled.
     def __init__(Parameters self,
                  object params):
-        # Generally, the values of these parameters should be
-        # floats, so explicitly convert them so the cache doesn't
-        # get duplicated keys for the float and int representation
-        # of the same number, e.g. `float(0)` and `int(0)`.
         # Normalize `params.birth_peak_time_of_year` by making
         # it relative to `params.start_time` and then modulo
         # `period` so that it is in [0, period).
@@ -112,7 +110,12 @@ cdef class Parameters:
             params.female_probability_at_birth)
 
 
-# TODO: Make into functions since we don't need a Python class.
+# The fundamental solution at time t_n is 2 dimensional.
+ctypedef double[:, ::1] _Solution_n
+# For `_Solution()`, add one more dimension for time.
+ctypedef double[:, :, ::1] _Solution_array
+
+
 cdef class _Solution:
     '''A `_Solution()` is a sequence of length `1 + order`, with
     `solution[0]` storing the solution at the current time step,
@@ -129,7 +132,7 @@ cdef class _Solution:
     recycled and ready to be set to the value of the solution at the
     new time step.'''
     cdef:
-        double[:, :, ::1] _array
+        _Solution_array _array
         ssize_t _front
 
     def __cinit__(_Solution self,
@@ -139,17 +142,19 @@ cdef class _Solution:
         # '_front' points to the `0` element in the current iteration.
         self._front = 0
 
-    cdef inline ssize_t _index(_Solution self,
-                               ssize_t i) nogil except -1:
-        return (i + self._front) % self._array.shape[0]
-
-    cdef inline double[:, ::1] get(_Solution self,
-                                   ssize_t i) nogil:
-        return self._array[self._index(i)]
+    cdef inline _Solution_n get(_Solution self,
+                                ssize_t i) nogil:
+        '''Get the solution `i` time steps ago.'''
+        # This is not `__getitem__()` so the GIL can be released.
+        cdef:
+            ssize_t j
+        j = (i + self._front) % self._array.shape[0]
+        return self._array[j]
 
     cdef inline bint update(_Solution self) nogil except False:
         '''Move the entries forward one position,
         wrapping the last entry to the front.'''
+        # Decrement `_front` by 1 and wrap around if it's negative.
         self._front = (self._front - 1) % self._array.shape[0]
         return True
 
@@ -204,8 +209,9 @@ cdef class Solver:
         '''The initial condition for the fundamental solution is the
         identity matrix.'''
         cdef:
-            double[:, :] solution0
+            _Solution_n solution0
             ssize_t i
+        # Avoid creating a new matrix, like `numpy.eye()` does.
         solution0 = solution.get(0)
         solution0[:] = 0
         for i in range(self._ages.shape[0]):
@@ -224,9 +230,10 @@ cdef class Solver:
         Put `female_probability_at_birth` in there, too, for
         simplicity & efficiency.'''
         with gil:
-            self._v_trapezoid = (agestep
-                                 * self.params.female_probability_at_birth
-                                 * numpy.ones(self._ages.shape[0]))
+            # `numpy.empty()` requires the GIL.
+            self._v_trapezoid = numpy.empty(self._ages.shape[0])
+        self._v_trapezoid[:] = (agestep
+                                * self.params.female_probability_at_birth)
         self._v_trapezoid[0] /= 2
         self._v_trapezoid[-1] /= 2
         return True
@@ -241,14 +248,18 @@ cdef class Solver:
         using the composite trapezoid rule,
         where U = `solution[0]`.'''
         cdef:
+            # The memoryview doesn't need the GIL.
             double[:] temp_view
-            double[:, :] solution0
+            _Solution_n solution0
             ssize_t n_ages, n_col, i
         # The simple version is
         # `U[0] += (v_trapezoid * birth_rate) @ U`
         # but avoid building new vectors.
         with gil:
+            # `birth_rate()` is a Python function, so it needs the GIL.
+            # `out` must be a `numpy.ndarray()`.
             birth_rate(t_n, self.ages, out=temp)
+            # Accessing the `numpy.ndarray()` also needs the GIL.
             temp_view = temp
         solution0 = solution.get(0)
         n_ages, n_col = solution0.shape[:2]
@@ -275,6 +286,7 @@ cdef class Solver:
         cdef:
             object M
             double[:] diag
+        # Everything needs the GIL.
         M = sparse.lil_matrix((self._ages.shape[0], self._ages.shape[0]))
         diag1 = 1 / (1 + tstep * mortalityRV.hazard(self.ages))
         M.setdiag(diag1[1 : ], -1)
@@ -288,8 +300,9 @@ cdef class Solver:
                                           object birth_rate,
                                           numpy.ndarray temp) \
                                          nogil except False:
+        '''Do an implicit Euler step.'''
         cdef:
-            double[:, ::1] solution0, solution1
+            _Solution_n solution0, solution1
         # The simple version is
         # `solution[0] = M @ solution[1]`
         # but avoid building a new matrix.
@@ -323,6 +336,7 @@ cdef class Solver:
         cdef:
             object M2, M1
             double[:] diag2, diag1
+        # Everything needs the GIL.
         M2 = sparse.lil_matrix((self._ages.shape[0], self._ages.shape[0]))
         diag2 = ((1 - tstep * mortalityRV.hazard(self.ages))
                  / (1 + tstep * mortalityRV.hazard(self.ages)))
@@ -344,8 +358,9 @@ cdef class Solver:
                                           object birth_rate,
                                           numpy.ndarray temp) \
                                          nogil except False:
+        '''Do a Crank–Nicolson step.'''
         cdef:
-            double[:, ::1] solution0, solution1, solution2
+            _Solution_n solution0, solution1, solution2
         # The simple version is
         # `solution[0] = M_2 @ solution[2] + M_1 @ solution[1]`
         # but avoid building a new matrix.
@@ -360,30 +375,27 @@ cdef class Solver:
         self._step_births(t_n, solution, birth_rate, temp)
         return True
 
-    cdef inline double[:, :] _solve(Solver self,
-                                    _Solution solution,
-                                    object birth_rate,
-                                    numpy.ndarray temp) nogil:
-        '''The core of the solver.'''
+    cdef inline _Solution_n _iterate(Solver self,
+                                     _Solution solution,
+                                     object birth_rate,
+                                     numpy.ndarray temp) nogil:
+        '''The core of the solver, iterating over `self._t`.'''
         cdef:
             ssize_t n
-            double t_n
         if self._t.shape[0] == 0: return None
         ## n = 0 ##
         n = 0
-        t_n = self._t[n]
-        self._set_initial_condition(t_n, solution, birth_rate, temp)
+        self._set_initial_condition(self._t[n], solution, birth_rate, temp)
         if self._t.shape[0] == 1: return solution.get(0)
         ## n = 1 ##
         n = 1
-        t_n = self._t[n]
         solution.update()
-        self._step_implicit_euler(t_n, solution, birth_rate, temp)
+        self._step_implicit_euler(self._t[n], solution, birth_rate, temp)
         ## n = 2, 3, ... ##
+        # Looping over `self._t[2:]` requires the GIL.
         for n in range(2, self._t.shape[0]):
-            t_n = self._t[n]
             solution.update()
-            self._step_crank_nicolson(t_n, solution, birth_rate, temp)
+            self._step_crank_nicolson(self._t[n], solution, birth_rate, temp)
         # Return the solution at the final time.
         return solution.get(0)
 
@@ -405,4 +417,4 @@ cdef class Solver:
             self.params.birth_seasonal_coefficient_of_variation,
             _scaling=birth_scaling)
         temp = numpy.empty(self._ages.shape[0])
-        return numpy.asarray(self._solve(solution, birthRV.hazard, temp))
+        return numpy.asarray(self._iterate(solution, birthRV.hazard, temp))
