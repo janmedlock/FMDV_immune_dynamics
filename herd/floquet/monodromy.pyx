@@ -161,15 +161,15 @@ cdef class _Solution:
 
 cdef class Solver:
     '''Solve the monodromy problem.'''
-    # Crank–Nicolson is 2nd order because the solution at t_n
-    # depends on the solution at t_{n - 1} and t_{n - 2}.
-    _order = <ssize_t> 2
+    # Crank–Nicolson is 1st order because the solution at t_n
+    # depends on the solution at t_{n - 1}.
+    _order = <ssize_t> 1
 
     cdef:
         public numpy.ndarray ages
         Parameters params
         double[:] _ages, _t, _v_trapezoid
-        _CSR_Matrix _M_crank_nicolson_2, _M_crank_nicolson_1, _M_implicit_euler
+        _CSR_Matrix _M_crank_nicolson
 
     def __cinit__(Solver self,
                   Parameters solver_params,
@@ -272,84 +272,36 @@ cdef class Solver:
         return True
 
     @cython.wraparound(True)
-    cdef inline bint _init_implicit_euler(Solver self,
-                                          const double tstep,
-                                          object mortalityRV) except False:
-        '''The implicit Euler method is
-        (u_i^n - u_{i - 1}^{n - 1}) / dt = - d_i * u_i^n.
-        This can be written as
-        u^1 = M @ u^0,
-        with
-        M[i, i - 1] = 1 / (1 + dt * d_i),
-        and, to prevent the last age group from aging out of the population,
-        M[-1, -1] = 1 / (1 + dt * d_{-1}).'''
-        cdef:
-            object M
-            double[:] diag
-        # Everything needs the GIL.
-        M = sparse.lil_matrix((self._ages.shape[0], self._ages.shape[0]))
-        diag1 = 1 / (1 + tstep * mortalityRV.hazard(self.ages))
-        M.setdiag(diag1[1 : ], -1)
-        M[-1, -1] = diag1[-1]
-        self._M_implicit_euler = _CSR_Matrix(M)
-        return True
-
-    cdef inline bint _step_implicit_euler(Solver self,
-                                          const double t_n,
-                                          _Solution solution,
-                                          object birth_rate,
-                                          numpy.ndarray temp) \
-                                         nogil except False:
-        '''Do an implicit Euler step.'''
-        cdef:
-            _Solution_n solution0, solution1
-        # The simple version is
-        # `solution[0] = M @ solution[1]`
-        # but avoid building a new matrix.
-        solution0 = solution.get(0)
-        solution1 = solution.get(1)
-        solution0[:] = 0
-        # solution[0] += M @ solution[1]
-        self._M_implicit_euler.matvecs(solution1, solution0)
-        self._step_births(t_n, solution, birth_rate, temp)
-        return True
-
-    @cython.wraparound(True)
     cdef inline bint _init_crank_nicolson(Solver self,
                                           const double tstep,
                                           object mortalityRV) except False:
         '''The Crank–Nicolson method is
-        (u_i^n - u_{i - 2}^{n - 2}) / 2 / dt
-        = - d_{i - 1} * (u_i^n + u_{i - 2}^{n - 2}) / 2,
-        for i = 2, 3, ...,
-        with implicit Euler for i = 1,
-        (u_1^n - u_0^{n - 1}) / dt = - d_1 * u_1^n.
+        (u_i^n - u_{i - 1}^{n - 1}) / dt
+        = - d_{i - 1 / 2} * (u_i^n + u_{i - 1}^{n - 1}) / 2,
+        for i = 1, 2, ....
         This can be written as
-        u^n = M_2 @ u^{n - 2} + M_1 @ u^{n - 1},
+        u^n = M @ u^{n - 1},
         with
-        M_2[i, i - 2] = (1 - dt * d_{i - 1}) / (1 + dt * d_{i - 1});
-        to prevent the last age group from aging out of the population,
-        M_2[-1, -1] = (1 - dt * d_{-1}) / (1 + dt * d_{-1});
-        M_1[1, 0] = 1 / (1 + dt * d_i);
-        and, to prevent the next to last age group from aging out,
-        M_1[-1, -2] = 1 / (1 + dt * d_{-1}).'''
+        M[i, i - 1] = (1 - k_i) / (1 + k_i),
+        k_i = d_{i - 1 / 2} * dt / 2,
+        and, to prevent the last age group from aging out of the population,
+        M[-1, -1] = (1 - k_{-1}) / (1 + k_{-1}),
+        k_{-1} = d_{-1} * dt / 2.'''
         cdef:
-            object M2, M1
-            double[:] diag2, diag1
+            object M
+            numpy.ndarray ages_mid, k
+            double k_last
         # Everything needs the GIL.
-        M2 = sparse.lil_matrix((self._ages.shape[0], self._ages.shape[0]))
-        diag2 = ((1 - tstep * mortalityRV.hazard(self.ages))
-                 / (1 + tstep * mortalityRV.hazard(self.ages)))
-        M2.setdiag(diag2[1 : -1], -2)
-        M2[-1, -1] = diag2[-1]
-        self._M_crank_nicolson_2 = _CSR_Matrix(M2)
-        M1 = sparse.lil_matrix((self._ages.shape[0], self._ages.shape[0]))
-        diag1 = 1 / (1 + tstep * mortalityRV.hazard(self.ages))
-        M1[1, 0] = diag1[1]
-        M1[-1, -2] = diag1[-1]
-        self._M_crank_nicolson_1 = _CSR_Matrix(M1)
-        # The first time step, n = 1, uses implicit Euler:
-        self._init_implicit_euler(tstep, mortalityRV)
+        M = sparse.lil_matrix((self._ages.shape[0], self._ages.shape[0]))
+        # Midpoints between adjacent ages.
+        ages_mid = (self.ages[1:] + self.ages[:-1]) / 2
+        k = mortalityRV.hazard(ages_mid) * tstep / 2
+        # Set the first subdiagonal.
+        M.setdiag((1 - k) / (1 + k), -1)
+        # Keep the last age group from ageing out.
+        k_last = mortalityRV.hazard(self.ages[-1]) * tstep / 2
+        M[-1, -1] = (1 - k_last) / (1 + k_last)
+        self._M_crank_nicolson = _CSR_Matrix(M)
         return True
 
     cdef inline bint _step_crank_nicolson(Solver self,
@@ -360,18 +312,15 @@ cdef class Solver:
                                          nogil except False:
         '''Do a Crank–Nicolson step.'''
         cdef:
-            _Solution_n solution0, solution1, solution2
+            _Solution_n solution0, solution1
         # The simple version is
-        # `solution[0] = M_2 @ solution[2] + M_1 @ solution[1]`
+        # `solution[0] = M @ solution[1]`
         # but avoid building a new matrix.
         solution0 = solution.get(0)
         solution1 = solution.get(1)
-        solution2 = solution.get(2)
         solution0[:] = 0
-        # solution[0] += M_2 @ solution[2]
-        self._M_crank_nicolson_2.matvecs(solution2, solution0)
-        # solution[0] += M_1 @ solution[1]
-        self._M_crank_nicolson_1.matvecs(solution1, solution0)
+        # solution[0] += M @ solution[1]
+        self._M_crank_nicolson.matvecs(solution1, solution0)
         self._step_births(t_n, solution, birth_rate, temp)
         return True
 
@@ -387,13 +336,9 @@ cdef class Solver:
         n = 0
         self._set_initial_condition(self._t[n], solution, birth_rate, temp)
         if self._t.shape[0] == 1: return solution.get(0)
-        ## n = 1 ##
-        n = 1
-        solution.update()
-        self._step_implicit_euler(self._t[n], solution, birth_rate, temp)
-        ## n = 2, 3, ... ##
-        # Looping over `self._t[2:]` requires the GIL.
-        for n in range(2, self._t.shape[0]):
+        ## n = 1, 2, ... ##
+        # Looping over `self._t[1:]` requires the GIL.
+        for n in range(1, self._t.shape[0]):
             solution.update()
             self._step_crank_nicolson(self._t[n], solution, birth_rate, temp)
         # Return the solution at the final time.
