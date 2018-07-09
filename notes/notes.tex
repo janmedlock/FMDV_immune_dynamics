@@ -314,7 +314,7 @@ $a_0$ at $t_0$, is
 % \end{align}
 
 On birth, the newborn is female with probability
-$p_{\text{female birth}} = 0.5$ or otherwise male.
+$p_{\text{female}} = 0.5$ or otherwise male.
 
 
 \section{Waning}
@@ -367,7 +367,7 @@ $\mu_{\text{chronic recovery}}$.
 A sample of size $N$ from the stable age structure was used to
 initialize the population.  (See \autoref{stable_age_structure}.)  The
 sex of each buffalo was randomly selected with probability
-$p_{\text{female birth}}$ of being female.
+$p_{\text{female}}$ of being female.
 % The simulations were started at $t = 0$ with $2$ initial infections
 % in randomly chosen members of the population.
 
@@ -389,7 +389,7 @@ The mean rate of female births $B(t)$ follows the Lotka equation
   \label{lotka}
   \begin{split}
     B(t) =&
-    p_{\text{female birth}} \bigg[
+    p_{\text{female}} \bigg[
       \int_0^t B(t - a)
       S_{\text{mortality}}(a)
       h_{\text{birth}}(t, a) \md a
@@ -409,7 +409,7 @@ where $n_0(a)$ is the density of age $a$ females at time $t = 0$
 % integral in \eqref{lotka}---becomes negligible, so
 % \begin{equation}
 %   B(t) =
-%   p_{\text{female birth}} \int_0^t B(t - a)
+%   p_{\text{female}} \int_0^t B(t - a)
 %   \hat{h}_{\text{birth}}(t, a) \md a
 % \end{equation}
 % for large $t$,
@@ -423,7 +423,7 @@ where $n_0(a)$ is the density of age $a$ females at time $t = 0$
 % \begin{equation}
 %   B(t)
 %   =
-%   p_{\text{female birth}} \int_0^{t}
+%   p_{\text{female}} \int_0^{t}
 %   B(u)
 %   \hat{h}_{\text{birth}}(t, t - u)
 %   \md u.
@@ -450,7 +450,7 @@ Foerster partial differential equation (PDE)
     &= - h_{\text{death}}(a) n(t, a),
     \\
     n(t, 0) &=
-    p_{\text{female birth}}
+    p_{\text{female}}
     \int_0^{+\infty} h_{\text{birth}}(t, a) n(t, a) \md a,
     \\
     n(0, a) &= n_0(a).
@@ -473,7 +473,7 @@ $n(t, a)$, but with an initial condition localized to age $a'$:
     &= - h_{\text{death}}(a) \Phi(t, a, a'),
     \\
     \Phi(t, 0, a') &=
-    p_{\text{female birth}}
+    p_{\text{female}}
     \int_0^{+\infty} h_{\text{birth}}(t, a) \Phi(t, a, a') \md a,
     \\
     \Phi(0, a, a') &= \delta(a - a'),
@@ -528,7 +528,7 @@ For $i = 0$, the birth integral is given by the composite trapezoid rule,
 \begin{equation}
   \label{birth_step}
   \Phi_{0, j}^k =
-  \frac{p_{\text{female birth}} \Delta t}{2}
+  \frac{p_{\text{female}} \Delta t}{2}
   \sum_{i = 1}^{I - 1}
   \left[h_{\text{birth}}(t^k, a_i) \Phi_{i, j}^k +
     h_{\text{birth}}(t^k, a_{i - 1}) \Phi_{i - 1, j}^k\right].
@@ -565,9 +565,9 @@ with the vector $\vec{v} = [v_i]$ where
 \begin{equation}
   v_i =
   \begin{cases}
-    \frac{p_{\text{female birth}} \Delta t}{2}
+    \frac{p_{\text{female}} \Delta t}{2}
     & \text{if $i = 0$ or $i = I - 1$}, \\
-    p_{\text{female birth}} \Delta t
+    p_{\text{female}} \Delta t
     & \text{otherwise};
   \end{cases}
 \end{equation}
@@ -621,6 +621,278 @@ and doubling the maximum age to $a_{\text{max}} = 70$
 gave a relative error of $5 \times 10^{-6}$.
 These computations were done in Python 3.6.6 \citep{python} using the
 NumPy \citep{numpy} and SciPy \citep{scipy} libraries.
+
+
+\section{Initial conditions scratch}
+
+The PDEs are
+\begin{equation}
+  \begin{split}
+    \left(
+      \frac{\partial}{\partial t}
+      + \frac{\partial}{\partial a}
+      + h_{\text{death}}(a)
+      + h_{\text{waning}}(a)
+    \right) M(t, a)
+    &= 0,
+    \\
+    \left(
+      \frac{\partial}{\partial t}
+      + \frac{\partial}{\partial a}
+      + h_{\text{death}}(a)
+      + h_{\text{infection}}(t)
+    \right) S(t, a)
+    &= h_{\text{waning}}(a) M(t, a),
+    \\
+    \left(
+      \frac{\partial}{\partial t}
+      + \frac{\partial}{\partial a}
+      + \frac{\partial}{\partial r}
+      + h_{\text{death}}(a)
+      + h_{\text{progression}}(r)
+    \right) E(t, a, r)
+    &= 0,
+    \\
+    \left(
+      \frac{\partial}{\partial t}
+      + \frac{\partial}{\partial a}
+      + \frac{\partial}{\partial r}
+      + h_{\text{death}}(a)
+      + h_{\text{recovery}}(r)
+    \right) I(t, a, r)
+    &= 0,
+    \\
+    \left(
+      \frac{\partial}{\partial t}
+      + \frac{\partial}{\partial a}
+      + h_{\text{death}}(a)
+      + h_{\text{chronic recovery}}
+    \right) C(t, a)
+    &= p_{\text{chronic}} H_{\text{recovery}}(t, a),
+    \\
+    \left(
+      \frac{\partial}{\partial t}
+      + \frac{\partial}{\partial a}
+      + h_{\text{death}}(a)
+    \right) R(t, a)
+    &= (1 - p_{\text{chronic}}) H_{\text{recovery}}(t, a)
+    \\ & \quad {}
+    + h_{\text{chronic recovery}} C(t, a),
+  \end{split}
+\end{equation}
+with boundary conditions
+\begin{equation}
+  \begin{split}
+    M(t, 0)
+    &= p_{\text{female}}
+    \int_0^{+\infty} h_{\text{birth}}(t, a) N(t, a) \md a,
+    \\
+    S(t, 0) &= 0,
+    \\
+    E(t, a, 0)
+    &= h_{\text{infection}}(t) S(t, a),
+    \\
+    I(t, a, 0)
+    &= \int_0^{+\infty}h_{\text{progression}}(r) E(t, a, r) \md r,
+    \\
+    C(t, 0) &= 0,
+    \\
+    R(t, 0) &= 0,
+  \end{split}
+\end{equation}
+and
+\begin{equation}
+  \begin{split}
+    h_{\text{infection}}(t)
+    &= \int_0^{+\infty} \beta_{\text{infectious}} I(t, a)
+    + \beta_{\text{carrier}} C(t, a) \md a,
+    \\
+    H_{\text{recovery}}(t, a)
+    &= \int_0^{+\infty}h_{\text{recovery}}(r) I(t, a, r) \md r,
+    \\
+    N(t, a) &= M(t, a) + S(t, a) + C(t, a) + R(t, a)
+    \\ & \quad {}
+    + \int_0^{+\infty} E(t, a, r) + I(t, a, r) \md r.
+  \end{split}
+\end{equation}
+
+These equations imply that the total population satisfies the
+McKendrick--von Foerster equation
+\begin{equation}
+  \begin{split}
+    \left(
+      \frac{\partial}{\partial t}
+      + \frac{\partial}{\partial a}
+      + h_{\text{death}}(a)
+    \right)
+    N(t, a)
+    &= 0,
+    \\
+    N(t, 0)
+    &= p_{\text{female}}
+    \int_0^{+\infty} h_{\text{birth}}(t, a) N(t, a) \md a.
+  \end{split}
+\end{equation}
+
+
+\subsection{Equilibrium}
+
+The PDEs are
+\begin{equation}
+  \begin{split}
+    \frac{\md M}{\md a}
+    &= - \big(h_{\text{death}}(a)
+    + h_{\text{waning}}(a)\big) M,
+    \\
+    \frac{\md S}{\md a}
+    &= h_{\text{waning}}(a) M
+    \\ & \quad {}
+    - \big(h_{\text{death}}(a)
+      + h_{\text{infection}}
+    \big) S,
+    \\
+    \left(
+      \frac{\partial}{\partial a}
+      + \frac{\partial}{\partial r}
+    \right) E
+    &=- \big(h_{\text{death}}(a)
+    + h_{\text{progression}}(r)\big) E,
+    \\
+    \left(
+      \frac{\partial}{\partial a}
+      + \frac{\partial}{\partial r}
+    \right) I
+    &= - \big(h_{\text{death}}(a)
+    + h_{\text{recovery}}(r)\big) I,
+    \\
+    \frac{\md C}{\md a}
+    &= p_{\text{chronic}} H_{\text{recovery}}(a)
+    \\ & \quad {}
+    - \big(h_{\text{death}}(a)
+    + h_{\text{chronic recovery}}\big) C,
+    \\
+    \frac{\md R}{\md a}
+    &= (1 - p_{\text{chronic}}) H_{\text{recovery}}(a)
+    \\ & \quad {}
+    + h_{\text{chronic recovery}} C(a)
+    \\ & \quad {}
+    - h_{\text{death}}(a) R,
+  \end{split}
+\end{equation}
+with boundary conditions
+\begin{equation}
+  \begin{split}
+    M(0)
+    &= p_{\text{female}}
+    \int_0^{+\infty} h_{\text{birth}}(a) N(a) \md a
+    = N(0),
+    \\
+    S(0) &= 0,
+    \\
+    E(a, 0)
+    &= h_{\text{infection}} S(a),
+    \\
+    I(a, 0)
+    &= \int_0^{+\infty}h_{\text{progression}}(r) E(a, r) \md r,
+    \\
+    C(0) &= 0,
+    \\
+    R(0) &= 0,
+  \end{split}
+\end{equation}
+and
+\begin{equation}
+  \begin{split}
+    h_{\text{infection}}
+    &= \int_0^{+\infty} \beta_{\text{infectious}} I(a)
+    + \beta_{\text{carrier}} C(a) \md a,
+    \\
+    H_{\text{recovery}}(a)
+    &= \int_0^{+\infty}h_{\text{recovery}}(r) I(a, r) \md r,
+    \\
+    N(a) &= M(a) + S(a) + C(a) + R(a)
+    + \int_0^{+\infty} E(a, r) + I(a, r) \md r.
+  \end{split}
+\end{equation}
+
+Write the big Crank--Nicolson scheme for this problem.  Describe each
+variable as a block in a block diagonal matrix.  Do I need to
+use double time steps because of the nonlinearity $I S$?
+Solve with root finder and $E, I, R > 0$.
+
+\begin{equation}
+  \begin{split}
+    \frac{M^k - M^{k - 1}}{\Delta a}
+    &= - \big(h_{\text{death}}(a^{k - 1/2})
+    + h_{\text{waning}}(a^{k - 1 / 2})\big)
+    \frac{M^k + M^{k - 1}}{2},
+    \\
+    \frac{S^k - S^{k - 1}}{\Delta a}
+    &= h_{\text{waning}}(a^{k - 1 / 2})
+    \frac{M^k + M^{k - 1}}{2}
+    \\ & \quad {}
+    - \big(h_{\text{death}}(a^{k - 1 / 2})
+    + h_{\text{infection}}\big)
+    \frac{S^k + S^{k - 1}}{2},
+    \\
+    \frac{E_j^k - E_{j - 1}^{k - 1}}{\Delta a}
+    &=- \big(h_{\text{death}}(a^{k - 1 / 2})
+    + h_{\text{progression}}(r_{j - 1 / 2})\big)
+    \frac{E_j^k + E_{j - 1}^{k - 1}}{2},
+    \\
+    \frac{I_j^k - I_{j - 1}^{k - 1}}{\Delta a}
+    &= - \big(h_{\text{death}}(a^{k - 1 / 2})
+    + h_{\text{recovery}}(r_{j - 1 / 2})\big)
+    \frac{I_j^k + I_{j - 1}^{k - 1}}{2},
+    \\
+    \frac{C^k - C^{k - 1}}{\Delta a}
+    &= p_{\text{chronic}} H_{\text{recovery}}(a^{k - 1 / 2})
+    \\ & \quad {}
+    - \big(h_{\text{death}}(a^{k - 1 / 2})
+    + h_{\text{chronic recovery}}\big) \frac{C^k + C^{k - 1}}{2},
+    \\
+    \frac{R^k - R^{k - 1}}{\Delta a}
+    &= (1 - p_{\text{chronic}}) H_{\text{recovery}}(a^{k - 1 / 2})
+    \\ & \quad {}
+    + h_{\text{chronic recovery}} \frac{C^k + C^{k - 1}}{2}
+    \\ & \quad {}
+    - h_{\text{death}}(a^{k - 1 / 2}) \frac{R^k + R^{k - 1}}{2},
+  \end{split}
+\end{equation}
+with boundary conditions
+\begin{equation}
+  \begin{split}
+    M^0
+    &= p_{\text{female}}
+    \sum_k v^k h_{\text{birth}}(a^k) N^k
+    = N^0,
+    \\
+    S^0 &= 0,
+    \\
+    E_0^k &= h_{\text{infection}} S^k,
+    \\
+    I_0^k &= \sum_j v_j h_{\text{progression}}(r_j) E(a^k, r_j)
+    \\
+    C^0 &= 0,
+    \\
+    R^0 &= 0,
+  \end{split}
+\end{equation}
+and
+\begin{equation}
+  \begin{split}
+    h_{\text{infection}}
+    &= \int_0^{+\infty} \beta_{\text{infectious}} I(a)
+    + \beta_{\text{carrier}} C(a) \md a,
+    \\
+    H_{\text{recovery}}(a)
+    &= \int_0^{+\infty}h_{\text{recovery}}(r) I(a, r) \md r,
+    \\
+    N(a) &= M(a) + S(a) + C(a) + R(a)
+    + \int_0^{+\infty} E(a, r) + I(a, r) \md r.
+  \end{split}
+\end{equation}
+
 
 
 \bibliography{journal_abbreviations,math_epi}
