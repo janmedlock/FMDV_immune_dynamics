@@ -13,7 +13,6 @@
 *.png
 *.pgf
 __pycache__/
-/herd/_cache/
-/herd/floquet/_cache/
+_cache/
 /herd/floquet/monodromy*.so
 /Erin/
