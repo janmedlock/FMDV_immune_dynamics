@@ -5,8 +5,6 @@ import time
 
 import herd
 
-export_data = False
-
 def make_plot(data, show = True):
     from matplotlib import pyplot
     import seaborn
@@ -29,18 +27,20 @@ def make_plot(data, show = True):
 
 
 def make_datasheet(data):
-	(t, x) = map(numpy.array, zip(*data))
-	data2 = pandas.DataFrame(data=x, index=t, columns=['M', 'S', 'I', 'R'])
-	data2.to_csv("run_one_data.csv", sep=',')
+    (t, x) = map(numpy.array, zip(*data))
+    data2 = pandas.DataFrame(x, index=t,
+                             columns=['M', 'S', 'E', 'I', 'C', 'R'])
+    data2.to_csv('run_one_data.csv', sep=',')
 
 
 if __name__ == '__main__':
     numpy.random.seed(1)
 
-    p = herd.Parameters(SAT = 1)
+    p = herd.Parameters(SAT=1)
 
     tmax = 1
     debug = False
+    export_data = False
 
     t0 = time.time()
     data = herd.Herd(p, debug = debug).run(tmax)
@@ -50,4 +50,3 @@ if __name__ == '__main__':
     make_plot(data)
     if export_data:
         make_datasheet(data)
-

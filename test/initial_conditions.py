@@ -48,7 +48,8 @@ axes[2].set_ylabel('number in\nsample')
 
 axes[-1].set_xlabel('age')
 
-fig.tight_layout(rect=(0, 0.05, 1, 1))
-fig.legend(loc='lower center', ncol=len(status_prob))
+fig.tight_layout(rect=(0, 0.1, 1, 1))
+fig.legend(loc='lower center',
+           ncol=int(numpy.ceil(status_prob.shape[1] / 2)))
 
 pyplot.show()

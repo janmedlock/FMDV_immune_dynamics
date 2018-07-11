@@ -16,30 +16,33 @@ class gen:
         h = _initial_conditions.find_hazard_infection()
         self.hazard_infection = h['Pooled']
 
+    def _M_prob(self, age):
+        '''Probability of being in M, i.e. having maternal immunity.'''
+        return self.maternal_immunity_waningRV.sf(age)
+
+    def _S_prob(self, age):
+        '''Probability of being in S, i.e. susceptible.'''
+        return _initial_conditions.S_prob(age, self.hazard_infection,
+                                          self.maternal_immunity_waningRV)
+
     def _proportion(self, age):
-        status = {}
-        total = 0
-        # M.
-        p = self.maternal_immunity_waningRV.sf(age)
-        status['maternal immunity'] = p
-        total += p
-        # S.
-        p = _initial_conditions.S_prob(age, self.hazard_infection,
-                                       self.maternal_immunity_waningRV)
-        status['susceptible'] = p
-        total += p
-        # R.
-        # Hopefully this is just fixing roundoff errors.
-        total = numpy.clip(total, 0, 1)
-        status['recovered'] = 1 - total
-        # FIX ME: Figure out who is E/I/C.
-        # Force the same order as in the `status` dict.
-        cols = status.keys()
         if numpy.isscalar(age):
-            return pandas.Series(status, index=cols)
+            status = pandas.Series()
         else:
             rows = pandas.Index(age, name='age')
-            return pandas.DataFrame(status, index=rows, columns=cols)
+            status = pandas.DataFrame(index=rows)
+        status['maternal immunity'] = self._M_prob(age)
+        status['susceptible'] = self._S_prob(age)
+        status['exposed'] = 0
+        status['infectious'] = 0
+        status['chronic'] = 0
+        # The remaining proportion are recovered.
+        # Sum over the statuses.
+        not_R = status.sum(axis=(status.ndim - 1))
+        status['recovered'] = 1 - not_R
+        assert numpy.all(status >= 0)
+        assert numpy.all(status <= 1)
+        return status
 
     def rvs(self, size=1):
         # Pick `size` random ages.

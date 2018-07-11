@@ -129,23 +129,17 @@ def _minus_loglikelihood(hazard_infection, params, data):
         # representative age for an age interval.
         age = age_interval.mid
         M_logprob = maternal_immunity_waningRV.logsf(age)
-        # Hopefully, this is just fixing roundoff errors...
-        M_logprob = numpy.clip(M_logprob, -numpy.inf, 0)
         # Avoid 0 * -inf.
         l += ((data_age['M'] * M_logprob)
               if (data_age['M'] > 0)
               else 0)
         S_logprob_ = S_logprob(age, hazard_infection, params)
-        # Hopefully, this is just fixing roundoff errors...
-        S_logprob_ = numpy.clip(S_logprob_, -numpy.inf, 0)
         # Avoid 0 * -inf.
         l += ((data_age['S'] * S_logprob_)
               if (data_age['S'] > 0)
               else 0)
         # R_not_prob = 1 - R_prob.
         R_not_prob = numpy.exp(M_logprob) + numpy.exp(S_logprob_)
-        # Hopefully, this is just fixing roundoff errors...
-        R_not_prob = numpy.clip(R_not_prob, 0, 1)
         # R_logprob = numpy.log(1 - R_not_prob)
         # but more accurate for R_not_prob near 0,
         # and handle log(0).
