@@ -3,6 +3,7 @@ import pandas
 from scipy.stats import multinomial
 
 from herd import age_structure, maternal_immunity_waning
+from herd import _initial_conditions
 
 
 class gen:
@@ -12,19 +13,33 @@ class gen:
         self.age_structureRV = age_structure.gen(self.parameters)
         self.maternal_immunity_waningRV = maternal_immunity_waning.gen(
             self.parameters)
+        h = _initial_conditions.find_hazard_infection()
+        self.hazard_infection = h['Pooled']
 
     def _proportion(self, age):
         status = {}
-        # Who has maternal antibodies.
-        status['maternal immunity'] = self.maternal_immunity_waningRV.sf(age)
-        # Figure out who is S and who is C/R.
-        status['rest'] = 1 - status['maternal immunity']
-        # Figure out who is E/I.
+        total = 0
+        # M.
+        p = self.maternal_immunity_waningRV.sf(age)
+        status['maternal immunity'] = p
+        total += p
+        # S.
+        p = _initial_conditions.S_prob(age, self.hazard_infection,
+                                       self.maternal_immunity_waningRV)
+        status['susceptible'] = p
+        total += p
+        # R.
+        # Hopefully this is just fixing roundoff errors.
+        total = numpy.clip(total, 0, 1)
+        status['recovered'] = 1 - total
+        # FIX ME: Figure out who is E/I/C.
+        # Force the same order as in the `status` dict.
+        cols = status.keys()
         if numpy.isscalar(age):
-            return pandas.Series(status)
+            return pandas.Series(status, index=cols)
         else:
-            idx = pandas.Index(age, name='age')
-            return pandas.DataFrame(status, index=idx)
+            rows = pandas.Index(age, name='age')
+            return pandas.DataFrame(status, index=rows, columns=cols)
 
     def rvs(self, size=1):
         # Pick `size` random ages.
