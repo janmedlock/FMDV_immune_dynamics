@@ -12,6 +12,9 @@ class Parameters:
             # self.birth_seasonal_coefficient_of_variation = 0.505  # 1st year.
             # self.birth_seasonal_coefficient_of_variation = 0.984  # 2nd year.
             self.birth_seasonal_coefficient_of_variation = 0.613  # Both years.
+            # During in M before moving to S.
+            self.maternal_immunity_duration_mean = 0.37
+            self.maternal_immunity_duration_shape = 1.19
             # Proportion leaving I that become C.
             self.probability_chronic = 0
             # Duration in C before leaving to R.
@@ -25,24 +28,18 @@ class Parameters:
                 self.recovery_shape = 3.9
                 self.recovery_mean = 6.0 / 365
                 self.transmission_rate = 7.1 * 365
-                self.maternal_immunity_duration_mean = 0.35
-                self.maternal_immunity_duration_shape = 1.02
             elif SAT == 2:
                 self.progression_shape = 1.7
                 self.progression_mean = 1.9 / 365
                 self.recovery_shape = 3.4
                 self.recovery_mean = 4.8 / 365
                 self.transmission_rate = 5.6 * 365
-                self.maternal_immunity_duration_mean = 0.40
-                self.maternal_immunity_duration_shape = 1.44
             elif SAT == 3:
                 self.progression_shape = 1.6
                 self.progression_mean = 3.3 / 365
                 self.recovery_shape = 3.8
                 self.recovery_mean = 4.6 / 365
                 self.transmission_rate = 3.6 * 365
-                self.maternal_immunity_duration_mean = 0.37
-                self.maternal_immunity_duration_shape = 1.27
             else:
                 raise ValueError("Unknown SAT '{}'!".format(SAT))
 
