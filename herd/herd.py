@@ -1,7 +1,7 @@
 from collections import defaultdict
 from itertools import count
 
-from numpy import inf
+import numpy
 from pandas import DataFrame
 
 from herd.buffalo import Buffalo
@@ -16,7 +16,7 @@ statuses = ('maternal immunity', 'susceptible', 'exposed',
 class Herd(list):
     '''A herd of buffaloes, the things that can happen to them, and code to
     simulate.'''
-    def __init__(self, params=None, debug=False, run_number=None):
+    def __init__(self, params=None, debug=False, run_number=None, seed=None):
         if params is None:
             self.params = Parameters()
         else:
@@ -25,13 +25,17 @@ class Herd(list):
         self.debug = debug
         self.run_number = run_number
 
+        if (seed is None) and (run_number is not None):
+            seed = run_number
+        if seed is not None:
+            numpy.random.seed(seed)
+
         self.rvs = RandomVariables(self.params)
 
         self.time = self.params.start_time
         self.immune_status_lists = defaultdict(list)
         self.identifiers = count(0)
 
-        # Loop until we get a non-zero number of initial infections.
         status_ages = self.rvs.initial_conditions.rvs(
             self.params.population_size)
 
@@ -95,22 +99,23 @@ class Herd(list):
     def stop(self):
         return (self.number_infected == 0)
 
-    def step(self, tmax=inf):
+    def step(self, tmax=numpy.inf):
         self.update_infection_times()
         event = self.get_next_event()
 
-        if (event is not None) and (event.time < tmax):
+        if ((event is not None)
+            and (event.time < self.params.start_time + tmax)):
             if self.debug:
                 print(event)
             self.time = event.time
             event()
         else:
-            self.time = tmax
+            self.time = self.params.start_time + tmax
 
     def run(self, tmax):
         result = [self.get_stats()]
 
-        while (self.time < tmax):
+        while (self.time < self.params.start_time + tmax):
             self.step(tmax)
             result.append(self.get_stats())
             if self.stop():
@@ -118,11 +123,12 @@ class Herd(list):
 
         if self.run_number is not None:
             t_last = result[-1][0]
-            print('Simulation #{} ended at {:g} days.'.format(self.run_number,
-                                                              365 * t_last))
+            print('Simulation #{} ended after {:g} days.'.format(
+                self.run_number, 365 * (t_last - self.params.start_time)))
 
         result = DataFrame(dict(result), index=statuses).T
         result.index.name = 'time (y)'
+        result.columns.name = 'status'
         return result
 
     def find_extinction_time(self, tmax):

@@ -1,20 +1,16 @@
 #!/usr/bin/python3
 
-import functools
-import multiprocessing
-
 import numpy
 import pandas
 
 import herd
 import run_many
 
-export_data = False
 
 def _build_ix(SAT, rep, t):
     return pandas.MultiIndex.from_arrays(([SAT] * len(t), [rep] * len(t), t),
                                          names = ('SAT', 'rep', 'time'))
-    
+
 
 def run_SATs(nruns = 100, tmax = numpy.inf, debug = False):
     cols = ['M', 'S', 'E', 'I', 'C', 'R', 'Total']
@@ -28,7 +24,7 @@ def run_SATs(nruns = 100, tmax = numpy.inf, debug = False):
         data = run_many.run_many(nruns, p, tmax, debug = debug)
         t1 = time.time()
         print('Run time: {} seconds.'.format(t1 - t0))
-    
+
         (T, X) = zip(*(zip(*d) for d in data))
         for (i, tx) in enumerate(zip(T, X)):
             t, x = map(numpy.array, tx)
@@ -52,11 +48,9 @@ def run_SATs(nruns = 100, tmax = numpy.inf, debug = False):
 
 
 if __name__ == '__main__':
-    import time
-
-    numpy.random.seed(1)
+    export_data = False
 
     data = run_SATs()
 
     if export_data:
-        data.to_csv("run_SATs.csv", sep=',')
+        data.to_csv('run_SATs.csv')

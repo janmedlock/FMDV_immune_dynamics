@@ -5,6 +5,7 @@ import time
 
 import herd
 
+
 def make_plot(data, show = True):
     from matplotlib import pyplot
     import seaborn
@@ -13,11 +14,10 @@ def make_plot(data, show = True):
     (fig, ax) = pyplot.subplots()
     seaborn.set_palette(seaborn.color_palette('deep', 6))
 
-    (t, x) = map(numpy.array, zip(*data))
-    for (j, l) in enumerate(('M', 'S', 'E', 'I', 'C', 'R')):
-        ax.step(365 * t, x[:, j], where = 'post', label = l)
+    for (k, x) in data.items():
+        ax.step(365 * x.index, x, where = 'post', label = k)
 
-    ax.set_xlabel('time (days)')
+    ax.set_xlabel(data.index.name)
     ax.set_ylabel('number')
 
     ax.legend()
@@ -26,27 +26,20 @@ def make_plot(data, show = True):
         pyplot.show()
 
 
-def make_datasheet(data):
-    (t, x) = map(numpy.array, zip(*data))
-    data2 = pandas.DataFrame(x, index=t,
-                             columns=['M', 'S', 'E', 'I', 'C', 'R'])
-    data2.to_csv('run_one_data.csv', sep=',')
-
-
 if __name__ == '__main__':
-    numpy.random.seed(1)
-
-    p = herd.Parameters(SAT=1)
-
+    SAT = 1
     tmax = 1
+    seed = 1
     debug = False
     export_data = False
 
+    p = herd.Parameters(SAT=SAT)
+
     t0 = time.time()
-    data = herd.Herd(p, debug=debug).run(tmax)
+    data = herd.Herd(p, seed=seed, debug=debug).run(tmax)
     t1 = time.time()
     print('Run time: {} seconds.'.format(t1 - t0))
 
     make_plot(data)
     if export_data:
-        make_datasheet(data)
+        data.to_csv('run_one.csv')
