@@ -45,23 +45,36 @@ class gen:
         return status
 
     def rvs(self, size=1):
-        # Pick `size` random ages.
-        ages = self.age_structureRV.rvs(size=size)
-        # Determine the status for each age.
-        proportions = self._proportion(ages)
-        status = proportions.columns
-        status_ages = {k: [] for k in status}
-        # `scipy.stats.multinomial.rvs()` can't handle multiple `p`s,
-        # so we need to loop.
-        for (age, row) in proportions.iterrows():
-            # Randomly pick a status.
-            rv = multinomial.rvs(1, row)
-            # `rv` is an array with `1` in the position
-            # picked and `0`s in the remaining positions.
-            # Convert that to the name.
-            s = status[rv == 1][0]
-            # Add this `age` to the status list.
-            status_ages[s].append(age)
+        # Loop until we get a satisfactory sample.
+        while True:
+            # Pick `size` random ages.
+            ages = self.age_structureRV.rvs(size=size)
+            # Determine the status for each age.
+            proportions = self._proportion(ages)
+            status = proportions.columns
+            status_ages = {k: [] for k in status}
+            # `scipy.stats.multinomial.rvs()` can't handle multiple `p`s,
+            # so we need to loop.
+            for (age, row) in proportions.iterrows():
+                # Randomly pick a status.
+                rv = multinomial.rvs(1, row)
+                # `rv` is an array with `1` in the position
+                # picked and `0`s in the remaining positions.
+                # Convert that to the name.
+                s = status[rv == 1][0]
+                # Add this `age` to the status list.
+                status_ages[s].append(age)
+            if (len(status_ages['susceptible'])
+                < self.parameters.initial_infectious):
+                # We don't have enough susceptibles.  Loop again.
+                continue
+            else:
+                # Convert a few susceptibles to infectious.
+                for _ in range(self.parameters.initial_infectious):
+                    age = status_ages['susceptible'].pop()
+                    status_ages['infectious'].append(age)
+                # This is a satisfactory sample, so end loop.
+                break
         return status_ages
 
     def pdf(self, age):

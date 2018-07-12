@@ -43,7 +43,7 @@ if __name__ == '__main__':
     export_data = False
 
     t0 = time.time()
-    data = herd.Herd(p, debug = debug).run(tmax)
+    data = herd.Herd(p, debug=debug).run(tmax)
     t1 = time.time()
     print('Run time: {} seconds.'.format(t1 - t0))
 

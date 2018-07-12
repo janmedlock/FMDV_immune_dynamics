@@ -6,6 +6,7 @@ class Parameters:
         'Initialize with default values.'
         if _set_defaults:
             self.population_size = 1000
+            self.initial_infectious = 2
             self.start_time = 0.5  # 01 June, 6 months after birth peak.
             self.female_probability_at_birth = 0.5
             self.birth_peak_time_of_year = 0  # 01 January.
@@ -23,23 +24,23 @@ class Parameters:
             self.immunity_waning_duration = inf
             self.chronic_transmission_rate = 0
             if SAT == 1:
-                self.progression_shape = 1.2
-                self.progression_mean = 1.0 / 365
-                self.recovery_shape = 3.9
-                self.recovery_mean = 6.0 / 365
-                self.transmission_rate = 7.1 * 365
+                self.progression_shape = 0.8
+                self.progression_mean = 0.8 / 365
+                self.recovery_shape = 3.6
+                self.recovery_mean = 5.8 / 365
+                self.transmission_rate = 2.7 * 365
             elif SAT == 2:
-                self.progression_shape = 1.7
-                self.progression_mean = 1.9 / 365
-                self.recovery_shape = 3.4
-                self.recovery_mean = 4.8 / 365
-                self.transmission_rate = 5.6 * 365
+                self.progression_shape = 1.2
+                self.progression_mean = 1.5 / 365
+                self.recovery_shape = 3.1
+                self.recovery_mean = 4.7 / 365
+                self.transmission_rate = 1.6 * 365
             elif SAT == 3:
-                self.progression_shape = 1.6
-                self.progression_mean = 3.3 / 365
-                self.recovery_shape = 3.8
-                self.recovery_mean = 4.6 / 365
-                self.transmission_rate = 3.6 * 365
+                self.progression_shape = 1.3
+                self.progression_mean = 2.8 / 365
+                self.recovery_shape = 3.5
+                self.recovery_mean = 4.4 / 365
+                self.transmission_rate = 1.2 * 365
             else:
                 raise ValueError("Unknown SAT '{}'!".format(SAT))
 

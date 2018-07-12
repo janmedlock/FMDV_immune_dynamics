@@ -2,10 +2,15 @@ from collections import defaultdict
 from itertools import count
 
 from numpy import inf
+from pandas import DataFrame
 
 from herd.buffalo import Buffalo
 from herd.parameters import Parameters
 from herd.random_variables import RandomVariables
+
+
+statuses = ('maternal immunity', 'susceptible', 'exposed',
+            'infectious', 'chronic', 'recovered')
 
 
 class Herd(list):
@@ -27,13 +32,8 @@ class Herd(list):
         self.identifiers = count(0)
 
         # Loop until we get a non-zero number of initial infections.
-        while True:
-            status_ages = self.rvs.initial_conditions.rvs(
-                self.params.population_size)
-            if (len(status_ages['exposed'])
-                + len(status_ages['infectious'])
-                + len(status_ages['chronic'])) > 0:
-                break
+        status_ages = self.rvs.initial_conditions.rvs(
+            self.params.population_size)
 
         for (immune_status, ages) in status_ages.items():
             for age in ages:
@@ -74,10 +74,9 @@ class Herd(list):
 
     def get_stats(self):
         stats = [len(self.immune_status_lists[status])
-                 for status in ('maternal immunity', 'susceptible', 'exposed',
-                                'infectious', 'chronic', 'recovered')]
+                 for status in statuses]
 
-        return [self.time, stats]
+        return (self.time, stats)
 
     def get_next_event(self):
         if len(self) > 0:
@@ -122,6 +121,8 @@ class Herd(list):
             print('Simulation #{} ended at {:g} days.'.format(self.run_number,
                                                               365 * t_last))
 
+        result = DataFrame(dict(result), index=statuses).T
+        result.index.name = 'time (y)'
         return result
 
     def find_extinction_time(self, tmax):
