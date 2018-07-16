@@ -2,7 +2,6 @@
 
 import time
 
-import numpy
 import pandas
 
 import herd
@@ -22,7 +21,7 @@ def run_SATs(nruns, tmax, *args, **kwargs):
 
 
 if __name__ == '__main__':
-    nruns = 100
+    nruns = 1000
     tmax = 1
 
     data = run_SATs(nruns, tmax)
