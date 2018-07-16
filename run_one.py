@@ -1,15 +1,21 @@
 #!/usr/bin/python3
 
-import numpy
 import time
 
+import numpy
+
 import herd
+
+
+def run_one(run_number, parameters, tmax, *args, **kwargs):
+    '''Run one simulation.'''
+    h = herd.Herd(parameters, run_number=run_number, *args, **kwargs)
+    return h.run(tmax)
 
 
 def make_plot(data, show = True):
     from matplotlib import pyplot
     import seaborn
-    from scipy import integrate
 
     (fig, ax) = pyplot.subplots()
     seaborn.set_palette(seaborn.color_palette('deep', 6))
@@ -28,18 +34,14 @@ def make_plot(data, show = True):
 
 if __name__ == '__main__':
     SAT = 1
-    tmax = 1
     seed = 1
+    tmax = 1
     debug = False
-    export_data = False
 
     p = herd.Parameters(SAT=SAT)
-
     t0 = time.time()
-    data = herd.Herd(p, seed=seed, debug=debug).run(tmax)
+    data = run_one(seed, p, tmax, debug=debug)
     t1 = time.time()
     print('Run time: {} seconds.'.format(t1 - t0))
-
     make_plot(data)
-    if export_data:
-        data.to_pickle('run_one.pkl')
+    # data.to_pickle('run_one.pkl')

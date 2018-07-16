@@ -3,16 +3,10 @@
 import time
 
 from joblib import delayed, Parallel
-import numpy
 import pandas
 
 import herd
-
-
-def run_one(run_number, parameters, tmax, *args, **kwargs):
-    '''Run one simulation, among multiple running in parallel.'''
-    h = herd.Herd(parameters, run_number=run_number, *args, **kwargs)
-    return h.run(tmax)
+from run_one import run_one
 
 
 def run_many(nruns, parameters, tmax, *args, **kwargs):
@@ -69,18 +63,13 @@ def make_plots(data, show=True):
 
 if __name__ == '__main__':
     SAT = 1
-    nruns = 4
+    nruns = 100
     tmax = 1
-    debug = False
-    export_data = True
 
     p = herd.Parameters(SAT=SAT)
-
     t0 = time.time()
-    data = run_many(nruns, p, tmax, debug=debug)
+    data = run_many(nruns, p, tmax)
     t1 = time.time()
     print('Run time: {} seconds.'.format(t1 - t0))
-
     make_plots(data)
-    if export_data:
-        data.to_pickle('run_many.pkl')
+    # data.to_pickle('run_many.pkl')
