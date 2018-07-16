@@ -13,8 +13,8 @@ from scipy.optimize import minimize
 from herd import maternal_immunity_waning, parameters
 
 
-_filename = 'Hedger_1972_survey_data.xlsx'
-# It is in the same directory as this source file.
+_filename = 'data/Hedger_1972_survey_data.xlsx'
+# It is relative to directory as this source file.
 _filename = os.path.join(os.path.dirname(__file__), _filename)
 
 
