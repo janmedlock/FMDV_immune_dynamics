@@ -42,4 +42,4 @@ if __name__ == '__main__':
 
     make_plot(data)
     if export_data:
-        data.to_csv('run_one.csv')
+        data.to_pickle('run_one.pkl')

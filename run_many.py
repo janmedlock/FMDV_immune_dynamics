@@ -1,6 +1,5 @@
 #!/usr/bin/python3
 
-import functools
 import time
 
 from joblib import delayed, Parallel
@@ -70,8 +69,8 @@ def make_plots(data, show=True):
 
 if __name__ == '__main__':
     SAT = 1
-    tmax = 1
     nruns = 4
+    tmax = 1
     debug = False
     export_data = True
 
@@ -84,4 +83,4 @@ if __name__ == '__main__':
 
     make_plots(data)
     if export_data:
-        data.to_csv('run_many.csv')
+        data.to_pickle('run_many.pkl')
