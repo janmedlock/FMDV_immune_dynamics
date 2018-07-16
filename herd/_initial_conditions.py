@@ -87,7 +87,7 @@ def _S_logprob(a, hazard_infection, params):
     maternal_immunity_waningRV = maternal_immunity_waning.gen(params)
     val, _ = quadrature(_S_logprob_integrand, 0, a,
                         args=(hazard_infection, maternal_immunity_waningRV),
-                        maxiter=1000)
+                        maxiter=10000)
     # Handle log(0).
     if val == 0:
         return - numpy.inf
