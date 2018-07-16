@@ -15,7 +15,8 @@ def run_start_times(nruns, SAT, tmax, *args, **kwargs):
     for start_time in numpy.arange(0, 1, 1 / 12):
         p = herd.Parameters(SAT=SAT)
         p.start_time = start_time
-        print('Running SAT {}, start time {}.'.format(SAT, start_time))
+        print('Running SAT {}, start time {:g} / 12.'.format(SAT,
+                                                             start_time * 12))
         t0 = time.time()
         results[start_time] = run_many(nruns, p, tmax, *args, **kwargs)
         t1 = time.time()
