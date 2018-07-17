@@ -1,6 +1,12 @@
+* Chronic model.
+** How to handle initial conditions?
+*** There is data in the spreadsheet.
+
 * Sampling from Simon's posteriors.
 
 * Convolution plot to Erin.
+
+* Work on figures 3 & 4.
 
 * Generate good initial condtions by solving PDEs.
 
