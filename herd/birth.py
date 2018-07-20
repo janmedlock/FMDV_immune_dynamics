@@ -68,7 +68,7 @@ class gen(RV):
             out = numpy.empty(time.shape)
         # Without building intermediate arrays, compute
         # `tau = fracpart(time - self.peak_time_of_year)`.
-        out[:] = time - self.peak_time_of_year
+        out[()] = time - self.peak_time_of_year
         fracpart(out, out=out)
         # Now out = fracpart(time - self.peak_time_of_year)
         #         = tau.
