@@ -108,7 +108,7 @@ if __name__ == '__main__':
     # For births, to remove age dependence.
     a0 = 4  # years.
 
-    hazard = pandas.read_csv('recruitment_rate.csv')
+    hazard = pandas.read_csv('susceptible_recruitment.csv')
     # hazard = {}
     # hazard['Birth'] = pandas.Series(
     #     birth.hazard(timestamp2year(t_birth), a0),
@@ -123,7 +123,7 @@ if __name__ == '__main__':
     #                                    timestamp2year(t_susceptible[0]), a0),
     #     index=t_susceptible)
     # hazard = pandas.DataFrame(hazard)
-    # hazard.to_csv('recruitment_rate.csv')
+    # hazard.to_csv('susceptible_recruitment.csv')
 
     fig, ax = pyplot.subplots(1, 3)
 
@@ -158,8 +158,8 @@ if __name__ == '__main__':
     seaborn.despine(fig, top=True, right=True)
 
     fig.tight_layout()
-    fig.savefig('recruitment_rate.png', dpi=300)
-    fig.savefig('recruitment_rate.pdf')
-    fig.savefig('recruitment_rate.pgf')
+    fig.savefig('susceptible_recruitment.png', dpi=300)
+    fig.savefig('susceptible_recruitment.pdf')
+    fig.savefig('susceptible_recruitment.pgf')
 
     pyplot.show()
