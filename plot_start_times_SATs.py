@@ -11,8 +11,10 @@ t_name = 'time (y)'
 
 def get_data():
     data = pandas.read_pickle('run_start_times_SATs.pkl')
-    # data_ds = downsample(data)
-    data_ds = pandas.read_pickle('run_start_times_SATs_downsampled.pkl')
+    try:
+        data_ds = pandas.read_pickle('run_start_times_SATs_downsampled.pkl')
+    except FileNotFound:
+        data_ds = downsample(data)
     return (data, data_ds)
 
 
@@ -52,14 +54,19 @@ def plot_persistence_time(data):
     not_t_names = [n for n in data.index.names if n != t_name]
     persistence_time = data.groupby(level=not_t_names).apply(
         get_persistence_time)
-    persistence_time = persistence_time.reset_index(name='persistence time')
+    persistence_time *= 365
+    persistence_time = persistence_time.reset_index(
+        name='persistence time (days)')
     # seaborn.factorplot(data=persistence_time,
-    #                    x='start_time', y='persistence time', col='SAT',
+    #                    x='start_time', y='persistence time (days)', col='SAT',
     #                    kind='box', sharey=False)
     pyplot.figure()
     seaborn.violinplot(data=persistence_time,
-                       x='SAT', y='persistence time',
+                       x='SAT', y='persistence time (days)',
                        cut=0, linewidth=1)
+    pyplot.xlabel('')
+    locs, labels = pyplot.xticks()
+    pyplot.xticks(locs, ['SAT {}'.format(i.get_text()) for i in labels])
     pyplot.tight_layout()
 
 
@@ -83,6 +90,8 @@ def plot_infected(data):
     #                       sharey='row')
     g = seaborn.FacetGrid(data=infected, col='SAT')
     g.map(plot_infected_facet, 'infected', alpha=0.3)
+    g.set_axis_labels('time (days)', 'number infected')
+    g.set_titles('{col_var} {col_name}')
     pyplot.tight_layout()
 
 
@@ -98,16 +107,20 @@ def plot_time_to_peak(data):
     not_t_names = [n for n in data.index.names if n != t_name]
     time_to_peak = data.groupby(level=not_t_names).apply(
         get_time_to_peak)
+    time_to_peak *= 365
     time_to_peak = time_to_peak.reset_index(level=['SAT', 'start_time'],
-                                            name='time to peak')
+                                            name='time to peak (days)')
     # seaborn.factorplot(data=time_to_peak,
-    #                    x='start_time', y='time to peak', col='SAT',
+    #                    x='start_time', y='time to peak (days)', col='SAT',
     #                    sharey=False,
     #                    kind='violin', cut=0, linewidth=1)
     pyplot.figure()
     seaborn.violinplot(data=time_to_peak,
-                       x='SAT', y='time to peak',
+                       x='SAT', y='time to peak (days)',
                        cut=0, linewidth=1)
+    pyplot.xlabel('')
+    locs, labels = pyplot.xticks()
+    pyplot.xticks(locs, ['SAT {}'.format(i.get_text()) for i in labels])
     pyplot.tight_layout()
 
 
@@ -132,6 +145,9 @@ def plot_total_infected(data):
     seaborn.violinplot(data=total_infected,
                        x='SAT', y='total infected',
                        cut=0, linewidth=1)
+    pyplot.xlabel('')
+    locs, labels = pyplot.xticks()
+    pyplot.xticks(locs, ['SAT {}'.format(i.get_text()) for i in labels])
     pyplot.tight_layout()
 
 

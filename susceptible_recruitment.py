@@ -40,6 +40,7 @@ class SusceptibleRecruitment(herd.rv.RV):
     '''The mixture of birth and maternal-immunity waning.'''
     def __init__(self, parameters, *args, **kwargs):
         self._birth = Birth(parameters)
+        # self._birth = herd.birth.gen(parameters)
         self._maternal_immunity_waning = herd.maternal_immunity_waning.gen(
             parameters)
 
@@ -119,6 +120,7 @@ if __name__ == '__main__':
     # 2 years of dates, points every day.
     start = pandas.Timestamp(year=2001, month=7, day=1)
     end = start + pandas.DateOffset(years=2) - pandas.DateOffset(days=1)
+    # end = start + pandas.DateOffset(years=5) - pandas.DateOffset(days=1)
     freq = 'D'
     t_susceptible = pandas.date_range(start, end, freq=freq)
 
