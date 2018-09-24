@@ -22,13 +22,11 @@ def run_one(run_number, parameters, sample, tmax, *args, **kwargs):
 def run_samples(SAT, tmax, *args, **kwargs):
     '''Run many simulations in parallel.'''
     parameters = herd.Parameters(SAT=SAT)
-    # Combine SAT and `None`.
-    s = pandas.concat((samples[SAT], samples[None]), axis=1)
     print('Running SAT {}.'.format(SAT))
     t0 = time.time()
     results = Parallel(n_jobs=-1)(
-        delayed(run_one)(i, parameters, sample, tmax, *args, **kwargs)
-        for i, sample in s.iterrows())
+        delayed(run_one)(i, parameters, s, tmax, *args, **kwargs)
+        for i, s in samples[SAT].iterrows())
     t1 = time.time()
     print('Run time: {} seconds.'.format(t1 - t0))
     return pandas.concat(results, keys=range(len(samples)), names=['sample'])
