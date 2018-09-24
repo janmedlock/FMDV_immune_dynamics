@@ -1,5 +1,6 @@
 #!/usr/bin/python3
 
+import numpy
 import pandas
 
 import herd
@@ -15,7 +16,7 @@ def run_start_times_SATs(nruns, tmax, *args, **kwargs):
 
 if __name__ == '__main__':
     nruns = 10000
-    tmax = 1
+    tmax = numpy.inf
 
     data = run_start_times_SATs(nruns, tmax)
     data.to_pickle('run_start_times_SATs.pkl')

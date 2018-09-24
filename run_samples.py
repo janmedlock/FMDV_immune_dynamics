@@ -4,6 +4,7 @@ import copy
 import time
 
 from joblib import delayed, Parallel
+import numpy
 import pandas
 
 import herd
@@ -40,7 +41,7 @@ def run_SATs(tmax, *args, **kwargs):
 
 
 if __name__ == '__main__':
-    tmax = 1
+    tmax = numpy.inf
 
     data = run_SATs(tmax)
     data.to_pickle('run_samples.pkl')
