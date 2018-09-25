@@ -14,14 +14,31 @@ def _get_persistence_time(x):
     return t.max() - t.min()
 
 
+def _load_persistence_times():
+    results = pandas.read_pickle('run_samples.pkl')
+    groups = results.groupby(['SAT', 'sample'])
+    pt = groups.apply(_get_persistence_time)
+    pt.name = 'persistence_time'
+    # Move 'SAT' from row MultiIndex to columns.
+    pt = pt.reset_index('SAT').pivot(columns='SAT')
+    pt = pt.reorder_levels([1, 0], axis='columns')
+    # Put parameter values and persistence time together.
+    df = pandas.concat([samples, pt], axis='columns')
+    df.columns.set_names('value', level=1, inplace=True)
+    return df
+
+
 def load_persistence_times():
-    df = pandas.read_pickle('run_samples.pkl')
-    groups = df.groupby(['SAT', 'sample'])
-    persistence_times = groups.apply(_get_persistence_time)
-    return persistence_times
+    try:
+        df = pandas.read_pickle('plot_samples.pkl')
+    except FileNotFoundError:
+        df = _load_persistence_times()
+        df.to_pickle('plot_samples.pkl')
+    return df
 
 
-def _get_labels(base, rank):
+def _get_labels(name, rank):
+    base = name.replace('_', ' ')
     if not rank:
         label = base
         label_resid = 'Residual ' + base.lower()
@@ -31,19 +48,22 @@ def _get_labels(base, rank):
     return (label, label_resid)
 
 
-def plot_parameters(persistence_times, rank=True, marker='.', s=1, alpha=0.6):
-    SATs = persistence_times.index.get_level_values('SAT').unique()
-    (ylabel, ylabel_resid) = _get_labels('Persistence time', rank)
+def plot_parameters(df, rank=True, marker='.', s=1, alpha=0.6):
+    outcome = 'persistence_time'
+    SATs = df.columns.get_level_values('SAT').unique()
+    params = df.columns.get_level_values('value').unique().drop(outcome)
+    (ylabel, ylabel_resid) = _get_labels(outcome, rank)
     for SAT in SATs:
-        X = samples[SAT]
-        y = persistence_times[SAT]
+        X = df.loc[:, (SAT, params)]
+        y = df.loc[:, (SAT, outcome)]
         if rank:
             X = (X.rank() - 1) / (len(X) - 1)
             y = (y.rank() - 1) / (len(y) - 1)
         fig, axes = pyplot.subplots(X.shape[1], 2)
         for (i, (col, x)) in enumerate(X.items()):
+            _, param = col
             color = 'C{}'.format(i)
-            (xlabel, xlabel_resid) = _get_labels(col.replace('_', ' '), rank)
+            (xlabel, xlabel_resid) = _get_labels(param, rank)
             axes[i, 0].scatter(x, y,
                                color=color, marker=marker, s=s, alpha=alpha)
             Z = X.drop(columns=col)
@@ -67,26 +87,34 @@ def plot_parameters(persistence_times, rank=True, marker='.', s=1, alpha=0.6):
                          rect=[w, 0, 1 - w, 0.98])
 
 
-def plot_tornados(persistence_times, errorbars=False):
-    n_samples = len(persistence_times)
-    SATs = persistence_times.index.get_level_values('SAT').unique()
-    colors = None
+def plot_tornados(df, errorbars=False):
+    outcome = 'persistence_time'
+    SATs = df.columns.get_level_values('SAT').unique()
+    params = df.columns.get_level_values('value').unique().drop(outcome)
+    n_samples = len(df)
+    n_params = len(params)
+    y = range(n_params)
+    colors = None  # Set the first time through.
     with seaborn.axes_style('whitegrid'):
         fig, axes = pyplot.subplots(1, len(SATs), sharex='row')
         for (SAT, ax) in zip(SATs, axes):
-            n_params = samples[SAT].shape[-1]
-            rho = stats.prcc(samples[SAT], persistence_times[SAT])
-            CI = stats.prcc_CI(rho, n_samples)
-            xerr = numpy.row_stack((rho - CI['lower'], CI['upper'] - rho))
-            ix = numpy.argsort(numpy.abs(rho))
-            labels = samples[SAT].columns[ix]
+            p = df.loc[:, (SAT, params)]
+            o = df.loc[:, (SAT, outcome)]
+            rho = stats.prcc(p, o)
+            ix = rho.abs().sort_values().index
+            x = rho[ix]
+            labels = ix.get_level_values('value')
             # Colors are defined by the order in the first SAT.
             if colors is None:
                 colors = dict(zip(reversed(labels),
                                   seaborn.color_palette('tab10', n_params)))
             c = [colors[l] for l in labels]
             if errorbars:
-                kwds = dict(xerr=xerr[:, ix],
+                rho_CI = stats.prcc_CI(rho, n_samples)
+                rho_err = pandas.DataFrame({'lower': rho - rho_CI['lower'],
+                                            'upper': rho_CI['upper'] - rho}).T
+                xerr = rho_err[ix].values
+                kwds = dict(xerr=xerr,
                             error_kw=dict(ecolor='black',
                                           elinewidth=1.5,
                                           capthick=1.5,
@@ -94,16 +122,13 @@ def plot_tornados(persistence_times, errorbars=False):
                                           alpha=0.6))
             else:
                 kwds = dict()
-            patches = ax.barh(range(n_params), rho[ix],
-                              height=1, left=0,
-                              align='center',
-                              color=c,
-                              edgecolor=c,
-                              **kwds)
+            ax.barh(y, x, height=1, left=0,
+                    align='center', color=c, edgecolor=c,
+                    **kwds)
             ax.xaxis.set_major_formatter(ticker.StrMethodFormatter('{x:g}'))
             # ax.xaxis.set_minor_locator(ticker.AutoMinorLocator(n=2))
             ax.tick_params(axis='y', pad=35)
-            ax.set_yticks(range(n_params))
+            ax.set_yticks(y)
             ax.set_ylim(- 0.5, n_params - 0.5)
             ylabels = [l.replace('_', '\n') for l in labels]
             ax.set_yticklabels(ylabels, horizontalalignment='center')
@@ -115,7 +140,7 @@ def plot_tornados(persistence_times, errorbars=False):
 
 
 if __name__ == '__main__':
-    persistence_times = load_persistence_times()
-    plot_parameters(persistence_times)
-    plot_tornados(persistence_times)
+    df = load_persistence_times()
+    # plot_parameters(df)
+    plot_tornados(df)
     pyplot.show()

@@ -56,11 +56,12 @@ def prcc(X, y):
 def pcc_CI(rho, N, alpha=0.05):
     p = 1
     z = numpy.arctanh(rho)
-    z_CI = pandas.DataFrame(index=rho.index,
-                            columns=('lower', 'upper'))
     z_crit = scipy.stats.norm.ppf((alpha / 2, 1 - alpha / 2))
-    z_CI[:] = z.values[:, None] + z_crit / numpy.sqrt(N - p - 3)
-    return numpy.tanh(z_CI)
+    z_CI = pandas.DataFrame(z[:, None] + z_crit / numpy.sqrt(N - p - 3),
+                            index=rho.index,
+                            columns=('lower', 'upper'))
+    rho_CI = numpy.tanh(z_CI)
+    return rho_CI
 
 
 def prcc_CI(rho, N, alpha=0.05):
