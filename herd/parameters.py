@@ -24,22 +24,22 @@ class Parameters:
             self.immunity_waning_duration = inf
             self.chronic_transmission_rate = 0
             if SAT == 1:
-                self.progression_shape = 0.8
-                self.progression_mean = 0.8 / 365
-                self.recovery_shape = 3.6
-                self.recovery_mean = 5.8 / 365
-                self.transmission_rate = 2.7 * 365
-            elif SAT == 2:
                 self.progression_shape = 1.2
-                self.progression_mean = 1.5 / 365
-                self.recovery_shape = 3.1
-                self.recovery_mean = 4.7 / 365
+                self.progression_mean = 0.5 / 365
+                self.recovery_shape = 11.8
+                self.recovery_mean = 5.7 / 365
+                self.transmission_rate = 2.8 * 365
+            elif SAT == 2:
+                self.progression_shape = 1.6
+                self.progression_mean = 1.3 / 365
+                self.recovery_shape = 8.7
+                self.recovery_mean = 4.6 / 365
                 self.transmission_rate = 1.6 * 365
             elif SAT == 3:
-                self.progression_shape = 1.3
+                self.progression_shape = 1.6
                 self.progression_mean = 2.8 / 365
-                self.recovery_shape = 3.5
-                self.recovery_mean = 4.4 / 365
+                self.recovery_shape = 11.8
+                self.recovery_mean = 4.2 / 365
                 self.transmission_rate = 1.2 * 365
             else:
                 raise ValueError("Unknown SAT '{}'!".format(SAT))
