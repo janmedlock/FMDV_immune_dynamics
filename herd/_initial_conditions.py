@@ -1,4 +1,3 @@
-#!/usr/bin/python3
 '''Estimate the infection hazard from the Hedger 1972 data.'''
 
 import os.path
@@ -46,7 +45,7 @@ def _load_data():
     data = pandas.read_excel(_filename,
                              sheet_name='reclassified_no carriers',
                              usecols=[1, 2, 3, 5, 6, 7, 9, 10, 11, 12],
-                             skip_footer=18)
+                             skipfooter=18)
     # Each rows is for an age interval.
     # Breaks are where one intervals ends and the next starts.
     data.index = pandas.IntervalIndex.from_breaks([0, 1, 2, 3, 4, 7, 11],
