@@ -233,12 +233,3 @@ def plot(hazard_infection, CI=0.5, show=True):
     pyplot.legend(title='SAT')
     if show:
         pyplot.show()
-
-
-if __name__ == '__main__':
-    hazard_infection = find_hazard_infection()
-    if len(hazard_infection) > 1:
-        AIC = find_AIC(hazard_infection)
-        print('Separate AIC = {:g}'.format(AIC.sum() - AIC['Pooled']))
-        print('Pooled   AIC = {:g}'.format(AIC['Pooled']))
-    plot(hazard_infection)
