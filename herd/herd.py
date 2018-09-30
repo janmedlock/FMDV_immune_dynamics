@@ -16,7 +16,8 @@ statuses = ('maternal immunity', 'susceptible', 'exposed',
 class Herd(list):
     '''A herd of buffaloes, the things that can happen to them, and code to
     simulate.'''
-    def __init__(self, params=None, debug=False, run_number=None, seed=None):
+    def __init__(self, params=None, debug=False, run_number=None, seed=None,
+                 logging_prefix=''):
         if params is None:
             self.params = Parameters()
         else:
@@ -29,6 +30,8 @@ class Herd(list):
             seed = run_number
         if seed is not None:
             numpy.random.seed(seed)
+
+        self.logging_prefix = logging_prefix
 
         self.rvs = RandomVariables(self.params)
 
@@ -123,8 +126,9 @@ class Herd(list):
 
         if self.run_number is not None:
             t_last = result[-1][0]
-            print('Simulation #{} ended after {:g} days.'.format(
-                self.run_number, 365 * (t_last - self.params.start_time)))
+            print('{}Simulation #{} ended after {:g} days.'.format(
+                self.logging_prefix, self.run_number,
+                365 * (t_last - self.params.start_time)))
 
         result = DataFrame(dict(result), index=statuses).T
         result.index.name = 'time (y)'

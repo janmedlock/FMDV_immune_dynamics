@@ -1,5 +1,6 @@
 #!/usr/bin/python3
 
+import os.path
 import time
 
 import numpy
@@ -9,16 +10,20 @@ import herd
 from run_many import run_many
 
 
-def run_start_times(nruns, SAT, tmax, *args, **kwargs):
+def run_start_times(nruns, SAT, tmax, logging_prefix='', *args, **kwargs):
     results = {}
     # Every month.
     for start_time in numpy.arange(0, 1, 1 / 12):
         p = herd.Parameters(SAT=SAT)
         p.start_time = start_time
-        print('Running SAT {}, start time {:g} / 12.'.format(SAT,
-                                                             start_time * 12))
+        logging_prefix_ = (logging_prefix
+                           + 'Start time {:g} / 12'.format(start_time * 12))
+        print('Running {}.'.format(logging_prefix_))
+        logging_prefix_ += ', '
         t0 = time.time()
-        results[start_time] = run_many(nruns, p, tmax, *args, **kwargs)
+        results[start_time] = run_many(nruns, p, tmax,
+                                       logging_prefix=logging_prefix_,
+                                       *args, **kwargs)
         t1 = time.time()
         print('Run time: {} seconds.'.format(t1 - t0))
     return pandas.concat(results, names=['start_time'])
@@ -30,4 +35,7 @@ if __name__ == '__main__':
     tmax = 1
 
     data = run_start_times(nruns, SAT, tmax)
-    data.to_pickle('run_start_times.pkl')
+
+    _filebase, _ = os.path.splitext(__file__)
+    _picklefile = _filebase + '.pkl'
+    data.to_pickle(_picklefile)

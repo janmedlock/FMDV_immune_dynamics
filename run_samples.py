@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 
 import copy
+import os.path
 import time
 
 from joblib import delayed, Parallel
@@ -36,7 +37,9 @@ def run_samples(SAT, tmax, *args, **kwargs):
 def run_SATs(tmax, *args, **kwargs):
     results = {}
     for SAT in (1, 2, 3):
-        results[SAT] = run_samples(SAT, tmax, *args, **kwargs)
+        results[SAT] = run_samples(SAT, tmax,
+                                   logging_prefix='SAT {}, '.format(SAT),
+                                   *args, **kwargs)
     return pandas.concat(results, names=['SAT'])
 
 
@@ -44,4 +47,7 @@ if __name__ == '__main__':
     tmax = numpy.inf
 
     data = run_SATs(tmax)
-    data.to_pickle('run_samples.pkl')
+
+    _filebase, _ = os.path.splitext(__file__)
+    _picklefile = _filebase + '.pkl'
+    data.to_pickle(_picklefile)

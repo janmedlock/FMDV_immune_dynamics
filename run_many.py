@@ -1,5 +1,6 @@
 #!/usr/bin/python3
 
+import os.path
 import time
 
 from joblib import delayed, Parallel
@@ -71,5 +72,9 @@ if __name__ == '__main__':
     data = run_many(nruns, p, tmax)
     t1 = time.time()
     print('Run time: {} seconds.'.format(t1 - t0))
+
     make_plots(data)
-    # data.to_pickle('run_many.pkl')
+
+    # _filebase, _ = os.path.splitext(__file__)
+    # _picklefile = _filebase + '.pkl'
+    # data.to_pickle(_picklefile)

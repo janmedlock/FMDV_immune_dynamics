@@ -1,5 +1,6 @@
 #!/usr/bin/python3
 
+import os.path
 import time
 
 import numpy
@@ -43,5 +44,9 @@ if __name__ == '__main__':
     data = run_one(seed, p, tmax, debug=debug)
     t1 = time.time()
     print('Run time: {} seconds.'.format(t1 - t0))
+
     make_plot(data)
-    # data.to_pickle('run_one.pkl')
+
+    # _filebase, _ = os.path.splitext(__file__)
+    # _picklefile = _filebase + '.pkl'
+    # data.to_pickle(_picklefile)
