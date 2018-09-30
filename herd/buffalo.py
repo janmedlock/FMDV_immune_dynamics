@@ -6,8 +6,8 @@ from herd.events import Events
 class Buffalo:
     'A single buffalo and the actions that can occur to it.'
 
-    def __init__(self, herd, immune_status = 'maternal immunity', age = 0,
-                 building_herd = False):
+    def __init__(self, herd, immune_status='maternal immunity', age=0,
+                 building_herd=False):
         self.herd = herd
         self.immune_status = immune_status
 
