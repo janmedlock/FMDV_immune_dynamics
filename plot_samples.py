@@ -160,6 +160,6 @@ def plot_tornados(df, errorbars=False):
 if __name__ == '__main__':
     df = load_persistence_times()
     plot_times(df)
-    # plot_parameters(df)
-    # plot_tornados(df)
+    plot_parameters(df)
+    plot_tornados(df)
     pyplot.show()
