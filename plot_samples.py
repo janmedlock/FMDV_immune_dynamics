@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 
 from matplotlib import pyplot, ticker
+import numpy
 import pandas
 import seaborn
 
@@ -46,6 +47,23 @@ def _get_labels(name, rank):
         label = 'Rank ' + base.lower()
         label_resid = 'Residual rank ' + base.lower()
     return (label, label_resid)
+
+
+def plot_times(df):
+    outcome = 'persistence_time'
+    df = df.reorder_levels(order=[1, 0], axis='columns')
+    fig, ax = pyplot.subplots()
+    for SAT, col in df[outcome].items():
+        x = numpy.hstack([0, col.sort_values()])
+        cdf = numpy.linspace(0, 1, len(x))
+        ax.step(x, 1 - cdf, where='post', label='SAT {}'.format(SAT))
+    ax.set_xlabel('time (y)')
+    ax.set_ylabel('Survival')
+    ax.set_yscale('log')
+    # Next smaller power of 10.
+    # a = numpy.ceil(numpy.log10(1 / len(df)) - 1)
+    # ax.set_ylim(10 ** a, 1)
+    ax.legend()
 
 
 def plot_parameters(df, rank=True, marker='.', s=1, alpha=0.6):
@@ -141,6 +159,7 @@ def plot_tornados(df, errorbars=False):
 
 if __name__ == '__main__':
     df = load_persistence_times()
-    plot_parameters(df)
-    plot_tornados(df)
+    plot_times(df)
+    # plot_parameters(df)
+    # plot_tornados(df)
     pyplot.show()
