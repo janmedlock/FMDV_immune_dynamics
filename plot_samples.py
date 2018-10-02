@@ -105,7 +105,7 @@ def plot_parameters(df, rank=True, marker='.', s=1, alpha=0.6):
                          rect=[w, 0, 1 - w, 0.98])
 
 
-def plot_tornados(df, errorbars=False):
+def plot_tornados(df, rank=True, errorbars=False):
     outcome = 'persistence_time'
     SATs = df.columns.get_level_values('SAT').unique()
     params = df.columns.get_level_values('value').unique().drop(outcome)
@@ -118,7 +118,16 @@ def plot_tornados(df, errorbars=False):
         for (SAT, ax) in zip(SATs, axes):
             p = df.loc[:, (SAT, params)]
             o = df.loc[:, (SAT, outcome)]
-            rho = stats.prcc(p, o)
+            if rank:
+                rho = stats.prcc(p, o)
+                xlabel = 'PRCC'
+                if errorbars:
+                    rho_CI = stats.prcc_CI(rho, n_samples)
+            else:
+                rho = stats.pcc(p, o)
+                xlabel = 'PCC'
+                if errorbars:
+                    rho_CI = stats.pcc_CI(rho, n_samples)
             ix = rho.abs().sort_values().index
             x = rho[ix]
             labels = ix.get_level_values('value')
@@ -128,7 +137,6 @@ def plot_tornados(df, errorbars=False):
                                   seaborn.color_palette('tab10', n_params)))
             c = [colors[l] for l in labels]
             if errorbars:
-                rho_CI = stats.prcc_CI(rho, n_samples)
                 rho_err = pandas.DataFrame({'lower': rho - rho_CI['lower'],
                                             'upper': rho_CI['upper'] - rho}).T
                 xerr = rho_err[ix].values
@@ -150,7 +158,7 @@ def plot_tornados(df, errorbars=False):
             ax.set_ylim(- 0.5, n_params - 0.5)
             ylabels = [l.replace('_', '\n') for l in labels]
             ax.set_yticklabels(ylabels, horizontalalignment='center')
-            ax.set_xlabel('PRCC')
+            ax.set_xlabel(xlabel)
             ax.set_title('SAT {}'.format(SAT))
             ax.grid(False, axis='y', which='both')
         seaborn.despine(fig, top=True, bottom=False, left=True, right=True)
@@ -160,6 +168,6 @@ def plot_tornados(df, errorbars=False):
 if __name__ == '__main__':
     df = load_persistence_times()
     plot_times(df)
-    plot_parameters(df)
+    # plot_parameters(df)
     plot_tornados(df)
     pyplot.show()
