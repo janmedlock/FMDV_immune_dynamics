@@ -69,7 +69,7 @@ def _load_data():
                                                      pooled.columns),
                                                     names=data.columns.names)
     # Estimate for each SAT and the pooled data.
-    # return pandas.concat((data, pooled), axis='columns')
+    # return pandas.concat((data, pooled), axis='columns', copy=False)
     # Estimate only for the pooled data.
     return pooled
 

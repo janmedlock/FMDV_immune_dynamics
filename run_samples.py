@@ -31,7 +31,8 @@ def run_samples(SAT, tmax, *args, **kwargs):
         for i, s in samples[SAT].iterrows())
     t1 = time.time()
     print('Run time: {} seconds.'.format(t1 - t0))
-    return pandas.concat(results, keys=range(len(samples)), names=['sample'])
+    return pandas.concat(results, keys=range(len(samples)), names=['sample'],
+                         copy=False)
 
 
 def run_SATs(tmax, *args, **kwargs):
@@ -40,7 +41,7 @@ def run_SATs(tmax, *args, **kwargs):
         results[SAT] = run_samples(SAT, tmax,
                                    logging_prefix='SAT {}, '.format(SAT),
                                    *args, **kwargs)
-    return pandas.concat(results, names=['SAT'])
+    return pandas.concat(results, names=['SAT'], copy=False)
 
 
 if __name__ == '__main__':

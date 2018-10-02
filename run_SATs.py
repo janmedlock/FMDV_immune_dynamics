@@ -17,7 +17,7 @@ def run_SATs(nruns, tmax, *args, **kwargs):
         results[SAT] = run_many(nruns, p, tmax, *args, **kwargs)
         t1 = time.time()
         print('Run time: {} seconds.'.format(t1 - t0))
-    return pandas.concat(results, names=['SAT'])
+    return pandas.concat(results, names=['SAT'], copy=False)
 
 
 if __name__ == '__main__':

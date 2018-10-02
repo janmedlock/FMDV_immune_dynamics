@@ -24,7 +24,7 @@ def _load_persistence_times():
     pt = pt.reset_index('SAT').pivot(columns='SAT')
     pt = pt.reorder_levels([1, 0], axis='columns')
     # Put parameter values and persistence time together.
-    df = pandas.concat([samples, pt], axis='columns')
+    df = pandas.concat([samples, pt], axis='columns', copy=False)
     df.columns.set_names('value', level=1, inplace=True)
     return df
 

@@ -16,7 +16,8 @@ def run_many(nruns, parameters, tmax, *args, **kwargs):
         delayed(run_one)(i, parameters, tmax, *args, **kwargs)
         for i in range(nruns))
     # Make 'run' the outer row index.
-    return pandas.concat(results, keys=range(nruns), names=['run'])
+    return pandas.concat(results, keys=range(nruns), names=['run'],
+                         copy=False)
 
 
 def get_mean(data):

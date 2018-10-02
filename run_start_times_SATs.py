@@ -15,7 +15,7 @@ def run_start_times_SATs(nruns, tmax, *args, **kwargs):
         results[SAT] = run_start_times(nruns, SAT, tmax,
                                        logging_prefix='SAT {}, '.format(SAT),
                                        *args, **kwargs)
-    return pandas.concat(results, names=['SAT'])
+    return pandas.concat(results, names=['SAT'], copy=False)
 
 
 if __name__ == '__main__':

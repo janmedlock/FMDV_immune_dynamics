@@ -26,7 +26,7 @@ def run_start_times(nruns, SAT, tmax, logging_prefix='', *args, **kwargs):
                                        *args, **kwargs)
         t1 = time.time()
         print('Run time: {} seconds.'.format(t1 - t0))
-    return pandas.concat(results, names=['start_time'])
+    return pandas.concat(results, names=['start_time'], copy=False)
 
 
 if __name__ == '__main__':
