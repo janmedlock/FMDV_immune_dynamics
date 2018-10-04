@@ -13,7 +13,7 @@ def get_data():
     data = pandas.read_pickle('run_start_times_SATs.pkl')
     try:
         data_ds = pandas.read_pickle('run_start_times_SATs_downsampled.pkl')
-    except FileNotFound:
+    except FileNotFoundError:
         data_ds = downsample(data)
     return (data, data_ds)
 
