@@ -1,8 +1,9 @@
 #!/usr/bin/python3
 import sys
-sys.path.append('..')
 
+sys.path.append('..')
 from herd._initial_conditions import find_hazard_infection, find_AIC, plot
+sys.path.pop(-1)
 
 
 hazard_infection = find_hazard_infection()

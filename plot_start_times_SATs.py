@@ -68,6 +68,7 @@ def plot_persistence_time(data):
     locs, labels = pyplot.xticks()
     pyplot.xticks(locs, ['SAT {}'.format(i.get_text()) for i in labels])
     pyplot.tight_layout()
+    pyplot.savefig('plot_start_times_SATs_persistence_time.pdf')
 
 
 def plot_infected_facet(x, color=None, alpha=1, **kwargs):
@@ -93,6 +94,7 @@ def plot_infected(data):
     g.set_axis_labels('time (days)', 'number infected')
     g.set_titles('{col_var} {col_name}')
     pyplot.tight_layout()
+    pyplot.savefig('plot_start_times_SATs_infected.pdf')
 
 
 def get_time_to_peak(x):
@@ -122,10 +124,12 @@ def plot_time_to_peak(data):
     locs, labels = pyplot.xticks()
     pyplot.xticks(locs, ['SAT {}'.format(i.get_text()) for i in labels])
     pyplot.tight_layout()
+    pyplot.savefig('plot_start_times_SATs_time_to_peak.pdf')
 
 
 def get_total_infected(x):
     R = x['recovered']
+    # This sucks to approximate total infected.
     return R.iloc[-1] - R.iloc[0]
 
 
@@ -135,6 +139,7 @@ def plot_total_infected(data):
     data = data[mask]
     not_t_names = [n for n in data.index.names if n != t_name]
     total_infected = data.groupby(level=not_t_names).apply(get_total_infected)
+    total_infected.clip_lower(0, inplace=True)
     total_infected = total_infected.reset_index(level=['SAT', 'start_time'],
                                                 name='total infected')
     # seaborn.factorplot(data=total_infected,
@@ -149,6 +154,7 @@ def plot_total_infected(data):
     locs, labels = pyplot.xticks()
     pyplot.xticks(locs, ['SAT {}'.format(i.get_text()) for i in labels])
     pyplot.tight_layout()
+    pyplot.savefig('plot_start_times_SATs_total_infected.pdf')
 
 
 if __name__ == '__main__':
@@ -157,4 +163,4 @@ if __name__ == '__main__':
     plot_persistence_time(data)
     plot_time_to_peak(data)
     plot_total_infected(data)
-    pyplot.show()
+    # pyplot.show()
