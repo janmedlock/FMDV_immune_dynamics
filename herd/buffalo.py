@@ -142,7 +142,7 @@ class Buffalo:
     def chronic_progression(self):
         assert self.is_infectious()
         self.change_immune_status_to('chronic')
-        self.events.remove('chronic')
+        self.events.remove('chronic_progression')
         self.set_chronic_recovery()
 
     def set_chronic_progression(self):
@@ -153,7 +153,7 @@ class Buffalo:
         assert self.is_chronic()
         self.change_immune_status_to('recovered')
         self.events.remove('chronic_recovery')
-        self.set_chronic_recovery()
+        self.set_immunity_waning()
 
     def set_chronic_recovery(self):
         self.events.add('chronic_recovery',
