@@ -11,6 +11,7 @@ class gen(RV):
         self.chronic_recovery_shape = parameters.chronic_recovery_shape
         scale = self.chronic_recovery_mean / self.chronic_recovery_shape
         distn = gamma(self.chronic_recovery_shape, scale=scale)
+        super()._copyattrs(distn)
 
     def __repr__(self):
         return super().__repr__(('chronic_recovery_mean',
