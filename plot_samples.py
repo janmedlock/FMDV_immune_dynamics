@@ -64,6 +64,7 @@ def plot_times(df):
     # a = numpy.ceil(numpy.log10(1 / len(df)) - 1)
     # ax.set_ylim(10 ** a, 1)
     ax.legend()
+    fig.savefig('plot_samples_times.pdf')
 
 
 def plot_parameters(df, rank=True, marker='.', s=1, alpha=0.6):
@@ -103,9 +104,10 @@ def plot_parameters(df, rank=True, marker='.', s=1, alpha=0.6):
         w = 0.02
         fig.tight_layout(pad=0, h_pad=0, w_pad=0,
                          rect=[w, 0, 1 - w, 0.98])
+        fig.savefig('plot_samples_parameters.pdf')
 
 
-def plot_tornados(df, rank=True, errorbars=False):
+def plot_sensitivity(df, rank=True, errorbars=False):
     outcome = 'persistence_time'
     SATs = df.columns.get_level_values('SAT').unique()
     params = df.columns.get_level_values('value').unique().drop(outcome)
@@ -163,11 +165,12 @@ def plot_tornados(df, rank=True, errorbars=False):
             ax.grid(False, axis='y', which='both')
         seaborn.despine(fig, top=True, bottom=False, left=True, right=True)
         fig.tight_layout()
+    fig.savefig('plot_samples_sensitivity.pdf')
 
 
 if __name__ == '__main__':
     df = load_persistence_times()
     plot_times(df)
     # plot_parameters(df)
-    plot_tornados(df)
+    plot_sensitivity(df)
     pyplot.show()
