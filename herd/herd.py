@@ -131,7 +131,7 @@ class Herd(list):
                 365 * (t_last - self.params.start_time)))
 
         result = DataFrame(dict(result), index=statuses).T
-        result.index.name = 'time (y)'
+        result.index.name = 'time (d)'
         result.columns.name = 'status'
         return result
 
