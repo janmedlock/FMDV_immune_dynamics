@@ -15,6 +15,55 @@ from herd import maternal_immunity_waning, parameters
 _filename = 'data/Hedger_1972_survey_data.xlsx'
 # It is relative to directory as this source file.
 _filename = os.path.join(os.path.dirname(__file__), _filename)
+# Each row is for an age interval.
+# Breaks are where one intervals ends and the next starts.
+_age_groups = pandas.IntervalIndex.from_breaks([0, 1, 2, 3, 4, 7, 11],
+                                               closed='left',
+                                               name='age (y)')
+
+def _load_data():
+    '''Load and format the data.'''
+    data = pandas.read_excel(_filename,
+                             sheet_name=None,  # All sheets.
+                             skipfooter=18)
+    # Loop over the sheets.
+    # One assumes chronic infections and the other only acute.
+    for k, df in data.items():
+        df.drop(columns=['age', 'age.1', 'age.2'], inplace=True)
+        df.index = _age_groups
+        # Convert proportions to numbers.
+        N = df.pop('N')
+        df = df.mul(N, axis='index').astype(int)
+        # Use the multiindex (SAT, status) for the columns.
+        column_re = re.compile(r'^%(.*) - SAT(.*)$')
+        tuples = []
+        for c in df.columns:
+            m = column_re.match(c)
+            status, SAT = m.groups()
+            tuples.append((int(SAT), status))
+        df.columns = pandas.MultiIndex.from_tuples(tuples,
+                                                   names=['SAT', 'status'])
+        # If 'I' is in the columns, add it to 'S' and remove.
+        S = (slice(None), (slice(None), 'S'))
+        SI = (slice(None), (slice(None), ['S', 'I']))
+        df.loc[S] = df.loc[SI].sum(axis='columns', level='SAT').reindex(
+            columns=df.loc[S].columns, level='SAT')
+        df.drop(columns='I', level='status', errors='ignore', inplace=True)
+        # Add SATs together into pooled data.
+        pooled = df.sum(axis='columns', level='status')
+        pooled.columns = pandas.MultiIndex.from_product((['Pooled'],
+                                                         pooled.columns),
+                                                        names=df.columns.names)
+        df = pandas.concat((df, pooled), axis='columns', copy=False)
+        data[k] = df
+    data = pandas.concat(data, axis='columns', names=['chronic'], copy=False)
+    # Relabel as chronic or not.
+    data.rename({'all groups': True, 'reclassified_no carriers': False},
+                axis='columns', inplace=True)
+    # Estimate only for the pooled data.  Drop the individual SATs.
+    data = data.loc[:, (slice(None), 'Pooled')]
+    # return data
+    return data[False]
 
 
 # Some of the functions below are slow, so the values are cached
@@ -38,40 +87,6 @@ class Parameters(parameters.Parameters):
             params.maternal_immunity_duration_mean)
         self.maternal_immunity_duration_shape = float(
             params.maternal_immunity_duration_shape)
-
-
-def _load_data():
-    '''Load and format the data.'''
-    data = pandas.read_excel(_filename,
-                             sheet_name='reclassified_no carriers',
-                             usecols=[1, 2, 3, 5, 6, 7, 9, 10, 11, 12],
-                             skipfooter=18)
-    # Each rows is for an age interval.
-    # Breaks are where one intervals ends and the next starts.
-    data.index = pandas.IntervalIndex.from_breaks([0, 1, 2, 3, 4, 7, 11],
-                                                  closed='left',
-                                                  name='age (y)')
-    # Convert proportions to numbers.
-    N = data.pop('N')
-    data = data.mul(N, axis='index').astype(int)
-    # Use the multiindex (SAT, status) for the columns.
-    column_re = re.compile(r'^%(.*) - SAT(.*)$')
-    tuples = []
-    for c in data.columns:
-        m = column_re.match(c)
-        status, SAT = m.groups()
-        tuples.append((int(SAT), status))
-    data.columns = pandas.MultiIndex.from_tuples(tuples,
-                                                 names=['SAT', 'status'])
-    # Pool the data across SATs.
-    pooled = data.sum(axis=1, level='status')
-    pooled.columns = pandas.MultiIndex.from_product((['Pooled'],
-                                                     pooled.columns),
-                                                    names=data.columns.names)
-    # Estimate for each SAT and the pooled data.
-    # return pandas.concat((data, pooled), axis='columns', copy=False)
-    # Estimate only for the pooled data.
-    return pooled
 
 
 def _S_logprob_integrand(b, hazard_infection, maternal_immunity_waningRV):
