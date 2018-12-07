@@ -103,7 +103,7 @@ def S_logprob(age, hazard_infection, params):
                     * exp(hazard_infection * b) db
       - hazard_infection * a.'''
     params_cache = Parameters(params)
-    if numpy.isscalar(age):
+    if numpy.ndim(age) == 0:
         return _S_logprob(age, hazard_infection, params_cache)
     else:
         return numpy.array([_S_logprob(a, hazard_infection, params_cache)

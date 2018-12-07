@@ -52,7 +52,7 @@ class SusceptibleRecruitment(herd.rv.RV):
         '''The PDF is
         p_{susceptible}(t, t0, a0)
         = \int_{t0}^t p_{birth}(s, t0, a0) p_{waning}(t - s) ds.'''
-        if numpy.isscalar(t):
+        if numpy.ndim(t) == 0:
             pdf, _ = integrate.quadrature(self._pdf_integrand, t0, t,
                                           args=(t, t0, a0),
                                           maxiter=maxiter)
@@ -72,7 +72,7 @@ class SusceptibleRecruitment(herd.rv.RV):
         P_{susceptible}(t, t0, a0)
         = \int_{t0}^t p_{susceptible}(s, t0, a0) ds
         = \int_{t0}^t p_{birth}(s, t0, a0) P_{waning}(t - s) ds.'''
-        if numpy.isscalar(t):
+        if numpy.ndim(t) == 0:
             cdf, _ = integrate.quadrature(self._cdf_integrand, t0, t,
                                           args=(t, t0, a0),
                                           maxiter=maxiter)

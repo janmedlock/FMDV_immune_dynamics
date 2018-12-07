@@ -22,15 +22,15 @@ class gen:
 
     def _S_prob(self, age):
         '''Probability of being in S, i.e. susceptible.'''
-        return _initial_conditions.S_prob(age, self.hazard_infection,
+        return _initial_conditions.S_prob(age,
+                                          self.hazard_infection,
                                           self.maternal_immunity_waningRV)
 
     def _proportion(self, age):
-        if numpy.isscalar(age):
-            status = pandas.Series()
-        else:
-            rows = pandas.Index(age, name='age')
-            status = pandas.DataFrame(index=rows)
+        if numpy.ndim(age) == 0:
+            age = numpy.array([age])
+        rows = pandas.Index(age, name='age')
+        status = pandas.DataFrame(index=rows)
         status['maternal immunity'] = self._M_prob(age)
         status['susceptible'] = self._S_prob(age)
         status['exposed'] = 0
@@ -44,7 +44,10 @@ class gen:
         assert numpy.all(status <= 1)
         return status
 
-    def rvs(self, size=1):
+    def rvs(self, size=None):
+        if size is None:
+            size = self.parameters.initial_infectious
+        assert (size >= self.parameters.initial_infectious)
         # Loop until we get a satisfactory sample.
         while True:
             # Pick `size` random ages.
