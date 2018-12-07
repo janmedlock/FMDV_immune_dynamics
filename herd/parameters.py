@@ -4,6 +4,8 @@ from numpy import inf
 class Parameters:
     def __init__(self, SAT=1, chronic=False, _set_defaults=True):
         'Initialize with default values.'
+        self.SAT = SAT
+        self.chronic = chronic
         if _set_defaults:
             self.population_size = 1000
             self.initial_infectious = 2
@@ -18,44 +20,44 @@ class Parameters:
             self.maternal_immunity_duration_shape = 1.19
             # Duration in R before returning to S.
             self.immunity_waning_duration = inf
-            if SAT == 1:
+            if self.SAT == 1:
                 self.progression_shape = 1.2
                 self.progression_mean = 0.5 / 365
                 self.recovery_shape = 11.8
                 self.recovery_mean = 5.7 / 365
                 self.transmission_rate = 2.8 * 365
                 # Proportion leaving I that become C.
-                self.probability_chronic = 0.90 if chronic else 0
+                self.probability_chronic = 0.90 if self.chronic else 0
                 # Duration in C before leaving to R.
                 self.chronic_recovery_mean = 243 / 365
                 self.chronic_recovery_shape = 3.2
                 self.chronic_transmission_rate = 0.028 * 365
-            elif SAT == 2:
+            elif self.SAT == 2:
                 self.progression_shape = 1.6
                 self.progression_mean = 1.3 / 365
                 self.recovery_shape = 8.7
                 self.recovery_mean = 4.6 / 365
                 self.transmission_rate = 1.6 * 365
                 # Proportion leaving I that become C.
-                self.probability_chronic = 0.44 if chronic else 0
+                self.probability_chronic = 0.44 if self.chronic else 0
                 # Duration in C before leaving to R.
                 self.chronic_recovery_mean = 180 / 365
                 self.chronic_recovery_shape = 3.2
                 self.chronic_transmission_rate = 0.003 * 365
-            elif SAT == 3:
+            elif self.SAT == 3:
                 self.progression_shape = 1.6
                 self.progression_mean = 2.8 / 365
                 self.recovery_shape = 11.8
                 self.recovery_mean = 4.2 / 365
                 self.transmission_rate = 1.2 * 365
                 # Proportion leaving I that become C.
-                self.probability_chronic = 0.67 if chronic else 0
+                self.probability_chronic = 0.67 if self.chronic else 0
                 # Duration in C before leaving to R.
                 self.chronic_recovery_mean = 174 / 365
                 self.chronic_recovery_shape = 3.2
                 self.chronic_transmission_rate = 0.012 * 365
             else:
-                raise ValueError("Unknown SAT '{}'!".format(SAT))
+                raise ValueError("Unknown SAT '{}'!".format(self.SAT))
 
     def __repr__(self):
         'Make instances print nicely.'
