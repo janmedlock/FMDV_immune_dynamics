@@ -1,8 +1,10 @@
-* Chronic model.
-** How to handle initial conditions?
-*** There is data in the spreadsheet.
+* Fix herd.initial_conditions._C_prob
+** Check with test/initial_conditions.py
+** Save results in new files!!!
 
-* Sampling from Simon's posteriors.
+* Re-run acute samples since they weren't updating the initial
+  conditions for different parameter values for the duration maternal
+  immunity.
 
 * Work on figures 3 & 4.
 

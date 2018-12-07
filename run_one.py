@@ -35,11 +35,12 @@ def make_plot(data, show = True):
 
 if __name__ == '__main__':
     SAT = 1
+    chronic = True
     seed = 1
-    tmax = 1
+    tmax = numpy.inf
     debug = False
 
-    p = herd.Parameters(SAT=SAT)
+    p = herd.Parameters(SAT=SAT, chronic=chronic)
     t0 = time.time()
     data = run_one(seed, p, tmax, debug=debug)
     t1 = time.time()

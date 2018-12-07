@@ -12,7 +12,8 @@ age_max = 10
 age_bin_width = 0.1
 ages = numpy.linspace(0, age_max, 301)
 
-parameters = Parameters()
+chronic = True
+parameters = Parameters(chronic=chronic)
 RVs = RandomVariables(parameters)
 ICs = RVs.initial_conditions
 

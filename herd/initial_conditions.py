@@ -13,8 +13,8 @@ class gen:
         self.age_structureRV = age_structure.gen(self.parameters)
         self.maternal_immunity_waningRV = maternal_immunity_waning.gen(
             self.parameters)
-        h = _initial_conditions.find_hazard_infection()
-        self.hazard_infection = h['Pooled']
+        self.hazard_infection = _initial_conditions.find_hazard_infection(
+            self.parameters)
 
     def _M_prob(self, age):
         '''Probability of being in M, i.e. having maternal immunity.'''
@@ -24,7 +24,12 @@ class gen:
         '''Probability of being in S, i.e. susceptible.'''
         return _initial_conditions.S_prob(age,
                                           self.hazard_infection,
-                                          self.maternal_immunity_waningRV)
+                                          self.parameters)
+
+    def _C_prob(self, age):
+        '''Probability of being in C, i.e. chronically infected.'''
+        # Should depend on _S_prob...
+        return numpy.zeros_like(age)
 
     def _proportion(self, age):
         if numpy.ndim(age) == 0:
@@ -35,7 +40,7 @@ class gen:
         status['susceptible'] = self._S_prob(age)
         status['exposed'] = 0
         status['infectious'] = 0
-        status['chronic'] = 0
+        status['chronic'] = self._C_prob(age)
         # The remaining proportion are recovered.
         # Sum over the statuses.
         not_R = status.sum(axis=(status.ndim - 1))
