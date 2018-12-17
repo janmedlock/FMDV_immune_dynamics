@@ -231,3 +231,8 @@ class Buffalo:
         event = self.events['Infection']
         assert event.is_valid()
         event.time = event.sample_time()
+
+    def get_next_event(self):
+        # Consider storing the events in a data type that's more
+        # efficient to find the minimum.
+        return self.events.get_next()

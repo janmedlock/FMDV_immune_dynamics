@@ -64,7 +64,7 @@ class Herd(list):
             updated = True
         if number_chronic_new != self.number_chronic:
             self.number_chronic = number_chronic_new
-            if (self.rvs.chronic_transmission_rate > 0):
+            if self.rvs.chronic_transmission_rate > 0:
                 updated = True
         if updated:
             for b in self.immune_status_lists['susceptible']:
@@ -80,7 +80,7 @@ class Herd(list):
         if len(self) > 0:
             # Consider storing all events for the herd in an efficient
             # data type to avoid looping through the whole list.
-            return min(b.events.get_next() for b in self)
+            return min(b.get_next_event() for b in self)
         else:
             return None
 
