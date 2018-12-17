@@ -73,7 +73,6 @@ class Herd(list):
     def get_stats(self):
         stats = [len(self.immune_status_lists[status])
                  for status in statuses]
-
         return (self.time, stats)
 
     def get_next_event(self):
@@ -96,7 +95,6 @@ class Herd(list):
     def step(self, tmax=numpy.inf):
         self.update_infection_times()
         event = self.get_next_event()
-
         if ((event is not None)
             and (event.time < self.params.start_time + tmax)):
             if self.debug:
@@ -108,19 +106,16 @@ class Herd(list):
 
     def run(self, tmax):
         result = [self.get_stats()]
-
         while (self.time < self.params.start_time + tmax):
             self.step(tmax)
             result.append(self.get_stats())
             if self.stop():
                 break
-
         if self.run_number is not None:
             t_last = result[-1][0]
             print('{}Simulation #{} ended after {:g} days.'.format(
                 self.logging_prefix, self.run_number,
                 365 * (t_last - self.params.start_time)))
-
         result = DataFrame(dict(result), index=statuses).T
         result.index.name = 'time (d)'
         result.columns.name = 'status'
