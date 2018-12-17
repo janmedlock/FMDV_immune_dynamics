@@ -19,9 +19,8 @@ class Herd(list):
     def __init__(self, params=None, debug=False, run_number=None, seed=None,
                  logging_prefix=''):
         if params is None:
-            self.params = Parameters()
-        else:
-            self.params = params
+            params = Parameters()
+        self.params = params
 
         self.debug = debug
         self.run_number = run_number
