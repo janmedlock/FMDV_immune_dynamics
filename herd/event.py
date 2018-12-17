@@ -32,8 +32,8 @@ class _Event(abc.ABC):
     def name(self):
         return self.__class__.__name__
 
-    def __init__(self, buffalo):
-        self.buffalo = buffalo
+    def __init__(self, buffalo_):
+        self.buffalo = buffalo_
         assert self.is_valid()
         self.time = self.sample_time()
 
@@ -52,11 +52,24 @@ class _Event(abc.ABC):
             self.time, self.name, self.buffalo.identifier)
 
 
-def Sex(buffalo):
+def get_all_valid_events(buffalo_):
+    events = []
+    # Collect all valid subclasses of `_Event()`.
+    for klass in _Event.__subclasses__():
+        # `_Event.__init__()` raises an `AssertionError`
+        # if `_Event.is_valid()` is False.
+        try:
+            events.append(klass(buffalo_))
+        except AssertionError:
+            pass
+    return events
+
+
+def Sex(buffalo_):
     '''A buffalo having its sex determined.'''
     # This is intentionally not an `_Event()`,
     # because it doesn't have a sample time, etc.
-    if buffalo.herd.rvs.female.rvs() == 1:
+    if buffalo_.herd.rvs.female.rvs() == 1:
         return 'female'
     else:
         return 'male'

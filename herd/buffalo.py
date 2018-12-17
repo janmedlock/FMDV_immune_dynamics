@@ -5,9 +5,10 @@ class Events(dict):
     '''Container to hold all events that can happen to a buffalo.'''
     # Consider storing the events in a data type that's more
     # efficient to find the minimum time.
-    def __init__(self, buffalo, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.buffalo = buffalo
+    def __init__(self, buffalo):
+        super().__init__()
+        for event_ in event.get_all_valid_events(buffalo):
+            self.add(event_)
 
     def add(self, event_):
         self[event_.name] = event_
@@ -31,6 +32,7 @@ class Buffalo:
         self.birth_date = self.herd.time - age
         self.sex = event.Sex(self)
         self.identifier = next(self.herd.identifiers)
+        self.events = Events(self)
         if self.herd.debug:
             if age == 0:
                 print('t = {}: birth of #{} with status {}'.format(
@@ -43,36 +45,6 @@ class Buffalo:
                     self.identifier,
                     age,
                     immune_status))
-        self.events = Events(self)
-        # Add all valid `_Event()` subclasses.
-        # for klass in event._Event.__subclasses__():
-        #     try:
-        #         self.events.add(klass(self))
-        #     except AssertionError:
-        #         pass
-        self.events.add(event.Mortality(self))
-        if self.sex == 'female':
-            self.events.add(event.Birth(self))
-        if self.immune_status == 'maternal immunity':
-            self.events.add(event.MaternalImmunityWaning(self))
-        elif self.immune_status == 'susceptible':
-            # When building a new herd, the infection time
-            # won't be correct because
-            # `self.herd.number_infectious` won't be finalized.
-            # This gets fixed by `herd.Herd()`
-            # calling `update_infection()` after the herd is built.
-            self.events.add(event.Infection(self))
-        elif self.immune_status == 'exposed':
-            self.events.add(event.Progression(self))
-        elif self.immune_status == 'infectious':
-            self.events.add(event.Recovery(self))
-        elif self.immune_status == 'chronic':
-            self.events.add(event.ChronicRecovery(self))
-        elif self.immune_status == 'recovered':
-            self.events.add(event.ImmunityWaning(self))
-        else:
-            raise ValueError('Unknown immune_status = {}!'.format(
-                self.immune_status))
 
     @property
     def age(self):
