@@ -21,30 +21,25 @@ class Herd(list):
         if params is None:
             params = Parameters()
         self.params = params
-
         self.debug = debug
         self.run_number = run_number
-
         if (seed is None) and (run_number is not None):
             seed = run_number
         if seed is not None:
             numpy.random.seed(seed)
-
         self.logging_prefix = logging_prefix
-
         self.rvs = RandomVariables(self.params)
-
         self.time = self.params.start_time
         self.immune_status_lists = defaultdict(list)
         self.identifiers = count(0)
-
         status_ages = self.rvs.initial_conditions.rvs(
             self.params.population_size)
-
+        # These need to be defined before initializing
+        # susceptible `Buffalo()`.
+        self.number_infectious = self.number_chronic = 0
         for (immune_status, ages) in status_ages.items():
             for age in ages:
-                self.append(Buffalo(self, immune_status, age,
-                                    building_herd=True))
+                self.append(Buffalo(self, immune_status, age))
 
     def immune_status_append(self, b):
         self.immune_status_lists[b.immune_status].append(b)
@@ -63,16 +58,13 @@ class Herd(list):
     def update_infection_times(self):
         number_infectious_new = len(self.immune_status_lists['infectious'])
         number_chronic_new = len(self.immune_status_lists['chronic'])
-
         updated = False
-        if ((not hasattr(self, 'number_infectious'))
-            or (number_infectious_new != self.number_infectious)):
+        if number_infectious_new != self.number_infectious:
             self.number_infectious = number_infectious_new
             updated = True
-        if ((not hasattr(self, 'number_chronic'))
-            or (number_chronic_new != self.number_chronic)):
+        if number_chronic_new != self.number_chronic:
             self.number_chronic = number_chronic_new
-            if (self.rvs.chronic_transmission_rate > 0):
+            if self.rvs.chronic_transmission_rate > 0:
                 updated = True
         if updated:
             for b in self.immune_status_lists['susceptible']:
