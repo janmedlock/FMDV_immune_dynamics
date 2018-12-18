@@ -44,13 +44,13 @@ class Event(ABC):
 
 
 def get_all_valid_events(buffalo_):
-    events = []
+    events = set()
     # Collect all valid subclasses of `Event()`.
     # `Event.__init__()` raises an `AssertionError`
     # if `Event.is_valid()` is False.
     for klass in Event.__subclasses__():
         try:
-            events.append(klass(buffalo_))
+            events.add(klass(buffalo_))
         except AssertionError:
             pass
     return events
@@ -96,11 +96,11 @@ class Birth(Event):
             calf_status = 'maternal immunity'
         else:
             calf_status = 'susceptible'
-        self.buffalo.herd.append(buffalo.Buffalo(self.buffalo.herd,
-                                                 calf_status))
+        self.buffalo.herd.add(buffalo.Buffalo(self.buffalo.herd,
+                                              calf_status))
         # Add next birth.
         self.time = self.sample_time()
-        self.buffalo.events.append(self)
+        self.buffalo.events.add(self)
 
     def sample_time(self):
         return (self.buffalo.herd.time
@@ -115,7 +115,7 @@ class MaternalImmunityWaning(Event):
 
     def do(self):
         self.buffalo.change_immune_status_to('susceptible')
-        self.buffalo.events.append(Infection(self.buffalo))
+        self.buffalo.events.add(Infection(self.buffalo))
 
     def sample_time(self):
         # Use resampling to get a waning time > current time.
@@ -133,7 +133,7 @@ class Infection(Event):
 
     def do(self):
         self.buffalo.change_immune_status_to('exposed')
-        self.buffalo.events.append(Progression(self.buffalo))
+        self.buffalo.events.add(Progression(self.buffalo))
 
     def sample_time(self):
         force_of_infection = (
@@ -157,7 +157,7 @@ class Progression(Event):
 
     def do(self):
         self.buffalo.change_immune_status_to('infectious')
-        self.buffalo.events.append(Recovery(self.buffalo))
+        self.buffalo.events.add(Recovery(self.buffalo))
 
     def sample_time(self):
         return (self.buffalo.herd.time
@@ -177,11 +177,11 @@ class Recovery(Event):
 
     def do_recovery(self):
         self.buffalo.change_immune_status_to('recovered')
-        self.buffalo.events.append(ImmunityWaning(self.buffalo))
+        self.buffalo.events.add(ImmunityWaning(self.buffalo))
 
     def do_chronic_progression(self):
         self.buffalo.change_immune_status_to('chronic')
-        self.buffalo.events.append(ChronicRecovery(self.buffalo))
+        self.buffalo.events.add(ChronicRecovery(self.buffalo))
 
     def sample_time(self):
         return (self.buffalo.herd.time
@@ -195,7 +195,7 @@ class ChronicRecovery(Event):
 
     def do(self):
         self.buffalo.change_immune_status_to('recovered')
-        self.buffalo.events.append(ImmunityWaning(self.buffalo))
+        self.buffalo.events.add(ImmunityWaning(self.buffalo))
 
     def sample_time(self):
         return (self.buffalo.herd.time
@@ -209,7 +209,7 @@ class ImmunityWaning(Event):
 
     def do(self):
         self.buffalo.change_immune_status_to('susceptible')
-        self.buffalo.events.append(Infection(self.buffalo))
+        self.buffalo.events.add(Infection(self.buffalo))
 
     def sample_time(self):
         return (self.buffalo.herd.time

@@ -1,7 +1,7 @@
 from herd import event
 
 
-class BuffaloEvents(list):
+class BuffaloEvents(set):
     '''Container to hold all events that can happen to a buffalo.
     Actions on these are copied to `buffalo.herd.events`
     so the next herd event can be found efficiently.'''
@@ -10,12 +10,12 @@ class BuffaloEvents(list):
         self.herd_events = buffalo.herd.events
         self.herd_events.update(self)
 
-    def append(self, value):
-        super().append(value)
+    def add(self, value):
+        super().add(value)
         self.herd_events.add(value)
 
-    def extend(self, iterable):
-        super().extend(iterable)
+    def update(self, iterable):
+        super().update(iterable)
         self.herd_events.update(iterable)
 
     def remove(self, value):
@@ -61,4 +61,4 @@ class Buffalo:
     def change_immune_status_to(self, new_immune_status):
         self.herd.immune_status_remove(self)
         self.immune_status = new_immune_status
-        self.herd.immune_status_append(self)
+        self.herd.immune_status_add(self)
