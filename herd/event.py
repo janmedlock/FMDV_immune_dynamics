@@ -1,7 +1,5 @@
 '''Events that can happen to a buffalo.'''
-
-import abc
-import functools
+from abc import ABC, abstractmethod
 
 import numpy
 from scipy import stats
@@ -9,21 +7,19 @@ from scipy import stats
 from herd import buffalo
 
 
-# Use __lt__ and __eq__ to generate all the other comparisons.
-@functools.total_ordering
-class _Event(abc.ABC):
+class Event(ABC):
     '''Parent class for events that happen to a buffalo.'''
-    @abc.abstractmethod
+    @abstractmethod
     def is_valid(self):
         '''Check whether the buffalo is valid to have the event.
         Subclasses must define this method.'''
 
-    @abc.abstractmethod
+    @abstractmethod
     def do(self):
         '''Execute the event.
         Subclasses must define this method.'''
 
-    @abc.abstractmethod
+    @abstractmethod
     def sample_time(self):
         '''Generate a random sample time for the event.
         Subclasses must define this method.'''
@@ -41,23 +37,28 @@ class _Event(abc.ABC):
         assert self.is_valid()
         self.do()
 
-    def __lt__(self, other):
-        return (self.time < other.time)
-
-    def __eq__(self, other):
-        return (self.time == other.time)
-
     def __repr__(self):
         return 't = {}: {} for buffalo #{}'.format(
             self.time, self.name, self.buffalo.identifier)
 
 
+def get_time(event):
+    '''Key function for comparing `Event()`s by their `time` attributes.'''
+    return event.time
+
+
+def get_next(events):
+    '''Find the `Event()` in the sequence `events`
+    with the smallest `time` attribute.'''
+    return min(events, key=get_time)
+
+
 def get_all_valid_events(buffalo_):
     events = []
-    # Collect all valid subclasses of `_Event()`.
-    for klass in _Event.__subclasses__():
-        # `_Event.__init__()` raises an `AssertionError`
-        # if `_Event.is_valid()` is False.
+    # Collect all valid subclasses of `Event()`.
+    for klass in Event.__subclasses__():
+        # `Event.__init__()` raises an `AssertionError`
+        # if `Event.is_valid()` is False.
         try:
             events.append(klass(buffalo_))
         except AssertionError:
@@ -67,7 +68,7 @@ def get_all_valid_events(buffalo_):
 
 def Sex(buffalo_):
     '''A buffalo having its sex determined.'''
-    # This is intentionally not an `_Event()`,
+    # This is intentionally not an `Event()`,
     # because it doesn't have a sample time, etc.
     if buffalo_.herd.rvs.female.rvs() == 1:
         return 'female'
@@ -75,7 +76,7 @@ def Sex(buffalo_):
         return 'male'
 
 
-class Mortality(_Event):
+class Mortality(Event):
     '''A buffalo dying.'''
     def is_valid(self):
         return True  # All buffalo can die.
@@ -92,7 +93,7 @@ class Mortality(_Event):
                 return time
 
 
-class Birth(_Event):
+class Birth(Event):
     '''A buffalo giving birth.'''
     # Which classes give mom antibodies that she passes on.
     has_antibodies = ('chronic', 'recovered')
@@ -116,7 +117,7 @@ class Birth(_Event):
                                                   self.buffalo.age))
 
 
-class MaternalImmunityWaning(_Event):
+class MaternalImmunityWaning(Event):
     '''A buffalo losing maternal immunity.'''
     def is_valid(self):
         return self.buffalo.immune_status == 'maternal immunity'
@@ -135,7 +136,7 @@ class MaternalImmunityWaning(_Event):
                 return time
 
 
-class Infection(_Event):
+class Infection(Event):
     '''A buffalo becoming infected.'''
     def is_valid(self):
         return self.buffalo.immune_status == 'susceptible'
@@ -160,7 +161,7 @@ class Infection(_Event):
                 + stats.expon.rvs(scale=scale))
 
 
-class Progression(_Event):
+class Progression(Event):
     '''A buffalo becoming infectious.'''
     def is_valid(self):
         return self.buffalo.immune_status == 'exposed'
@@ -175,7 +176,7 @@ class Progression(_Event):
                 + self.buffalo.herd.rvs.progression.rvs())
 
 
-class Recovery(_Event):
+class Recovery(Event):
     '''A buffalo recovering from acute infection.'''
     def is_valid(self):
         return self.buffalo.immune_status == 'infectious'
@@ -201,7 +202,7 @@ class Recovery(_Event):
                 + self.buffalo.herd.rvs.recovery.rvs())
 
 
-class ChronicRecovery(_Event):
+class ChronicRecovery(Event):
     '''A buffalo recovering from chronically infected.'''
     def is_valid(self):
         return self.buffalo.immune_status == 'chronic'
@@ -216,7 +217,7 @@ class ChronicRecovery(_Event):
                 + self.buffalo.herd.rvs.chronic_recovery.rvs())
 
 
-class ImmunityWaning(_Event):
+class ImmunityWaning(Event):
     '''A buffalo losing its acquired immunity.'''
     def is_valid(self):
         return self.buffalo.immune_status == 'recovered'

@@ -5,6 +5,7 @@ import numpy
 from pandas import DataFrame
 
 from herd.buffalo import Buffalo
+from herd import event
 from herd.parameters import Parameters
 from herd.random_variables import RandomVariables
 
@@ -76,10 +77,10 @@ class Herd(list):
         return (self.time, stats)
 
     def get_next_event(self):
+        # Consider storing all events for the herd in an efficient
+        # data type to avoid looping through the whole list.
         if len(self) > 0:
-            # Consider storing all events for the herd in an efficient
-            # data type to avoid looping through the whole list.
-            return min(b.get_next_event() for b in self)
+            return event.get_next(b.get_next_event() for b in self)
         else:
             return None
 

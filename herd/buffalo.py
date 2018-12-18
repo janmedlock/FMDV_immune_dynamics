@@ -17,11 +17,7 @@ class Events(dict):
         del self[event_.name]
 
     def get_next(self):
-        # `self.values()` is a sequence of `Event()`s.
-        # These have comparison methods (<, >, =, etc)
-        # defined to compare by event time.
-        # Thus, `min()` gives the next one to occur.
-        return min(self.values())
+        return event.get_next(self.values())
 
 
 class Buffalo:
