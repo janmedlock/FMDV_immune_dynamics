@@ -35,6 +35,7 @@ class Event(ABC):
 
     def __call__(self):
         assert self.is_valid()
+        self.buffalo.events.remove(self)
         self.do()
 
     def __repr__(self):
@@ -42,23 +43,12 @@ class Event(ABC):
             self.time, self.name, self.buffalo.identifier)
 
 
-def get_time(event):
-    '''Key function for comparing `Event()`s by their `time` attributes.'''
-    return event.time
-
-
-def get_next(events):
-    '''Find the `Event()` in the sequence `events`
-    with the smallest `time` attribute.'''
-    return min(events, key=get_time)
-
-
 def get_all_valid_events(buffalo_):
     events = []
     # Collect all valid subclasses of `Event()`.
+    # `Event.__init__()` raises an `AssertionError`
+    # if `Event.is_valid()` is False.
     for klass in Event.__subclasses__():
-        # `Event.__init__()` raises an `AssertionError`
-        # if `Event.is_valid()` is False.
         try:
             events.append(klass(buffalo_))
         except AssertionError:
@@ -82,7 +72,7 @@ class Mortality(Event):
         return True  # All buffalo can die.
 
     def do(self):
-        self.buffalo.herd.remove(self.buffalo)
+        self.buffalo.die()
 
     def sample_time(self):
         # Use resampling to get a mortality time > current time.
@@ -108,8 +98,9 @@ class Birth(Event):
             calf_status = 'susceptible'
         self.buffalo.herd.append(buffalo.Buffalo(self.buffalo.herd,
                                                  calf_status))
-        # Update to time of the next birth.
+        # Add next birth.
         self.time = self.sample_time()
+        self.buffalo.events.append(self)
 
     def sample_time(self):
         return (self.buffalo.herd.time
@@ -124,8 +115,7 @@ class MaternalImmunityWaning(Event):
 
     def do(self):
         self.buffalo.change_immune_status_to('susceptible')
-        self.buffalo.events.remove(self)
-        self.buffalo.events.add(Infection(self.buffalo))
+        self.buffalo.events.append(Infection(self.buffalo))
 
     def sample_time(self):
         # Use resampling to get a waning time > current time.
@@ -143,8 +133,7 @@ class Infection(Event):
 
     def do(self):
         self.buffalo.change_immune_status_to('exposed')
-        self.buffalo.events.remove(self)
-        self.buffalo.events.add(Progression(self.buffalo))
+        self.buffalo.events.append(Progression(self.buffalo))
 
     def sample_time(self):
         force_of_infection = (
@@ -168,8 +157,7 @@ class Progression(Event):
 
     def do(self):
         self.buffalo.change_immune_status_to('infectious')
-        self.buffalo.events.remove(self)
-        self.buffalo.events.add(Recovery(self.buffalo))
+        self.buffalo.events.append(Recovery(self.buffalo))
 
     def sample_time(self):
         return (self.buffalo.herd.time
@@ -189,13 +177,11 @@ class Recovery(Event):
 
     def do_recovery(self):
         self.buffalo.change_immune_status_to('recovered')
-        self.buffalo.events.remove(self)
-        self.buffalo.events.add(ImmunityWaning(self.buffalo))
+        self.buffalo.events.append(ImmunityWaning(self.buffalo))
 
     def do_chronic_progression(self):
         self.buffalo.change_immune_status_to('chronic')
-        self.buffalo.events.remove(self)
-        self.buffalo.events.add(ChronicRecovery(self.buffalo))
+        self.buffalo.events.append(ChronicRecovery(self.buffalo))
 
     def sample_time(self):
         return (self.buffalo.herd.time
@@ -209,8 +195,7 @@ class ChronicRecovery(Event):
 
     def do(self):
         self.buffalo.change_immune_status_to('recovered')
-        self.buffalo.events.remove(self)
-        self.buffalo.events.add(ImmunityWaning(self.buffalo))
+        self.buffalo.events.append(ImmunityWaning(self.buffalo))
 
     def sample_time(self):
         return (self.buffalo.herd.time
@@ -224,8 +209,7 @@ class ImmunityWaning(Event):
 
     def do(self):
         self.buffalo.change_immune_status_to('susceptible')
-        self.buffalo.events.remove(self)
-        self.buffalo.events.add(Infection(self.buffalo))
+        self.buffalo.events.append(Infection(self.buffalo))
 
     def sample_time(self):
         return (self.buffalo.herd.time

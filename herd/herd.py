@@ -3,6 +3,7 @@ from itertools import count
 
 import numpy
 from pandas import DataFrame
+from sortedcontainers import SortedKeyList
 
 from herd.buffalo import Buffalo
 from herd import event
@@ -12,6 +13,55 @@ from herd.random_variables import RandomVariables
 
 statuses = ('maternal immunity', 'susceptible', 'exposed',
             'infectious', 'chronic', 'recovered')
+
+
+class HerdEvents(SortedKeyList):
+    '''Container to hold all events that can happen in the herd.
+    The `Event()`s are sorted by their time so that the
+    one with minimum time can be found efficiently.
+    `Infection()` events are also stored in the `infections` attribute,
+    since they need to be updated frequently.'''
+    def __init__(self):
+        super().__init__(key=self.key)
+        self.infections = []
+
+    @staticmethod
+    def key(event_):
+        return event_.time
+
+    def add(self, value):
+        super().add(value)
+        if isinstance(value, event.Infection):
+            self.infections.append(value)
+
+    def update(self, iterable):
+        super().update(iterable)
+        for value in iterable:
+            # `super().update()` and call `add()`,
+            # so check if `value` is in `self.infections`.
+            if (isinstance(value, event.Infection)
+                and (value not in self.infections)):
+                self.infections.append(value)
+
+    def remove(self, value):
+        super().remove(value)
+        if isinstance(value, event.Infection):
+            self.infections.remove(value)
+
+    def get_next(self):
+        try:
+            return self[0]
+        except IndexError:
+            return None
+
+    def update_infection_times(self):
+        '''Update the infection events.'''
+        for infection in self.infections:
+            # Use the `super()` versions here
+            # to avoid remove() and append() to `infections`.
+            super().remove(infection)
+            infection.time = infection.sample_time()
+            super().add(infection)
 
 
 class Herd(list):
@@ -31,6 +81,7 @@ class Herd(list):
         self.logging_prefix = logging_prefix
         self.rvs = RandomVariables(self.params)
         self.time = self.params.start_time
+        self.events = HerdEvents()
         self.immune_status_lists = defaultdict(list)
         self.identifiers = count(0)
         status_ages = self.rvs.initial_conditions.rvs(
@@ -68,21 +119,12 @@ class Herd(list):
             if self.rvs.chronic_transmission_rate > 0:
                 updated = True
         if updated:
-            for b in self.immune_status_lists['susceptible']:
-                b.update_infection()
+            self.events.update_infection_times()
 
     def get_stats(self):
         stats = [len(self.immune_status_lists[status])
                  for status in statuses]
         return (self.time, stats)
-
-    def get_next_event(self):
-        # Consider storing all events for the herd in an efficient
-        # data type to avoid looping through the whole list.
-        if len(self) > 0:
-            return event.get_next(b.get_next_event() for b in self)
-        else:
-            return None
 
     @property
     def number_infected(self):
@@ -95,7 +137,7 @@ class Herd(list):
 
     def step(self, tmax=numpy.inf):
         self.update_infection_times()
-        event = self.get_next_event()
+        event = self.events.get_next()
         if ((event is not None)
             and (event.time < self.params.start_time + tmax)):
             if self.debug:

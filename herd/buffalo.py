@@ -1,23 +1,30 @@
 from herd import event
 
 
-class Events(dict):
-    '''Container to hold all events that can happen to a buffalo.'''
-    # Consider storing the events in a data type that's more
-    # efficient to find the minimum time.
+class BuffaloEvents(list):
+    '''Container to hold all events that can happen to a buffalo.
+    Actions on these are copied to `buffalo.herd.events`
+    so the next herd event can be found efficiently.'''
     def __init__(self, buffalo):
-        super().__init__()
-        for event_ in event.get_all_valid_events(buffalo):
-            self.add(event_)
+        super().__init__(event.get_all_valid_events(buffalo))
+        self.herd_events = buffalo.herd.events
+        self.herd_events.update(self)
 
-    def add(self, event_):
-        self[event_.name] = event_
+    def append(self, value):
+        super().append(value)
+        self.herd_events.add(value)
 
-    def remove(self, event_):
-        del self[event_.name]
+    def extend(self, iterable):
+        super().extend(iterable)
+        self.herd_events.update(iterable)
 
-    def get_next(self):
-        return event.get_next(self.values())
+    def remove(self, value):
+        super().remove(value)
+        self.herd_events.remove(value)
+
+    def __del__(self):
+        for value in self:
+            self.herd_events.remove(value)
 
 
 class Buffalo:
@@ -28,7 +35,7 @@ class Buffalo:
         self.birth_date = self.herd.time - age
         self.sex = event.Sex(self)
         self.identifier = next(self.herd.identifiers)
-        self.events = Events(self)
+        self.events = BuffaloEvents(self)
         if self.herd.debug:
             if age == 0:
                 print('t = {}: birth of #{} with status {}'.format(
@@ -42,6 +49,11 @@ class Buffalo:
                     age,
                     immune_status))
 
+    def die(self):
+        self.change_immune_status_to('dead')
+        self.herd.remove(self)
+        del self.events
+
     @property
     def age(self):
         return (self.herd.time - self.birth_date)
@@ -50,11 +62,3 @@ class Buffalo:
         self.herd.immune_status_remove(self)
         self.immune_status = new_immune_status
         self.herd.immune_status_append(self)
-
-    def update_infection(self):
-        infection = self.events['Infection']
-        assert infection.is_valid()
-        infection.time = infection.sample_time()
-
-    def get_next_event(self):
-        return self.events.get_next()
