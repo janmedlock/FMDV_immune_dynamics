@@ -11,9 +11,11 @@ def find_quantile_single(d, q):
     s = sorted(d)
     i = int(numpy.floor(q * len(s)))
     return s[i]
-  
+
+
 def find_quantile(D, q):
     return numpy.array([find_quantile_single(d, q) for d in D])
+
 
 def find_proportion_over_x(D, x):
     return (numpy.asarray(D) >= x).sum(axis = -1) / float(numpy.shape(D)[1])
@@ -37,7 +39,7 @@ def plot_slice2D(X, D, parameters1, **kwds):
 
     pyplot.subplot(2, 2, 1)
     Y = numpy.median(D['extinction_times'], axis = 1).reshape(dim)
-    pyplot.pcolor(X[0], X[1], Y) 
+    pyplot.pcolor(X[0], X[1], Y)
     pyplot.colorbar()
     pyplot.title('Median')
     pyplot.xlabel(parameters1[0])
@@ -45,7 +47,7 @@ def plot_slice2D(X, D, parameters1, **kwds):
 
     pyplot.subplot(2, 2, 2)
     Y = numpy.mean(D['extinction_times'], axis = 1).reshape(dim)
-    pyplot.pcolor(X[0], X[1], Y) 
+    pyplot.pcolor(X[0], X[1], Y)
     pyplot.colorbar()
     pyplot.title('Mean')
     pyplot.xlabel(parameters1[0])
@@ -53,7 +55,7 @@ def plot_slice2D(X, D, parameters1, **kwds):
 
     pyplot.subplot(2, 2, 3)
     Y = find_quantile(D['extinction_times'], 0.95).reshape(dim)
-    pyplot.pcolor(X[0], X[1], Y) 
+    pyplot.pcolor(X[0], X[1], Y)
     pyplot.colorbar()
     pyplot.title('Upper 95% quantile')
     pyplot.xlabel(parameters1[0])
@@ -61,7 +63,7 @@ def plot_slice2D(X, D, parameters1, **kwds):
 
     pyplot.subplot(2, 2, 4)
     Y = numpy.max(D['extinction_times'], axis = 1).reshape(dim)
-    pyplot.pcolor(X[0], X[1], Y) 
+    pyplot.pcolor(X[0], X[1], Y)
     pyplot.colorbar()
     pyplot.title('Maximum')
     pyplot.xlabel(parameters1[0])
@@ -94,12 +96,12 @@ def plot_slice(**kwds):
 #                               numpy.floor(logb) + 1)
 
 #     minor_exps = numpy.arange(numpy.floor(loga), numpy.ceil(logb) + 1)
-#     minor_subs = numpy.arange(1, base, base / float(minors))
+#     minor_subs = numpy.arange(1, base, base / minors)
 #     minor_locs = numpy.log10(numpy.outer(base ** minor_exps, minor_subs).flatten())
 #     minor_locs = numpy.compress((minor_locs >= loga)
 #                                & (minor_locs <= logb),
 #                                minor_locs)
-    
+
 #     labels = (10 ** major_locs).astype(int)
 
 #     # axis.set_ticks(major_locs)
@@ -141,7 +143,7 @@ def set_axis(axes, coord, key):
 def plot_3D(X, Y, Z, C, title):
     fig = pyplot.figure()
     axes = fig.add_subplot(1, 1, 1, projection = '3d', axisbg = (0, 0, 0, 0))
-    
+
     points = axes.scatter(numpy.log10(X), numpy.log10(Y), numpy.log10(Z),
                           c = C,
                           cmap = pyplot.cm.spectral_r,

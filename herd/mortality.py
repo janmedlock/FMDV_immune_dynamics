@@ -1,48 +1,87 @@
 import numpy
-from scipy import integrate, stats
+from pandas import Interval, Series
 
-from . import rv
+from herd.rv import RV
 
 
-class gen(rv.RV, stats.rv_continuous):
-    def __init__(self, parameters, *args, **kwargs):
-        stats.rv_continuous.__init__(self, name = 'mortality',
-                                     a = 0., *args, **kwargs)
+class gen(RV):
+    # {(a, b): s} is the annual survival for ages [a, b).
+    _annual_survival = {(0, 1): 0.66,
+                        (1, 3): 0.79,
+                        (3, 12): 0.88,
+                        (12, numpy.inf): 0.66}
+    # Convert to pandas.Interval()'s for convenience.
+    _annual_survival = Series(
+        {Interval(*interval, closed='left'): value
+         for (interval, value) in _annual_survival.items()}).sort_index()
 
-    def annualSurvival(self, age):
-        return numpy.where(
-            age < 1, 0.66, numpy.where(
-                age < 3, 0.79, numpy.where(
-                    age < 12, 0.88,
-                    0.66)))
+    def __init__(self, parameters):
+        pass
 
     def hazard(self, age):
-        return - numpy.log(self.annualSurvival(age))
+        return -numpy.log(numpy.asarray(self._annual_survival[age]))
 
-    def _cdf(self, age):
-        cdf_under_1 = 1 - 0.66 ** age
-        cdf_1_to_3 = 1 - 0.66 * 0.79 ** (age - 1)
-        cdf_3_to_12 = 1 - 0.66 * 0.79 * 0.79 * 0.88 ** (age - 3)
-        cdf_12_and_up = 1 - 0.66 * 0.79 ** 2 * 0.88 ** 9 * 0.66 ** (age - 12)
-        return numpy.where(age < 1, cdf_under_1,
-                           numpy.where(age < 3, cdf_1_to_3,
-                                       numpy.where(age < 12, cdf_3_to_12,
-                                                   cdf_12_and_up)))
+    def logsf(self, age):
+        '''Logarithm of the survival function.'''
+        logsf = numpy.zeros(numpy.shape(age))
+        for (interval, value) in self._annual_survival.items():
+            a = numpy.clip(age, interval.left, interval.right)
+            # (a - interval.left) is
+            # 0 if age <= interval.left,
+            # (interval.right - interval.left) if age >= interval.right,
+            # (age - interval.left) otherwise.
+            logsf += (a - interval.left) * numpy.log(value)
+        return logsf
 
-    # Inverse of CDF.
-    def _ppf(self, q):
-        q_1 = 1 - 0.66
-        ppf_under_1 = numpy.log(1 - q) / numpy.log(0.66)
-        q_3 = 1 - 0.66 * 0.79 ** 2
-        ppf_1_to_3 = 1 + (numpy.log(1 - q) - numpy.log(0.66)) / numpy.log(0.79)
-        q_12 = 1 - 0.66 * 0.79 * 0.79 * 0.88 ** 9
-        ppf_3_to_12 = (3 + (numpy.log(1 - q) - numpy.log(0.66)
-                            - 2 * numpy.log(0.79)) / numpy.log(0.88))
-        ppf_12_and_up = (12 + (numpy.log(1 - q) - numpy.log(0.66)
-                               - 2 * numpy.log(0.79) - 9 * numpy.log(0.66))
-                         / numpy.log(0.66))
+    def sf(self, age):
+        '''Survival function.'''
+        return numpy.exp(self.logsf(age))
 
-        return numpy.where(q < q_1, ppf_under_1,
-                           numpy.where(q < q_3, ppf_1_to_3,
-                                       numpy.where(q < q_12, ppf_3_to_12,
-                                                   ppf_12_and_up)))
+    def isf(self, q):
+        '''Inverse survival function.'''
+        logq = numpy.asarray(numpy.log(q))
+        isf = numpy.zeros(numpy.shape(q))
+        logq_max = logq_min = 0
+        for (interval, value) in self._annual_survival.items():
+            logq_min += (interval.right - interval.left) * numpy.log(value)
+            # This piece of logsf is the line segment from
+            # (interval.left, logq_max) to (interval.right, logq_min).
+            mask = (logq_min < logq) & (logq <= logq_max)
+            isf[mask] = (interval.left
+                         + (logq[mask] - logq_max) / numpy.log(value))
+            logq_max = logq_min
+        return isf
+
+    def cdf(self, age):
+        '''Cumulative distribution function.'''
+        return 1 - self.sf(age)
+
+    def ppf(self, q):
+        '''Percent point function, the inverse of the CDF.'''
+        return self.isf(1 - q)
+
+    def logpdf(self, age):
+        '''Logarithm of the probability density function.'''
+        return numpy.log(self.hazard(age)) + self.logsf(age)
+
+    def pdf(self, age):
+        '''Probability density function.'''
+        return numpy.exp(self.logpdf(age))
+
+    def rvs(self, size=None):
+        U = numpy.random.random_sample(size=size)
+        return self.ppf(U)
+
+
+class _MortalityParams:
+    '''Dummy parameters for the mortality random variable.'''
+    def __init__(self):
+        # There are no parameters.
+        pass
+
+
+def from_param_values():
+    '''Build a `gen()` instance from parameter values
+    instead of a `Parameters()` object.'''
+    parameters = _MortalityParams()
+    return gen(parameters)

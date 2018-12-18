@@ -1,27 +1,30 @@
 #!/usr/bin/python3
 
-import numpy
+import os.path
 import time
+
+import numpy
 
 import herd
 
-export_data = False
+
+def run_one(run_number, parameters, tmax, *args, **kwargs):
+    '''Run one simulation.'''
+    h = herd.Herd(parameters, run_number=run_number, *args, **kwargs)
+    return h.run(tmax)
+
 
 def make_plot(data, show = True):
     from matplotlib import pyplot
     import seaborn
-    from scipy import integrate
 
     (fig, ax) = pyplot.subplots()
     seaborn.set_palette(seaborn.color_palette('deep', 6))
 
-    (t, x) = map(numpy.array, zip(*data))
-    for (j, l) in enumerate(('M', 'S', 'E', 'I', 'C', 'R')):
-        # if l in ('S', 'E', 'I'):
-        if True:
-            ax.step(365 * t, x[:, j], where = 'post', label = l)
+    for (k, x) in data.items():
+        ax.step(365 * x.index, x, where = 'post', label = k)
 
-    ax.set_xlabel('time (days)')
+    ax.set_xlabel(data.index.name)
     ax.set_ylabel('number')
 
     ax.legend()
@@ -30,25 +33,21 @@ def make_plot(data, show = True):
         pyplot.show()
 
 
-def make_datasheet(data):
-	(t, x) = map(numpy.array, zip(*data))
-	data2 = pandas.DataFrame(data=x, index=t, columns=['M', 'S', 'I', 'R'])
-	data2.to_csv("run_one_data.csv", sep=',')
-
-
 if __name__ == '__main__':
-    numpy.random.seed(1)
-
-    p = herd.Parameters(SAT = 1)
-
-    tmax = 1
+    SAT = 1
+    chronic = True
+    seed = 1
+    tmax = numpy.inf
     debug = False
 
+    p = herd.Parameters(SAT=SAT, chronic=chronic)
     t0 = time.time()
-    data = herd.Herd(p, debug = debug).run(tmax)
+    data = run_one(seed, p, tmax, debug=debug)
     t1 = time.time()
     print('Run time: {} seconds.'.format(t1 - t0))
 
     make_plot(data)
-    if export_data:
-        make_datasheet(data)
+
+    # _filebase, _ = os.path.splitext(__file__)
+    # _picklefile = _filebase + '.pkl'
+    # data.to_pickle(_picklefile)

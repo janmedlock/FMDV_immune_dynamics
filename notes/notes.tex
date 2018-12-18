@@ -1,4 +1,4 @@
-\documentclass{article}
+\documentclass[12pt]{article}
 
 \usepackage[T1]{fontenc}
 \usepackage{textcomp}
@@ -19,6 +19,7 @@
 \renewcommand{\vec}[1]{\mathbf{#1}}
 \newcommand{\mat}[1]{\mathbf{#1}}
 \DeclareMathOperator{\Prob}{Prob}
+\DeclareMathOperator{\diag}{diag}
 \newcommand{\md}{\mathrm{d}}
 \newcommand{\me}{\mathrm{e}}
 \newcommand{\mT}{\mathrm{T}}
@@ -35,60 +36,27 @@
     co-infection at individual and population scales} \\
   Appendix 3: Model development and analysis}
 
+\author{Anna Jolles \and Erin Gorsich \and Simon Gubbins
+  \and Brianna Beechler \and Peter Buss \and Bryan Charleston
+  \and Nick Juleff \and Lin-Mari deKlerk-Lorist \and Francois Maree
+  \and Eva Perez-Martin \and OL van Schalkwyk \and Katherine Scott
+  \and Jan Medlock}
 
 \newcommand{\comment}[1]{\textbf{[#1]}}
-\DeclareMathOperator{\diag}{diag}
-
 
 \begin{document}
 
 \maketitle
 
-\section{Model}
 
 We built a stochastic individual-based model to capture the dynamics
 of FMDV in African buffalo.  The age and sex of each buffalo is
 tracked along with its immune state (\autoref{fig:diagram}): either
 immune due to maternal antibodies ($M$), susceptible to infection
-($S$), infectious ($I$), or recovered ($R$).  There are 5 events that
-can occur to each buffalo: death, birth, waning of maternal
-antibodies, infection, and recovery.
-
-\begin{figure}
-  \centering
-  \begin{tikzpicture}[
-    thick,
-    compartment/.style = {circle,
-      draw,
-      minimum width = {width("$M$") + 10pt}}
-    ]
-
-    \node at (0, 0) [compartment, name = M] {$M$};
-    \node at (3, 0) [compartment, name = S] {$S$};
-    \node at (6, 0) [compartment, name = I] {$I$};
-    \node at (9, 0) [compartment, name = R] {$R$};
-
-    \draw [->] (M) to node [above] {waning} (S);
-    \draw [->] (S) to node [above] {infection} (I);
-    \draw [->] (I) to node [above] {recovery} (R);
-
-    \draw [->] (S) to [out = 135, in = 45]
-    node [sloped, above, pos = 0.2] {birth} (M);
-    \draw [->] (I) to [out = 135, in = 45]
-    node [sloped, above, pos = 0.2] {birth} (M);
-    \draw [->] (R) to [out = 135, in = 45]
-    node [sloped, above, pos = 0.2] {birth} (M);
-    
-    \draw [->] (M) to node [right] {death} +(0, -1.5);
-    \draw [->] (S) to node [right] {death} +(0, -1.5);
-    \draw [->] (I) to node [right] {death} +(0, -1.5);
-    \draw [->] (R) to node [right] {death} +(0, -1.5);
-  \end{tikzpicture}
-  \caption{Model diagram.}
-  \label{fig:diagram}
-\end{figure}
-
-The simulations follow a Gillespie algorithm \citep{gillespie_1977}.
+($S$), exposed ($E$), infectious ($I$), carrier ($C$), or recovered
+($R$).  There are 7 events that can occur to each buffalo: death,
+birth, waning, infection, progression, recovery, and chronic
+recovery.
 \begin{description}
 \item[Death] On the birth of new buffalo calf, the age at death of
   that calf is sampled from the mortality distribution.
@@ -100,29 +68,45 @@ The simulations follow a Gillespie algorithm \citep{gillespie_1977}.
   birth to her next calf.  A simple Bernoulli sample determines the
   sex of each calf.
 
-\item[Waning] Each new buffalo calf is assumed to be immune to
-  infection due to maternal antibodies: at birth, the duration of
-  maternal immunity is sampled from its distribution.
+\item[Waning] Each new buffalo calf is assumed to be
+  immune to infection due to maternal antibodies: at birth, the
+  duration of maternal immunity is sampled from its distribution.
 
 \item[Infection] For each susceptible buffalo, the time to infection
   is sampled from its distribution, which depends on the current
   number of infected buffalo in the population.
 
-\item[Recovery] On infection, the time to recovery is sampled from its
-  distribution.
-\end{description}
-The distributions are detailed below.
+\item[Progression] On infection, the time to progression is sampled
+  from its distribution.
 
+\item[Recovery] On infection, the time to recovery is sampled from its
+  distribution.  A simple Bernoulli sample determines whether the
+  recovered buffalo becomes a carrier.
+
+\item[Chronic recovery] When a buffalo becomes a carrier, the time to
+  recovery is sampled from its distribution.
+\end{description}
+The distributions are detailed below.  (See also \autoref{fig:distributions}.)
+
+
+\begin{figure}
+  \centering
+  \input{diagram.tex}
+  \caption{Model diagram.  Death from each state is not shown.}
+  \label{fig:diagram}
+\end{figure}
+
+
+The simulations follow a Gillespie algorithm \citep{gillespie_1977}.
 For each buffalo, a list of events and the times they occur is stored.
 The next event over the whole population is found and the population
 is updated.  The hazards for infection depend on the number of
 infectious buffalo in the population and so the times to infection are
 updated after each change in the population.  The hazards of the other
 events are independent of the state of the population and so the times
-to these events are not updated.
-
-This process was repeated from $t = 0$ to $t = t_{\text{max}}$ or
-until there were $0$ infectious buffalo.
+to these events are not updated.  This process was repeated from $t =
+0$ to $t = t_{\text{max}}$ or until there were $0$ infected (exposed,
+infectious, and chronic) buffalo.
 
 When sampling from simple distributions, standard algorithms were used
 \citep{scipy}.  For complex distributions, the event times were
@@ -131,48 +115,51 @@ sampled using the inverse transform method \citep{rubinstein_1981}.
 The variables $t$ and $a$ denote time and age, respectively, and are
 both in units of years.
 
-\subsection{Death}
+\section{Death}
 
 We took the annual survival to be
 \begin{equation}
   \Prob\{\text{Survival for $\unit[1]{yr}$}\}
   =
   \begin{cases}
-    0.7 & \text{if $a < 1$},
+    0.66 & \text{if $a < 1$},
     \\
-    0.95 & \text{if $1 \leq a < 12$},
+    0.79 & \text{if $1 \leq a < 3$},
     \\
-    0.5 & \text{if $a \geq 12$}.
+    0.88 & \text{if $3 \leq a < 12$},
+    \\
+    0.66 & \text{if $a \geq 12$}.
   \end{cases}
 \end{equation}
 Assuming that the mortality hazard is constant throughout a year gives
-the survival function for mortality
+the hazard
 \begin{equation}
-  S_{\text{mortality}}(a) =
-  \begin{cases}
-    0.7^a & \text{if $a < 1$},
-    \\
-    0.7 \cdot 0.95^a & \text{if $1 \leq a < 12$},
-    \\
-    0.7 \cdot 0.95^{11} \cdot 0.5^a & \text{if $a \geq 12$}.
-  \end{cases}
+  h_{\text{mortality}}(a)
+  = - \log \Prob\{\text{Survival for $\unit[1]{yr}$}\},
 \end{equation}
-This has inverse
+and the survival
 \begin{equation}
-  Z_{\text{mortality}}(q) =
-  \begin{cases}
-    \unit[\frac{\log(q)}{\log(0.7)}]{yr} & \text{if $q > 0.7$},
-    \\
-    \unit[1 + \frac{\log(q) - \log(0.7)}{\log(0.95)}]{yr}
-    & \text{if $0.7 \cdot 0.95^{11} \leq q < 0.7$},
-    \\
-    \unit[12 + \frac{\log(q) - \log(0.7) - 11 \log(0.95)}{\log(0.5)}]{yr}
-    & \text{if $q \leq 0.7 \cdot 0.95^{11}$}.
-  \end{cases}
+  \begin{split}
+    S_{\text{mortality}}(a)
+    =
+    \begin{cases}
+      0.66^a
+      & \text{if $a < 1$},
+      \\
+      0.66 \cdot 0.79^{a - 1}
+      & \text{if $1 \leq a < 3$},
+      \\
+      0.66 \cdot 0.79^2 \cdot 0.88^{a - 3}
+      & \text{if $3 \leq a < 12$},
+      \\
+      0.66 \cdot 0.79^2 \cdot 0.88^9 \cdot 0.66^{a - 12}
+      & \text{if $a \geq 12$}.
+    \end{cases}
+  \end{split}
 \end{equation}
 
 
-\subsection{Birth}
+\section{Birth}
 
 We assumed that females reach reproductive maturity at age $4$ and
 that the birth hazard varies at a periodic, triangular-shaped rate in
@@ -182,273 +169,239 @@ time:
   \begin{cases}
     0 & \text{if $a < 4$},
     \\
-    \mu \alpha \max\left(1 - 2 \beta \{t\}, 0\right)
-    & \text{if $a \geq 4$ and $\{t\} < \frac{1}{2}$},
-    \\
-    \mu \alpha \max\left(1 - 2 \beta (1 - \{t\}), 0\right)
-    & \text{if $a \geq 4$ and $\{t\} \geq \frac{1}{2}$},
+    \mu \alpha \max\big(1 - \beta (1 - |1 - 2 \{t - \tau\}|), 0\big)
+    & \text{if $a \geq 4$},
   \end{cases}
 \end{equation}
 with
 \begin{equation}
   \alpha =
   \begin{cases}
-    1 + c_v \sqrt{3}
-    & \text{if $c_v < \frac{1}{\sqrt{3}}$},
+    1 + c_{\text{v}} \sqrt{3}
+    & \text{if $c_{\text{v}} < \frac{1}{\sqrt{3}}$},
     \\
-    \frac{3}{2} \left(1 + c_v^2\right)
-    & \text{if $c_v \geq \frac{1}{\sqrt{3}}$},
+    \frac{3}{2} \left(1 + c_{\text{v}}^2\right)
+    & \text{if $c_{\text{v}} \geq \frac{1}{\sqrt{3}}$},
   \end{cases}
 \end{equation}
 \begin{equation}
   \beta =
   \begin{cases}
-    \frac{2 c_v \sqrt{3}}{1 + c_v \sqrt{3}}
-    & \text{if $c_v < \frac{1}{\sqrt{3}}$},
+    \frac{2 c_{\text{v}} \sqrt{3}}{1 + c_{\text{v}} \sqrt{3}}
+    & \text{if $c_{\text{v}} < \frac{1}{\sqrt{3}}$},
     \\
-    \frac{3}{4} \left(1 + c_v^2\right)
-    & \text{if $c_v \geq \frac{1}{\sqrt{3}}$},
+    \frac{3}{4} \left(1 + c_{\text{v}}^2\right)
+    & \text{if $c_{\text{v}} \geq \frac{1}{\sqrt{3}}$},
   \end{cases}
 \end{equation}
-and $\{x\}$ is the fractional part of $x$.  The magnitude of the
-seasonal variation is captured by the coefficient of variation $c_v$,
-which we took to be $1$ by default.  The annual mean $\mu$ was chosen
-so that the population achieves the mean growth rate $r = 0$ in the
-absence of infection.  (See \autoref{no_infection}.)
+and $\{x\}$ is the fractional part of $x$
+(\autoref{fig:birth_hazard}).  The magnitude of the seasonal variation
+is captured by the coefficient of variation $c_{\text{v}}$.  The time of year
+of the peak birth hazard is $\tau$.  The annual mean $\mu$ was chosen
+so that the population achieves the mean growth rate $r = 0$.  (See
+\autoref{stable_age_structure}.)
 
-The survival function for $t$ years until the next birth, given age
-$a_0$ at the current time $t_0$ is
+\begin{figure}
+  \centering
+  \input{birth_hazard.pgf}
+  \caption{Model birth hazards for ages 4 years and older.}
+  \label{fig:birth_hazard}
+\end{figure}
+
+The cumulative hazard for $t$ years, given age $a_0$ at the current
+time $t_0$ is
 \begin{equation}
-  S_{\text{birth}}(t, t_0, a_0) = \exp\left(- H(t, t_0, a_0)\right),
+  H_{\text{birth}}(t, t_0, a_0) =
+  \begin{cases}
+    0 & \text{if $a_0 + t < 4$},
+    \\
+    \mu \left(H_0 + H_1  + H_2\right)
+    & \text{if $a_0 + t \geq 4$ and $c_{\text{v}} < \frac{1}{\sqrt{3}}$},
+    \\
+    \mu \left(H_0 + H_3 + H_4\right)
+    & \text{if $a_0 + t \geq 4$ and $c_{\text{v}} \geq \frac{1}{\sqrt{3}}$},
+  \end{cases}
 \end{equation}
-where the cumulative hazard is
-\begin{align}
-  H(t, t_0, a_0) &=
-  \begin{cases}
-    0 & \text{if $a_0 + t - t_0 < 4$},
+with
+\begin{equation}
+  \begin{split}
+    c &= t_0 + \max(4 - a_0, 0) - \tau,
     \\
-    \mu \alpha \left(H_1 + H_2  + H_3\right)
-    & \text{if $a_0 + t - t_0 \geq 4$ and $c_v < \frac{1}{\sqrt{3}}$},
+    d &= t_0 + t - \tau,
     \\
-    \mu \alpha \left(H_4 + H_5 + H_6\right)
-    & \text{if $a_0 + t - t_0 \geq 4$ and $c_v \geq \frac{1}{\sqrt{3}}$},
-  \end{cases}
-  \\
-  H_1 &= \left(1 - \frac{\beta}{2}\right)
-  \left(\lfloor d \rfloor - \lfloor c \rfloor - 1\right),
-  \\
-  H_2 &=
-  \begin{cases}
-    \frac{1}{2} \left(1 - \frac{\beta}{2}\right)
-    + \left(\frac{1}{2} - \{c\}\right)
-    \left[1 - \beta
-      + \beta \left(\frac{1}{2} - \{c\}\right)\right]
-    & \text{if $\{c\} < \frac{1}{2}$},
+    H_0 &= \lfloor d \rfloor - \lfloor c \rfloor - 1,
     \\
-    \left(1 - \{c\}\right)
-    \left[1 - \beta + \beta \left(1 - \{c\}\right)\right]
-    & \text{if $\{c\} \geq \frac{1}{2}$},
-  \end{cases}
-  \\
-  H_3 &=
-  \begin{cases}
-    \{d\}\left(1 - \beta \{d\}\right)
-    & \text{if $\{d\} < \frac{1}{2}$},
-    \\
-    \frac{1}{2} \left(1 - \frac{\beta}{2}\right)
-    + \left(\{d\} - \frac{1}{2}\right)
-    \left[1 - \beta
-      + \beta \left(\{d\} - \frac{1}{2}\right)\right]
-    & \text{if $\{d\} \geq \frac{1}{2}$},
+    H_1 &=
+    \begin{cases}
+      \frac{1}{2}
+      + \alpha \left(\frac{1}{2} - \{c\}\right)
+      \left[1 - \beta
+        + \beta \left(\frac{1}{2} - \{c\}\right)\right]
+      & \text{if $\{c\} < \frac{1}{2}$},
+      \\
+      \alpha \left(1 - \{c\}\right)
+      \left[1 - \beta + \beta \left(1 - \{c\}\right)\right]
+      & \text{if $\{c\} \geq \frac{1}{2}$},
     \end{cases}
-  \\
-  H_4 &= \frac{1}{2 \beta}
-  \left(\lfloor d \rfloor - \lfloor c \rfloor - 1\right),
-  \\
-  H_5 &=
-  \begin{cases}
-    \frac{1}{4 \beta}
-    + \beta \left(\frac{1}{2 \beta} - \{c\}\right)^2
-    & \text{if $\{c\} < \frac{1}{2 \beta}$},
     \\
-    \frac{1}{4 \beta}
-    & \text{if $\frac{1}{2 \beta} \leq \{c\} < 1 - \frac{1}{2 \beta}$},
+    H_2 &=
+    \begin{cases}
+      \alpha \{d\}\left(1 - \beta \{d\}\right)
+      & \text{if $\{d\} < \frac{1}{2}$},
+      \\
+      \frac{1}{2}
+      + \alpha \left(\{d\} - \frac{1}{2}\right)
+      \left[1 - \beta
+        + \beta \left(\{d\} - \frac{1}{2}\right)\right]
+      & \text{if $\{d\} \geq \frac{1}{2}$},
+    \end{cases}
     \\
-    \left(1 - \{c\}\right) \left[1 -
-      \beta \left(1 - \{c\}\right)\right]
-    & \text{if $\{c\} \geq 1 - \frac{1}{2 \beta}$}
-  \end{cases},
-  \\
-  H_6 &=
-  \begin{cases}
-    \{d\} \left[1 - \beta \{d\}\right]
-    & \text{if $\{d\} < \frac{1}{2 \beta}$},
+    H_3 &=
+    \begin{cases}
+      \frac{1}{2} + \alpha \beta \left(\frac{1}{2 \beta} - \{c\}\right)^2
+      & \text{if $\{c\} < \frac{1}{2 \beta}$},
+      \\
+      \frac{1}{2}
+      & \text{if $\frac{1}{2 \beta} \leq \{c\} < 1 - \frac{1}{2 \beta}$},
+      \\
+      \alpha \left(1 - \{c\}\right) \left[1 -
+        \beta \left(1 - \{c\}\right)\right]
+      & \text{if $\{c\} \geq 1 - \frac{1}{2 \beta}$},
+    \end{cases}
     \\
-    \frac{1}{4 \beta}
-    & \text{if $\frac{1}{2 \beta} \leq \{d\} <
-      1 - \frac{1}{2 \beta}$},
-    \\
-    \frac{1}{4 \beta}
-    + \beta
-    \left[\{d\} - \left(1 - \frac{1}{2 \beta}\right)\right]^2
-    & \text{if $\{d\} \geq 1 - \frac{1}{2 \beta}$},
-  \end{cases}
-  \\
-  c &= \max(4 - a_0, 0) + t_0,
-  \\
-  d &= t + t_0,
-\end{align}
+    H_4 &=
+    \begin{cases}
+      \alpha \{d\} \left[1 - \beta \{d\}\right]
+      & \text{if $\{d\} < \frac{1}{2 \beta}$},
+      \\
+      \frac{1}{2}
+      & \text{if $\frac{1}{2 \beta} \leq \{d\} <
+        1 - \frac{1}{2 \beta}$},
+      \\
+      \frac{1}{2}
+      + \alpha \beta
+      \left[\{d\} - \left(1 - \frac{1}{2 \beta}\right)\right]^2
+      & \text{if $\{d\} \geq 1 - \frac{1}{2 \beta}$},
+    \end{cases}
+  \end{split}
+\end{equation}
 and $\lfloor x \rfloor$ is the floor function,
 i.e.~$\lfloor x \rfloor = x - \{x\}$.
-
-There is no explicit inverse survival function.  Instead, the inverse
-was found numerically using a root-finding algorithm \citep{scipy}.
-
+The survival function for $t$ years, given age
+$a_0$ at the current time $t_0$ is then
+\begin{equation}
+  S_{\text{birth}}(t, t_0, a_0) = \exp\left(- H_{\text{birth}}(t, t_0, a_0)\right).
+\end{equation}
 The probability density function for births time $t$ later, given age
-$a_0$ at $t_0$ is
+$a_0$ at $t_0$, is
 \begin{align}
-  f_{\text{birth}}(t, t_0, a_0) &=
-  h_{\text{birth}}(t, a_0 + t) S_{\text{birth}}(t, t_0, a_0).
-\end{align}
-Multiplying by $N(t_0, a_0)$, the density of females aged $a_0$ at
-$t_0$, and integrating over $a_0$ gives the expected number of
-births time $t$ later:
-\begin{equation}
-  b(t, t_0) = \int_0^{\infty} f_{\text{birth}}(t, t_0, a_0) N(t_0, a_0) \md a_0.
-\end{equation}
-Binning by month gives the expected number of births in month $m$:
-\begin{align}
-  g(m, t_0) &=
-  \int_0^1 b\left(\frac{m + \mu}{12}, t_0\right) \md \mu
-  & & \text{for $m \in \{0, 1, 2, \ldots\}$}.
+  f_{\text{birth}}(t, t_0, a_0) =
+  h_{\text{birth}}(t_0 + t, a_0 + t)
+  S_{\text{birth}}(t, t_0, a_0).
 \end{align}
 
-The fraction of newborns that are male was taken to be
-\begin{equation}
-  p_{\text{male birth}} = 0.5.
-\end{equation}
+% Multiplying the probability density by $N(t_0, a_0)$, the density of
+% females aged $a_0$ at $t_0$, and integrating over $a_0$ gives the
+% expected number of births time $t$ later:
+% \begin{equation}
+%   b(t, t_0) = \int_0^{\infty} f_{\text{birth}}(t, t_0, a_0) N(t_0, a_0) \md a_0.
+% \end{equation}
+% Binning by month gives the expected number of births in month $m$:
+% \begin{align}
+%   g(m, t_0) &=
+%   \int_0^1 b\left(\frac{m + \mu}{12}, t_0\right) \md \mu
+%   & & \text{for $m \in \{0, 1, 2, \ldots\}$}.
+% \end{align}
+
+On birth, the newborn is female with probability
+$p_{\text{female}} = 0.5$ or otherwise male.
 
 
-\subsection{Waning of maternal antibodies}
+\section{Waning}
 
-Immunity from maternal antibodies was assumed to last
-\begin{equation}
-  T_{\text{maternal immunity}} = \unit[0.5]{yr}
-\end{equation}
-in all buffaloes.  That is, the survival function is
-\begin{equation}
-  S_{\text{maternal immunity}}(t) =
-  \begin{cases}
-    1 & \text{if $t < 0.5$},
-    \\
-    0 & \text{if $t \geq 0.5$},
-  \end{cases}
-\end{equation}
-and the inverse survival function is constant,
-\begin{equation}
-  Z_{\text{maternal immunity}}(q) = \unit[0.5]{yr}.
-\end{equation}
+The duration of maternal immunity was taken to be a standard gamma
+random variable with shape $k_{\text{maternal immunity}}$
+and mean $\mu_{\text{maternal immunity}}$.
 
 
-\subsection{Infection}
+\section{Infection}
 
 The infection hazard was taken to be
 \begin{equation}
-  h_{\text{infection}}(t) = \beta I(t),
+  h_{\text{infection}}(t) = \beta_{\text{acute}} I(t) +
+  \beta_{\text{chronic}} C(t),
 \end{equation}
-where $I(t)$ is the total number of infectious buffalo in the herd at
-time $t$.  Over periods where $I(t)$ is constant, the hazard is
-constant, which gives an exponential random variable.
-
-The transmission rate, $\beta$, is chosen to give the desired value of
-$R_0$.  For the model,
-\begin{equation}
-  R_0 = \frac{\beta N}{\frac{1}{\mu_{\text{infection}}}
-    + \frac{1}{\mu_{\text{mortality}}}},
-\end{equation}
-where $N$ is the population size,
-$\mu_{\text{infection}} = \unit[1.6]{d}$ is the mean time to recovery
-(see next section), and $\mu_{\text{mortality}}$ is the mean time to
-death.  Thus,
-\begin{equation}
-  \beta = \frac{R_0}{N}
-  \left(\frac{1}{\mu_{\text{infection}}} +
-    \frac{1}{\mu_{\text{mortality}}}\right)
-  \approx \frac{R_0}{N \mu_{\text{infection}}},
-\end{equation}
-because $\mu_{\text{infection}} \ll \mu_{\text{mortality}}$.
-
-\subsection{Recovery}
-
-The duration of infection was taken to be
-\begin{equation}
-  T_{\text{recovery}} = \unit[1.6]{d}
-\end{equation}
-in all buffaloes.  That is, the survival function is
-\begin{equation}
-  S_{\text{recovery}}(t) =
-  \begin{cases}
-    1 & \text{if $t < \frac{1.6}{365}$},
-    \\
-    0 & \text{if $t \geq \frac{1.6}{365}$},
-  \end{cases}
-\end{equation}
-and the inverse survival function is constant,
-\begin{equation}
-  Z_{\text{recovery}}(q) = \unit[1.6]{d}.
-\end{equation}
+where $I(t)$ and $C(t)$ are the total number of infectious and
+chronic-carrier buffalo in the herd at time $t$.  Over periods where
+$I(t)$ and $C(t)$ are constant, the hazard is constant, which gives an
+exponential random variable.
 
 
-\subsection{Initial conditions}
+\section{Progression}
+
+The duration of the latent period was taken to be a standard gamma
+random variable with shape $k_{\text{progression}}$
+and mean $\mu_{\text{progression}}$.
+
+
+\section{Recovery}
+
+The duration of infection was taken to be a standard gamma random
+variable with shape $k_{\text{recovery}}$ and mean
+$\mu_{\text{recovery}}$.
+
+On recovery, buffalo become chronic carriers with probability
+$p_{\text{chronic}}$ or otherwise is recovered, i.e.~fully cleared
+of pathogen.
+
+
+\section{Chronic recovery}
+
+The duration of the chronic-carrier state was taken to be an
+exponential random variable with mean
+$\mu_{\text{chronic recovery}}$.
+
+
+\section{Initial conditions}
 
 A sample of size $N$ from the stable age structure was used to
-initialize the population.  (See \autoref{no_infection}.)  The sex of
-each buffalo was randomly selected with probability
-$p_{\text{male birth}}$ of being male.  The simulations were started
-at $t = 0$ with $2$ initial infections in randomly chosen members of
-the population.
-
-Gap sizes 7 months and greater have period-2 stable limit-cycle
-asymptotic behavior.
+initialize the population.  (See \autoref{stable_age_structure}.)  The
+sex of each buffalo was randomly selected with probability
+$p_{\text{female}}$ of being female.
+% The simulations were started at $t = 0$ with $2$ initial infections
+% in randomly chosen members of the population.
 
 
 \begin{figure}
   \centering
-  \includegraphics[width = \textwidth]{hazards}
-  \caption{Hazard functions.}
-  \label{fig:hazard}
+  \input{distributions.pgf}
+  \caption{Hazards and survivals for the model events.
+    \textbf{Add stable age distribution?}}
+  \label{fig:distributions}
 \end{figure}
 
 
-\begin{figure}
-  \centering
-  \includegraphics[width = \textwidth]{survivals}
-  \caption{Survival functions.}
-  \label{fig:survival}
-\end{figure}
+\section{Stable age structure}
+\label{stable_age_structure}
 
-
-
-\clearpage
-\section{Analysis}
-
-\subsection{No infection}
-\label{no_infection}
-
-In the absence of infection, the mean number of female births $B(t)$
-follows the Lotka equation
+The mean rate of female births $B(t)$ follows the Lotka equation
 \begin{equation}
   \label{lotka}
   \begin{split}
     B(t) =&
-    \int_0^t B(t - a) S_{\text{mortality}}(a) h_{\text{birth}}(t, a) \md a
+    p_{\text{female}} \bigg[
+      \int_0^t B(t - a)
+      S_{\text{mortality}}(a)
+      h_{\text{birth}}(t, a) \md a
     \\
-    & {} +
-    \int_0^{\infty} n_0(a) \frac{S_{\text{mortality}}(a +
-      t)}{S_{\text{mortality}}(a)} h_{\text{birth}}(t, a + t) \md a,
+    & \quad\quad\quad\quad\quad {} +
+      \int_0^{\infty} n_0(a)
+      \frac{S_{\text{mortality}}(a + t)}{S_{\text{mortality}}(a)}
+      h_{\text{birth}}(t, a + t) \md a
+    \bigg],
   \end{split}
 \end{equation}
-where $n_0(a)$ is the number of age $a$ females at time $t = 0$
+where $n_0(a)$ is the density of age $a$ females at time $t = 0$
 \citetext{\citealp[Chapter VI, Section 29 on
   pp.~159--161]{harris_1963};
   \citealp[Chapter 20 on pp.~353--364]{kot_01}}.
@@ -456,25 +409,26 @@ where $n_0(a)$ is the number of age $a$ females at time $t = 0$
 % integral in \eqref{lotka}---becomes negligible, so
 % \begin{equation}
 %   B(t) =
-%   \int_0^t B(t - a) \hat{h}_{\text{birth}}(t, a) \md a
+%   p_{\text{female}} \int_0^t B(t - a)
+%   \hat{h}_{\text{birth}}(t, a) \md a
 % \end{equation}
 % for large $t$,
 % where
 % \begin{equation}
-%   \hat{h}_{\text{birth}}(t, a) = 
-%   S_{\text{mortality}}(a) 
+%   \hat{h}_{\text{birth}}(t, a) =
+%   S_{\text{mortality}}(a)
 %   h_{\text{birth}}(t, a).
 % \end{equation}
 % Alternately,
 % \begin{equation}
 %   B(t)
 %   =
-%   \int_0^{t}
+%   p_{\text{female}} \int_0^{t}
 %   B(u)
 %   \hat{h}_{\text{birth}}(t, t - u)
 %   \md u.
 % \end{equation}
-Given $B(t)$, the mean number of females of age $a$ is
+Given $B(t)$, the mean density of females of age $a$ is
 \begin{equation}
   n(t, a) =
   \begin{cases}
@@ -486,897 +440,459 @@ Given $B(t)$, the mean number of females of age $a$ is
     & \text{if $a > t$}.
   \end{cases}
 \end{equation}
-The mean number of females of age $a$ satisifies the McKendrick--von
-Foerster equation
+The mean density of females of age $a$ satisifies the McKendrick--von
+Foerster partial differential equation (PDE)
 \begin{equation}
+  \label{PDE}
   \begin{split}
-    \frac{\partial n}{\partial t} + \frac{\partial n}{\partial a}
+    \frac{\partial n}{\partial t}(t, a)
+    + \frac{\partial n}{\partial a}(t, a)
     &= - h_{\text{death}}(a) n(t, a),
     \\
-    n(t, 0) &= \int_0^t n(t, a) h_{\text{birth}}(t, a) \md a,
+    n(t, 0) &=
+    p_{\text{female}}
+    \int_0^{+\infty} h_{\text{birth}}(t, a) n(t, a) \md a,
     \\
     n(0, a) &= n_0(a).
   \end{split}
 \end{equation}
 
-Discretizing in $a$ by setting
+Because the birth hazard, $h_{\text{birth}}(t, a)$,
+is periodic with period $T = \unit[1]{y}$,
+we found the stable age structure and the asymptotic population growth
+rate using Floquet theory \citep{parker_1992}.
+Floquet theory requires the fundamental solution $\Phi(t, a, a')$ for
+McKendrick--von Foerster equation \eqref{PDE}, which, for each $a'$,
+satisfies the same PDE and birth integral as
+$n(t, a)$, but with an initial condition localized to age $a'$:
 \begin{equation}
-  \label{eq:11}
-  \vec{a} = \left[0, \Delta a, 2 \Delta a, \cdots, a_{\text{max}} \right]^{\mT}
-\end{equation}
-and
-\begin{equation}
-  \vec{n}(t) \approx n(t, \vec{a})
-\end{equation}
-gives
-\begin{equation}
+  \label{fundamental_PDE}
   \begin{split}
-    \frac{\md \vec{n}}{\md t} &=
-    \left[\mat{B}(t)
-      - \mat{M}
-      + \mat{A}\right] \vec{n},
+    \frac{\partial \Phi}{\partial t}(t, a, a')
+    + \frac{\partial \Phi}{\partial a}(t, a, a')
+    &= - h_{\text{death}}(a) \Phi(t, a, a'),
+    \\
+    \Phi(t, 0, a') &=
+    p_{\text{female}}
+    \int_0^{+\infty} h_{\text{birth}}(t, a) \Phi(t, a, a') \md a,
+    \\
+    \Phi(0, a, a') &= \delta(a - a'),
   \end{split}
 \end{equation}
-with
+where $\delta(x)$ is the Dirac delta.
+To solve this numerically, we used the
+Crank--Nicolson method on characteristics and the composite trapezoid
+rule for the birth integral \citep{milner_1992}.  Given the time
+step $\Delta t$,
+let $a_i = i \Delta t$
+and $a'_j = j \Delta t$
+for $i, j \in \{0, 1, 2, \ldots, I - 1\}$;
+$t^k = k \Delta t$
+for $k \in \{0, 1, \ldots, K - 1\}$;
+and $\Phi_{i, j}^k \approx \Phi(t^k, a_i, a'_j)$.
+For each $j$ and each $k \geq 1$, the Crank--Nicolson method on
+characteristics is
 \begin{equation}
-  \begin{split}
-    \mat{B}(t)
-    &=
-    (1 - p_{\text{male birth}})
-    \begin{bmatrix}
-      \cdots & h_{\text{birth}}(t, \vec{a}) & \dots
-      \\
-      \cdots & 0 & \cdots
-      \\
-      \cdots & 0 & \cdots
-      \\
-      & \vdots &
-      \\
-      \cdots & 0 & \cdots
-    \end{bmatrix},
-    \\
-    \mat{M} &=
-    \operatorname{diag}\left(h_{\text{mortality}}(\vec{a})\right),
-    \\
-    \mat{A} &=
-    \frac{1}{\Delta a}
-    \begin{bmatrix}
-      -1 & 0 & 0 & 0 & \cdots & 0 & 0
-      \\
-      1 & -1 & 0 & 0 & \cdots & 0 & 0
-      \\
-      0 & 1 & -1 & 0 & \cdots & 0 & 0
-      \\
-      \vdots & \ddots & \ddots & \ddots & \ddots &  & \vdots
-      \\
-      \vdots &  & \ddots & \ddots & \ddots & \ddots & \vdots
-      \\
-      0  & \cdots & \cdots & 0 & 1 & - 1 & 0
-      \\
-      0  & \cdots & \cdots & \cdots & 0 & 1 & 0
-    \end{bmatrix},
-  \end{split}
-\end{equation}
-Solving this from $t_0$ to $t_0 + 1$ gives
-\begin{equation}
-  \vec{n}(t_0 + 1) = \vec{n}(t_0)
-  \exp\left(\bar{\mat{B}} - \mat{M} + \mat{A}\right)
-\end{equation}
-where
-\begin{equation}
-  \begin{split}
-    \bar{\mat{B}} &=
-    \int_{t_0}^{t_0 + 1} \mat{B}(t) \md t =
-    (1 - p_{\text{male birth}})
-    \begin{bmatrix}
-      \cdots & \bar{h}_{\text{birth}}(\vec{a}) & \dots
-      \\
-      \cdots & 0 & \cdots
-      \\
-      \cdots & 0 & \cdots
-      \\
-      & \vdots &
-      \\
-      \cdots & 0 & \cdots
-    \end{bmatrix},
-    \\
-    \bar{h}_{\text{birth}}(a) &=
-    \int_{t_0}^{t_0 + 1} h_{\text{birth}}(t, a + t) \md t
-    \\
-    &=
-    \begin{cases}
-      0 & \text{if $a < 3$},
-      \\
-      \alpha \left(
-        a - 3 + \frac{\sigma}{2 \pi}
-        \left[
-          \sin\left(2\pi t_0\right)
-          - \sin\left(2 \pi (t_0 - a)\right)
-        \right]
-      \right)
-      & \text{if $3 \leq a < 4$},
-      \\
-      \alpha & \text{if $a \geq 4$}.
-    \end{cases}
-  \end{split}
-\end{equation}
-Assuming the stable age distribution so that
-\begin{equation}
-  \vec{n}(t_0 + 1) = \me^r \vec{n}(t_0)
-\end{equation}
-gives
-\begin{equation}
-  r = \lambda_0\left(\bar{\mat{B}} - \mat{M} + \mat{A}\right),
-\end{equation}
-where $\lambda_0(\mat{X})$ is the eigenvalue of $\mat{X}$ with largest
-magnitude.  The eigenvector corresponding to this eigenvalue is the
-stable age distribution $\vec{n}_{\text{stable}}$.
-
-We numerically computed the eigenvalue and eigenvector by using age
-steps $\Delta a = 0.01$, maximum age $a_{\text{max}} = 20$
-(probability of survival $S_{\text{mortality}}(20) = 0.0016$), and a
-standard eigenvalue solver
-\citep[\texttt{numpy.linalg.eig},][]{scipy}.  We then used a standard
-root-finding algorithm
-\citep[\texttt{scipy.optimize.fsolve},][]{scipy} to find the value of
-the mean birth hazard $\mu \approx 0.443$ that gave growth rate
-$r = 0$.  Halving the age step to $\Delta a = 0.005$ gave a value of
-$\mu$ within $1.2 \times 10^{-4}$ and doubling the maximum age to
-$a_{\text{max}} = 40$ gave a value of $\mu$ within
-$1.7 \times 10^{-12}$.
-
-
-\subsection{$R_0$}
-
-
-\appendix
-
-\section{Alternate Birth Hazards}
-
-\subsection{Rectangular}
-
-Let the hazard be constant $\alpha$ in the regions of width
-$\beta \in (0, 1]$ centered at $\{t\} = 0$ and $0$ elsewhere:
-\begin{equation}
-  h_{\text{birth}} (t, a) =
-  \begin{cases}
-    0 & \text{if $a < 4$},
-    \\
-    \alpha & \text{if $a \geq 4$ and $\left\{t + \frac{\beta}{2}\right\}
-      \leq \beta$},
-    \\
-    0 & \text{if $a \leq 4$ and $\left\{t + \frac{\beta}{2}\right\}
-      > \beta$},
-  \end{cases}
-\end{equation}
-where $\{x\}$ is the fractional part of $x$.  For $a > 4$, the mean
-and variance are
-\begin{align}
-  \mu &= \alpha \beta,
-  &
-  \sigma^2 &= \alpha^2 \beta (1 - \beta),
-\end{align}
-so the coefficient of variation is
-\begin{equation}
-  c_v = \sqrt{\frac{1 - \beta}{\beta}},
-\end{equation}
-which gives
-\begin{align}
-  \alpha &= \mu \left(1 + c_v^2\right),
-  &
-  \beta &= \frac{1}{1 + c_v^2}.
-\end{align}
-With $\mu$ fixed, this gives one parameter, $c_v$.
-
-The survival is
-\begin{equation}
-  S_{\text{birth}}(t, t_0, a_0) =
-  \exp\left(-H(t, t_0, a_0)\right)
-\end{equation}
-where the cumulative hazard is
-\begin{equation}
-  H(t, t_0, a_0) =
-  \begin{cases}
-    0 & \text{if $a_0 + t_0 < 4$},
-    \\
-    \alpha \left[
-      \beta (\lfloor d \rfloor - \lfloor c \rfloor)
-      + \min(\{d\}, \beta)
-      - \min(\{c\}, \beta)
-    \right]
-    & \text{if $a_0 + t_0 \geq 4$},
-  \end{cases}
-\end{equation}
-and
-\begin{align}
-  c &= \max(4 - a_0, 0) + t_0 + \frac{\beta}{2},
-  &
-  d &= t + t_0 + \frac{\beta}{2}.
-\end{align}
-
-
-
-\subsection{Triangular}
-
-Let the hazard be triangular with maximum $\alpha$ and slopes
-$\pm 2 \alpha \beta$ centered at $t = 0$:
-\begin{equation}
-  h_{\text{birth}} (t, a) =
-  \begin{cases}
-    0 & \text{if $a < 4$},
-    \\
-    \alpha \max\left(1 - 2 \beta \{t\}, 0\right)
-    & \text{if $a \geq 4$ and $\{t\} < \frac{1}{2}$},
-    \\
-    \alpha \max\left(1 - 2 \beta (1 - \{t\}), 0\right)
-    & \text{if $a \geq 4$ and $\{t\} \geq \frac{1}{2}$}.
-  \end{cases}
-\end{equation}
-
-\subsubsection{$\beta \leq 1$}
-
-With $\beta \leq 1$, the $\max(x, 0) = x$ in the hazard:
-\begin{equation}
-  h_{\text{birth}} (t, a) =
-  \begin{cases}
-    0 & \text{if $a < 4$},
-    \\
-    \alpha \left(1 - 2 \beta \{t\}\right)
-    & \text{if $a \geq 4$ and $\{t\} < \frac{1}{2}$},
-    \\
-    \alpha \left[1 - 2 \beta (1 - \{t\})\right]
-    & \text{if $a \geq 4$ and $\{t\} \geq \frac{1}{2}$}.
-  \end{cases}
-\end{equation}
-For $a > 4$, the mean is
-\begin{align}
-  \mu = \int_0^1 h_{\text{birth}}(t, a) \md t
-  = 2 \alpha \int_0^{\frac{1}{2}} 1 - 2 \beta t \md t
-  % = 2 a \left[t - b t^2\right]_0^{\frac{1}{2}}
-  = \frac{\alpha (2 - \beta)}{2}
-\end{align}
-and
-\begin{align}
-  \int_0^1 \left[h_{\text{birth}}(t, a)\right]^2 \md t
-  % \\
-  = 2 \alpha^2 \int_0^{\frac{1}{2}} \left(1 - 2 \beta t\right)^2 \md t
-  % \\
-  % &= 2 a^2 \int_0^{\frac{1}{2}} 1 - 4 b t + 4 b^2 t^2 \md t
-  % \\
-  % &= 2 a^2 \left[t - 2 b t^2 + \frac{4 b^2}{3} t^3\right]_0^{\frac{1}{2}}
-  % \\
-  = \frac{\alpha^2 (\beta^2 - 3 \beta + 3)}{3}
-\end{align}
-so the variance is
-\begin{align}
-  \sigma^2
-  % &= \frac{a^2}{3} (b^2 - 3 b + 3) - \frac{a^2}{4} (2 - b)^2
-  % \\
-  &= \frac{\alpha^2 \beta^2}{12}
-\end{align}
-and the coefficient of variation is
-\begin{equation}
-  c_v = \frac{\beta}{(2 - \beta) \sqrt{3}}.
-\end{equation}
-Then
-\begin{align}
-  \alpha &= \mu \left(1 + c_v \sqrt{3}\right),
-  &
-  \beta &= \frac{2 c_v \sqrt{3}}{1 + c_v \sqrt{3}}.
-\end{align}
-
-The survival is
-\begin{equation}
-  S_{\text{birth}}(t, t_0, a_0) = \exp\left(- H(t, t_0, a_0)\right)
-\end{equation}
-where the cumulative hazard is
-\begin{equation}
-  H(t, t_0, a_0) = 
-  \begin{cases}
-    0 & \text{if $a_0 + t < 4$},
-    \\
-    \alpha \int_{\ell}^t g(t_0 + \tau)~\md \tau
-    & \text{if $a_0 + t \geq 4$},
-  \end{cases}
-\end{equation}
-\begin{equation}
-  g (t) =
-  \begin{cases}
-    1 - 2 \beta \{t\}
-    & \text{if $\{t\} < \frac{1}{2}$},
-    \\
-    1 - 2 \beta (1 - \{t\})
-    & \text{if $\{t\} \geq \frac{1}{2}$},
-  \end{cases}
-\end{equation}
-and
-\begin{equation}
-  \ell = \max(4 - a_0, 0).
-\end{equation}
-Then the cumulative hazard is
-\begin{equation}
-  H(t, t_0, a_0) =
-  \begin{cases}
-    0 & \text{if $a_0 + t < 4$},
-    \\
-    \alpha \left(H_1  + H_2 + H_3\right)
-    & \text{if $a_0 + t \geq 4$},
-  \end{cases}
-\end{equation}
-with
-\begin{align}
-  H_1 &= \left(1 - \frac{\beta}{2}\right)
-  \left(\lfloor d \rfloor - \lfloor c \rfloor - 1\right),
-  \\
-  H_2 &=
-  \begin{cases}
-    \frac{1}{2} \left(1 - \frac{\beta}{2}\right)
-    + \left(\frac{1}{2} - \{c\}\right)
-    \left[1 - \beta
-      + \beta \left(\frac{1}{2} - \{c\}\right)\right]
-    & \text{if $\{c\} < \frac{1}{2}$},
-    \\
-    \left(1 - \{c\}\right)
-    \left[1 - \beta + \beta \left(1 - \{c\}\right)\right]
-    & \text{if $\{c\} \geq \frac{1}{2}$},
-  \end{cases}
-  \\
-  H_3 &=
-  \begin{cases}
-    \{d\}\left(1 - \beta \{d\}\right)
-    & \text{if $\{d\} < \frac{1}{2}$},
-    \\
-    \frac{1}{2} \left(1 - \frac{\beta}{2}\right)
-    + \left(\{d\} - \frac{1}{2}\right)
-    \left[1 - \beta
-      + \beta \left(\{d\} - \frac{1}{2}\right)\right]
-    & \text{if $\{d\} \geq \frac{1}{2}$},
-    \end{cases}
-\end{align}
-and
-\begin{align}
-  c &= \ell + t_0 = \max(4 - a_0, 0) + t_0,
-  &
-  d &= t + t_0.
-\end{align}
-
-
-\subsubsection{$\beta \geq 1$}
-
-Here we have
-\begin{equation}
-  h_{\text{birth}}(t, a) =
-  \begin{cases}
-    0 & \text{if $a < 4$},
-    \\
-    \alpha \left(1 - 2 \beta \{t\}\right)
-    & \text{if $a \geq 4$ and $\{t\} < \frac{1}{2 \beta}$},
-    \\
-    0 & \text{if $a \geq 4$ and $\frac{1}{2 \beta} \leq \{t\} < 1 -
-      \frac{1}{2 \beta}$},
-    \\
-    \alpha \left[1 - 2 \beta (1 - \{t\})\right]
-    & \text{if $a \geq 4$ and $\{t\} \geq 1 - \frac{1}{2 \beta}$}.
-  \end{cases}
-\end{equation}
-For $a \geq 4$, the mean is
-\begin{align}
-  \mu = \int_0^1 h_{\text{birth}}(t, a) \md t
-  = 2 \alpha \int_0^{\frac{1}{2 \beta}} 1 - 2 \beta t \; \md t
-  = \frac{\alpha}{2 \beta}
-\end{align}
-and
-\begin{align}
-  \int_0^1 \left[h_{\text{birth}}(t, a)\right]^2 \md t
-  & = 2 \alpha^2 \int_0^{\frac{1}{2 \beta}} \left(1 - 2 \beta t\right)^2 \md t
-  % \\
-  % &= 2 a^2 \int_0^{\frac{1}{2 c}} 1 - 4 c t + 4 c^2 t^2
-  %   \; \md t
-  % \\
-  % &= 2 a^2 \left[t - 2 c t^2 + \frac{4 c^2}{3} t^3\right]_0^{\frac{1}{2 c}}
-  % \\
-  = \frac{\alpha^2}{3 \beta},
-\end{align}
-so the variance is
-\begin{align}
-  \sigma^2 = \frac{\alpha^2}{12 \beta^2} (4 \beta - 3)
-\end{align}
-and the coefficient of variation is
-\begin{equation}
-  c_v = \sqrt{\frac{4 \beta - 3}{3}}.
-\end{equation}
-This gives
-\begin{align}
-  \alpha &= \frac{3}{2} \mu \left(1 + c_v^2\right),
-  &
-  \beta &= \frac{3}{4} \left(1 + c_v^2\right).
-\end{align}
-
-The survival is
-\begin{equation}
-  S_{\text{birth}}(t, t_0, a_0) = \exp\left(- H(t, t_0, a_0)\right)
-\end{equation}
-where the cumulative hazard is
-\begin{equation}
-  H(t, t_0, a_0) =
-  \begin{cases}
-    0 & \text{if $a_0 + t < 4$},
-    \\
-    \alpha \int_{\ell}^t g(t_0 + \tau) \md \tau & \text{if $a_0 + t \geq 4$},
-  \end{cases}
-\end{equation}
-\begin{equation}
-  g (t) =
-  \begin{cases}
-    1 - 2 \beta \{t\}
-    & \text{if $\{t\} < \frac{1}{2 \beta}$},
-    \\
-    0 & \text{if $\frac{1}{2 \beta} \leq \{t\} < 1 - \frac{1}{2 \beta}$},
-    \\
-    1 - 2 \beta (1 - \{t\})
-    & \text{if $\{t\} \geq 1 - \frac{1}{2 \beta}$},
-  \end{cases}
-\end{equation}
-and
-\begin{equation}
-  \ell = \max(4 - a_0, 0).
-\end{equation}
-Then the cumulative hazard is
-\begin{equation}
-  H(t, t_0, a_0) =
-  \begin{cases}
-    0 & \text{if $a_0 + t < 4$},
-    \\
-    \alpha \left(H_4 + H_5 + H_6\right) & \text{if $a_0 + t \geq 4$},
-  \end{cases}
-\end{equation}
-with
-\begin{align}
-  H_4 &= \frac{1}{2 \beta}
-  \left(\lfloor d \rfloor - \lfloor c \rfloor - 1\right),
-  \\
-  H_5 &=
-  \begin{cases}
-    \frac{1}{4 \beta}
-    + \beta \left(\frac{1}{2 \beta} - \{c\}\right)^2
-    & \text{if $\{c\} < \frac{1}{2 \beta}$},
-    \\
-    \frac{1}{4 \beta}
-    & \text{if $\frac{1}{2 \beta} \leq \{c\} < 1 - \frac{1}{2 \beta}$},
-    \\
-    \left(1 - \{c\}\right) \left[1 -
-      \beta \left(1 - \{c\}\right)\right]
-    & \text{if $\{c\} \geq 1 - \frac{1}{2 \beta}$},
-  \end{cases}
-  \\
-  H_6 &=
-  \begin{cases}
-    \{d\} \left[1 - \beta \{d\}\right]
-    & \text{if $\{d\} < \frac{1}{2 \beta}$},
-    \\
-    \frac{1}{4 \beta}
-    & \text{if $\frac{1}{2 \beta} \leq \{d\} <
-      1 - \frac{1}{2 \beta}$},
-    \\
-    \frac{1}{4 \beta}
-    + \beta
-    \left[\{d\} - \left(1 - \frac{1}{2 \beta}\right)\right]^2
-    & \text{if $\{d\} \geq 1 - \frac{1}{2 \beta}$},
-  \end{cases}
-\end{align}
-and
-\begin{align}
-  c &= \ell + t_0 = \max(4 - a_0, 0) + t_0,
-  &
-  d &= t + t_0.
-\end{align}
-
-
-\subsection{Sinusoidal}
-
-We assumed that females reach reproductive maturity at age $4$ and
-that the birth hazard varies sinusoidally in time:
-\begin{equation}
-  h_{\text{birth}}(t, a) =
-  \begin{cases}
-    0 & \text{if $a < 4$},
-    \\
-    \mu \left[1
-      + 2 c_v \cos\left(2 \pi t\right)\right]
-    & \text{if $a \geq 4$}.
-  \end{cases}
-\end{equation}
-The seasonal variation is captured by the coefficient of variation
-$c_v \in \left[0, \frac{1}{2}\right]$, which we took to be
-$\frac{1}{2}$ by default.  The annual mean $\mu$ was chosen so that
-the population achieves the mean growth rate $r = 0$ in the absence of
-infection.  (See \autoref{no_infection}.)
-
-The survival function is then
-\begin{equation}
-  \begin{split}
-    S_{\text{birth}}(t, t_0, a_0) &=
-    \exp\left(- \int_0^t h_{\text{birth}}(t_0 + \tau, a_0 + \tau) \md
-      \tau\right)
-    \\
-    &=
-    \exp\left(- H(t, t_0, a_0)\right),
-  \end{split}
-\end{equation}
-where the cumulative hazard is
-\begin{equation}
-  H(t, t_0, a_0) =
-  \begin{cases}
-    0 & \text{if $a_0 + t < 4$},
-    \\
-    \mu \left[
-      (t - \ell)
-      + \frac{c_V}{\pi}
-      \left[\sin\left(2 \pi (t + t_0)\right)
-        - \sin\left(2 \pi (t_0 + \ell)\right)\right]
-    \right]
-    & \text{if $a_0 + t \geq 4$},
-  \end{cases}
-\end{equation}
-with $\ell = \max\{0, 4 - a_0\}$.  There is no explicit inverse
-survival function.  Instead, the inverse was found numerically using a
-root-finding algorithm \citep{scipy}.
-
-
-
-\section{Finite-difference method}
-
-\subsection{Explicit}
-
-For the McKendrick--von Foerster equation
-\begin{equation}
-  \begin{split}
-    \frac{\partial u}{\partial t} + \frac{\partial u}{\partial a}
-    &= f(a, u),
-    \\
-    u(t, 0) &= \int_0^t B(t, a) u(t, a) \md a,
-    \\
-    u(0, a) &= u_0(a),
-  \end{split}
-\end{equation}
-for the approximation
-\begin{equation}
-  u(n \Delta t, i \Delta a) \approx U_i^n,
-\end{equation}
-we will use a forward difference in time,
-\begin{equation}
-  \frac{\partial u}{\partial t} (n \Delta t, i \Delta a)
-  \approx
-  \frac{U^{n + 1}_i - U^n_i}{\Delta t},
-\end{equation}
-and a backward difference in age,
-\begin{equation}
-  \frac{\partial u}{\partial a} (n \Delta t, i \Delta a)
-  \approx
-  \frac{U^n_i - U^n_{i - 1}}{\Delta a}.
-\end{equation}
-Letting
-\begin{equation}
-  f\left(i \Delta a, u(n \Delta t, a)\right)
-  \approx F_i(\vec{U}^n)
-\end{equation}
-gives
-\begin{equation}
-  \frac{U^{n + 1}_i - U^n_i}{\Delta t}
-  +
-  \frac{U^n_i - U^n_{i - 1}}{\Delta a}
-  = F_i(\vec{U}^n).
-\end{equation}
-Alternately
-\begin{equation}
-  U^{n + 1}_i
-  =
-  \left(1 - \frac{\Delta t}{\Delta a}\right)
-  U^n_i
-  +
-  \frac{\Delta t}{\Delta a} U^n_{i - 1} + \Delta t \, F_i(\vec{U}^n),
+  \label{CN_step}
+  \frac{\Phi_{i, j}^k - \Phi_{i - 1, j}^{k - 1}}{\Delta t}
+  = - h_{\text{death}}(a_{i - 1 / 2})
+  \frac{\Phi_{i, j}^k + \Phi_{i - 1, j}^{k - 1}}{2},
 \end{equation}
 or
 \begin{equation}
-  \vec{U}^{n + 1}
-  =
-  \mat{A} \vec{U}^{n} + \Delta t \, \vec{F}(\vec{U}^n),
+  \Phi_{i, j}^k
+  = \frac{1 - C_{i - 1 / 2}}{1 + C_{i - 1 / 2}}
+  \Phi_{i - 1, j}^{k - 1},
 \end{equation}
 with
 \begin{equation}
-  \mat{A} =
-  \begin{bmatrix}
-    1 - \frac{\Delta t}{\Delta a} & 0
-    & \hdotsfor{3} & 0
-    \\
-    \frac{\Delta t}{\Delta a} & 1 - \frac{\Delta t}{\Delta a} & 0
-    & \hdotsfor{2} & 0
-    \\
-    0 & \frac{\Delta t}{\Delta a} & 1 - \frac{\Delta t}{\Delta a} & 0
-    & \hdots & 0
-    \\
-    \vdots & \ddots & \ddots & \ddots & \ddots & \vdots
-    \\
-    0 & \hdots & 0 & \frac{\Delta t}{\Delta a}  & 1 - \frac{\Delta
-      t}{\Delta a} & 0
-    \\
-    0 & \hdotsfor{2} & 0 & \frac{\Delta t}{\Delta a} & 1
-  \end{bmatrix}.
+  C_{i - 1 / 2}
+  = \frac{h_{\text{death}}(a_{i - 1 / 2}) \Delta t}{2},
 \end{equation}
-
-
-\subsection{Implicit}
-
-For the McKendrick--von Foerster equation
+for $i \in \{1, 2, \ldots, I - 2\}$.  For $i = I - 1$,
+a term was added to prevent buffaloes from aging out of this
+last age group:
 \begin{equation}
-  \begin{split}
-    \frac{\partial u}{\partial t} + \frac{\partial u}{\partial a}
-    &= f(a, u),
-    \\
-    u(t, 0) &= \int_0^t B(t, a) u(t, a) \md a,
-    \\
-    u(0, a) &= u_0(a),
-  \end{split}
-\end{equation}
-for the approximation
-\begin{equation}
-  u(n \Delta t, i \Delta a) \approx U_i^n,
-\end{equation}
-we will use a backward difference in time,
-\begin{equation}
-  \frac{\partial u}{\partial t} (n \Delta t, i \Delta a)
-  \approx
-  \frac{U^n_i - U^{n - 1}_i}{\Delta t},
-\end{equation}
-and a forward difference in age,
-\begin{equation}
-  \frac{\partial u}{\partial a} (n \Delta t, i \Delta a)
-  \approx
-  \frac{U^n_{i + 1} - U^n_i}{\Delta a}.
-\end{equation}
-Letting
-\begin{equation}
-  f\left(i \Delta a, u(n \Delta t, a)\right)
-  \approx F_i(\vec{U}^{n - 1}, \vec{U}^n)
-\end{equation}
-gives
-\begin{equation}
-  \frac{U^n_i - U^{n - 1}_i}{\Delta t}
-  +
-  \frac{U^n_{i + 1} - U^n_i}{\Delta a}
-  = F_i(\vec{U}^{n - 1}, \vec{U}^n).
-\end{equation}
-Alternately
-\begin{equation}
-  \frac{\Delta t}{\Delta a} U^n_{i + 1}
-  +
-  \left(1 - \frac{\Delta t}{\Delta a}\right)
-  U^n_i
-  =
-  U^{n - 1}_i + \Delta t \, F_i(\vec{U}^{n - 1}, \vec{U}^n),
-\end{equation}
-or
-\begin{equation}
-  \mat{A} \vec{U}^n
-  =
-  \vec{U}^{n - 1} + \Delta t \, \vec{F}(\vec{U}^{n - 1}, \vec{U}^n),
+  \Phi_{I - 1, j}^k
+  = \frac{1 - C_{I - 3 / 2}}{1 + C_{I - 3 / 2}}
+  \Phi_{I - 2, j}^{k - 1}
+  + \frac{1 - C_{I - 1}}{1 + C_{I - 1}}
+  \Phi_{I - 1, j}^{k - 1},
 \end{equation}
 with
 \begin{equation}
-  \mat{A} =
-  \begin{bmatrix}
-    1 - \frac{\Delta t}{\Delta a} & \frac{\Delta t}{\Delta a} & 0
-    & \hdotsfor{2} & 0
-    \\
-    0 & 1 - \frac{\Delta t}{\Delta a} & \frac{\Delta t}{\Delta a}
-    & 0 & \hdots & 0
-    \\
-    \vdots & \ddots & \ddots & \ddots & \ddots & \vdots
-    \\
-    0 & \hdots & 0 & 1 - \frac{\Delta t}{\Delta a} &
-    \frac{\Delta t}{\Delta a} & 0
-    \\
-    0 & \hdotsfor{2} & 0 & 1 - \frac{\Delta t}{\Delta a} & \frac{\Delta t}{\Delta a}
-    \\
-    0 & \hdotsfor{3} & 0 & 1
-  \end{bmatrix}.
+  C_{I - 1}
+  = \frac{h_{\text{death}}(a_{I - 1}) \Delta t}{2}.
 \end{equation}
+For $i = 0$, the birth integral is given by the composite trapezoid rule,
+\begin{equation}
+  \label{birth_step}
+  \Phi_{0, j}^k =
+  \frac{p_{\text{female}} \Delta t}{2}
+  \sum_{i = 1}^{I - 1}
+  \left[h_{\text{birth}}(t^k, a_i) \Phi_{i, j}^k +
+    h_{\text{birth}}(t^k, a_{i - 1}) \Phi_{i - 1, j}^k\right].
+\end{equation}
+The initial condition is
+\begin{equation}
+  \Phi_{i, j}^0 =
+  \begin{cases}
+    1 & \text{if $i = j$}, \\
+    0 & \text{otherwise}.
+  \end{cases}
+\end{equation}
+Considering $\mat{\Phi}^k = [\Phi_{i, j}^k]$ as a matrix that
+evolves in time, the method is easily implemented with matrix algebra:
+the Crank--Nicolson step \eqref{CN_step} is
+\begin{equation}
+  \mat{\Phi}^k = \mat{M} \mat{\Phi}^{k - 1},
+\end{equation}
+with the matrix $\mat{M} = [M_{i, j}]$ where
+\begin{equation}
+  M_{i, j} =
+  \begin{cases}
+    \frac{1 - C_{i - 1 / 2}}{1 + C_{i - 1 / 2}}
+    & \text{if $i = j + 1$}, \\
+    \frac{1 - C_{I - 1}}{1 + C_{I - 1}} & \text{if $i = j = I - 1$}, \\
+    0 & \text{otherwise};
+  \end{cases}
+\end{equation}
+the birth integral \eqref{birth_step} is then
+\begin{equation}
+  \mat{\Phi}_0^k = \vec{v} \mat{\Phi}^k,
+\end{equation}
+with the vector $\vec{v} = [v_i]$ where
+\begin{equation}
+  v_i =
+  \begin{cases}
+    \frac{p_{\text{female}} \Delta t}{2}
+    & \text{if $i = 0$ or $i = I - 1$}, \\
+    p_{\text{female}} \Delta t
+    & \text{otherwise};
+  \end{cases}
+\end{equation}
+and the initial condition is
+\begin{equation}
+  \mat{\Phi}^0 = \mat{I},
+\end{equation}
+where $\mat{I}$ is the $I \times I$ identity matrix.
 
-More concretely,
+Using this numerical scheme, we solved for the monodromy matrix, the
+fundamental solution after one period:
+\begin{equation}
+  \mat{\Psi} = [\Psi_{i, j}] \approx [\Phi(T, a_i, a'_j)].
+\end{equation}
+The monodromy matrix projects the population forward at by one period,
+\begin{equation}
+  \vec{n}(T) = \mat{\Psi} \vec{n}(0),
+\end{equation}
+where $\vec{n}(t) = [n(t, a_i)]$.
+Using the monodromy operator to repeatedly project the population
+forward gives
+\begin{equation}
+  \vec{n}(K T)
+  = \mat{\Psi}^K \vec{n}(0)
+  \to \rho_0^K \vec{w}_0
+  = \me^{r K T} \vec{w}_0
+\end{equation}
+as $K \to \infty$,
+where $\rho_0$ is the dominant eigenvalue, i.e. the eigenvalue with
+largest magnitude, of $\mat{\Psi}$;
+the corresponding right eigenvector $\vec{w}_0$ is the stable age
+structure; and
+\begin{equation}
+  r = \frac{1}{T} \log \rho_0
+\end{equation}
+is the asymptotic population growth rate.
+
+We numerically computed the population growth rate and stable age
+structure by using age and time steps $\Delta t = 0.01$,
+maximum age $a_{\text{max}} = 35$
+(probability of survival
+$S_{\text{mortality}}(35) \approx 10^{-5}$),
+finding the monodromy matrix by numerically solving
+\eqref{fundamental_PDE} from $t = 0$ to $T$, and
+then finding its dominant eigenvalue and corresponding eigenvector.
+We then used a root-finding algorithm to find the value of the mean
+birth hazard $\mu \approx 0.9379$ that gave growth rate $r = 0$.
+Halving the age step to $\Delta a = 0.005$
+gave a relative error for $\mu$ of $7 \times 10^{-4}$
+and doubling the maximum age to $a_{\text{max}} = 70$
+gave a relative error of $5 \times 10^{-6}$.
+These computations were done in Python 3.6.6 \citep{python} using the
+NumPy \citep{numpy} and SciPy \citep{scipy} libraries.
+
+
+\section{Initial conditions scratch}
+
+The PDEs are
 \begin{equation}
   \begin{split}
-    \mat{A} \vec{S}^n
-    &=
-    \vec{S}^{n - 1}
-    + \Delta t \, 
-    \mat{F}_S(\vec{S}^{n - 1}, \vec{I}^{n - 1}, \vec{R}^{n - 1},
-    \vec{S}^n, \vec{I}^n, \vec{R}^n),
+    \left(
+      \frac{\partial}{\partial t}
+      + \frac{\partial}{\partial a}
+      + h_{\text{death}}(a)
+      + h_{\text{waning}}(a)
+    \right) M(t, a)
+    &= 0,
     \\
-    \mat{A} \vec{I}^n
-    &=
-    \vec{I}^{n - 1}
-    + \Delta t \,
-    \mat{F}_I(\vec{S}^{n - 1}, \vec{I}^{n - 1}, \vec{R}^{n - 1},
-    \vec{S}^n, \vec{I}^n, \vec{R}^n),
+    \left(
+      \frac{\partial}{\partial t}
+      + \frac{\partial}{\partial a}
+      + h_{\text{death}}(a)
+      + h_{\text{infection}}(t)
+    \right) S(t, a)
+    &= h_{\text{waning}}(a) M(t, a),
     \\
-    \mat{A} \vec{R}^n
-    &=
-    \vec{R}^{n - 1}
-    + \Delta t \mat{F}_R(\vec{S}^{n - 1}, \vec{I}^{n - 1}, \vec{R}^{n - 1},
-    \vec{S}^n, \vec{I}^n, \vec{R}^n),
+    \left(
+      \frac{\partial}{\partial t}
+      + \frac{\partial}{\partial a}
+      + \frac{\partial}{\partial r}
+      + h_{\text{death}}(a)
+      + h_{\text{progression}}(r)
+    \right) E(t, a, r)
+    &= 0,
+    \\
+    \left(
+      \frac{\partial}{\partial t}
+      + \frac{\partial}{\partial a}
+      + \frac{\partial}{\partial r}
+      + h_{\text{death}}(a)
+      + h_{\text{recovery}}(r)
+    \right) I(t, a, r)
+    &= 0,
+    \\
+    \left(
+      \frac{\partial}{\partial t}
+      + \frac{\partial}{\partial a}
+      + h_{\text{death}}(a)
+      + h_{\text{chronic recovery}}
+    \right) C(t, a)
+    &= p_{\text{chronic}} H_{\text{recovery}}(t, a),
+    \\
+    \left(
+      \frac{\partial}{\partial t}
+      + \frac{\partial}{\partial a}
+      + h_{\text{death}}(a)
+    \right) R(t, a)
+    &= (1 - p_{\text{chronic}}) H_{\text{recovery}}(t, a)
+    \\ & \quad {}
+    + h_{\text{chronic recovery}} C(t, a),
   \end{split}
 \end{equation}
-with
+with boundary conditions
 \begin{equation}
   \begin{split}
-    \vec{F}_S(\vec{S}^{n - 1}, \vec{I}^{n - 1}, \vec{R}^{n - 1},
-    \vec{S}^n, \vec{I}^n, \vec{R}^n)
-    &= \mat{B}^n (\vec{S}^n + \vec{I}^n + \vec{R}^n)
-    - \mat{M} \vec{S}^n
-    - {\vec{I}^{\ell}}^{\mT} \vec{T} \mat{\Sigma} \vec{S}^m
+    M(t, 0)
+    &= p_{\text{female}}
+    \int_0^{+\infty} h_{\text{birth}}(t, a) N(t, a) \md a,
     \\
-    \vec{F}_I(\vec{S}^{n - 1}, \vec{I}^{n - 1}, \vec{R}^{n - 1},
-    \vec{S}^n, \vec{I}^n, \vec{R}^n)
-    &= - \mat{M} \vec{I}^n
-    + {\vec{I}^{\ell}}^{\mT} \vec{T} \mat{\Sigma} \vec{S}^m
-    - \frac{1}{T_{\text{recovery}}} \vec{I}^n
+    S(t, 0) &= 0,
     \\
-    \vec{F}_R(\vec{S}^{n - 1}, \vec{I}^{n - 1}, \vec{R}^{n - 1},
-    \vec{S}^n, \vec{I}^n, \vec{R}^n)
-    &= - \mat{M} \vec{R}^n + \frac{1}{T_{\text{recovery}}} \vec{I}^n,
+    E(t, a, 0)
+    &= h_{\text{infection}}(t) S(t, a),
     \\
-    \mat{M} &= \diag\left(\left\{h_{\text{mortatlity}}(i \Delta
-        a)\right\}_{i = 0}^{N_a}\right),
+    I(t, a, 0)
+    &= \int_0^{+\infty}h_{\text{progression}}(r) E(t, a, r) \md r,
     \\
-    \mat{B}^n &=
-    \begin{bmatrix}
-      b^n_0
-      &
-      b^n_1
-      &
-      \hdots
-      &
-      b^n_{N_a}
-      \\
-      0 & 0 & \hdots & 0
-      \\
-      \vdots & \vdots & & \vdots
-      \\
-      0 & 0 & \hdots & 0
-    \end{bmatrix},
+    C(t, 0) &= 0,
     \\
-    b^n_i &= h_{\text{birth}}(n \Delta t, i \Delta a),
-    \\
-    \vec{T} &= \beta \Delta a
-    \begin{pmatrix}
-      \frac{1}{2} \\ 1 \\ 1 \\ \vdots \\ 1 \\ \frac{1}{2}
-    \end{pmatrix},
-    \\
-    \mat{\Sigma} &= \diag\left(
-      \left\{
-        \begin{array}{ll}
-          0 & \text{if $i \Delta a \leq T_{\text{maternal immunity}}$}
-          \\
-          1 & \text{otherwise}
-        \end{array}
-      \right\}_{i = 0}^{N_a}
-    \right),
+    R(t, 0) &= 0,
   \end{split}
 \end{equation}
-and $\ell, m \in \{n - 1, n\}$.  Combining these gives
+and
 \begin{equation}
   \begin{split}
-    \vec{U}^n &=
-    \begin{pmatrix}
-      \vec{S}^n
-      \\
-      \vec{I}^n
-      \\
-      \vec{R}^n
-    \end{pmatrix},
+    h_{\text{infection}}(t)
+    &= \int_0^{+\infty} \beta_{\text{infectious}} I(t, a)
+    + \beta_{\text{carrier}} C(t, a) \md a,
     \\
-    \mat{A}_U \vec{U}^n
-    &=
-    \vec{U}^{n - 1}
-    + \Delta t \, \vec{F}_U(\vec{U}^{n - 1}, \vec{U}^n),
+    H_{\text{recovery}}(t, a)
+    &= \int_0^{+\infty}h_{\text{recovery}}(r) I(t, a, r) \md r,
     \\
-    \mat{A}_U &=
-    \begin{bmatrix}
-      \mat{A} & \mat{0} & \mat{0}
-      \\
-      \mat{0} & \mat{A} & \mat{0}
-      \\
-      \mat{0} & \mat{0} & \mat{A}
-    \end{bmatrix},
-    \\
-    \vec{F}_U(\vec{U}^{n - 1}, \vec{U}^n) &=
-    - \mat{M}_U \vec{U}^n  + \mat{\Gamma}_U \vec{U}^n
-    + \mat{B}_U^n \vec{U}^n
-    + {\vec{U}^{\ell}}^{\mT} \vec{T}_U \mat{\Sigma}_U \vec{U}^m,
-    \\
-    \mat{B}_U^n &=
-    \begin{bmatrix}
-      \mat{B}^n & \mat{B}^n & \mat{B}^n
-      \\
-      \mat{0} & \mat{0} & \mat{0}
-      \\
-      \mat{0} & \mat{0} & \mat{0}
-    \end{bmatrix},
-    \\
-    \mat{M}_U &=
-    \begin{bmatrix}
-      \mat{M} & \mat{0} & \mat{0}
-      \\
-      \mat{0} & \mat{M} & \mat{0}
-      \\
-      \mat{0} & \mat{0} & \mat{M}
-    \end{bmatrix},
-    \\
-    \mat{\Sigma}_U &=
-    \begin{bmatrix}
-      - \mat{\Sigma} & \mat{0} & \mat{0}
-      \\
-      \mat{\Sigma} & \mat{0} & \mat{0}
-      \\
-      \mat{0} & \mat{0} & \mat{0}
-    \end{bmatrix},
-    \\
-    \mat{T}_U &=
-    \begin{pmatrix}
-      \vec{0} \\ \vec{T} \\ \vec{0}
-    \end{pmatrix},
-    \\
-    \mat{\Gamma}_U &=
-    \begin{bmatrix}
-      \mat{0} & \mat{0} & \mat{0}
-      \\
-      \mat{0} & - \mat{\Gamma} & \mat{0}
-      \\
-      \mat{0} & \mat{\Gamma} & \mat{0}
-    \end{bmatrix},
-    \\
-    \mat{\Gamma} &= \diag\left(\frac{1}{T_{\text{recovery}}}\right).
+    N(t, a) &= M(t, a) + S(t, a) + C(t, a) + R(t, a)
+    \\ & \quad {}
+    + \int_0^{+\infty} E(t, a, r) + I(t, a, r) \md r.
   \end{split}
 \end{equation}
-Thus
+
+These equations imply that the total population satisfies the
+McKendrick--von Foerster equation
 \begin{equation}
-  \left[\mat{A}_U + \Delta t \left(\mat{M}_U - \mat{\Gamma}_U
-    - \mat{B}_U^n\right)\right] \vec{U}^n
-  =
-  \vec{U}^{n - 1}
-  + \Delta t \, {\vec{U}^{\ell}}^{\mT} \vec{T}_U \mat{\Sigma}_U \vec{U}^m.
+  \begin{split}
+    \left(
+      \frac{\partial}{\partial t}
+      + \frac{\partial}{\partial a}
+      + h_{\text{death}}(a)
+    \right)
+    N(t, a)
+    &= 0,
+    \\
+    N(t, 0)
+    &= p_{\text{female}}
+    \int_0^{+\infty} h_{\text{birth}}(t, a) N(t, a) \md a.
+  \end{split}
 \end{equation}
 
-\begin{enumerate}
-\item $\ell = n - 1$ and $m = n$,
-  \begin{equation}
-    \left[\mat{A}_U + \Delta t \left(\mat{M}_U - \mat{\Gamma}_U
-        - \mat{B}_U^n
-        - {\vec{U}^{n-1}}^{\mT} \vec{T}_U \mat{\Sigma}_U\right)\right] \vec{U}^n
-    =
-    \vec{U}^{n - 1}.
-  \end{equation}
-\item $\ell = m = n - 1$,
-  \begin{equation}
-    \left[\mat{A}_U + \Delta t \left(\mat{M}_U - \mat{\Gamma}_U
-      - \mat{B}_U^n\right)\right] \vec{U}^n
-    =
-    \left(\mat{I}
-      + \Delta t \, {\vec{U}^{n - 1}}^{\mT} \vec{T}_U \mat{\Sigma}_U\right)
-    \vec{U}^{n - 1}.
-  \end{equation}
-% \item $\ell = n$ and $m = n - 1$,
-%   \begin{equation}
-%     \left[\mat{A}_U + \Delta t \left(\mat{M}_U - \mat{\Gamma}_U
-%       - \mat{B}_U^n \right)\right] \vec{U}^n
-%   - \Delta t \, {\vec{U}^n}^{\mT} \vec{T}_U \mat{\Sigma}_U \vec{U}^{n - 1}
-%     =
-%     \vec{U}^{n - 1}.
-%   \end{equation}
-%   I'm not sure how to handle this one.
-\end{enumerate}
 
-\pagebreak
+\subsection{Equilibrium}
+
+The PDEs are
+\begin{equation}
+  \begin{split}
+    \frac{\md M}{\md a}
+    &= - \big(h_{\text{death}}(a)
+    + h_{\text{waning}}(a)\big) M,
+    \\
+    \frac{\md S}{\md a}
+    &= h_{\text{waning}}(a) M
+    \\ & \quad {}
+    - \big(h_{\text{death}}(a)
+      + h_{\text{infection}}
+    \big) S,
+    \\
+    \left(
+      \frac{\partial}{\partial a}
+      + \frac{\partial}{\partial r}
+    \right) E
+    &=- \big(h_{\text{death}}(a)
+    + h_{\text{progression}}(r)\big) E,
+    \\
+    \left(
+      \frac{\partial}{\partial a}
+      + \frac{\partial}{\partial r}
+    \right) I
+    &= - \big(h_{\text{death}}(a)
+    + h_{\text{recovery}}(r)\big) I,
+    \\
+    \frac{\md C}{\md a}
+    &= p_{\text{chronic}} H_{\text{recovery}}(a)
+    \\ & \quad {}
+    - \big(h_{\text{death}}(a)
+    + h_{\text{chronic recovery}}\big) C,
+    \\
+    \frac{\md R}{\md a}
+    &= (1 - p_{\text{chronic}}) H_{\text{recovery}}(a)
+    \\ & \quad {}
+    + h_{\text{chronic recovery}} C(a)
+    \\ & \quad {}
+    - h_{\text{death}}(a) R,
+  \end{split}
+\end{equation}
+with boundary conditions
+\begin{equation}
+  \begin{split}
+    M(0)
+    &= p_{\text{female}}
+    \int_0^{+\infty} h_{\text{birth}}(a) N(a) \md a
+    = N(0),
+    \\
+    S(0) &= 0,
+    \\
+    E(a, 0)
+    &= h_{\text{infection}} S(a),
+    \\
+    I(a, 0)
+    &= \int_0^{+\infty}h_{\text{progression}}(r) E(a, r) \md r,
+    \\
+    C(0) &= 0,
+    \\
+    R(0) &= 0,
+  \end{split}
+\end{equation}
+and
+\begin{equation}
+  \begin{split}
+    h_{\text{infection}}
+    &= \int_0^{+\infty} \beta_{\text{infectious}} I(a)
+    + \beta_{\text{carrier}} C(a) \md a,
+    \\
+    H_{\text{recovery}}(a)
+    &= \int_0^{+\infty}h_{\text{recovery}}(r) I(a, r) \md r,
+    \\
+    N(a) &= M(a) + S(a) + C(a) + R(a)
+    + \int_0^{+\infty} E(a, r) + I(a, r) \md r.
+  \end{split}
+\end{equation}
+
+Write the big Crank--Nicolson scheme for this problem.  Describe each
+variable as a block in a block diagonal matrix.  Do I need to
+use double time steps because of the nonlinearity $I S$?
+Solve with root finder and $E, I, R > 0$.
+
+\begin{equation}
+  \begin{split}
+    \frac{M^k - M^{k - 1}}{\Delta a}
+    &= - \big(h_{\text{death}}(a^{k - 1/2})
+    + h_{\text{waning}}(a^{k - 1 / 2})\big)
+    \frac{M^k + M^{k - 1}}{2},
+    \\
+    \frac{S^k - S^{k - 1}}{\Delta a}
+    &= h_{\text{waning}}(a^{k - 1 / 2})
+    \frac{M^k + M^{k - 1}}{2}
+    \\ & \quad {}
+    - \big(h_{\text{death}}(a^{k - 1 / 2})
+    + h_{\text{infection}}\big)
+    \frac{S^k + S^{k - 1}}{2},
+    \\
+    \frac{E_j^k - E_{j - 1}^{k - 1}}{\Delta a}
+    &=- \big(h_{\text{death}}(a^{k - 1 / 2})
+    + h_{\text{progression}}(r_{j - 1 / 2})\big)
+    \frac{E_j^k + E_{j - 1}^{k - 1}}{2},
+    \\
+    \frac{I_j^k - I_{j - 1}^{k - 1}}{\Delta a}
+    &= - \big(h_{\text{death}}(a^{k - 1 / 2})
+    + h_{\text{recovery}}(r_{j - 1 / 2})\big)
+    \frac{I_j^k + I_{j - 1}^{k - 1}}{2},
+    \\
+    \frac{C^k - C^{k - 1}}{\Delta a}
+    &= p_{\text{chronic}} H_{\text{recovery}}(a^{k - 1 / 2})
+    \\ & \quad {}
+    - \big(h_{\text{death}}(a^{k - 1 / 2})
+    + h_{\text{chronic recovery}}\big) \frac{C^k + C^{k - 1}}{2},
+    \\
+    \frac{R^k - R^{k - 1}}{\Delta a}
+    &= (1 - p_{\text{chronic}}) H_{\text{recovery}}(a^{k - 1 / 2})
+    \\ & \quad {}
+    + h_{\text{chronic recovery}} \frac{C^k + C^{k - 1}}{2}
+    \\ & \quad {}
+    - h_{\text{death}}(a^{k - 1 / 2}) \frac{R^k + R^{k - 1}}{2},
+  \end{split}
+\end{equation}
+with boundary conditions
+\begin{equation}
+  \begin{split}
+    M^0
+    &= p_{\text{female}}
+    \sum_k v^k h_{\text{birth}}(a^k) N^k
+    = N^0,
+    \\
+    S^0 &= 0,
+    \\
+    E_0^k &= h_{\text{infection}} S^k,
+    \\
+    I_0^k &= \sum_j v_j h_{\text{progression}}(r_j) E(a^k, r_j)
+    \\
+    C^0 &= 0,
+    \\
+    R^0 &= 0,
+  \end{split}
+\end{equation}
+and
+\begin{equation}
+  \begin{split}
+    h_{\text{infection}}
+    &= \int_0^{+\infty} \beta_{\text{infectious}} I(a)
+    + \beta_{\text{carrier}} C(a) \md a,
+    \\
+    H_{\text{recovery}}(a)
+    &= \int_0^{+\infty}h_{\text{recovery}}(r) I(a, r) \md r,
+    \\
+    N(a) &= M(a) + S(a) + C(a) + R(a)
+    + \int_0^{+\infty} E(a, r) + I(a, r) \md r.
+  \end{split}
+\end{equation}
+
 
 
 \bibliography{journal_abbreviations,math_epi}

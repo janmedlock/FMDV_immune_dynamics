@@ -1,20 +1,16 @@
-from scipy import stats
+from scipy.stats import gamma
 
-from . import rv
+from herd.rv import RV
 
 
-class gen(rv.RV):
-    '''
-    Gamma-distributed progression period with rate
-    progression_mean and shape progression_shape.
-    '''
-
+class gen(RV):
+    '''Gamma-distributed progression period with rate
+    progression_mean and shape progression_shape.'''
     def __init__(self, parameters, *args, **kwargs):
         self.progression_mean = parameters.progression_mean
         self.progression_shape = parameters.progression_shape
-        distn = stats.gamma(self.progression_shape,
-                            scale = (self.progression_mean
-                                     / self.progression_shape))
+        scale = self.progression_mean / self.progression_shape
+        distn = gamma(self.progression_shape, scale=scale)
         super()._copyattrs(distn)
 
     def __repr__(self):

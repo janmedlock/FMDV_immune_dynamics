@@ -1,15 +1,15 @@
-* Convolution plot to Erin.
+* Fix herd.initial_conditions._C_prob
+** Check with test/initial_conditions.py
+** Save results in new files!!!
 
-* Fix herd/pde.py to handle gamma-distributed waning of maternal immunity, etc.
+* Re-run acute samples since they weren't updating the initial
+  conditions for different parameter values for the duration maternal
+  immunity.
 
-* Figure out what to do with all the untracked files in /orphans/ and /test/.
+* Work on figures 3 & 4.
 
-* Consider storing all events for the herd in an efficient data structure
-  (bisect) to avoid looping through the whole list.
+* Generate good initial condtions by solving PDEs.
+
+* Figure out what to do with all the untracked files in /orphans/.
 
 * Figure out how to do population stats.
-
-* Figure out how to bin by month.
-
-* Do some sampling model to make sure the birth distribution is
-  sensible.
