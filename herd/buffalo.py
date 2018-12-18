@@ -1,30 +1,5 @@
 from herd import event
-
-
-class BuffaloEvents(set):
-    '''Container to hold all events that can happen to a buffalo.
-    Actions on these are copied to `buffalo.herd.events`
-    so the next herd event can be found efficiently.'''
-    def __init__(self, buffalo):
-        super().__init__(event.get_all_valid_events(buffalo))
-        self.herd_events = buffalo.herd.events
-        self.herd_events.update(self)
-
-    def add(self, value):
-        super().add(value)
-        self.herd_events.add(value)
-
-    def update(self, iterable):
-        super().update(iterable)
-        self.herd_events.update(iterable)
-
-    def remove(self, value):
-        super().remove(value)
-        self.herd_events.remove(value)
-
-    def __del__(self):
-        for value in self:
-            self.herd_events.remove(value)
+from herd.events import BuffaloEvents
 
 
 class Buffalo:
@@ -50,7 +25,6 @@ class Buffalo:
                     immune_status))
 
     def die(self):
-        self.change_immune_status_to('dead')
         self.herd.remove(self)
         del self.events
 

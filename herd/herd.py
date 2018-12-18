@@ -1,81 +1,16 @@
-from collections import defaultdict
 from itertools import count
 
 import numpy
 from pandas import DataFrame
-from sortedcontainers import SortedSet
 
 from herd.buffalo import Buffalo
-from herd import event
+from herd.events import HerdEvents
 from herd.parameters import Parameters
 from herd.random_variables import RandomVariables
 
 
 statuses = ('maternal immunity', 'susceptible', 'exposed',
             'infectious', 'chronic', 'recovered')
-
-
-class HerdEvents(SortedSet):
-    '''Container to hold all events that can happen in the herd.
-    The `Event()`s are stored sorted by their time so that the
-    one with minimum time can be found efficiently.
-    `Infection()` events are stored in the `infections` attribute
-    since they need to be updated frequently.'''
-    def __init__(self):
-        super().__init__(key=self.key)
-        self.infections = set()
-
-    @staticmethod
-    def key(value):
-        '''Use `value.time` for the sort key.'''
-        return value.time
-
-    @staticmethod
-    def is_infection(value):
-        '''Test whether `value` is an `event.Infection()`.'''
-        return isinstance(value, event.Infection)
-
-    @classmethod
-    def get_infections(cls, *iterables):
-        '''Filter `event.Infection()` instances from `*iterables`.'''
-        return (filter(cls.is_infection, iterable)
-                for iterable in iterables)
-
-    def add(self, value):
-        super().add(value)
-        if self.is_infection(value):
-            self.infections.add(value)
-
-    def update(self, *others):
-        super().update(*others)
-        self.infections.update(*self.get_infections(*others))
-
-    def remove(self, value):
-        super().remove(value)
-        if self.is_infection(value):
-            self.infections.remove(value)
-
-    def difference_update(self, *others):
-        super().difference_update(*others)
-        self.infections.difference_update(*self.get_infections(*others))
-
-    def get_next(self):
-        '''Get the next event, returning `None` if there are no events.'''
-        try:
-            return self[0]
-        except IndexError:
-            return None
-
-    def update_infection_times(self):
-        '''Update the infection events.'''
-        # Use the `super()` versions here to avoid changing `self.infections`.
-        # Remove `self.infections` from the `SortedSet`.
-        super().difference_update(self.infections)
-        # Update the infection times.
-        for infection in self.infections:
-            infection.time = infection.sample_time()
-        # Add the updated `self.infections` to the `SortedSet`.
-        super().update(self.infections)
 
 
 class Herd(set):
@@ -96,7 +31,7 @@ class Herd(set):
         self.rvs = RandomVariables(self.params)
         self.time = self.params.start_time
         self.events = HerdEvents()
-        self.immune_status_groups = defaultdict(set)
+        self.by_immune_status = {s: set() for s in statuses}
         self.identifiers = count(0)
         status_ages = self.rvs.initial_conditions.rvs(
             self.params.population_size)
@@ -108,10 +43,10 @@ class Herd(set):
                 self.add(Buffalo(self, immune_status, age))
 
     def immune_status_add(self, b):
-        self.immune_status_groups[b.immune_status].add(b)
+        self.by_immune_status[b.immune_status].add(b)
 
     def immune_status_remove(self, b):
-        self.immune_status_groups[b.immune_status].remove(b)
+        self.by_immune_status[b.immune_status].remove(b)
 
     def add(self, b):
         super().add(b)
@@ -122,29 +57,33 @@ class Herd(set):
         super().remove(b)
 
     def update_infection_times(self):
-        number_infectious_new = len(self.immune_status_groups['infectious'])
-        number_chronic_new = len(self.immune_status_groups['chronic'])
+        '''Calculate the number of infectious and chronic buffalo,
+        then, if these are different than previous, update
+        the infection times for susceptible buffalo.'''
         updated = False
+        number_infectious_new = len(self.by_immune_status['infectious'])
         if number_infectious_new != self.number_infectious:
             self.number_infectious = number_infectious_new
             updated = True
-        if number_chronic_new != self.number_chronic:
-            self.number_chronic = number_chronic_new
-            if self.rvs.chronic_transmission_rate > 0:
+        if self.rvs.chronic_transmission_rate > 0:
+            # This only matters if the chronic transmission rate is non-zero.
+            number_chronic_new = len(self.by_immune_status['chronic'])
+            if number_chronic_new != self.number_chronic:
+                self.number_chronic = number_chronic_new
                 updated = True
         if updated:
             self.events.update_infection_times()
 
     def get_stats(self):
-        stats = [len(self.immune_status_groups[status])
+        stats = [len(self.by_immune_status[status])
                  for status in statuses]
         return (self.time, stats)
 
     @property
     def number_infected(self):
-        return (len(self.immune_status_groups['exposed'])
-                + len(self.immune_status_groups['infectious'])
-                + len(self.immune_status_groups['chronic']))
+        return (len(self.by_immune_status['exposed'])
+                + len(self.by_immune_status['infectious'])
+                + len(self.by_immune_status['chronic']))
 
     def stop(self):
         return (self.number_infected == 0)
@@ -173,7 +112,9 @@ class Herd(set):
             print('{}Simulation #{} ended after {:g} days.'.format(
                 self.logging_prefix, self.run_number,
                 365 * (t_last - self.params.start_time)))
-        result = DataFrame(dict(result), index=statuses).T
+        result = DataFrame.from_dict(dict(result),
+                                     orient='index',
+                                     columns=statuses)
         result.index.name = 'time (d)'
         result.columns.name = 'status'
         return result
