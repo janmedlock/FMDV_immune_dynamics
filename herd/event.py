@@ -86,7 +86,7 @@ class Mortality(Event):
 class Birth(Event):
     '''A buffalo giving birth.'''
     # Which classes give mom antibodies that she passes on.
-    has_antibodies = ('chronic', 'recovered')
+    has_antibodies = frozenset({'chronic', 'recovered'})
 
     def is_valid(self):
         return self.buffalo.sex == 'female'
