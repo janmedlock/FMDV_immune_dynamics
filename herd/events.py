@@ -48,7 +48,7 @@ class HerdEvents(SortedSet):
     # since they need to be updated frequently.
     def __init__(self):
         super().__init__(key=self._get_time)
-        self.infections = set()
+        self._infections = set()
 
     @staticmethod
     def _get_time(event_):
@@ -62,29 +62,29 @@ class HerdEvents(SortedSet):
 
     def add(self, event_):
         super().add(event_)
-        if self.is_infection(event_):
-            self.infections.add(event_)
+        if self._is_infection(event_):
+            self._infections.add(event_)
 
     def remove(self, event_):
         super().remove(event_)
-        if self.is_infection(event_):
-            self.infections.remove(event_)
+        if self._is_infection(event_):
+            self._infections.remove(event_)
 
     def update(self, *others):
         for iterable in others:
             # Make 2 copies in case `iterable` is an iterator.
             iterable_s, iterable_i = tee(iterable)
             super().update(iterable_s)
-            self.infections.update(filter(self._is_infection,
-                                          iterable_i))
+            self._infections.update(filter(self._is_infection,
+                                           iterable_i))
 
     def difference_update(self, *others):
         for iterable in others:
             # Make 2 copies in case `iterable` is an iterator.
             iterable_s, iterable_i = tee(iterable)
             super().difference_update(iterable_s)
-            self.infections.difference_update(filter(self._is_infection,
-                                                     iterable_i))
+            self._infections.difference_update(filter(self._is_infection,
+                                                      iterable_i))
 
     def get_next(self):
         '''Get the next event.  Returns `None` if there are no events.'''
@@ -95,11 +95,11 @@ class HerdEvents(SortedSet):
 
     def update_infection_times(self):
         '''Update the infection events.'''
-        # Use the `super()` versions here to avoid changing `self.infections`.
-        # Remove `self.infections` from the `SortedSet`.
-        super().difference_update(self.infections)
+        # Use the `super()` versions here to avoid changing `self._infections`.
+        # Remove `self._infections` from the `SortedSet`.
+        super().difference_update(self._infections)
         # Update the infection times.
-        for infection in self.infections:
+        for infection in self._infections:
             infection.time = infection.sample_time()
-        # Add the updated `self.infections` to the `SortedSet`.
-        super().update(self.infections)
+        # Add the updated `self._infections` to the `SortedSet`.
+        super().update(self._infections)
