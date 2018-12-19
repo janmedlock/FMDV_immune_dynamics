@@ -64,7 +64,7 @@ if __name__ == '__main__':
     p.birth_seasonal_coefficient_of_variation = 1
 
     nruns = 10000
-    tmax = 5
+    tmax = 10
     debug = False
 
     extinction_times = find_extinction_times(nruns, p, tmax, debug = debug)

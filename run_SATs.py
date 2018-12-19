@@ -22,7 +22,7 @@ def run_SATs(nruns, tmax, *args, **kwargs):
 
 if __name__ == '__main__':
     nruns = 1000
-    tmax = 1
+    tmax = 10
 
     data = run_SATs(nruns, tmax)
     data.to_pickle('run_SATs.pkl')

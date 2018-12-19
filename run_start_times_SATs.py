@@ -20,7 +20,7 @@ def run_start_times_SATs(nruns, tmax, *args, **kwargs):
 
 if __name__ == '__main__':
     nruns = 10000
-    tmax = numpy.inf
+    tmax = 10
 
     data = run_start_times_SATs(nruns, tmax)
 

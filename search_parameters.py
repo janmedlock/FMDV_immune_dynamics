@@ -47,7 +47,7 @@ if __name__ == '__main__':
         0.61 * numpy.array([1, 0.75, 0.5, 2, 3, 0.25, 4, 0.1, 0]))
 
     nruns = 1000
-    tmax = numpy.inf
+    tmax = 10
     debug = False
 
     for bscov in birth_seasonal_coefficients_of_variation:

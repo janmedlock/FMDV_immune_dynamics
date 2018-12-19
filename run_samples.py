@@ -45,7 +45,7 @@ def run_SATs(tmax, *args, **kwargs):
 
 
 if __name__ == '__main__':
-    tmax = numpy.inf
+    tmax = 10
 
     data = run_SATs(tmax)
 

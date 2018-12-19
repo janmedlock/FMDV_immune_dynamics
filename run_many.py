@@ -66,7 +66,7 @@ def make_plots(data, show=True):
 if __name__ == '__main__':
     SAT = 1
     nruns = 100
-    tmax = 1
+    tmax = 10
 
     p = herd.Parameters(SAT=SAT)
     t0 = time.time()

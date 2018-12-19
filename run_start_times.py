@@ -32,7 +32,7 @@ def run_start_times(nruns, SAT, tmax, logging_prefix='', *args, **kwargs):
 if __name__ == '__main__':
     nruns = 4
     SAT = 1
-    tmax = 1
+    tmax = 10
 
     data = run_start_times(nruns, SAT, tmax)
 

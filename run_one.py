@@ -37,7 +37,7 @@ if __name__ == '__main__':
     SAT = 1
     chronic = True
     seed = 1
-    tmax = numpy.inf
+    tmax = 10
     debug = False
 
     p = herd.Parameters(SAT=SAT, chronic=chronic)
