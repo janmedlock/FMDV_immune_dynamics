@@ -26,7 +26,7 @@ class Buffalo:
 
     def die(self):
         self.herd.remove(self)
-        del self.events
+        self.events.clear()
 
     @property
     def age(self):

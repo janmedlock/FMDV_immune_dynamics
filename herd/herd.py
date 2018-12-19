@@ -102,7 +102,7 @@ class Herd(set):
 
     def run(self, tmax):
         result = [self.get_stats()]
-        while (self.time < self.params.start_time + tmax):
+        while self.time < self.params.start_time + tmax:
             self.step(tmax)
             result.append(self.get_stats())
             if self.stop():
