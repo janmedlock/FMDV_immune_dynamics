@@ -71,11 +71,11 @@ class Mortality(Event):
         self.buffalo.die()
 
     def sample_time(self):
-        # Use resampling to get a mortality time > current time.
+        # Use resampling to get a mortality time >= current time.
         while True:
             time = (self.buffalo.birth_date
                     + self.buffalo.herd.rvs.mortality.rvs())
-            if time > self.buffalo.herd.time:
+            if time >= self.buffalo.herd.time:
                 return time
 
 
@@ -106,7 +106,7 @@ class MaternalImmunityWaning(Event):
         self.buffalo.events.add(Infection(self.buffalo))
 
     def sample_time(self):
-        # Use resampling to get a waning time > current time.
+        # Use resampling to get a waning time >= current time.
         while True:
             time = (self.buffalo.birth_date
                     + self.buffalo.herd.rvs.maternal_immunity_waning.rvs())
