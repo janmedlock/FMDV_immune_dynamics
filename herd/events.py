@@ -1,5 +1,6 @@
 '''Data structures to manage events.'''
 from itertools import tee
+from operator import attrgetter
 
 from sortedcontainers import SortedKeyList
 
@@ -43,14 +44,13 @@ class HerdEvents(SortedKeyList):
     # one with minimum time can be found efficiently.
     # `Infection()` events are stored in the `infections` attribute
     # since they need to be updated frequently.
+
+    # The key function used to sort `Event()`s by their `time` attribute.
+    _get_time = attrgetter('time')
+
     def __init__(self):
         super().__init__(key=self._get_time)
         self._infections = set()
-
-    @staticmethod
-    def _get_time(event_):
-        '''The key function used to sort `Event()`s by time.'''
-        return event_.time
 
     @staticmethod
     def _is_infection(event_):
