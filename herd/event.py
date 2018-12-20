@@ -4,8 +4,6 @@ from abc import ABC, abstractmethod
 import numpy
 from scipy import stats
 
-from herd import buffalo
-
 
 class Event(ABC):
     '''Parent class for events that happen to a buffalo.'''
@@ -24,8 +22,8 @@ class Event(ABC):
         '''Generate a random sample time for the event.
         Subclasses must define this method.'''
 
-    def __init__(self, buffalo_):
-        self.buffalo = buffalo_
+    def __init__(self, buffalo):
+        self.buffalo = buffalo
         assert self.is_valid()
         self.time = self.sample_time()
 
@@ -41,24 +39,24 @@ class Event(ABC):
             self.buffalo.identifier)
 
 
-def get_all_valid_events(buffalo_):
+def get_all_valid_events(buffalo):
     events = set()
     # Collect all valid subclasses of `Event()`.
     # `Event.__init__()` raises an `AssertionError`
     # if `Event.is_valid()` is False.
     for cls in Event.__subclasses__():
         try:
-            events.add(cls(buffalo_))
+            events.add(cls(buffalo))
         except AssertionError:
             pass
     return events
 
 
-def Sex(buffalo_):
+def Sex(buffalo):
     '''A buffalo having its sex determined.'''
     # This is intentionally not an `Event()`,
     # because it doesn't have a sample time, etc.
-    if buffalo_.herd.rvs.female.rvs() == 1:
+    if buffalo.herd.rvs.female.rvs() == 1:
         return 'female'
     else:
         return 'male'
@@ -83,19 +81,11 @@ class Mortality(Event):
 
 class Birth(Event):
     '''A buffalo giving birth.'''
-    # Which classes give mom antibodies that she passes on.
-    has_antibodies = frozenset({'chronic', 'recovered'})
-
     def is_valid(self):
         return self.buffalo.sex == 'female'
 
     def do(self):
-        if self.buffalo.immune_status in self.has_antibodies:
-            calf_status = 'maternal immunity'
-        else:
-            calf_status = 'susceptible'
-        self.buffalo.herd.add(buffalo.Buffalo(self.buffalo.herd,
-                                              calf_status))
+        self.buffalo.give_birth()
         # Add next birth.
         self.time = self.sample_time()
         self.buffalo.events.add(self)

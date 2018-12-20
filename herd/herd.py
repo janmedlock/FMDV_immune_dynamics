@@ -33,11 +33,11 @@ class Herd(set):
         self.events = HerdEvents()
         self.by_immune_status = {s: set() for s in statuses}
         self.identifiers = count(0)
-        status_ages = self.rvs.initial_conditions.rvs(
-            self.params.population_size)
         # These need to be defined before initializing
         # susceptible `Buffalo()`.
         self.number_infectious = self.number_chronic = 0
+        status_ages = self.rvs.initial_conditions.rvs(
+            self.params.population_size)
         for (immune_status, ages) in status_ages.items():
             for age in ages:
                 self.add(Buffalo(self, immune_status, age))
