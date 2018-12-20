@@ -43,7 +43,7 @@ class Buffalo:
             immune_status_calf = 'maternal immunity'
         else:
             immune_status_calf = 'susceptible'
-        self.herd.add(Buffalo(herd, immune_status_calf))
+        self.herd.add(Buffalo(self.herd, immune_status_calf))
 
     def change_immune_status_to(self, new_immune_status):
         self.herd.immune_status_remove(self)
