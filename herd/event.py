@@ -24,10 +24,6 @@ class Event(ABC):
         '''Generate a random sample time for the event.
         Subclasses must define this method.'''
 
-    @property
-    def name(self):
-        return self.__class__.__name__
-
     def __init__(self, buffalo_):
         self.buffalo = buffalo_
         assert self.is_valid()
@@ -40,7 +36,9 @@ class Event(ABC):
 
     def __repr__(self):
         return 't = {}: {} for buffalo #{}'.format(
-            self.time, self.name, self.buffalo.identifier)
+            self.time,
+            self.__class__.__name__,
+            self.buffalo.identifier)
 
 
 def get_all_valid_events(buffalo_):
@@ -48,9 +46,9 @@ def get_all_valid_events(buffalo_):
     # Collect all valid subclasses of `Event()`.
     # `Event.__init__()` raises an `AssertionError`
     # if `Event.is_valid()` is False.
-    for klass in Event.__subclasses__():
+    for cls in Event.__subclasses__():
         try:
-            events.add(klass(buffalo_))
+            events.add(cls(buffalo_))
         except AssertionError:
             pass
     return events
