@@ -8,14 +8,15 @@ import numpy
 from herd import Parameters, RandomVariables
 
 
-age_max = 10
-age_bin_width = 0.1
-ages = numpy.linspace(0, age_max, 301)
-
 chronic = True
+
 parameters = Parameters(chronic=chronic)
 RVs = RandomVariables(parameters)
 ICs = RVs.initial_conditions
+
+age_max = 10
+age_bin_width = 0.1
+ages = numpy.linspace(0, age_max, 301)
 
 fig, axes = pyplot.subplots(3, 1, sharex=True)
 

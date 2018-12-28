@@ -1,5 +1,6 @@
 '''Estimate the infection hazard from the Hedger 1972 data.'''
 
+from functools import partial
 import os.path
 import re
 
@@ -55,6 +56,12 @@ def _load_data(params):
     return data
 
 
+def _vectorize(**kwds):
+    '''Decorator to vectorize a scalar function.'''
+    # Just make `numpy.vectorize()` easier to use as a decorator.
+    return partial(numpy.vectorize, **kwds)
+
+
 # Some of the functions below are slow, so the values are cached
 # to disk with `joblib.Memory()` so that they are only computed once.
 # Set up the cache in a subdirectory of the directory that this source
@@ -84,18 +91,16 @@ def _S_logprob_integrand(b, hazard_infection, maternal_immunity_waningRV):
                      + hazard_infection * b)
 
 
-# This is slow because of the calls to `scipy.integrate.quadrature()`.
+# Make the function able to handle vector-valued `age`.
+@_vectorize(otypes=[float])
+# The function is slow because of the calls to `scipy.integrate.quadrature()`.
 @_cache.cache
-def _S_logprob(a, hazard_infection, params):
-    assert hazard_infection >= 0, hazard_infection
+def _S_logprob_integral(age, hazard_infection, params):
     maternal_immunity_waningRV = maternal_immunity_waning.gen(params)
-    val, _ = quadrature(_S_logprob_integrand, 0, a,
+    val, _ = quadrature(_S_logprob_integrand, 0, age,
                         args=(hazard_infection, maternal_immunity_waningRV),
                         maxiter=10000)
-    # Handle log(0).
-    return numpy.ma.filled(
-        numpy.ma.log(val) - hazard_infection * a,
-        - numpy.inf)
+    return val
 
 
 def S_logprob(age, hazard_infection, params):
@@ -106,12 +111,13 @@ def S_logprob(age, hazard_infection, params):
     = \log \int_0^a Prob{Transitioning from M to S at age b}
                     * exp(hazard_infection * b) db
       - hazard_infection * a.'''
+    assert hazard_infection >= 0, hazard_infection
     params_cache = SParameters(params)
-    if numpy.ndim(age) == 0:
-        return _S_logprob(age, hazard_infection, params_cache)
-    else:
-        return numpy.array([_S_logprob(a, hazard_infection, params_cache)
-                            for a in age])
+    # Handle log(0).
+    return numpy.ma.filled(
+        numpy.ma.log(_S_logprob_integral(age, hazard_infection, params_cache))
+        - hazard_infection * age,
+        - numpy.inf)
 
 
 def S_prob(age, hazard_infection, params):
@@ -138,24 +144,20 @@ class CParameters(SParameters):
 
 
 def _C_logprob_integrand(b, a, hazard_infection, params, chronic_recoveryRV):
-    return numpy.exp(_S_logprob(b, hazard_infection, params)
+    return numpy.exp(S_logprob(b, hazard_infection, params)
                      + chronic_recoveryRV.logsf(a - b))
 
-# This is slow because of the calls to `scipy.integrate.quadrature()`.
+# Make the function able to handle vector-valued `age`.
+@_vectorize(otypes=[float])
+# The function is slow because of the calls to `scipy.integrate.quadrature()`.
 @_cache.cache
-def _C_logprob_integral(a, hazard_infection, params):
-    # For call to `_S_logprob()` in `_C_logprob_integrand()`.
-    params_cache = SParameters(params)
+def _C_logprob_integral(age, hazard_infection, params):
     chronic_recoveryRV = chronic_recovery.gen(params)
-    val, _ = quadrature(_C_logprob_integrand, 0, a,
-                        args=(a, hazard_infection, params_cache,
+    val, _ = quadrature(_C_logprob_integrand, 0, age,
+                        args=(age, hazard_infection, params,
                               chronic_recoveryRV),
-                        vec_func=False,
                         maxiter=10000)
-    # Handle log(0).
-    return numpy.ma.filled(
-        numpy.ma.log(val) + numpy.ma.log(hazard_infection),
-        - numpy.inf)
+    return val
 
 
 def C_logprob(age, hazard_infection, params):
@@ -172,19 +174,16 @@ def C_logprob(age, hazard_infection, params):
                     * Prob{survival in chronically infected for (a - b)} db
       + \log hazard_infection
       + \log probabilty_chronic.'''
+    assert hazard_infection >= 0, hazard_infection
     if not params.chronic:
         # Shortcut to probability = 0.
-        I = - numpy.inf * numpy.ones_like(age)
-    else:
-        params_cache = CParameters(params)
-        if numpy.ndim(age) == 0:
-            I = _C_logprob_integral(age, hazard_infection, params_cache)
-        else:
-            I = numpy.array([_C_logprob_integral(a, hazard_infection,
-                                                 params_cache)
-                               for a in age])
+        return - numpy.inf * numpy.ones_like(age)
+    params_cache = CParameters(params)
+    # Handle log(0).
     return numpy.ma.filled(
-        I + numpy.ma.log(params.probability_chronic),
+        numpy.ma.log(_C_logprob_integral(age, hazard_infection, params_cache))
+        + numpy.ma.log(hazard_infection)
+        + numpy.ma.log(params.probability_chronic),
         - numpy.inf)
 
 
@@ -235,7 +234,7 @@ def minus_loglikelihood(hazard_infection, params, data):
     return _minus_loglikelihood(hazard_infection, params_cache, data)
 
 
-# This is very slow because of the call to `scipy.optimize.minimize()`.
+# The function is very slow because of the call to `scipy.optimize.minimize()`.
 @_cache.cache
 def _find_hazard_infection(params):
     '''Find the MLE for the infection hazard.'''
