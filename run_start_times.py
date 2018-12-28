@@ -10,11 +10,12 @@ import herd
 from run_many import run_many
 
 
-def run_start_times(nruns, SAT, tmax, logging_prefix='', *args, **kwargs):
+def run_start_times(nruns, SAT, chronic, tmax, logging_prefix='',
+                    *args, **kwargs):
     results = {}
     # Every month.
     for start_time in numpy.arange(0, 1, 1 / 12):
-        p = herd.Parameters(SAT=SAT)
+        p = herd.Parameters(SAT=SAT, chronic=chronic)
         p.start_time = start_time
         logging_prefix_ = (logging_prefix
                            + 'Start time {:g} / 12'.format(start_time * 12))
@@ -30,11 +31,12 @@ def run_start_times(nruns, SAT, tmax, logging_prefix='', *args, **kwargs):
 
 
 if __name__ == '__main__':
-    nruns = 4
     SAT = 1
+    chronic = True
+    nruns = 4
     tmax = 10
 
-    data = run_start_times(nruns, SAT, tmax)
+    data = run_start_times(nruns, SAT, chronic, tmax)
 
     _filebase, _ = os.path.splitext(__file__)
     _picklefile = _filebase + '.pkl'

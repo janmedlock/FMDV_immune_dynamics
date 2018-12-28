@@ -31,7 +31,7 @@ def load_extinction_data():
     r = csv.reader(open('search_parameters.csv'))
     header = next(r)
     data = numpy.array([translate(row) for row in r])
-    
+
     cols = ['SAT',
             'population_size',
             'birth_seasonal_coefficient_of_variation']

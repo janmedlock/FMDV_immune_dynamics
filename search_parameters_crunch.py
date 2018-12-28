@@ -165,7 +165,7 @@ def plot_3D(X, Y, Z, C, title):
     set_axis(axes, 'x', 'population_size')
     set_axis(axes, 'y', 'maternal_immunity_duration')
     set_axis(axes, 'z', 'recovery_mean')
-    
+
     if len(C) > 0:
         cbar = fig.colorbar(points)
         cbar.set_label(title)
@@ -196,10 +196,10 @@ def plot_average_extinction_time(average = 'mean'):
 
 
 def plot_persistance(years):
-    title = 'Proportion persisting ≥{} year{}'.format(
+    title = 'Proportion persisting >={} year{}'.format(
         years,
         '' if years == 1 else 's')
-    
+
     X = extinction_times['population_size']
     Y = extinction_times['maternal_immunity_duration']
     Z = extinction_times['infection_duration']
@@ -269,7 +269,7 @@ parameters_values = {k: numpy.unique(extinction_times[k])
 default = {'population_size': 100,
            'transmission_rate': 7.1,
            'infection_duration': 1.6 / 365 * 365}
-           
+
 
 # plot_slice(infection_duration = default['infection_duration'],
 #            R0 = default['R0'])

@@ -1,5 +1,4 @@
-* Fix herd.initial_conditions._C_prob
-** Check with test/initial_conditions.py
+* Start runs with carriers.
 ** Save results in new files!!!
 
 * Re-run acute samples since they weren't updating the initial

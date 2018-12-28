@@ -21,9 +21,9 @@ def run_one(run_number, parameters, sample, tmax, *args, **kwargs):
     return h.run(tmax)
 
 
-def run_samples(SAT, tmax, *args, **kwargs):
+def run_samples(SAT, chronic, tmax, *args, **kwargs):
     '''Run many simulations in parallel.'''
-    parameters = herd.Parameters(SAT=SAT)
+    parameters = herd.Parameters(SAT=SAT, chronic=chronic)
     print('Running SAT {}.'.format(SAT))
     t0 = time.time()
     results = Parallel(n_jobs=-1)(
@@ -35,19 +35,20 @@ def run_samples(SAT, tmax, *args, **kwargs):
                          copy=False)
 
 
-def run_SATs(tmax, *args, **kwargs):
+def run_SATs(chronic, tmax, *args, **kwargs):
     results = {}
     for SAT in (1, 2, 3):
-        results[SAT] = run_samples(SAT, tmax,
+        results[SAT] = run_samples(SAT, chronic, tmax,
                                    logging_prefix='SAT {}, '.format(SAT),
                                    *args, **kwargs)
     return pandas.concat(results, names=['SAT'], copy=False)
 
 
 if __name__ == '__main__':
+    chronic = True
     tmax = 10
 
-    data = run_SATs(tmax)
+    data = run_SATs(chronic, tmax)
 
     _filebase, _ = os.path.splitext(__file__)
     _picklefile = _filebase + '.pkl'

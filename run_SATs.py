@@ -8,10 +8,10 @@ import herd
 from run_many import run_many
 
 
-def run_SATs(nruns, tmax, *args, **kwargs):
+def run_SATs(chronic, nruns, tmax, *args, **kwargs):
     results = {}
     for SAT in (1, 2, 3):
-        p = herd.Parameters(SAT=SAT)
+        p = herd.Parameters(SAT=SAT, chronic=chronic)
         print('Running SAT {}.'.format(SAT))
         t0 = time.time()
         results[SAT] = run_many(nruns, p, tmax, *args, **kwargs)
@@ -21,8 +21,9 @@ def run_SATs(nruns, tmax, *args, **kwargs):
 
 
 if __name__ == '__main__':
+    chronic = True
     nruns = 1000
     tmax = 10
 
-    data = run_SATs(nruns, tmax)
+    data = run_SATs(chronic, nruns, tmax)
     data.to_pickle('run_SATs.pkl')

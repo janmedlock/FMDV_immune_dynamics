@@ -57,7 +57,10 @@ def show_stats(mystats):
 if __name__ == '__main__':
     import herd
 
-    p = herd.Parameters()
+    SAT = 1
+    chronic = True
+
+    p = herd.Parameters(SAT=SAT, chronic=chronic)
 
     p.population_size = 100
     p.infection_duration = 21 / 365

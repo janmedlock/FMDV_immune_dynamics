@@ -9,7 +9,7 @@ import pandas
 from scipy.integrate import quadrature
 from scipy.optimize import minimize
 
-from herd import maternal_immunity_waning, parameters
+from herd import chronic_recovery, maternal_immunity_waning, parameters
 
 
 _filename = 'data/Hedger_1972_survey_data.xlsx'
@@ -63,7 +63,7 @@ _cachedir = os.path.join(os.path.dirname(__file__), '_cache')
 _cache = Memory(_cachedir, verbose=0)
 
 
-class Parameters(parameters.Parameters):
+class SParameters(parameters.Parameters):
     '''Build a `herd.parameters.Parameters()`-like object that
     only has the parameters needed by `S_logprob()` etc
     so that they can be efficiently cached.'''
@@ -93,10 +93,9 @@ def _S_logprob(a, hazard_infection, params):
                         args=(hazard_infection, maternal_immunity_waningRV),
                         maxiter=10000)
     # Handle log(0).
-    if val == 0:
-        return - numpy.inf
-    else:
-        return numpy.log(val) - hazard_infection * a
+    return numpy.ma.filled(
+        numpy.ma.log(val) - hazard_infection * a,
+        - numpy.inf)
 
 
 def S_logprob(age, hazard_infection, params):
@@ -107,7 +106,7 @@ def S_logprob(age, hazard_infection, params):
     = \log \int_0^a Prob{Transitioning from M to S at age b}
                     * exp(hazard_infection * b) db
       - hazard_infection * a.'''
-    params_cache = Parameters(params)
+    params_cache = SParameters(params)
     if numpy.ndim(age) == 0:
         return _S_logprob(age, hazard_infection, params_cache)
     else:
@@ -118,6 +117,80 @@ def S_logprob(age, hazard_infection, params):
 def S_prob(age, hazard_infection, params):
     '''The probability of being susceptible at age `a`.'''
     return numpy.exp(S_logprob(age, hazard_infection, params))
+
+
+class CParameters(SParameters):
+    '''Build a `herd.parameters.Parameters()`-like object that
+    only has the parameters needed by `C_logprob()` etc
+    so that they can be efficiently cached.'''
+    def __init__(self, params):
+        # This needs the parameters in `SParameters()`
+        # and a few more.
+        super().__init__(params)
+        # Generally, the values of these parameters should be
+        # floats, so explicitly convert them so the cache doesn't
+        # get duplicated keys for the float and int representation
+        # of the same number, e.g. `float(0)` and `int(0)`.
+        self.chronic_recovery_mean = float(
+            params.chronic_recovery_mean)
+        self.chronic_recovery_shape = float(
+            params.chronic_recovery_shape)
+
+
+def _C_logprob_integrand(b, a, hazard_infection, params, chronic_recoveryRV):
+    return numpy.exp(_S_logprob(b, hazard_infection, params)
+                     + chronic_recoveryRV.logsf(a - b))
+
+# This is slow because of the calls to `scipy.integrate.quadrature()`.
+@_cache.cache
+def _C_logprob_integral(a, hazard_infection, params):
+    # For call to `_S_logprob()` in `_C_logprob_integrand()`.
+    params_cache = SParameters(params)
+    chronic_recoveryRV = chronic_recovery.gen(params)
+    val, _ = quadrature(_C_logprob_integrand, 0, a,
+                        args=(a, hazard_infection, params_cache,
+                              chronic_recoveryRV),
+                        vec_func=False,
+                        maxiter=10000)
+    # Handle log(0).
+    return numpy.ma.filled(
+        numpy.ma.log(val) + numpy.ma.log(hazard_infection),
+        - numpy.inf)
+
+
+def C_logprob(age, hazard_infection, params):
+    '''The logarithm of the probability of being chronically infected
+    at age `a`.  This is
+    \log \int_0^a Prob{Infection at age b}
+                  * probabilty_chronic
+                  * Prob{survival in chronically infected for (a - b)} db
+    = \log \int_0^a Prob{In S at age b}
+                    * hazard_infection
+                    * probabilty_chronic
+                    * Prob{survival in chronically infected for (a - b)} db
+    = \log \int_0^a Prob{In S at age b}
+                    * Prob{survival in chronically infected for (a - b)} db
+      + \log hazard_infection
+      + \log probabilty_chronic.'''
+    if not params.chronic:
+        # Shortcut to probability = 0.
+        I = - numpy.inf * numpy.ones_like(age)
+    else:
+        params_cache = CParameters(params)
+        if numpy.ndim(age) == 0:
+            I = _C_logprob_integral(age, hazard_infection, params_cache)
+        else:
+            I = numpy.array([_C_logprob_integral(a, hazard_infection,
+                                                 params_cache)
+                               for a in age])
+    return numpy.ma.filled(
+        I + numpy.ma.log(params.probability_chronic),
+        - numpy.inf)
+
+
+def C_prob(age, hazard_infection, params):
+    '''The probability of being chronically infected at age `a`.'''
+    return numpy.exp(C_logprob(age, hazard_infection, params))
 
 
 def _minus_loglikelihood(hazard_infection, params, data):
@@ -158,7 +231,7 @@ def _minus_loglikelihood(hazard_infection, params, data):
 
 
 def minus_loglikelihood(hazard_infection, params, data):
-    params_cache = Parameters(params)
+    params_cache = SParameters(params)
     return _minus_loglikelihood(hazard_infection, params_cache, data)
 
 
@@ -179,7 +252,7 @@ def _find_hazard_infection(params):
 
 def find_hazard_infection(params):
     '''Find the MLE for the infection hazard for each SAT.'''
-    params_cache = Parameters(params)
+    params_cache = SParameters(params)
     return _find_hazard_infection(params_cache)
 
 

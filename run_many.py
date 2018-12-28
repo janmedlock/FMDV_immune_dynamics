@@ -65,10 +65,11 @@ def make_plots(data, show=True):
 
 if __name__ == '__main__':
     SAT = 1
+    chronic = True
     nruns = 100
     tmax = 10
 
-    p = herd.Parameters(SAT=SAT)
+    p = herd.Parameters(SAT=SAT, chronic=chronic)
     t0 = time.time()
     data = run_many(nruns, p, tmax)
     t1 = time.time()

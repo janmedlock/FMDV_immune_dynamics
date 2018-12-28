@@ -7,6 +7,8 @@ from herd import _initial_conditions
 
 
 class gen:
+    '''This all assumes that progression (E -> I) and recovery (I -> C/R)
+    are fast compared to the other processes.'''
     def __init__(self, parameters):
         self.parameters = parameters
         # Reuse these in case we call rvs() repeatedly.
@@ -28,8 +30,9 @@ class gen:
 
     def _C_prob(self, age):
         '''Probability of being in C, i.e. chronically infected.'''
-        # Should depend on _S_prob...
-        return numpy.zeros_like(age)
+        return _initial_conditions.C_prob(age,
+                                          self.hazard_infection,
+                                          self.parameters)
 
     def _proportion(self, age):
         if numpy.ndim(age) == 0:
