@@ -49,5 +49,7 @@ if __name__ == '__main__':
     make_plot(data)
 
     # _filebase, _ = os.path.splitext(__file__)
+    # if chronic:
+    #     _filebase += '_chronic'
     # _picklefile = _filebase + '.pkl'
     # data.to_pickle(_picklefile)

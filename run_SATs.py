@@ -1,5 +1,6 @@
 #!/usr/bin/python3
 
+import os.path
 import time
 
 import pandas
@@ -26,4 +27,8 @@ if __name__ == '__main__':
     tmax = 10
 
     data = run_SATs(chronic, nruns, tmax)
-    data.to_pickle('run_SATs.pkl')
+    _filebase, _ = os.path.splitext(__file__)
+    if chronic:
+        _filebase += '_chronic'
+    _picklefile = _filebase + '.pkl'
+    data.to_pickle(_picklefile)

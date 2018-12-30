@@ -20,11 +20,13 @@ def run_start_times_SATs(nruns, chronic, tmax, *args, **kwargs):
 
 if __name__ == '__main__':
     chronic = True
-    nruns = 10000
+    nruns = 1000
     tmax = 10
 
     data = run_start_times_SATs(nruns, chronic, tmax)
 
     _filebase, _ = os.path.splitext(__file__)
+    if chronic:
+        _filebase += '_chronic'
     _picklefile = _filebase + '.pkl'
     data.to_pickle(_picklefile)
