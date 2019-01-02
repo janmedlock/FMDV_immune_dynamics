@@ -14,12 +14,15 @@ from scipy import integrate
 seaborn.set_context('talk')
 
 
-def load_SIR_data():
-    return pandas.read_csv('run_SATs.csv',
-                           index_col = (0, 1, 2))
+def load_SIR_data(chronic=False):
+    filename = 'run_SATs'
+    if chronic:
+        filename += '_chronic'
+    filename += '.pkl'
+    return pandas.read_pickle(filename)
 
 
-def load_extinction_data():
+def load_extinction_data(chronic=False):
     def translate(row):
         def f(x):
             if x == '':
@@ -28,7 +31,11 @@ def load_extinction_data():
                 return float(x)
         return list(map(f, row))
 
-    r = csv.reader(open('search_parameters.csv'))
+    filename = 'search_parameters'
+    if chronic:
+        filename += '_chronic'
+    filename += '.csv'
+    r = csv.reader(open(filename))
     header = next(r)
     data = numpy.array([translate(row) for row in r])
 
@@ -58,14 +65,14 @@ def load_extinction_data():
     return data
 
 
-def make_SIR_plots(show = True):
-    data = load_SIR_data()
+def make_SIR_plots(chronic=False, show=True):
+    data = load_SIR_data(chronic)
 
     SATs = data.index.levels[0]
     reps = data.index.levels[1]
 
     # Drop 'Total'
-    nrows = len(data.columns) - 1
+    nrows = len(data.columns)
     ncols = len(SATs)
     (fig, axes) = pyplot.subplots(nrows, ncols,
                                   sharex = 'all', sharey = 'row')
@@ -81,12 +88,12 @@ def make_SIR_plots(show = True):
                 c = 'black'
                 alpha = 0.6
             for i in range(nrows):
-                axes[i, j].step(365 * t, x.iloc[:, i], where = 'post',
-                                color = c, alpha = 0.5)
+                axes[i, j].step(365 * t, x.iloc[:, i], where='post',
+                                color=c, alpha=0.5)
                 axes[i, j].xaxis.set_major_locator(
-                    ticker.MaxNLocator(nbins = 4))
+                    ticker.MaxNLocator(nbins=4))
                 axes[i, j].yaxis.set_major_locator(
-                    ticker.MaxNLocator(nbins = 4))
+                    ticker.MaxNLocator(nbins=4))
             axes[0, j].set_title('SAT {}'.format(SAT))
 
     ax = axes[:, 0]
@@ -103,17 +110,22 @@ def make_SIR_plots(show = True):
     for ax in axes[:, 0]:
         yl = ax.get_ylim()
         if yl[0] < 0:
-            ax.set_ylim(ymin = 0)
+            ax.set_ylim(bottom=0)
 
-    fig.savefig('plot_SATs_SIR.pdf')
+    filename = 'plot_SATs'
+    if chronic:
+        filename += '_chronic'
+    filename += '_SIR.pdf'
+    fig.savefig(filename)
     if show:
         pyplot.show()
 
 
-def make_extinction_hist(population_size = 1000,
-                         birth_seasonal_coefficient_of_variation = 0.61,
-                         show = True):
-    data = load_extinction_data()
+def make_extinction_hist(population_size=1000,
+                         birth_seasonal_coefficient_of_variation=0.61,
+                         chronic=False,
+                         show=True):
+    data = load_extinction_data(chronic)
     data = data.loc(axis = 0)[:,
                               population_size,
                               birth_seasonal_coefficient_of_variation]
@@ -133,14 +145,18 @@ def make_extinction_hist(population_size = 1000,
     mid = (axes.shape[-1] - 1) // 2
     axes[mid].set_xlabel('time (days)')
 
-    fig.savefig('plot_SATs_hist.pdf')
+    filename = 'plot_SATs'
+    if chronic:
+        filename += '_chronic'
+    filename += '_hist.pdf'
+    fig.savefig(filename)
     if show:
         pyplot.show()
 
 
-def make_full(show = True):
-    data = load_extinction_data()
-    
+def make_full(chronic=False, show=True):
+    data = load_extinction_data(chronic)
+
     palette = 'Set2'
     linewidth = 0.75
 
@@ -193,12 +209,17 @@ def make_full(show = True):
             leg.set_visible(False)
 
     fig.tight_layout()
-    fig.savefig('full.pdf')
+    filename = 'plot_SATs'
+    if chronic:
+        filename += '_chronic'
+    filename += '_full.pdf'
+    fig.savefig(filename)
     if show:
         pyplot.show()
 
 
 if __name__ == '__main__':
-    # make_SIR_plots()
-    # make_extinction_hist()
-    make_full()
+    chronic = True
+    make_SIR_plots(chronic)
+    # make_extinction_hist(chronic)
+    # make_full(chronic)
