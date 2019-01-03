@@ -1,5 +1,7 @@
 #!/usr/bin/python3
 
+import os.path
+
 from matplotlib import pyplot
 import numpy
 import pandas
@@ -9,12 +11,19 @@ import seaborn
 t_name = 'time (y)'
 
 
-def get_data():
-    data = pandas.read_pickle('run_start_times_SATs.pkl')
+def get_data(chronic=False):
+    filename = 'run_start_times_SATs'
+    if chronic:
+        filename += '_chronic'
+    filename += '.pkl'
+    data = pandas.read_pickle(filename)
     try:
-        data_ds = pandas.read_pickle('run_start_times_SATs_downsampled.pkl')
+        base, ext = os.path.splitext(filename)
+        filename_ds = base + '_downsampled' + ext
+        data_ds = pandas.read_pickle(filenameds)
     except FileNotFoundError:
         data_ds = downsample(data)
+        data_ds.to_pickle(filename_ds)
     return (data, data_ds)
 
 
@@ -38,7 +47,6 @@ def downsample(data):
         # Interpolate from previous point.
         data_ds.loc[k][mask] = x.reindex(t[mask], method='ffill')
     data_ds.dropna(axis=0, inplace=True)
-    data_ds.to_pickle('run_start_times_SATs_downsampled.pkl')
     return data_ds
 
 
@@ -47,7 +55,7 @@ def get_persistence_time(x):
     return t.max() - t.min()
 
 
-def plot_persistence_time(data):
+def plot_persistence_time(data, chronic=False):
     # Only plot the first start time.
     mask = (data.index.get_level_values('start_time') == 0.)
     data = data[mask]
@@ -68,7 +76,11 @@ def plot_persistence_time(data):
     locs, labels = pyplot.xticks()
     pyplot.xticks(locs, ['SAT {}'.format(i.get_text()) for i in labels])
     pyplot.tight_layout()
-    pyplot.savefig('plot_start_times_SATs_persistence_time.pdf')
+    filename = 'plot_start_times_SATs_persistence_time'
+    if chronic:
+        filename += '_chronic'
+    filename += '.pdf'
+    pyplot.savefig(filename)
 
 
 def plot_infected_facet(x, color=None, alpha=1, **kwargs):
@@ -80,7 +92,7 @@ def plot_infected_facet(x, color=None, alpha=1, **kwargs):
     pyplot.plot(365 * t, x.mean(axis=1), color='black', alpha=1, **kwargs)
 
 
-def plot_infected(data):
+def plot_infected(data, chronic=False):
     # Only plot the first start time.
     mask = (data.index.get_level_values('start_time') == 0.)
     data = data[mask]
@@ -94,7 +106,11 @@ def plot_infected(data):
     g.set_axis_labels('time (days)', 'number infected')
     g.set_titles('{col_var} {col_name}')
     pyplot.tight_layout()
-    pyplot.savefig('plot_start_times_SATs_infected.pdf')
+    filename = 'plot_start_times_SATs_infected'
+    if chronic:
+        filename += '_chronic'
+    filename += '.pdf'
+    pyplot.savefig(filename)
 
 
 def get_time_to_peak(x):
@@ -102,7 +118,7 @@ def get_time_to_peak(x):
     return I.idxmax()[-1] - I.index.get_level_values(t_name).min()
 
 
-def plot_time_to_peak(data):
+def plot_time_to_peak(data, chronic=False):
     # Only plot the first start time.
     mask = (data.index.get_level_values('start_time') == 0.)
     data = data[mask]
@@ -124,7 +140,11 @@ def plot_time_to_peak(data):
     locs, labels = pyplot.xticks()
     pyplot.xticks(locs, ['SAT {}'.format(i.get_text()) for i in labels])
     pyplot.tight_layout()
-    pyplot.savefig('plot_start_times_SATs_time_to_peak.pdf')
+    filename = 'plot_start_times_SATs_time_to_peak'
+    if chronic:
+        filename += '_chronic'
+    filename += '.pdf'
+    pyplot.savefig(filename)
 
 
 def get_total_infected(x):
@@ -133,7 +153,7 @@ def get_total_infected(x):
     return R.iloc[-1] - R.iloc[0]
 
 
-def plot_total_infected(data):
+def plot_total_infected(data, chronic=False):
     # Only plot the first start time.
     mask = (data.index.get_level_values('start_time') == 0.)
     data = data[mask]
@@ -154,13 +174,19 @@ def plot_total_infected(data):
     locs, labels = pyplot.xticks()
     pyplot.xticks(locs, ['SAT {}'.format(i.get_text()) for i in labels])
     pyplot.tight_layout()
-    pyplot.savefig('plot_start_times_SATs_total_infected.pdf')
+    filename = 'plot_start_times_SATs_total_infected'
+    if chronic:
+        filename += '_chronic'
+    filename += '.pdf'
+    pyplot.savefig(filename)
 
 
 if __name__ == '__main__':
-    data, data_ds = get_data()
-    plot_infected(data_ds)
-    plot_persistence_time(data)
-    plot_time_to_peak(data)
-    plot_total_infected(data)
+    chronic = True
+
+    data, data_ds = get_data(chronic)
+    plot_infected(data_ds, chronic)
+    plot_persistence_time(data, chronic)
+    plot_time_to_peak(data, chronic)
+    plot_total_infected(data, chronic)
     # pyplot.show()

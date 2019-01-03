@@ -1,5 +1,4 @@
-* Start runs with carriers.
-** Save results in new files!!!
+* Analyze carrier runs.
 
 * Re-run acute samples since they weren't updating the initial
   conditions for different parameter values for the duration maternal
