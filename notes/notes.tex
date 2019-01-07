@@ -631,24 +631,24 @@ The PDEs are
     \left(
       \frac{\partial}{\partial t}
       + \frac{\partial}{\partial a}
-      + h_{\text{death}}(a)
-      + h_{\text{waning}}(a)
+      + h_{\text{mortality}}(a)
+      + h_{\text{maternal immunity}}(a)
     \right) M(t, a)
     &= 0,
     \\
     \left(
       \frac{\partial}{\partial t}
       + \frac{\partial}{\partial a}
-      + h_{\text{death}}(a)
+      + h_{\text{mortality}}(a)
       + h_{\text{infection}}(t)
     \right) S(t, a)
-    &= h_{\text{waning}}(a) M(t, a),
+    &= h_{\text{maternal immunity}}(a) M(t, a),
     \\
     \left(
       \frac{\partial}{\partial t}
       + \frac{\partial}{\partial a}
       + \frac{\partial}{\partial r}
-      + h_{\text{death}}(a)
+      + h_{\text{mortality}}(a)
       + h_{\text{progression}}(r)
     \right) E(t, a, r)
     &= 0,
@@ -657,7 +657,7 @@ The PDEs are
       \frac{\partial}{\partial t}
       + \frac{\partial}{\partial a}
       + \frac{\partial}{\partial r}
-      + h_{\text{death}}(a)
+      + h_{\text{mortality}}(a)
       + h_{\text{recovery}}(r)
     \right) I(t, a, r)
     &= 0,
@@ -665,7 +665,7 @@ The PDEs are
     \left(
       \frac{\partial}{\partial t}
       + \frac{\partial}{\partial a}
-      + h_{\text{death}}(a)
+      + h_{\text{mortality}}(a)
       + h_{\text{chronic recovery}}
     \right) C(t, a)
     &= p_{\text{chronic}} H_{\text{recovery}}(t, a),
@@ -673,7 +673,7 @@ The PDEs are
     \left(
       \frac{\partial}{\partial t}
       + \frac{\partial}{\partial a}
-      + h_{\text{death}}(a)
+      + h_{\text{mortality}}(a)
     \right) R(t, a)
     &= (1 - p_{\text{chronic}}) H_{\text{recovery}}(t, a)
     \\ & \quad {}
@@ -723,7 +723,7 @@ McKendrick--von Foerster equation
     \left(
       \frac{\partial}{\partial t}
       + \frac{\partial}{\partial a}
-      + h_{\text{death}}(a)
+      + h_{\text{mortality}}(a)
     \right)
     N(t, a)
     &= 0,
@@ -741,13 +741,13 @@ The PDEs are
 \begin{equation}
   \begin{split}
     \frac{\md M}{\md a}
-    &= - \big(h_{\text{death}}(a)
-    + h_{\text{waning}}(a)\big) M,
+    &= - \big(h_{\text{mortality}}(a)
+    + h_{\text{maternal immunity}}(a)\big) M,
     \\
     \frac{\md S}{\md a}
-    &= h_{\text{waning}}(a) M
+    &= h_{\text{maternal immunity}}(a) M
     \\ & \quad {}
-    - \big(h_{\text{death}}(a)
+    - \big(h_{\text{mortality}}(a)
       + h_{\text{infection}}
     \big) S,
     \\
@@ -755,20 +755,20 @@ The PDEs are
       \frac{\partial}{\partial a}
       + \frac{\partial}{\partial r}
     \right) E
-    &=- \big(h_{\text{death}}(a)
+    &=- \big(h_{\text{mortality}}(a)
     + h_{\text{progression}}(r)\big) E,
     \\
     \left(
       \frac{\partial}{\partial a}
       + \frac{\partial}{\partial r}
     \right) I
-    &= - \big(h_{\text{death}}(a)
+    &= - \big(h_{\text{mortality}}(a)
     + h_{\text{recovery}}(r)\big) I,
     \\
     \frac{\md C}{\md a}
     &= p_{\text{chronic}} H_{\text{recovery}}(a)
     \\ & \quad {}
-    - \big(h_{\text{death}}(a)
+    - \big(h_{\text{mortality}}(a)
     + h_{\text{chronic recovery}}\big) C,
     \\
     \frac{\md R}{\md a}
@@ -776,7 +776,7 @@ The PDEs are
     \\ & \quad {}
     + h_{\text{chronic recovery}} C(a)
     \\ & \quad {}
-    - h_{\text{death}}(a) R,
+    - h_{\text{mortality}}(a) R,
   \end{split}
 \end{equation}
 with boundary conditions
@@ -823,32 +823,32 @@ Solve with root finder and $E, I, R > 0$.
 \begin{equation}
   \begin{split}
     \frac{M^k - M^{k - 1}}{\Delta a}
-    &= - \big(h_{\text{death}}(a^{k - 1/2})
-    + h_{\text{waning}}(a^{k - 1 / 2})\big)
+    &= - \big(h_{\text{mortality}}(a^{k - 1/2})
+    + h_{\text{maternal immunity}}(a^{k - 1 / 2})\big)
     \frac{M^k + M^{k - 1}}{2},
     \\
     \frac{S^k - S^{k - 1}}{\Delta a}
-    &= h_{\text{waning}}(a^{k - 1 / 2})
+    &= h_{\text{maternal immunity}}(a^{k - 1 / 2})
     \frac{M^k + M^{k - 1}}{2}
     \\ & \quad {}
-    - \big(h_{\text{death}}(a^{k - 1 / 2})
+    - \big(h_{\text{mortality}}(a^{k - 1 / 2})
     + h_{\text{infection}}\big)
     \frac{S^k + S^{k - 1}}{2},
     \\
     \frac{E_j^k - E_{j - 1}^{k - 1}}{\Delta a}
-    &=- \big(h_{\text{death}}(a^{k - 1 / 2})
+    &=- \big(h_{\text{mortality}}(a^{k - 1 / 2})
     + h_{\text{progression}}(r_{j - 1 / 2})\big)
     \frac{E_j^k + E_{j - 1}^{k - 1}}{2},
     \\
     \frac{I_j^k - I_{j - 1}^{k - 1}}{\Delta a}
-    &= - \big(h_{\text{death}}(a^{k - 1 / 2})
+    &= - \big(h_{\text{mortality}}(a^{k - 1 / 2})
     + h_{\text{recovery}}(r_{j - 1 / 2})\big)
     \frac{I_j^k + I_{j - 1}^{k - 1}}{2},
     \\
     \frac{C^k - C^{k - 1}}{\Delta a}
     &= p_{\text{chronic}} H_{\text{recovery}}(a^{k - 1 / 2})
     \\ & \quad {}
-    - \big(h_{\text{death}}(a^{k - 1 / 2})
+    - \big(h_{\text{mortality}}(a^{k - 1 / 2})
     + h_{\text{chronic recovery}}\big) \frac{C^k + C^{k - 1}}{2},
     \\
     \frac{R^k - R^{k - 1}}{\Delta a}
@@ -856,7 +856,7 @@ Solve with root finder and $E, I, R > 0$.
     \\ & \quad {}
     + h_{\text{chronic recovery}} \frac{C^k + C^{k - 1}}{2}
     \\ & \quad {}
-    - h_{\text{death}}(a^{k - 1 / 2}) \frac{R^k + R^{k - 1}}{2},
+    - h_{\text{mortality}}(a^{k - 1 / 2}) \frac{R^k + R^{k - 1}}{2},
   \end{split}
 \end{equation}
 with boundary conditions
