@@ -320,8 +320,8 @@ $p_{\text{female}} = 0.5$ or otherwise male.
 \section{Waning}
 
 The duration of maternal immunity was taken to be a standard gamma
-random variable with shape $k_{\text{maternal immunity}}$
-and mean $\mu_{\text{maternal immunity}}$.
+random variable with shape $k_{\text{waning}}$
+and mean $\mu_{\text{waning}}$.
 
 
 \section{Infection}
@@ -632,7 +632,7 @@ The PDEs are
       \frac{\partial}{\partial t}
       + \frac{\partial}{\partial a}
       + h_{\text{mortality}}(a)
-      + h_{\text{maternal immunity}}(a)
+      + h_{\text{waning}}(a)
     \right) M(t, a)
     &= 0,
     \\
@@ -642,7 +642,7 @@ The PDEs are
       + h_{\text{mortality}}(a)
       + h_{\text{infection}}(t)
     \right) S(t, a)
-    &= h_{\text{maternal immunity}}(a) M(t, a),
+    &= h_{\text{waning}}(a) M(t, a),
     \\
     \left(
       \frac{\partial}{\partial t}
@@ -742,10 +742,10 @@ The PDEs are
   \begin{split}
     \frac{\md M}{\md a}
     &= - \big(h_{\text{mortality}}(a)
-    + h_{\text{maternal immunity}}(a)\big) M,
+    + h_{\text{waning}}(a)\big) M,
     \\
     \frac{\md S}{\md a}
-    &= h_{\text{maternal immunity}}(a) M
+    &= h_{\text{waning}}(a) M
     \\ & \quad {}
     - \big(h_{\text{mortality}}(a)
       + h_{\text{infection}}
@@ -824,11 +824,11 @@ Solve with root finder and $E, I, R > 0$.
   \begin{split}
     \frac{M^k - M^{k - 1}}{\Delta a}
     &= - \big(h_{\text{mortality}}(a^{k - 1/2})
-    + h_{\text{maternal immunity}}(a^{k - 1 / 2})\big)
+    + h_{\text{waning}}(a^{k - 1 / 2})\big)
     \frac{M^k + M^{k - 1}}{2},
     \\
     \frac{S^k - S^{k - 1}}{\Delta a}
-    &= h_{\text{maternal immunity}}(a^{k - 1 / 2})
+    &= h_{\text{waning}}(a^{k - 1 / 2})
     \frac{M^k + M^{k - 1}}{2}
     \\ & \quad {}
     - \big(h_{\text{mortality}}(a^{k - 1 / 2})
