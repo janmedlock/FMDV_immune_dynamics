@@ -115,7 +115,7 @@ class Herd(set):
         result = DataFrame.from_dict(dict(result),
                                      orient='index',
                                      columns=statuses)
-        result.index.name = 'time (d)'
+        result.index.name = 'time (y)'
         result.columns.name = 'status'
         return result
 
