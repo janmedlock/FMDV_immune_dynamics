@@ -17,10 +17,10 @@ def get_data(chronic=False):
         filename += '_chronic'
     filename += '.pkl'
     data = pandas.read_pickle(filename)
+    base, ext = os.path.splitext(filename)
+    filename_ds = base + '_downsampled' + ext
     try:
-        base, ext = os.path.splitext(filename)
-        filename_ds = base + '_downsampled' + ext
-        data_ds = pandas.read_pickle(filenameds)
+        data_ds = pandas.read_pickle(filename_ds)
     except FileNotFoundError:
         data_ds = downsample(data)
         data_ds.to_pickle(filename_ds)
