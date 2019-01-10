@@ -5,6 +5,7 @@ import os.path
 import numpy
 import pandas
 
+import h5
 import herd
 from run_start_times import run_start_times
 
@@ -28,5 +29,5 @@ if __name__ == '__main__':
     _filebase, _ = os.path.splitext(__file__)
     if chronic:
         _filebase += '_chronic'
-    _picklefile = _filebase + '.pkl'
-    data.to_pickle(_picklefile)
+    _h5file = _filebase + '.h5'
+    h5.dump(data, _h5file)

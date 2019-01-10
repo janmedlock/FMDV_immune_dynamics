@@ -5,6 +5,7 @@ import numpy
 import pandas
 import seaborn
 
+import h5
 import herd
 from herd.samples import samples
 import stats
@@ -16,7 +17,7 @@ def _get_persistence_time(x):
 
 
 def _load_persistence_times():
-    results = pandas.read_pickle('run_samples.pkl')
+    results = h5.load('run_samples.h5')
     groups = results.groupby(['SAT', 'sample'])
     pt = groups.apply(_get_persistence_time)
     pt.name = 'persistence_time'
@@ -31,10 +32,10 @@ def _load_persistence_times():
 
 def load_persistence_times():
     try:
-        df = pandas.read_pickle('plot_samples.pkl')
+        df = h5.load('plot_samples.h5')
     except FileNotFoundError:
         df = _load_persistence_times()
-        df.to_pickle('plot_samples.pkl')
+        h5.dump(df, 'plot_samples.h5')
     return df
 
 

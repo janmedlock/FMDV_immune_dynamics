@@ -7,6 +7,8 @@ import numpy
 import pandas
 import seaborn
 
+import h5
+
 
 t_name = 'time (y)'
 
@@ -15,15 +17,15 @@ def get_data(chronic=False):
     filename = 'run_start_times_SATs'
     if chronic:
         filename += '_chronic'
-    filename += '.pkl'
-    data = pandas.read_pickle(filename)
+    filename += '.h5'
+    data = h5.load(filename)
     base, ext = os.path.splitext(filename)
     filename_ds = base + '_downsampled' + ext
     try:
-        data_ds = pandas.read_pickle(filename_ds)
+        data_ds = h5.load(filename_ds)
     except FileNotFoundError:
         data_ds = downsample(data)
-        data_ds.to_pickle(filename_ds)
+        h5.dump(data_ds, filename_ds)
     return (data, data_ds)
 
 

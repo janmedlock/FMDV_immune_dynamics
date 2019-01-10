@@ -11,6 +11,8 @@ import pandas
 import seaborn
 from scipy import integrate
 
+import h5
+
 seaborn.set_context('talk')
 
 
@@ -18,8 +20,8 @@ def load_SIR_data(chronic=False):
     filename = 'run_SATs'
     if chronic:
         filename += '_chronic'
-    filename += '.pkl'
-    return pandas.read_pickle(filename)
+    filename += '.h5'
+    return h5.load(filename)
 
 
 def load_extinction_data(chronic=False):
