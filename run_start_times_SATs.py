@@ -2,21 +2,8 @@
 
 import os.path
 
-import numpy
-import pandas
-
 import h5
-import herd
-from run_start_times import run_start_times
-
-
-def run_start_times_SATs(nruns, chronic, tmax, *args, **kwargs):
-    results = {}
-    for SAT in (1, 2, 3):
-        results[SAT] = run_start_times(nruns, SAT, chronic, tmax,
-                                       logging_prefix='SAT {}, '.format(SAT),
-                                       *args, **kwargs)
-    return pandas.concat(results, names=['SAT'], copy=False)
+import run_common
 
 
 if __name__ == '__main__':
@@ -24,7 +11,7 @@ if __name__ == '__main__':
     nruns = 1000
     tmax = 10
 
-    data = run_start_times_SATs(nruns, chronic, tmax)
+    data = run_common.run_start_times_SATs(nruns, chronic, tmax)
 
     _filebase, _ = os.path.splitext(__file__)
     if chronic:

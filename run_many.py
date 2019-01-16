@@ -1,24 +1,15 @@
 #!/usr/bin/python3
 
-import os.path
+import itertools
 import time
 
 from joblib import delayed, Parallel
+from matplotlib import pyplot
 import pandas
+import seaborn
 
-import h5
 import herd
-from run_one import run_one
-
-
-def run_many(nruns, parameters, tmax, *args, **kwargs):
-    '''Run many simulations in parallel.'''
-    results = Parallel(n_jobs=-1)(
-        delayed(run_one)(i, parameters, tmax, *args, **kwargs)
-        for i in range(nruns))
-    # Make 'run' the outer row index.
-    return pandas.concat(results, keys=range(nruns), names=['run'],
-                         copy=False)
+import run_common
 
 
 def get_mean(data):
@@ -35,10 +26,6 @@ def get_mean(data):
 
 
 def make_plots(data, show=True):
-    from matplotlib import pyplot
-    import seaborn
-    import itertools
-
     (fig, ax) = pyplot.subplots(6, sharex=True)
     colors = itertools.cycle(seaborn.color_palette('husl', 8))
     for (i, color) in zip(data.index.levels[0], colors):
@@ -72,14 +59,8 @@ if __name__ == '__main__':
 
     p = herd.Parameters(SAT=SAT, chronic=chronic)
     t0 = time.time()
-    data = run_many(nruns, p, tmax)
+    data = run_common.run_many(nruns, p, tmax)
     t1 = time.time()
     print('Run time: {} seconds.'.format(t1 - t0))
 
     make_plots(data)
-
-    # _filebase, _ = os.path.splitext(__file__)
-    # if chronic:
-    #     _filebase += '_chronic'
-    # _h5file = _filebase + '.h5'
-    # h5.dump(data, _h5file)

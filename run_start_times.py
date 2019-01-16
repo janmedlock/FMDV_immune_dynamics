@@ -1,34 +1,9 @@
 #!/usr/bin/python3
 
 import os.path
-import time
-
-import numpy
-import pandas
 
 import h5
-import herd
-from run_many import run_many
-
-
-def run_start_times(nruns, SAT, chronic, tmax, logging_prefix='',
-                    *args, **kwargs):
-    results = {}
-    # Every month.
-    for start_time in numpy.arange(0, 1, 1 / 12):
-        p = herd.Parameters(SAT=SAT, chronic=chronic)
-        p.start_time = start_time
-        logging_prefix_ = (logging_prefix
-                           + 'Start time {:g} / 12'.format(start_time * 12))
-        print('Running {}.'.format(logging_prefix_))
-        logging_prefix_ += ', '
-        t0 = time.time()
-        results[start_time] = run_many(nruns, p, tmax,
-                                       logging_prefix=logging_prefix_,
-                                       *args, **kwargs)
-        t1 = time.time()
-        print('Run time: {} seconds.'.format(t1 - t0))
-    return pandas.concat(results, names=['start_time'], copy=False)
+import run_common
 
 
 if __name__ == '__main__':
@@ -37,7 +12,7 @@ if __name__ == '__main__':
     nruns = 100
     tmax = 10
 
-    data = run_start_times(nruns, SAT, chronic, tmax)
+    data = run_common.run_start_times(nruns, SAT, chronic, tmax)
 
     _filebase, _ = os.path.splitext(__file__)
     if chronic:

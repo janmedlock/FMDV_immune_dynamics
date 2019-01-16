@@ -1,24 +1,15 @@
 #!/usr/bin/python3
 
-import os.path
 import time
 
-import numpy
-
-import h5
 import herd
+import run_common
 
-
-def run_one(run_number, parameters, tmax, *args, **kwargs):
-    '''Run one simulation.'''
-    h = herd.Herd(parameters, run_number=run_number, *args, **kwargs)
-    return h.run(tmax)
+from matplotlib import pyplot
+import seaborn
 
 
 def make_plot(data, show = True):
-    from matplotlib import pyplot
-    import seaborn
-
     (fig, ax) = pyplot.subplots()
     seaborn.set_palette(seaborn.color_palette('deep', 6))
 
@@ -43,14 +34,8 @@ if __name__ == '__main__':
 
     p = herd.Parameters(SAT=SAT, chronic=chronic)
     t0 = time.time()
-    data = run_one(seed, p, tmax, debug=debug)
+    data = run_common.run_one(seed, p, tmax, debug=debug)
     t1 = time.time()
     print('Run time: {} seconds.'.format(t1 - t0))
 
     make_plot(data)
-
-    # _filebase, _ = os.path.splitext(__file__)
-    # if chronic:
-    #     _filebase += '_chronic'
-    # _h5file = _filebase + '.h5'
-    # h5.dump(data, _h5file)
