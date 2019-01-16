@@ -12,6 +12,7 @@
 *.synctex.gz
 *.png
 *.pgf
+*.h5
 __pycache__/
 _cache/
 /herd/floquet/monodromy*.so
