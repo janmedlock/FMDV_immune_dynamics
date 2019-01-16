@@ -4,12 +4,12 @@ import itertools
 import os.path
 
 from matplotlib import pyplot
-import matplotlib.collections
 import numpy
 import pandas
 import seaborn
 
 import h5
+import plot_common
 
 
 t_name = 'time (y)'
@@ -86,9 +86,7 @@ def plot_persistence_time(chronic=False):
                             x='persistence time (days)', y='SAT',
                             orient='horizontal', width=0.95,
                             cut=0, linewidth=1)
-    for col in ax.collections:
-        if isinstance(col, matplotlib.collections.PolyCollection):
-            col.set_linewidth(0)
+    plot_common.set_violins_linewidth(ax, 0)
     pyplot.ylabel('')
     locs, labels = pyplot.yticks()
     pyplot.yticks(locs, ['SAT {}'.format(i.get_text()) for i in labels])
@@ -159,9 +157,7 @@ def plot_time_to_peak(chronic=False):
                             x='time to peak (days)', y='SAT',
                             orient='horizontal', width=0.95,
                             cut=0, linewidth=1)
-    for col in ax.collections:
-        if isinstance(col, matplotlib.collections.PolyCollection):
-            col.set_linewidth(0)
+    plot_common.set_violins_linewidth(ax, 0)
     pyplot.ylabel('')
     locs, labels = pyplot.yticks()
     pyplot.yticks(locs, ['SAT {}'.format(i.get_text()) for i in labels])
@@ -199,9 +195,7 @@ def plot_total_infected(chronic=False):
                             x='total infected', y='SAT',
                             orient='horizontal', width=0.95,
                             cut=0, linewidth=1)
-    for col in ax.collections:
-        if isinstance(col, matplotlib.collections.PolyCollection):
-            col.set_linewidth(0)
+    plot_common.set_violins_linewidth(ax, 0)
     pyplot.ylabel('')
     locs, labels = pyplot.yticks()
     pyplot.yticks(locs, ['SAT {}'.format(i.get_text()) for i in labels])
