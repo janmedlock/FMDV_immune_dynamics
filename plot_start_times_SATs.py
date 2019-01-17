@@ -38,7 +38,9 @@ def plot_persistence_time(chronic=False):
     filename = get_filename(chronic=chronic)
     # Only plot the first start time.
     where = 'start_time=0'
-    data = h5.load(filename, where=where)
+    # Persistence time is calculated using only the time values
+    # in the index, so no data columns are needed.
+    data = h5.load(filename, where=where, columns=[])
     not_t_names = [n for n in data.index.names if n != plot_common.t_name]
     persistence_time = data.groupby(level=not_t_names).apply(
         get_persistence_time)
@@ -77,6 +79,9 @@ def plot_infected_facet(x, color=None, alpha=1, **kwargs):
 
 
 def plot_infected(chronic=False):
+    # It might be helpful to reduce what is loaded here to
+    # `where='start_time=0'` and
+    # `columns=['exposed', 'infectious', 'chronic']`.
     data = get_downsampled(chronic=chronic)
     # Only plot the first start time.
     mask = (data.index.get_level_values('start_time') == 0.)
@@ -107,7 +112,8 @@ def plot_time_to_peak(chronic=False):
     filename = get_filename(chronic=chronic)
     # Only plot the first start time.
     where = 'start_time=0'
-    data = h5.load(filename, where=where)
+    data = h5.load(filename, where=where,
+                   columns=['exposed', 'infectious', 'chronic'])
     not_t_names = [n for n in data.index.names if n != plot_common.t_name]
     time_to_peak = data.groupby(level=not_t_names).apply(
         get_time_to_peak)
@@ -146,7 +152,7 @@ def plot_total_infected(chronic=False):
     filename = get_filename(chronic=chronic)
     # Only plot the first start time.
     where = 'start_time=0'
-    data = h5.load(filename, where=where)
+    data = h5.load(filename, where=where, columns=['recovered'])
     not_t_names = [n for n in data.index.names if n != plot_common.t_name]
     total_infected = data.groupby(level=not_t_names).apply(get_total_infected)
     total_infected.clip_lower(0, inplace=True)
