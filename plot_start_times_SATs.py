@@ -1,18 +1,12 @@
 #!/usr/bin/python3
 
-import itertools
 import os.path
 
 from matplotlib import pyplot
-import numpy
-import pandas
 import seaborn
 
 import h5
 import plot_common
-
-
-t_name = 'time (y)'
 
 
 def get_filename(chronic=False):
@@ -30,40 +24,13 @@ def get_downsampled(chronic=False):
     try:
         data_ds = h5.load(filename_ds)
     except FileNotFoundError:
-        data_ds = downsample(filename)
+        data_ds = plot_common.downsample(filename)
         h5.dump(data_ds, filename_ds)
     return data_ds
 
 
-def downsample(filename):
-    store = h5.HDFStore(filename, mode='r')
-    not_t_names = [n for n in store.index.names if n != t_name]
-    # Daily timesteps.
-    t = store.index.get_level_values(t_name)
-    t = numpy.arange(t.min(), t.max(), 1 / 365)
-    not_t = [store.index.get_level_values(n).unique()
-             for n in not_t_names]
-    midx = pandas.MultiIndex.from_product(not_t + [t],
-                                          names=store.index.names)
-    data_ds = pandas.DataFrame(index=midx,
-                               columns=store.columns)
-    # Loop over each run.
-    for ix in itertools.product(*not_t):
-        where = ' & '.join(f'{k}={v}' for k, v in zip(not_t_names, ix))
-        print(where)
-        data = store.select(where=where)
-        # Only keep time index.
-        data.index = data.index.get_level_values(t_name)
-        # Only interpolate between start and extinction.
-        mask = ((t >= data.index.min()) & (t <= data.index.max()))
-        # Interpolate from previous point.
-        data_ds.loc[ix][mask] = data.reindex(t[mask], method='ffill')
-    data_ds.dropna(axis=0, inplace=True)
-    return data_ds
-
-
 def get_persistence_time(x):
-    t = x.index.get_level_values(t_name)
+    t = x.index.get_level_values(plot_common.t_name)
     return t.max() - t.min()
 
 
@@ -72,7 +39,7 @@ def plot_persistence_time(chronic=False):
     # Only plot the first start time.
     where = 'start_time=0'
     data = h5.load(filename, where=where)
-    not_t_names = [n for n in data.index.names if n != t_name]
+    not_t_names = [n for n in data.index.names if n != plot_common.t_name]
     persistence_time = data.groupby(level=not_t_names).apply(
         get_persistence_time)
     persistence_time *= 365
@@ -133,7 +100,7 @@ def plot_infected(chronic=False):
 
 def get_time_to_peak(x):
     I = x[['exposed', 'infectious', 'chronic']].sum(axis=1)
-    return I.idxmax()[-1] - I.index.get_level_values(t_name).min()
+    return I.idxmax()[-1] - I.index.get_level_values(plot_common.t_name).min()
 
 
 def plot_time_to_peak(chronic=False):
@@ -141,7 +108,7 @@ def plot_time_to_peak(chronic=False):
     # Only plot the first start time.
     where = 'start_time=0'
     data = h5.load(filename, where=where)
-    not_t_names = [n for n in data.index.names if n != t_name]
+    not_t_names = [n for n in data.index.names if n != plot_common.t_name]
     time_to_peak = data.groupby(level=not_t_names).apply(
         get_time_to_peak)
     time_to_peak *= 365
@@ -180,7 +147,7 @@ def plot_total_infected(chronic=False):
     # Only plot the first start time.
     where = 'start_time=0'
     data = h5.load(filename, where=where)
-    not_t_names = [n for n in data.index.names if n != t_name]
+    not_t_names = [n for n in data.index.names if n != plot_common.t_name]
     total_infected = data.groupby(level=not_t_names).apply(get_total_infected)
     total_infected.clip_lower(0, inplace=True)
     total_infected = total_infected.reset_index(level=['SAT', 'start_time'],
