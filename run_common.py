@@ -8,7 +8,6 @@ import pandas
 import herd
 
 
-
 _SATs = (1, 2, 3)
 
 
