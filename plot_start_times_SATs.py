@@ -246,8 +246,8 @@ def plot_total_infected(chronic=False):
 if __name__ == '__main__':
     chronic = True
 
-    # plot_infected(chronic)
-    plot_extinction_time(chronic)
+    plot_infected(chronic)
+    # plot_extinction_time(chronic)
     # plot_time_to_peak(chronic)
     # plot_total_infected(chronic)
     # pyplot.show()
