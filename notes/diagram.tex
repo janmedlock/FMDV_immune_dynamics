@@ -3,7 +3,7 @@
   \node at (2, 9) [compartment, name=Susceptible] {Susceptible};
   \node at (2, 7) [compartment, name=Exposed] {Exposed};
   \node at (2, 5) [compartment, name=Infectious] {Infectious};
-  \node at (0, 1) [compartment, name=Chronic] {Chronic};
+  \node at (0, 1) [compartment, dashed, name=Chronic] {Chronic};
   \node at (4, 0) [compartment, name=Recovered] {Recovered};
 
   \draw [->] (MaternalImmunity)
@@ -24,7 +24,7 @@
   \draw [->] (2, 3.5)
              to node [] {}
              (Recovered.90);
-  \draw [->] (Chronic.342)
+  \draw [->, dashed] (Chronic.342)
              to node [sloped, align=center] {chronic\\recovery}
              (Recovered.165);
   % \draw [->] (Recovered.195)
@@ -40,7 +40,7 @@
   \draw [->] (Infectious.0)
              to [out=0, in=0] node [sloped, above, pos=0.8] {birth}
              (Susceptible.0);
-  \draw [->] (Chronic.18)
+  \draw [->, dashed] (Chronic.18)
              to [out=15, in=0, looseness=1.1] node [] {}
              (MaternalImmunity.0);
   \draw [->] (Recovered.15)
@@ -69,5 +69,5 @@
 
 %%% Local Variables:
 %%% mode: latex
-%%% TeX-master: "notes"
+%%% TeX-master: "diagram_standalone"
 %%% End:
