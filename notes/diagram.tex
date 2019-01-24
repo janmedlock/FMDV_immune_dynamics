@@ -1,70 +1,77 @@
 \begin{tikzpicture}[thick, compartment/.style = {rectangle, draw}]
-  \node at (2, 11) [compartment, align=center, name=MaternalImmunity] {Maternal\\immunity};
-  \node at (2, 9) [compartment, name=Susceptible] {Susceptible};
-  \node at (2, 7) [compartment, name=Exposed] {Exposed};
-  \node at (2, 5) [compartment, name=Infectious] {Infectious};
-  \node at (0, 1) [compartment, dashed, name=Chronic] {Chronic};
-  \node at (4, 0) [compartment, name=Recovered] {Recovered};
+  % Compartments.
+  \node at (0, 11) [compartment, align=center, name=MaternalImmunity] {Maternal\\immunity};
+  \node at (0, 8.5) [compartment, name=Susceptible] {Susceptible};
+  \node at (0, 6) [compartment, name=Exposed] {Exposed};
+  \node at (0, 3.5) [compartment, name=Infectious] {Infectious};
+  \node at (0, 0) [compartment, name=Recovered] {Recovered};
+  \node at (3.5, 1) [compartment, dashed, name=Chronic] {Chronic};
 
+  % Location for branch from Infectious to Chronic and Recovered.
+  \coordinate (recovery) at (0, 1.75);
+
+  % Infection-related processes.
   \draw [->] (MaternalImmunity)
-             to node [left, align=center] {waning}
+             to node [rotate=-90, below] {waning}
              (Susceptible);
   \draw [->] (Susceptible)
-             to node [left] {infection}
+             to node [rotate=-90, below] {infection}
              (Exposed);
   \draw [->] (Exposed)
-             to node [left] {progression}
+             to node [rotate=-90, below] {progression}
              (Infectious);
   \draw [  ] (Infectious)
-             to node [left] {recovery}
-             (2, 3.5);
-  \draw [->, dashed] (2, 3.5)
-             to node [sloped, align=center] {probability\\chronic}
-             (Chronic.90);
-  \draw [->] (2, 3.5)
+             to node [rotate=-90, below, yshift=-2pt] {recovery}
+             (recovery);
+  \draw [->, dashed] (recovery)
+             to node [sloped, above, yshift=-2pt] {chronicity}
+             (Chronic.161);
+  \draw [->] (recovery)
              to node [] {}
              (Recovered.90);
-  \draw [->, dashed] (Chronic.342)
+  \draw [->, dashed] (Chronic.199)
              to node [sloped, align=center] {chronic\\recovery}
-             (Recovered.165);
+             (Recovered.15);
   % \draw [->] (Recovered.195)
   %            to [out=180, in=180] node [left, align=center] {immunity\\waning}
   %            (Susceptible.180);
 
-  \draw [->] (Susceptible.344)
-             to [out=315, in=0, looseness=3.5] node [] {}
-             (Susceptible.0);
-  \draw [->] (Exposed.0)
-             to [out=0, in=0] node [] {}
-             (Susceptible.0);
-  \draw [->] (Infectious.0)
-             to [out=0, in=0] node [sloped, above, pos=0.8] {birth}
-             (Susceptible.0);
-  \draw [->, dashed] (Chronic.18)
-             to [out=15, in=0, looseness=1.1] node [] {}
-             (MaternalImmunity.0);
-  \draw [->] (Recovered.15)
-             to [out=45, in=0] node [sloped, above, pos=0.8] {birth}
+  % Births
+  \draw [->] (Susceptible.196)
+             to [out=225, in=180, looseness=3.5] node [] {}
+             (Susceptible.180);
+  \draw [->] (Exposed.180)
+             to [out=180, in=180] node [] {}
+             (Susceptible.180);
+  \draw [->] (Infectious.180)
+             to [out=180, in=180, looseness=0.9] node [sloped, above, pos=0.85] {birth}
+             (Susceptible.180);
+  \draw [->] (Recovered.180)
+             to [out=180, in=180, looseness=0.6] node [sloped, above, pos=0.8] {birth}
+             (MaternalImmunity.180);
+  \draw [->, dashed] (Chronic.90)
+             to [out=90, in=0, looseness=0.8] node [sloped, above, pos=0.75] {birth}
              (MaternalImmunity.0);
 
-  % \draw [->] (MaternalImmunity.331)
-  %            to node [sloped, below] {death}
-  %            +(300: 1);
-  % \draw [->] (Susceptible.344)
-  %            to node [sloped, below] {death}
-  %            +(300: 1);
-  % \draw [->] (Exposed.340)
-  %            to node [sloped, below] {death}
-  %            +(300: 1);
-  % \draw [->] (Infectious.344)
-  %            to node [sloped, below] {death}
-  %            +(300: 1);
-  % \draw [->] (Chronic.342)
-  %            to node [sloped, below] {death}
-  %            +(300: 1);
-  % \draw [->] (Recovered.345)
-  %            to node [sloped, below] {death}
-  %            +(300: 1);
+  % Deaths
+  \draw [->] (MaternalImmunity.331)
+             to node [sloped, below, yshift=1pt] {death}
+             +(330: 1);
+  \draw [->] (Susceptible.344)
+             to node [sloped, below, yshift=1pt] {death}
+             +(330: 1);
+  \draw [->] (Exposed.340)
+             to node [sloped, below, yshift=1pt] {death}
+             +(330: 1);
+  \draw [->] (Infectious.345)
+             to node [sloped, below, yshift=1pt] {death}
+             +(330: 1);
+  \draw [->] (Recovered.345)
+             to node [sloped, below, yshift=1pt] {death}
+             +(330: 1);
+  \draw [->, dashed] (Chronic.342)
+             to node [sloped, below, yshift=1pt] {death}
+             +(330: 1);
 \end{tikzpicture}
 
 %%% Local Variables:
