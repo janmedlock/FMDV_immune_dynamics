@@ -26,12 +26,17 @@ SAT_colors = {
     3: '#807dba'
 }
 
+# From `pdfinfo notes/diagram_standalone.pdf'.
+diagram_width = 184.763 / 72  # inches
+diagram_height = 279.456 / 72  # inches
+
 # Nature.
 rc = {}
 # Widths: 89mm, 183mm, 120mm, 136mm.
-width = 183 / 25.4  # inches
-height = 1.2 * width
-rc['figure.figsize'] = [width, height]
+total_width = 183 / 25.4  # inches
+fig_width = total_width - diagram_width
+fig_height = 6  # inches
+rc['figure.figsize'] = [fig_width, fig_height]
 # Sans-serif, preferably Helvetica or Arial.
 rc['font.family'] = 'sans-serif'
 rc['font.sans-serif'] = 'DejaVu Sans'
@@ -73,7 +78,7 @@ def plot_infected(ax, infected, SAT, chronic):
     ax.xaxis.offsetText.set_visible(False)
     if ax.is_first_col():
         ax.set_ylabel('Number\ninfected')
-        ax.annotate(f'SAT {SAT}', (-0.18, 0.2),
+        ax.annotate(f'SAT {SAT}', (-0.35, 0.2),
                     xycoords='axes fraction',
                     rotation=90, fontsize=rc['axes.titlesize'])
     else:
@@ -109,7 +114,7 @@ def plot_extinction_time(ax, extinction_time, SAT, chronic):
         bbox = dict(boxstyle=f'rarrow, pad={pad}',
                     facecolor=color, linewidth=0)
         ax.annotate('{:g}%'.format(not_extinct * 100),
-                    (0.98, 0.8), xycoords='axes fraction',
+                    (0.96, 0.8), xycoords='axes fraction',
                     bbox=bbox, color='white',
                     verticalalignment='bottom',
                     horizontalalignment='right')
@@ -130,7 +135,7 @@ def plot(infected, extinction_time):
     chronics = infected.chronic.unique()
     nrows = len(SATs) * 2
     ncols = len(chronics)
-    height_ratios = (1, 0.2) * (nrows // 2)
+    height_ratios = (1, 1 / 3) * (nrows // 2)
     with seaborn.axes_style('whitegrid'), pyplot.rc_context(rc=rc):
         fig = pyplot.figure(constrained_layout=True)
         gs = gridspec.GridSpec(nrows, ncols, figure=fig,
