@@ -6,6 +6,7 @@
 # * Consider tweaking height ratios.
 # * Consider changing width ratios from 1:1 to
 #   show difference in time scales between columns.
+# * Consider plotting fewer runs.
 
 from matplotlib import gridspec
 from matplotlib import pyplot
@@ -95,9 +96,6 @@ def plot_extinction_time(ax, extinction_time, SAT, chronic):
         kde.fit(gridsize=100, cut=0)
         x = kde.support
         y = kde.density
-        if x[0] > 0:
-            x = numpy.concatenate([[0, x[0]], x])
-            y = numpy.concatenate([[0, 0], y])
     else:
         # No extinctions: make line at y=0.
         x = (0, extinction_time[col].max())
@@ -164,6 +162,6 @@ def plot(infected, extinction_time):
 
 
 if __name__ == '__main__':
-    # infected, extinction_time = load()
+    infected, extinction_time = load()
     plot(infected, extinction_time)
     # pyplot.show()
