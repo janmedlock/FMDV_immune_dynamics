@@ -1,3 +1,8 @@
+* Susceptible recruitment with stable population as background
+  Plot over one year, sums to 1.
+
+* Compute R0 with chronic model.
+
 * Ask Simon for posterior samples.
 
 * Analyze carrier runs.

@@ -2,11 +2,7 @@
 #
 # TODO
 # * Label alignment.
-# * Add/plan for model diagram.
-# * Consider tweaking height ratios.
-# * Consider changing width ratios from 1:1 to
-#   show difference in time scales between columns.
-# * Consider plotting fewer runs.
+# * Check width of figure with diagram.
 
 from matplotlib import gridspec
 from matplotlib import pyplot
@@ -47,6 +43,7 @@ rc['axes.labelsize'] = 6
 rc['xtick.labelsize'] = rc['ytick.labelsize'] = 5
 # Separate panels in multi-part figures should be labelled with 8
 # pt bold, upright (not italic) a, b, c...
+# I'm gonna try to avoid this.
 
 
 def load():
@@ -65,17 +62,27 @@ def load():
 
 
 def plot_infected(ax, infected, SAT, chronic):
+    nruns = 1000
     mask = ((infected.SAT == SAT)
-            & (infected.chronic == chronic))
-    i = infected[mask].infected.unstack('run')
+            & (infected.chronic == chronic)
+            & (infected.index.get_level_values('run') < nruns))
+    # .unstack('run') puts 'run' on columns, time on rows.
+    i = infected.infected[mask].unstack('run')
+    # Start time at 0.
     t = i.index - i.index.min()
-    ax.plot(365 * t, i, alpha=0.25)
+    ax.plot(365 * t, i, color=SAT_colors[SAT],
+            alpha=0.15, linewidth=0.5, drawstyle='steps-pre')
     # `i.fillna(0)` gives mean including those that
     # have gone extinct.
-    ax.plot(365 * t, i.fillna(0).mean(axis=1), color='black', alpha=1)
+    ax.plot(365 * t, i.fillna(0).mean(axis='columns'), color='black',
+            alpha=1)
+    # Tighten y-axis limits.
+    ax.margins(y=0)
+    # Shared x-axis with extinction time.
     ax.xaxis.set_tick_params(which='both',
                              labelbottom=False, labeltop=False)
     ax.xaxis.offsetText.set_visible(False)
+    # Shared y-axis between models.
     if ax.is_first_col():
         ax.set_ylabel('Number\ninfected')
         ax.annotate(f'SAT {SAT}', (-0.35, 0.2),
@@ -91,22 +98,13 @@ def plot_infected(ax, infected, SAT, chronic):
 
 
 def plot_extinction_time(ax, extinction_time, SAT, chronic):
-    col = 'extinction time (days)'
     mask = ((extinction_time.SAT == SAT)
             & (extinction_time.chronic == chronic))
-    e = extinction_time[col][mask]
+    e = extinction_time['extinction time (days)'][mask]
     color = SAT_colors[SAT]
     if len(e.dropna()) > 0:
-        kde = statsmodels.nonparametric.api.KDEUnivariate(e)
-        kde.fit(gridsize=100, cut=0)
-        x = kde.support
-        y = kde.density
-    else:
-        # No extinctions: make line at y=0.
-        x = (0, extinction_time[col].max())
-        y = (0, 0)
-    ax.plot(x, y, color=color)
-    ax.fill_between(x, 0, y, facecolor=color, alpha=0.25)
+        seaborn.kdeplot(e.dropna(), ax=ax, color=color,
+                        shade=True, legend=False, cut=0)
     not_extinct = len(e[e.isnull()]) / len(e)
     if not_extinct > 0:
         # 0.6 -> 0.3, 1 -> 1.
@@ -114,20 +112,22 @@ def plot_extinction_time(ax, extinction_time, SAT, chronic):
         bbox = dict(boxstyle=f'rarrow, pad={pad}',
                     facecolor=color, linewidth=0)
         ax.annotate('{:g}%'.format(not_extinct * 100),
-                    (0.96, 0.8), xycoords='axes fraction',
+                    (0.98, 0.8), xycoords='axes fraction',
                     bbox=bbox, color='white',
                     verticalalignment='bottom',
                     horizontalalignment='right')
     # No y ticks.
     ax.yaxis.set_major_locator(ticker.NullLocator())
-    if ax.is_first_col():
-        ax.set_ylabel('Extinction\ntime')
+    # Shared x-axes between SATs.
     if ax.is_last_row():
         ax.set_xlabel('Time (d)')
     else:
         ax.xaxis.set_tick_params(which='both',
                                  labelbottom=False, labeltop=False)
         ax.xaxis.offsetText.set_visible(False)
+    # Shared y-axis between models.
+    if ax.is_first_col():
+        ax.set_ylabel('Extinction\ntime')
 
 
 def plot(infected, extinction_time):
@@ -135,11 +135,13 @@ def plot(infected, extinction_time):
     chronics = infected.chronic.unique()
     nrows = len(SATs) * 2
     ncols = len(chronics)
-    height_ratios = (1, 1 / 3) * (nrows // 2)
+    height_ratios = (3, 1) * (nrows // 2)
+    width_ratios = (1, 1)
     with seaborn.axes_style('whitegrid'), pyplot.rc_context(rc=rc):
         fig = pyplot.figure(constrained_layout=True)
         gs = gridspec.GridSpec(nrows, ncols, figure=fig,
-                               height_ratios=height_ratios)
+                               height_ratios=height_ratios,
+                               width_ratios=width_ratios)
         axes = numpy.empty((nrows, ncols), dtype=object)
         for row in range(nrows):
             for col in range(ncols):
@@ -153,10 +155,26 @@ def plot(infected, extinction_time):
                                                  sharey=sharey)
         for (i, SAT) in enumerate(SATs):
             for (col, chronic) in enumerate(chronics):
-                ax_i = axes[2 * i, col]
-                ax_e = axes[2 * i + 1, col]
-                plot_infected(ax_i, infected, SAT, chronic)
-                plot_extinction_time(ax_e, extinction_time, SAT, chronic)
+                row_i = 2 * i
+                row_e = 2 * i + 1
+                plot_infected(axes[row_i, col], infected, SAT, chronic)
+                plot_extinction_time(axes[row_e, col], extinction_time,
+                                     SAT, chronic)
+        # Shade time region from acute-model column
+        # in chronic-model column.
+        col_chronic = numpy.where(chronics == True)[0][0]
+        mask = (extinction_time.chronic == False)
+        e_acute = extinction_time['extinction time (days)'][mask]
+        assert e_acute.notnull().all()
+        e_acute_mask = e_acute.max()
+        color = pyplot.rcParams['grid.color']
+        for (i, SAT) in enumerate(SATs):
+            for row in range(2 * i, 2 * i + 2):
+                _, margin = axes[row, col_chronic].margins()
+                axes[row, col_chronic].axvspan(0, e_acute_mask * (1 + margin),
+                                               color=color, alpha=0.5,
+                                               linewidth=0)
+        # I get weird results if I set these limits individually.
         for row in range(nrows):
             for col in range(ncols):
                 axes[row, col].set_xlim(left=0)
