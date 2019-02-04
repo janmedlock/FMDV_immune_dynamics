@@ -9,7 +9,7 @@ from matplotlib import pyplot
 import seaborn
 
 
-def make_plot(data, show = True):
+def make_plot(data, show=True):
     (fig, ax) = pyplot.subplots()
     seaborn.set_palette(seaborn.color_palette('deep', 6))
 
