@@ -1,18 +1,11 @@
-* Susceptible recruitment with stable population as background
+* Susceptible recruitment with stable population as background.
   Plot over one year, sums to 1.
 
-* Compute R0 with chronic model.
-
-* Ask Simon for posterior samples.
-
-* Analyze carrier runs.
-** Build run_start_times_SATs_chronic_downsampled.h5.
-
-* Plots
-** Consider putting other plots in supplement.
-** Color SATs.
+* Compute R0 with samples from chronic model.
 
 * Run over population size and over birth variance.
+
+* Run chronic model with posterior samples.
 
 * Re-run acute samples since they weren't updating the initial
   conditions for different parameter values for the duration maternal
