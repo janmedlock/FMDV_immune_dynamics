@@ -1,4 +1,7 @@
 #!/usr/bin/python3
+#
+# To do:
+# * Update for `chronic=True`.
 
 from matplotlib import pyplot, ticker
 import numpy
@@ -7,7 +10,7 @@ import seaborn
 
 import h5
 import herd
-from herd.samples import samples
+import herd.samples
 import stats
 
 
@@ -16,7 +19,9 @@ def _get_persistence_time(x):
     return t.max() - t.min()
 
 
-def _load_persistence_times():
+def _load_persistence_times(chronic):
+    # Update here for `chronic=True`.
+    assert chronic == False
     results = h5.load('run_samples.h5')
     groups = results.groupby(['SAT', 'sample'])
     pt = groups.apply(_get_persistence_time)
@@ -24,17 +29,20 @@ def _load_persistence_times():
     # Move 'SAT' from row MultiIndex to columns.
     pt = pt.reset_index('SAT').pivot(columns='SAT')
     pt = pt.reorder_levels([1, 0], axis='columns')
+    samples = herd.samples.load(chronic=chronic)
     # Put parameter values and persistence time together.
     df = pandas.concat([samples, pt], axis='columns', copy=False)
     df.columns.set_names('value', level=1, inplace=True)
     return df
 
 
-def load_persistence_times():
+def load_persistence_times(chronic=False):
+    # Update here for `chronic=True`.
+    assert chronic == False
     try:
         df = h5.load('plot_samples.h5')
     except FileNotFoundError:
-        df = _load_persistence_times()
+        df = _load_persistence_times(chronic=chronic)
         h5.dump(df, 'plot_samples.h5')
     return df
 

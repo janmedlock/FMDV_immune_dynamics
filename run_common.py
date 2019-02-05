@@ -6,6 +6,7 @@ import numpy
 import pandas
 
 import herd
+import herd.samples
 
 
 _SATs = (1, 2, 3)
@@ -79,13 +80,13 @@ def _run_sample(run_number, parameters, sample, tmax, *args, **kwargs):
 
 def _run_samples_SAT(SAT, chronic, tmax, *args, **kwargs):
     '''Run many simulations in parallel.'''
-    from herd.samples import samples  # There's some cost to importing this...
+    samples = herd.samples.load(chronic=chronic)[SAT]
     parameters = herd.Parameters(SAT=SAT, chronic=chronic)
     print('Running SAT {}.'.format(SAT))
     t0 = time.time()
     results = Parallel(n_jobs=-1)(
         delayed(_run_sample)(i, parameters, s, tmax, *args, **kwargs)
-        for i, s in samples[SAT].iterrows())
+        for i, s in samples.iterrows())
     t1 = time.time()
     print('Run time: {} seconds.'.format(t1 - t0))
     return pandas.concat(results, keys=range(len(samples)),
