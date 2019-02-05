@@ -1,7 +1,15 @@
 #!/usr/bin/python3
 #
+# Assumptions:
+# * Constant population size, particulraly no seasonal births.
+# * All susceptible, so drop M.
+# * Mortality is negligible, so S->E->I is equivalent to S->I,
+#   among other simplifications.
+# * Transmission rate for both acute and chronic scales so that R_0 is
+#   independent of population size.
+#
 # To do:
-# Update to use samples for chronic model.
+# * Update to use samples for chronic model.
 
 import herd
 
