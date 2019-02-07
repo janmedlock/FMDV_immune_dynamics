@@ -6,19 +6,29 @@ import seaborn
 import sys
 sys.path.append('..')
 from herd import Parameters, RandomVariables
+import plot_figure
+sys.path.pop()
 
-RVs = {'SAT{}'.format(sat): RandomVariables(Parameters(SAT=sat))
-       for sat in range(1, 3 + 1)}
 
-colors= {'All': 'black'}
-colors.update({sat: 'C{}'.format(j) for j, sat in enumerate(RVs.keys())})
+SATs = plot_figure.SAT_colors.keys()
+
+SAT_colors = {'all': 'black'}
+SAT_colors.update(plot_figure.SAT_colors)
+
+SAT_labels = {'all': 'All'}
+SAT_labels.update({SAT: f'SAT{SAT}' for SAT in SATs})
+
+RVs = {SAT: RandomVariables(Parameters(SAT=SAT))
+       for SAT in SATs}
+
 
 def get_RV(RVs, name, all_=False):
     if all_:
         v = list(RVs.values())[0]
-        return {'All': getattr(v, name)}
+        return {'all': getattr(v, name)}
     else:
-        return {sat: getattr(v, name) for sat, v in RVs.items()}
+        return {SAT: getattr(v, name) for SAT, v in RVs.items()}
+
 
 width = 390 / 72.27
 height = 0.6 * width
@@ -41,10 +51,10 @@ with pyplot.rc_context(rc=rc):
     t_max = 20
     t = numpy.linspace(0, t_max, 1001)
     j += 1
-    for sat, v in RV.items():
-        axes_hazards[j].plot(t, v.hazard(t), color=colors[sat],
+    for SAT, v in RV.items():
+        axes_hazards[j].plot(t, v.hazard(t), color=SAT_colors[SAT],
                             linestyle='steps-post')
-        axes_survivals[j].plot(t, v.sf(t), color=colors[sat])
+        axes_survivals[j].plot(t, v.sf(t), color=SAT_colors[SAT])
     axes_hazards[j].set_title(title)
     axes_survivals[j].set_xlabel(xlabel)
 
@@ -54,9 +64,9 @@ with pyplot.rc_context(rc=rc):
     t_max = 3
     t = numpy.linspace(0, t_max, 1001)
     j += 1
-    for sat, v in RV.items():
-        axes_hazards[j].plot(t, v.hazard(t, 4 + t), color=colors[sat])
-        axes_survivals[j].plot(t, v.sf(t, 0, 4), color=colors[sat])
+    for SAT, v in RV.items():
+        axes_hazards[j].plot(t, v.hazard(t, 4 + t), color=SAT_colors[SAT])
+        axes_survivals[j].plot(t, v.sf(t, 0, 4), color=SAT_colors[SAT])
     axes_hazards[j].set_title(title)
     axes_survivals[j].set_xlabel(xlabel)
 
@@ -66,9 +76,9 @@ with pyplot.rc_context(rc=rc):
     t_max = 1
     t = numpy.linspace(0, t_max, 1001)
     j += 1
-    for sat, v in RV.items():
-        axes_hazards[j].plot(t, v.hazard(t), color=colors[sat])
-        axes_survivals[j].plot(t, v.sf(t), color=colors[sat])
+    for SAT, v in RV.items():
+        axes_hazards[j].plot(t, v.hazard(t), color=SAT_colors[SAT])
+        axes_survivals[j].plot(t, v.sf(t), color=SAT_colors[SAT])
     axes_hazards[j].set_title(title)
     axes_survivals[j].set_xlabel(xlabel)
 
@@ -78,9 +88,9 @@ with pyplot.rc_context(rc=rc):
     t_max = 10
     t = numpy.linspace(0, t_max, 1001)
     j += 1
-    for sat, v in RV.items():
-        axes_hazards[j].plot(t, v.hazard(t / 365), color=colors[sat])
-        axes_survivals[j].plot(t, v.sf(t / 365), color=colors[sat])
+    for SAT, v in RV.items():
+        axes_hazards[j].plot(t, v.hazard(t / 365), color=SAT_colors[SAT])
+        axes_survivals[j].plot(t, v.sf(t / 365), color=SAT_colors[SAT])
     axes_hazards[j].set_title(title)
     axes_survivals[j].set_xlabel(xlabel)
 
@@ -90,9 +100,9 @@ with pyplot.rc_context(rc=rc):
     t_max = 15
     t = numpy.linspace(0, t_max, 1001)
     j += 1
-    for sat, v in RV.items():
-        axes_hazards[j].plot(t, v.hazard(t / 365), color=colors[sat])
-        axes_survivals[j].plot(t, v.sf(t / 365), color=colors[sat])
+    for SAT, v in RV.items():
+        axes_hazards[j].plot(t, v.hazard(t / 365), color=SAT_colors[SAT])
+        axes_survivals[j].plot(t, v.sf(t / 365), color=SAT_colors[SAT])
     axes_hazards[j].set_title(title)
     axes_survivals[j].set_xlabel(xlabel)
 
@@ -102,9 +112,9 @@ with pyplot.rc_context(rc=rc):
     t_max = 1
     t = numpy.linspace(0, t_max, 1001)
     j += 1
-    for sat, v in RV.items():
-        axes_hazards[j].plot(t, v.hazard(t), color=colors[sat])
-        axes_survivals[j].plot(t, v.sf(t), color=colors[sat])
+    for SAT, v in RV.items():
+        axes_hazards[j].plot(t, v.hazard(t), color=SAT_colors[SAT])
+        axes_survivals[j].plot(t, v.sf(t), color=SAT_colors[SAT])
     axes_hazards[j].set_title(title)
     axes_survivals[j].set_xlabel(xlabel)
 
@@ -129,8 +139,10 @@ with pyplot.rc_context(rc=rc):
     axes_hazards[0].set_ylabel(r'Hazard ($\mathrm{y}^{-1}$)')
     axes_survivals[0].set_ylabel('Survival')
 
-    handles = [lines.Line2D([], [], color=color, label=sat)
-               for sat, color in colors.items()]
+    handles = [lines.Line2D([], [],
+                            color=color,
+                            label=SAT_labels[SAT])
+               for (SAT, color) in SAT_colors.items()]
     fig.legend(handles=handles, markerfirst=False, loc='lower center',
                ncol=len(handles))
 
