@@ -37,7 +37,7 @@ with pyplot.rc_context(rc=rc):
 
     RV = get_RV(RVs, 'mortality', all_=True)
     title = 'Death'
-    xlabel = 'Age ($y$)'
+    xlabel = 'Age ($\mathrm{y}$)'
     t_max = 20
     t = numpy.linspace(0, t_max, 1001)
     j += 1
@@ -50,7 +50,7 @@ with pyplot.rc_context(rc=rc):
 
     RV = get_RV(RVs, 'birth', all_=True)
     title = 'Birth'
-    xlabel = 'Time ($y$)'
+    xlabel = 'Time ($\mathrm{y}$)'
     t_max = 3
     t = numpy.linspace(0, t_max, 1001)
     j += 1
@@ -62,7 +62,7 @@ with pyplot.rc_context(rc=rc):
 
     RV = get_RV(RVs, 'maternal_immunity_waning', all_=True)
     title = 'Waning'
-    xlabel = 'Age ($y$)'
+    xlabel = 'Age ($\mathrm{y}$)'
     t_max = 1
     t = numpy.linspace(0, t_max, 1001)
     j += 1
@@ -74,7 +74,7 @@ with pyplot.rc_context(rc=rc):
 
     RV = get_RV(RVs, 'progression')
     title = 'Progression'
-    xlabel = 'Time ($d$)'
+    xlabel = 'Time ($\mathrm{d}$)'
     t_max = 10
     t = numpy.linspace(0, t_max, 1001)
     j += 1
@@ -86,7 +86,7 @@ with pyplot.rc_context(rc=rc):
 
     RV = get_RV(RVs, 'recovery')
     title = 'Recovery'
-    xlabel = 'Time ($d$)'
+    xlabel = 'Time ($\mathrm{d}$)'
     t_max = 15
     t = numpy.linspace(0, t_max, 1001)
     j += 1
@@ -98,7 +98,7 @@ with pyplot.rc_context(rc=rc):
 
     RV = get_RV(RVs, 'chronic_recovery')
     title = 'Chronic\nRecovery'
-    xlabel = 'Time ($y$)'
+    xlabel = 'Time ($\mathrm{y}$)'
     t_max = 1
     t = numpy.linspace(0, t_max, 1001)
     j += 1
