@@ -9,6 +9,7 @@
 *.out
 *.pdf
 *.run.xml
+*.synctex
 *.synctex.gz
 *.png
 *.pgf
