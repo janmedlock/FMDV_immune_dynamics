@@ -59,7 +59,7 @@ with pyplot.rc_context(rc=rc):
     axes_hazards[j].set_title(title)
     axes_survivals[j].set_xlabel(xlabel)
 
-    RV = get_RV(RVs, 'maternal_immunity_waning')
+    RV = get_RV(RVs, 'maternal_immunity_waning', all_=True)
     title = 'Waning'
     xlabel = 'Age (years)'
     t_max = 1
