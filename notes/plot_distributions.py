@@ -26,17 +26,18 @@ rc = {'figure.figsize': (width, height),
       'font.size': 7,
       'axes.titlesize': 'large',
       'legend.frameon': False}
-ncols = 5
+ncols = 6
 nrows = 2
 with pyplot.rc_context(rc=rc):
     fig, axes = pyplot.subplots(nrows, ncols, sharex='col')
+    fig.align_labels()
     axes_hazards = axes[0, :]
     axes_survivals = axes[1, :]
     j = -1
 
     RV = get_RV(RVs, 'mortality', all_=True)
     title = 'Death'
-    xlabel = 'Age (years)'
+    xlabel = 'Age ($y$)'
     t_max = 20
     t = numpy.linspace(0, t_max, 1001)
     j += 1
@@ -49,7 +50,7 @@ with pyplot.rc_context(rc=rc):
 
     RV = get_RV(RVs, 'birth', all_=True)
     title = 'Birth'
-    xlabel = 'Time (years)'
+    xlabel = 'Time ($y$)'
     t_max = 3
     t = numpy.linspace(0, t_max, 1001)
     j += 1
@@ -61,7 +62,7 @@ with pyplot.rc_context(rc=rc):
 
     RV = get_RV(RVs, 'maternal_immunity_waning', all_=True)
     title = 'Waning'
-    xlabel = 'Age (years)'
+    xlabel = 'Age ($y$)'
     t_max = 1
     t = numpy.linspace(0, t_max, 1001)
     j += 1
@@ -73,7 +74,7 @@ with pyplot.rc_context(rc=rc):
 
     RV = get_RV(RVs, 'progression')
     title = 'Progression'
-    xlabel = 'Time (days)'
+    xlabel = 'Time ($d$)'
     t_max = 10
     t = numpy.linspace(0, t_max, 1001)
     j += 1
@@ -85,13 +86,25 @@ with pyplot.rc_context(rc=rc):
 
     RV = get_RV(RVs, 'recovery')
     title = 'Recovery'
-    xlabel = 'Time (days)'
+    xlabel = 'Time ($d$)'
     t_max = 15
     t = numpy.linspace(0, t_max, 1001)
     j += 1
     for sat, v in RV.items():
         axes_hazards[j].plot(t, v.hazard(t / 365), color=colors[sat])
         axes_survivals[j].plot(t, v.sf(t / 365), color=colors[sat])
+    axes_hazards[j].set_title(title)
+    axes_survivals[j].set_xlabel(xlabel)
+
+    RV = get_RV(RVs, 'chronic_recovery')
+    title = 'Chronic\nRecovery'
+    xlabel = 'Time ($y$)'
+    t_max = 1
+    t = numpy.linspace(0, t_max, 1001)
+    j += 1
+    for sat, v in RV.items():
+        axes_hazards[j].plot(t, v.hazard(t), color=colors[sat])
+        axes_survivals[j].plot(t, v.sf(t), color=colors[sat])
     axes_hazards[j].set_title(title)
     axes_survivals[j].set_xlabel(xlabel)
 
