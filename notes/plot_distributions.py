@@ -10,24 +10,30 @@ import plot_figure
 sys.path.pop()
 
 
-SATs = plot_figure.SAT_colors.keys()
+# The of these determines the order of the legend.
+SATs = ('all', 1, 2, 3)
 
-SAT_colors = {'all': 'black'}
-SAT_colors.update(plot_figure.SAT_colors)
+colors = {SAT: 'black' if (SAT == 'all') else plot_figure.SAT_colors[SAT]
+          for SAT in SATs}
+labels = {SAT: 'All' if (SAT == 'all') else f'SAT{SAT}'
+          for SAT in SATs}
 
-SAT_labels = {'all': 'All'}
-SAT_labels.update({SAT: f'SAT{SAT}' for SAT in SATs})
+# For 'all', use the first non-'all' SAT.
+SAT_map = ((SAT, SATs[1] if (SAT == 'all') else SAT)
+           for SAT in SATs)
+RVs = {SAT: RandomVariables(Parameters(SAT=v))
+       for (SAT, v) in SAT_map}
 
-RVs = {SAT: RandomVariables(Parameters(SAT=SAT))
-       for SAT in SATs}
+# Common to all SATs.
+common = ('mortality', 'birth', 'maternal_immunity_waning')
 
 
-def get_RV(RVs, name, all_=False):
-    if all_:
-        v = list(RVs.values())[0]
-        return {'all': getattr(v, name)}
+def get_RV(RVs, name):
+    if name in common:
+        which = ('all', )
     else:
-        return {SAT: getattr(v, name) for SAT, v in RVs.items()}
+        which = (SAT for SAT in SATs if (SAT != 'all'))
+    return {SAT: getattr(RVs[SAT], name) for SAT in which}
 
 
 width = 390 / 72.27
@@ -45,40 +51,40 @@ with pyplot.rc_context(rc=rc):
     axes_survivals = axes[1, :]
     j = -1
 
-    RV = get_RV(RVs, 'mortality', all_=True)
+    RV = get_RV(RVs, 'mortality')
     title = 'Death'
     xlabel = 'Age ($\mathrm{y}$)'
     t_max = 20
     t = numpy.linspace(0, t_max, 1001)
     j += 1
     for SAT, v in RV.items():
-        axes_hazards[j].plot(t, v.hazard(t), color=SAT_colors[SAT],
+        axes_hazards[j].plot(t, v.hazard(t), color=colors[SAT],
                             linestyle='steps-post')
-        axes_survivals[j].plot(t, v.sf(t), color=SAT_colors[SAT])
+        axes_survivals[j].plot(t, v.sf(t), color=colors[SAT])
     axes_hazards[j].set_title(title)
     axes_survivals[j].set_xlabel(xlabel)
 
-    RV = get_RV(RVs, 'birth', all_=True)
+    RV = get_RV(RVs, 'birth')
     title = 'Birth'
     xlabel = 'Time ($\mathrm{y}$)'
     t_max = 3
     t = numpy.linspace(0, t_max, 1001)
     j += 1
     for SAT, v in RV.items():
-        axes_hazards[j].plot(t, v.hazard(t, 4 + t), color=SAT_colors[SAT])
-        axes_survivals[j].plot(t, v.sf(t, 0, 4), color=SAT_colors[SAT])
+        axes_hazards[j].plot(t, v.hazard(t, 4 + t), color=colors[SAT])
+        axes_survivals[j].plot(t, v.sf(t, 0, 4), color=colors[SAT])
     axes_hazards[j].set_title(title)
     axes_survivals[j].set_xlabel(xlabel)
 
-    RV = get_RV(RVs, 'maternal_immunity_waning', all_=True)
+    RV = get_RV(RVs, 'maternal_immunity_waning')
     title = 'Waning'
     xlabel = 'Age ($\mathrm{y}$)'
     t_max = 1
     t = numpy.linspace(0, t_max, 1001)
     j += 1
     for SAT, v in RV.items():
-        axes_hazards[j].plot(t, v.hazard(t), color=SAT_colors[SAT])
-        axes_survivals[j].plot(t, v.sf(t), color=SAT_colors[SAT])
+        axes_hazards[j].plot(t, v.hazard(t), color=colors[SAT])
+        axes_survivals[j].plot(t, v.sf(t), color=colors[SAT])
     axes_hazards[j].set_title(title)
     axes_survivals[j].set_xlabel(xlabel)
 
@@ -89,8 +95,8 @@ with pyplot.rc_context(rc=rc):
     t = numpy.linspace(0, t_max, 1001)
     j += 1
     for SAT, v in RV.items():
-        axes_hazards[j].plot(t, v.hazard(t / 365), color=SAT_colors[SAT])
-        axes_survivals[j].plot(t, v.sf(t / 365), color=SAT_colors[SAT])
+        axes_hazards[j].plot(t, v.hazard(t / 365), color=colors[SAT])
+        axes_survivals[j].plot(t, v.sf(t / 365), color=colors[SAT])
     axes_hazards[j].set_title(title)
     axes_survivals[j].set_xlabel(xlabel)
 
@@ -101,8 +107,8 @@ with pyplot.rc_context(rc=rc):
     t = numpy.linspace(0, t_max, 1001)
     j += 1
     for SAT, v in RV.items():
-        axes_hazards[j].plot(t, v.hazard(t / 365), color=SAT_colors[SAT])
-        axes_survivals[j].plot(t, v.sf(t / 365), color=SAT_colors[SAT])
+        axes_hazards[j].plot(t, v.hazard(t / 365), color=colors[SAT])
+        axes_survivals[j].plot(t, v.sf(t / 365), color=colors[SAT])
     axes_hazards[j].set_title(title)
     axes_survivals[j].set_xlabel(xlabel)
 
@@ -113,8 +119,8 @@ with pyplot.rc_context(rc=rc):
     t = numpy.linspace(0, t_max, 1001)
     j += 1
     for SAT, v in RV.items():
-        axes_hazards[j].plot(t, v.hazard(t), color=SAT_colors[SAT])
-        axes_survivals[j].plot(t, v.sf(t), color=SAT_colors[SAT])
+        axes_hazards[j].plot(t, v.hazard(t), color=colors[SAT])
+        axes_survivals[j].plot(t, v.sf(t), color=colors[SAT])
     axes_hazards[j].set_title(title)
     axes_survivals[j].set_xlabel(xlabel)
 
@@ -139,10 +145,8 @@ with pyplot.rc_context(rc=rc):
     axes_hazards[0].set_ylabel(r'Hazard ($\mathrm{y}^{-1}$)')
     axes_survivals[0].set_ylabel('Survival')
 
-    handles = [lines.Line2D([], [],
-                            color=color,
-                            label=SAT_labels[SAT])
-               for (SAT, color) in SAT_colors.items()]
+    handles = [lines.Line2D([], [], color=color, label=labels[SAT])
+               for (SAT, color) in colors.items()]
     fig.legend(handles=handles, markerfirst=False, loc='lower center',
                ncol=len(handles))
 
