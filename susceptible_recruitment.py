@@ -15,34 +15,13 @@ import herd.birth
 import herd.maternal_immunity_waning
 
 
-class Birth(herd.birth.gen):
-    '''Birth cut off after 1 year.'''
-    def hazard(self, time, time0, age0):
-        return numpy.where(time < 1,
-                           super().hazard(time + time0, age0 + time),
-                           0)
-
-    def logsf(self, time, time0, age0):
-        return numpy.where(time < 1,
-                           super().logsf(time, time0, age0),
-                           super().logsf(1, time0, age0))
-
-    def pdf(self, time, time0, age0):
-        return (self.hazard(time, time0, age0)
-                * self.sf(time, time0, age0))
-
-    def logpdf(self, time, time0, age0):
-        return (numpy.log(self.hazard(time, time0, age0))
-                + self.logsf(time, time0, age0))
-
-
 class SusceptibleRecruitment(herd.rv.RV):
     '''The mixture of birth and maternal-immunity waning.'''
     def __init__(self, parameters=None, *args, **kwargs):
         if parameters is None:
             parameters = Parameters()
         self._birth = Birth(parameters)
-        # self._birth = herd.birth.gen(parameters)
+        self._birth = herd.birth.gen(parameters)
         self._maternal_immunity_waning = herd.maternal_immunity_waning.gen(
             parameters)
 
