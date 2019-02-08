@@ -38,7 +38,9 @@ class Birth(herd.birth.gen):
 
 class SusceptibleRecruitment(herd.rv.RV):
     '''The mixture of birth and maternal-immunity waning.'''
-    def __init__(self, parameters, *args, **kwargs):
+    def __init__(self, parameters=None, *args, **kwargs):
+        if parameters is None:
+            parameters = Parameters()
         self._birth = Birth(parameters)
         # self._birth = herd.birth.gen(parameters)
         self._maternal_immunity_waning = herd.maternal_immunity_waning.gen(
@@ -112,49 +114,46 @@ def MonthLocator(interval=1):
     return dates.MonthLocator(bymonth)
 
 
-if __name__ == '__main__':
-    # 'hazard', 'pdf', 'cdf', or 'sf'.
-    stat = operator.attrgetter('pdf')
-
-    # Susceptible recruitment depends on time of year.
-    # 2 years of dates, points every day.
-    start = pandas.Timestamp(year=2001, month=7, day=1)
-    end = start + pandas.DateOffset(years=2) - pandas.DateOffset(days=1)
-    # end = start + pandas.DateOffset(years=5) - pandas.DateOffset(days=1)
-    freq = 'D'
-    t_susceptible = pandas.date_range(start, end, freq=freq)
-
-    parameters = herd.Parameters()
-    susceptible_recruitment = SusceptibleRecruitment(parameters)
-
-    # For births, to remove age dependence.
-    a0 = 4  # years.
-
+def get_susceptible_recruitment():
+    filename = 'susceptible_recruitment.csv'
     try:
-        ser = pandas.read_csv('susceptible_recruitment.csv',
-                              index_col=0, header=None, squeeze=True)
+        ser = pandas.read_csv(filename,
+                              index_col=0, parse_dates=True,
+                              header=None, squeeze=True)
     except FileNotFoundError:
+        susceptible_recruitment = SusceptibleRecruitment()
+        # Susceptible recruitment depends on time of year.
+        # 2 years of dates, points every day.
+        start = pandas.Timestamp(year=2001, month=7, day=1)
+        end = start + pandas.DateOffset(years=2) - pandas.DateOffset(days=1)
+        t_susceptible = pandas.date_range(start, end, freq='D')
         t = timestamp2year(t_susceptible)
+        a0 = 4  # years, to remove age dependence from births.
         ser = pandas.Series(
-            stat(susceptible_recruitment)(t - t[0], t[0], a0),
+            susceptible_recruitment.pdf(t - t[0], t[0], a0),
             index=t_susceptible)
-        ser.to_csv('susceptible_recruitment.csv')
+        ser.to_csv(filename)
+    return ser
 
-    fig, ax = pyplot.subplots()
 
-    ax.plot(t_susceptible, ser)
+def plot_susceptible_recruitment(ser):
+    fig, ax = pyplot.subplots(constrained_layout=True)
+    ax.plot(ser)
     ax.set_xlabel('Susceptible recruitment')
     ax.set_ylabel(r'Density ($\mathrm{y}^{-1}$)')
-    # Major ticks every 6 months and minor ticks every month.
-    ax.xaxis.set_major_locator(MonthLocator(interval=3))
-    ax.xaxis.set_minor_locator(ticker.AutoMinorLocator(3))
+    # Major ticks every 3 months and minor ticks every month.
+    n = 3
+    ax.xaxis.set_major_locator(MonthLocator(interval=n))
+    ax.xaxis.set_minor_locator(ticker.AutoMinorLocator(n))
+    # Label month.
     ax.xaxis.set_major_formatter(dates.DateFormatter('%b'))
-
     seaborn.despine(fig, top=True, right=True)
+    # fig.savefig('susceptible_recruitment.png', dpi=300)
+    # fig.savefig('susceptible_recruitment.pdf')
+    # fig.savefig('susceptible_recruitment.pgf')
 
-    fig.tight_layout()
-    fig.savefig('susceptible_recruitment.png', dpi=300)
-    fig.savefig('susceptible_recruitment.pdf')
-    fig.savefig('susceptible_recruitment.pgf')
 
+if __name__ == '__main__':
+    ser = get_susceptible_recruitment()
+    plot_susceptible_recruitment(ser)
     pyplot.show()
