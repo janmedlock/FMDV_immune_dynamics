@@ -1,15 +1,12 @@
 #!/usr/bin/python3
 
-import operator
-
 import joblib
-from matplotlib import dates, gridspec, pyplot, ticker
+from matplotlib import dates, pyplot, ticker
 import numpy
 import pandas
 from scipy import integrate
 import seaborn
 
-import herd
 import herd.rv
 import herd.birth
 import herd.maternal_immunity_waning
@@ -20,7 +17,6 @@ class SusceptibleRecruitment(herd.rv.RV):
     def __init__(self, parameters=None, *args, **kwargs):
         if parameters is None:
             parameters = Parameters()
-        self._birth = Birth(parameters)
         self._birth = herd.birth.gen(parameters)
         self._maternal_immunity_waning = herd.maternal_immunity_waning.gen(
             parameters)
@@ -37,7 +33,7 @@ class SusceptibleRecruitment(herd.rv.RV):
             pdf, _ = integrate.quadrature(self._pdf_integrand, t0, t,
                                           args=(t, t0, a0),
                                           maxiter=maxiter)
-            assert pdf >= 0
+            assert (pdf >= 0)
             return pdf
         else:
             return numpy.array(joblib.Parallel(n_jobs=-1)(
@@ -71,28 +67,6 @@ class SusceptibleRecruitment(herd.rv.RV):
         return self.pdf(t, t0, a0) / self.sf(t, t0, a0)
 
 
-def timestamp2year(ts):
-    '''Convert a `pandas.Timestamp` or `pandas.DatetimeIndex`
-    to a float year.'''
-    try:
-        t0 = ts[0]
-    except TypeError:
-        t0 = ts
-    return (ts.dayofyear - 1) / dates.DAYS_PER_YEAR + ts.year - t0.year
-
-
-def timedelta2year(ts):
-    '''Convert a `pandas.Timedelta` or `pandas.TimedeltaIndex`
-    to a float year.'''
-    return ts.days / dates.DAYS_PER_YEAR
-
-
-def MonthLocator(interval=1):
-    '''Like `matplotlib.dates.MonthLocator()` but always start on January.'''
-    bymonth = range(1, 12 + 1, interval)
-    return dates.MonthLocator(bymonth)
-
-
 def get_susceptible_recruitment():
     filename = 'susceptible_recruitment.csv'
     try:
@@ -105,12 +79,13 @@ def get_susceptible_recruitment():
         # 2 years of dates, points every day.
         start = pandas.Timestamp(year=2001, month=7, day=1)
         end = start + pandas.DateOffset(years=2) - pandas.DateOffset(days=1)
-        t_susceptible = pandas.date_range(start, end, freq='D')
-        t = timestamp2year(t_susceptible)
+        t = pandas.date_range(start, end, freq='D')
+        # Convert to float year.
+        t_float = (t.dayofyear - 1) / dates.DAYS_PER_YEAR + (t.year - t[0].year)
         a0 = 4  # years, to remove age dependence from births.
         ser = pandas.Series(
-            susceptible_recruitment.pdf(t - t[0], t[0], a0),
-            index=t_susceptible)
+            susceptible_recruitment.pdf(t_float - t_float[0], t_float[0], a0),
+            index=t)
         ser.to_csv(filename)
     return ser
 
@@ -122,9 +97,11 @@ def plot_susceptible_recruitment(ser):
     ax.set_ylabel(r'Density ($\mathrm{y}^{-1}$)')
     # Major ticks every 3 months and minor ticks every month.
     n = 3
-    ax.xaxis.set_major_locator(MonthLocator(interval=n))
+    # Using `bymonth=...` instead of `interval=n` starts the month ticks
+    # on January.
+    ax.xaxis.set_major_locator(dates.MonthLocator(bymonth=range(1, 12 + 1, n)))
     ax.xaxis.set_minor_locator(ticker.AutoMinorLocator(n))
-    # Label month.
+    # Use month for tick label.
     ax.xaxis.set_major_formatter(dates.DateFormatter('%b'))
     seaborn.despine(fig, top=True, right=True)
     # fig.savefig('susceptible_recruitment.png', dpi=300)
