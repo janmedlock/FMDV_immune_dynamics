@@ -30,7 +30,7 @@ _cache = Memory(_cachedir, verbose=1)
 # `monodromy.Solver.solve()`, which is very slow, and
 # `dominant_eigen.find()`, which is somewhat slow, so it is cached.
 # Caching also allows the eigenvector to be retrieved from the cache
-# by `find_stable_birth_structure()` after the eigenvalue is computed
+# by `find_stable_age_structure()` after the eigenvalue is computed
 # in `find_birth_scaling()`.
 # Set `verbose=0` because this function gets called many times in
 # `_find_birth_scaling()`, which leads to lots of output if
