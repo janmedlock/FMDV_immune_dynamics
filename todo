@@ -1,8 +1,5 @@
 * Edit manuscript and methods.
 
-* Susceptible recruitment with stable population as background.
-  Plot over one year, sums to 1.
-
 * Run over population size and over birth variance.
 
 * Run chronic model with posterior samples.
