@@ -17,14 +17,12 @@ seaborn.set_context('talk')
 
 
 def load_SIR_data(chronic=False):
-    filename = 'run_SATs'
-    if chronic:
-        filename += '_chronic'
-    filename += '.h5'
-    return h5.load(filename)
+    where = 'model={}'.format('chronic' if chronic else 'acute')
+    return h5.load('run_SATs.h5', where=where)
 
 
 def load_extinction_data(chronic=False):
+    # FIXME: doesn't work with `chronic=True`.
     def translate(row):
         def f(x):
             if x == '':
@@ -33,11 +31,7 @@ def load_extinction_data(chronic=False):
                 return float(x)
         return list(map(f, row))
 
-    filename = 'search_parameters'
-    if chronic:
-        filename += '_chronic'
-    filename += '.csv'
-    r = csv.reader(open(filename))
+    r = csv.reader(open('search_parameters.csv'))
     header = next(r)
     data = numpy.array([translate(row) for row in r])
 
@@ -70,8 +64,9 @@ def load_extinction_data(chronic=False):
 def make_SIR_plots(chronic=False, show=True):
     data = load_SIR_data(chronic)
 
-    SATs = data.index.levels[0]
-    reps = data.index.levels[1]
+    (models, SATs, reps) = data.index.levels[:3]
+    assert len(models) == 1
+    model = models[0]
 
     # Drop 'Total'
     nrows = len(data.columns)
@@ -81,7 +76,7 @@ def make_SIR_plots(chronic=False, show=True):
     for (j, SAT) in enumerate(SATs):
         colors = itertools.cycle(seaborn.color_palette('husl', 8))
         for rep in reps:
-            x = data.loc(axis = 0)[SAT, rep]
+            x = data.loc(axis=0)[model, SAT, rep]
             t = x.index
             if rep != 'mean':
                 c = next(colors)

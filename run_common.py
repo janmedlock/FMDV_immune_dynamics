@@ -28,16 +28,34 @@ def run_many(nruns, parameters, tmax, *args, **kwargs):
                          copy=False)
 
 
-def run_SATs(chronic, nruns, tmax, *args, **kwargs):
-    results = {}
+def get_model(chronic):
+    # Use a `pandas.CategoricalIndex()` to store the alternatives
+    # to encode string widths for HDF.
+    models = ['acute', 'chronic']
+    val = model[1] if chronic else model[0]
+    return pandas.CategoricalIndex([val], models, name='model')
+
+
+def run_SATs(chronic, nruns, tmax, hdfstore, *args, **kwargs):
     for SAT in _SATs:
         p = herd.Parameters(SAT=SAT, chronic=chronic)
         print('Running SAT {}.'.format(SAT))
         t0 = time.time()
-        results[SAT] = run_many(nruns, p, tmax, *args, **kwargs)
+        results = run_many(nruns, p, tmax, *args, **kwargs)
         t1 = time.time()
         print('Run time: {} seconds.'.format(t1 - t0))
-    return pandas.concat(results, names=['SAT'], copy=False)
+        # Save the data.
+        # Add 'model' and 'SAT' levels to the index.
+        ix_model = get_model(chronic)
+        # Leave enough space for all possible model names.
+        min_itemsize = {ix_model.name: ix_model.categories.len().max()}}
+        ix_model = ix_model.astype('str')
+        ix_SAT = pandas.Index([SAT], name='SAT')
+        results.index = pandas.MultiIndex.from_arrays(
+            [ix.repeat(len(results)) for ix in (ix_model, ix_SAT)]
+            + [results.index.get_level_values(l) for l in results.index.names])
+        hdfstore.put(results, format='table', append=True,
+                     min_itemsize=min_itemsize)
 
 
 def run_start_times(nruns, SAT, chronic, tmax, logging_prefix='',
