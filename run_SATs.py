@@ -12,8 +12,8 @@ if __name__ == '__main__':
 
     _filebase, _ = os.path.splitext(__file__)
     _filename = _filebase + '.h5'
-    hdfstore = h5.HDFStore(_filename)
+    store = h5.HDFStore(_filename)
     for chronic in (False, True):
-        run_common.run_SATs(chronic, nruns, tmax, hdfstore)
-    hdfstore.close()
+        run_common.run_SATs(chronic, nruns, tmax, store)
+    store.close()
     h5.repack(_filename)

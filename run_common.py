@@ -41,26 +41,25 @@ def run_SATs(chronic, nruns, tmax, hdfstore, *args, **kwargs):
         p = herd.Parameters(SAT=SAT, chronic=chronic)
         print('Running SAT {}.'.format(SAT))
         t0 = time.time()
-        results = run_many(nruns, p, tmax, *args, **kwargs)
+        df = run_many(nruns, p, tmax, *args, **kwargs)
         t1 = time.time()
         print('Run time: {} seconds.'.format(t1 - t0))
-        # Save the data.
+        # Save the data for this SAT.
         # Add 'model' and 'SAT' levels to the index.
         ix_model = get_model(chronic)
         # Leave enough space for all possible model names.
         min_itemsize = {ix_model.name: ix_model.categories.len().max()}}
         ix_model = ix_model.astype('str')
         ix_SAT = pandas.Index([SAT], name='SAT')
-        results.index = pandas.MultiIndex.from_arrays(
-            [ix.repeat(len(results)) for ix in (ix_model, ix_SAT)]
-            + [results.index.get_level_values(l) for l in results.index.names])
-        hdfstore.put(results, format='table', append=True,
+        df.index = pandas.MultiIndex.from_arrays(
+            [ix.repeat(len(df)) for ix in (ix_model, ix_SAT)]
+            + [df.index.get_level_values(l) for l in df.index.names])
+        hdfstore.put(df, format='table', append=True,
                      min_itemsize=min_itemsize)
 
 
-def run_start_times(nruns, SAT, chronic, tmax, logging_prefix='',
+def run_start_times(nruns, SAT, chronic, tmax, hdfstore, logging_prefix='',
                     *args, **kwargs):
-    results = {}
     # Every month.
     for start_time in numpy.arange(0, 1, 1 / 12):
         p = herd.Parameters(SAT=SAT, chronic=chronic)
@@ -70,21 +69,19 @@ def run_start_times(nruns, SAT, chronic, tmax, logging_prefix='',
         print('Running {}.'.format(logging_prefix_))
         logging_prefix_ += ', '
         t0 = time.time()
-        results[start_time] = run_many(nruns, p, tmax,
-                                       logging_prefix=logging_prefix_,
-                                       *args, **kwargs)
+        df = run_many(nruns, p, tmax,
+                      logging_prefix=logging_prefix_,
+                      *args, **kwargs)
         t1 = time.time()
         print('Run time: {} seconds.'.format(t1 - t0))
-    return pandas.concat(results, names=['start_time'], copy=False)
+        # FIXME: Save here.
 
 
-def run_start_times_SATs(nruns, chronic, tmax, *args, **kwargs):
-    results = {}
+def run_start_times_SATs(nruns, chronic, tmax, hdfstore, *args, **kwargs):
     for SAT in _SATs:
-        results[SAT] = run_start_times(nruns, SAT, chronic, tmax,
-                                       logging_prefix='SAT {}, '.format(SAT),
-                                       *args, **kwargs)
-    return pandas.concat(results, names=['SAT'], copy=False)
+        run_start_times(nruns, SAT, chronic, tmax, hdfstore,
+                        logging_prefix='SAT {}, '.format(SAT),
+                        *args, **kwargs)
 
 
 def _run_sample(run_number, parameters, sample, tmax, *args, **kwargs):
@@ -111,10 +108,9 @@ def _run_samples_SAT(SAT, chronic, tmax, *args, **kwargs):
                          names=['sample'], copy=False)
 
 
-def run_samples(chronic, tmax, *args, **kwargs):
-    results = {}
+def run_samples(chronic, tmax, hdfstore, *args, **kwargs):
     for SAT in (1, 2, 3):
-        results[SAT] = _run_samples_SAT(SAT, chronic, tmax,
-                                        logging_prefix='SAT {}, '.format(SAT),
-                                        *args, **kwargs)
-    return pandas.concat(results, names=['SAT'], copy=False)
+        df = _run_samples_SAT(SAT, chronic, tmax,
+                              logging_prefix='SAT {}, '.format(SAT),
+                              *args, **kwargs)
+        # FIXME: Save here.
