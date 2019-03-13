@@ -44,11 +44,11 @@ def run_SATs(chronic, nruns, tmax, hdfstore, *args, **kwargs):
         df = run_many(nruns, p, tmax, *args, **kwargs)
         t1 = time.time()
         print('Run time: {} seconds.'.format(t1 - t0))
-        # Save the data for this SAT.
+        # Save the data for this `SAT`.
         # Add 'model' and 'SAT' levels to the index.
         ix_model = get_model(chronic)
         # Leave enough space for all possible model names.
-        min_itemsize = {ix_model.name: ix_model.categories.len().max()}}
+        min_itemsize = {ix_model.name: ix_model.categories.len().max()}
         ix_model = ix_model.astype('str')
         ix_SAT = pandas.Index([SAT], name='SAT')
         df.index = pandas.MultiIndex.from_arrays(
@@ -74,7 +74,19 @@ def run_start_times(nruns, SAT, chronic, tmax, hdfstore, logging_prefix='',
                       *args, **kwargs)
         t1 = time.time()
         print('Run time: {} seconds.'.format(t1 - t0))
-        # FIXME: Save here.
+        # Save the data for this `start_time`.
+        # Add 'model', 'SAT', and 'start_time' levels to the index.
+        ix_model = get_model(chronic)
+        # Leave enough space for all possible model names.
+        min_itemsize = {ix_model.name: ix_model.categories.len().max()}
+        ix_model = ix_model.astype('str')
+        ix_SAT = pandas.Index([SAT], name='SAT')
+        ix_start_time = pandas.Index([start_time], name='start_time')
+        df.index = pandas.MultiIndex.from_arrays(
+            [ix.repeat(len(df)) for ix in (ix_model, ix_SAT, ix_start_time)]
+            + [df.index.get_level_values(l) for l in df.index.names])
+        hdfstore.put(df, format='table', append=True,
+                     min_itemsize=min_itemsize)
 
 
 def run_start_times_SATs(nruns, chronic, tmax, hdfstore, *args, **kwargs):
