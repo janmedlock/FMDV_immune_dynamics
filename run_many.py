@@ -59,7 +59,7 @@ if __name__ == '__main__':
 
     p = herd.Parameters(SAT=SAT, chronic=chronic)
     t0 = time.time()
-    data = run_common.run_many(nruns, p, tmax)
+    data = run_common.run_many(p, tmax, nruns)
     t1 = time.time()
     print('Run time: {} seconds.'.format(t1 - t0))
 

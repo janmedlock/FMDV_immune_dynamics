@@ -1,12 +1,7 @@
+* Use model=['acute'|'chronic'] instead of chronic=[True|False].
 * Combine 'acute' and 'chronic' output.
-** Is CategoricalIndex() where the categories have different string
-   length inside a MultiIndex() handled correctly by pandas.HDFStore?
-** run_common.py
-*** run_start_times()
-*** run_samples()
 ** run_start_times_SATs.h5
-** run_samples.py
-*** run_samples.h5
+** run_samples.h5
 ** plot_start_times_SATs.py
 *** run_start_times_SATs_downsampled.h5
 *** plot_start_times_SATs_extinction_time.h5

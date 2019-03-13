@@ -2,51 +2,17 @@
 
 import os
 import subprocess
+import warnings
 
 import numpy
 import pandas
-
-
-class HDFStore(pandas.HDFStore):
-    '''pandas.HDFStore() with fixed key.'''
-    def __init__(self, path, key='df', *args, **kwds):
-        super().__init__(path, *args, **kwds)
-        self.key = key
-        self._index = None
-        self._columns = None
-
-    def get(self):
-        return super().get(self.key)
-
-    def select(self, *args, **kwds):
-        return super().select(self.key, *args, **kwds)
-
-    def put(self, *args, **kwds):
-        return super().put(self.key, *args, **kwds)
-
-    @property
-    def index(self):
-        if self._index is None:
-            self._index = self.select(columns=[]).index
-        return self._index
-
-    @property
-    def columns(self):
-        if self._columns is None:
-            self._columns = self.select(stop=0).columns
-        return self._columns
-
-
-def load(filename, key='df', **kwds):
-    return pandas.read_hdf(filename, key, **kwds)
-
-
-def dump(df, filename, key='df', mode='w', format='table'):
-    df.to_hdf(filename, key, mode=mode, format=format)
-    repack(filename)
+import tables
 
 
 def repack(filename):
+    '''
+    Use `ptrepack` to compress the HDF file.
+    '''
     tmp = filename + '.repack'
     try:
         subprocess.run(['ptrepack', '--chunkshape=auto',
@@ -59,7 +25,78 @@ def repack(filename):
     os.rename(tmp, filename)
 
 
-def convert(filename):
-    base, _ = os.path.splitext(filename)
-    h5file = base + '.h5'
-    dump(pandas.read_pickle(filename), h5file)
+class _catch_natural_name_warnings(warnings.catch_warnings):
+    '''
+    Ignore `tables.NaturalNameWarning`.
+    '''
+    def __enter__(self):
+        super().__enter__()
+        warnings.filterwarnings('ignore',
+                                category=tables.NaturalNameWarning)
+
+
+class HDFStore(pandas.HDFStore):
+    '''
+    pandas.HDFStore() with improved defaults.
+    '''
+    def __init__(self, path, *args, key='df', **kwds):
+        self.key = key
+        super().__init__(path, *args, **kwds)
+
+    def get(self, key=None):
+        if key is None:
+            key = self.key
+        return super().get(key)
+
+    def select(self, *args, key=None, **kwds):
+        if key is None:
+            key = self.key
+        return super().select(key, *args, **kwds)
+
+    def put(self, value, format='table', append=True, *args, key=None, **kwds):
+        if key is None:
+            key = self.key
+        with _catch_natural_name_warnings():
+            return super().put(key, value,
+                               format=format, append=append,
+                               *args, **kwds)
+
+    def append(self, value, format='table', append=True, *args, key=None,
+               **kwds):
+        if key is None:
+            key = self.key
+        with _catch_natural_name_warnings():
+            return super().append(key, value, format=format, append=append,
+                                  *args, **kwds)
+
+    def get_index(self, *args, key=None, **kwds):
+        # For speed, don't read any columns.
+        df = self.select(*args, key=key, columns=[], **kwds)
+        return df.index
+
+    def get_index_names(self, *args, key=None, **kwds):
+        # For speed, don't read any rows or columns.
+        df = self.select(*args, key=key, stop=0, columns=[], **kwds)
+        return df.index.names
+
+    def get_columns(self, *args, key=None, **kwds):
+        # For speed, don't read any rows.
+        df = self.select(*args, key=key, stop=0, **kwds)
+        return df.columns
+
+    def repack(self):
+        self.close()
+        repack(self._path)
+        self.open(self._mode)
+
+
+def load(filename, key='df', **kwds):
+    return pandas.read_hdf(filename, key, **kwds)
+
+
+def dump(df, filename, key='df', mode='w', format='table', append=True,
+         **kwds):
+    with _catch_natural_name_warnings():
+        df.to_hdf(filename, key, mode=mode, format=format, append=append,
+                  **kwds)
+    repack(filename)

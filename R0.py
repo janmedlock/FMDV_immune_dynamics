@@ -12,7 +12,7 @@ import herd.samples
 
 
 def calculate(SAT, chronic, alpha=0.05):
-    s = herd.samples.load(chronic=chronic)[SAT]
+    s = herd.samples.load(chronic=chronic, SAT=SAT)
     R0 = s.recovery_mean * s.transmission_rate
     if chronic:
         R0 += s.probability_chronic * s.chronic_recovery_mean

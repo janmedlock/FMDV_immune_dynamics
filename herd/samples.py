@@ -112,7 +112,7 @@ def _load_probability_chronic(size, seed=1):
     return df
 
 
-def load(chronic=False):
+def load(chronic=False, SAT=None):
     df = pandas.concat([_load_acute_transmission(),
                         _load_maternal_immunity_duration()],
                        axis='columns')
@@ -123,4 +123,8 @@ def load(chronic=False):
                             _load_chronic_recovery(),
                             _load_probability_chronic(size)],
                            axis='columns')
-    return df.sort_index(axis='columns')
+    df.sort_index(axis='columns', inplace=True)
+    if SAT is None:
+        return df
+    else:
+        return df[SAT]

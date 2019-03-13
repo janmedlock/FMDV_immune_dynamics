@@ -9,7 +9,7 @@ from herd import birth
 import extinction_times
 
 
-def search_parameter(parameter_name, values, nruns, parameters, tmax,
+def search_parameter(parameter_name, values, parameters, tmax, nruns,
                     *args, **kwargs):
     assert hasattr(parameters, parameter_name)
 
@@ -30,7 +30,7 @@ def search_parameter(parameter_name, values, nruns, parameters, tmax,
     for v in values:
         setattr(parameters, parameter_name, v)
         print('{} = {}'.format(parameter_name, v))
-        ets = extinction_times.find_extinction_times(nruns, parameters, tmax,
+        ets = extinction_times.find_extinction_times(parameters, tmax, nruns,
                                                      *args, **kwargs)
         w.writerow([getattr(parameters, k) for k in paramkeys]
                    + ets)
@@ -58,7 +58,7 @@ if __name__ == '__main__':
             parameters.birth_seasonal_coefficient_of_variation = bscov
             search_parameter('population_size',
                              population_sizes,
-                             nruns,
                              parameters,
                              tmax,
+                             nruns,
                              debug=debug)

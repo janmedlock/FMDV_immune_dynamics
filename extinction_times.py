@@ -2,7 +2,7 @@
 
 import numpy
 
-import run_many
+import run_common
 
 
 def number_infected(x):
@@ -10,22 +10,15 @@ def number_infected(x):
     return (E + I)
 
 
-def find_extinction_times(nruns,
-                          parameters,
-                          tmax,
-                          *args,
-                          **kwds):
-    data = run_many.run_many(nruns, parameters, tmax, *args, **kwds)
-
+def find_extinction_times(parameters, tmax, nruns, *args, **kwds):
+    data = run_common.run_many(parameters, tmax, nruns, *args, **kwds)
     (T, X) = zip(*(zip(*d) for d in data))
-
     extinction_times = [t[-1] if (number_infected(x[-1]) == 0) else None
                         for (t, x) in zip(T, X)]
-
     return extinction_times
 
 
-def ppf(D, q, a = 0):
+def ppf(D, q, a=0):
     Daug = numpy.asarray(sorted(D) + [a])
     indices = numpy.ceil(numpy.asarray(q) * len(D) - 1).astype(int)
     return Daug[indices]
@@ -70,7 +63,7 @@ if __name__ == '__main__':
     tmax = 10
     debug = False
 
-    extinction_times = find_extinction_times(nruns, p, tmax, debug = debug)
+    extinction_times = find_extinction_times(p, tmax, nruns, debug = debug)
 
     mystats = find_stats(extinction_times)
     show_stats(mystats)

@@ -7,13 +7,12 @@ import herd
 
 
 if __name__ == '__main__':
-    chronic = True
     tmax = 10
 
-    data = run_common.run_samples(chronic, tmax)
-
     _filebase, _ = os.path.splitext(__file__)
-    if chronic:
-        _filebase += '_chronic'
-    _h5file = _filebase + '.h5'
-    h5.dump(data, _h5file)
+    _filename = _filebase + '.h5'
+    with h5.HDFStore(_filename) as store:
+        # for chronic in (False, True):
+        for chronic in (True, ):
+            run_common.run_samples_SATs(chronic, tmax, store)
+        store.repack(_filename)

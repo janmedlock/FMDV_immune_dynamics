@@ -34,7 +34,7 @@ if __name__ == '__main__':
 
     p = herd.Parameters(SAT=SAT, chronic=chronic)
     t0 = time.time()
-    data = run_common.run_one(seed, p, tmax, debug=debug)
+    data = run_common.run_one(p, tmax, seed, debug=debug)
     t1 = time.time()
     print('Run time: {} seconds.'.format(t1 - t0))
 
