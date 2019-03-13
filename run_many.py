@@ -53,11 +53,11 @@ def make_plots(data, show=True):
 
 if __name__ == '__main__':
     SAT = 1
-    chronic = True
+    model = 'chronic'
     nruns = 100
     tmax = 10
 
-    p = herd.Parameters(SAT=SAT, chronic=chronic)
+    p = herd.Parameters(model=model, SAT=SAT)
     t0 = time.time()
     data = run_common.run_many(p, tmax, nruns)
     t1 = time.time()

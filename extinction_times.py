@@ -51,9 +51,9 @@ if __name__ == '__main__':
     import herd
 
     SAT = 1
-    chronic = True
+    model = 'chronic'
 
-    p = herd.Parameters(SAT=SAT, chronic=chronic)
+    p = herd.Parameters(model=model, SAT=SAT)
 
     p.population_size = 100
     p.infection_duration = 21 / 365

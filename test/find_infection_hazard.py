@@ -9,9 +9,11 @@ from herd._initial_conditions import find_hazard_infection, plot
 sys.path.pop(-1)
 
 
-for chronic in (False, True):
-    params = herd.Parameters(chronic=chronic)
+models = ('acute', 'chronic')
+
+for model in models:
+    params = herd.Parameters(model=model)
     hazard_infection = find_hazard_infection(params)
-    plot(hazard_infection, params, show=False)
-pyplot.legend(['Acute only', 'Chronic'])
+    plot(hazard_infection, params, show=False, label=model.capitalize())
+pyplot.legend()
 pyplot.show()

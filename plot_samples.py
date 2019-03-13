@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 #
 # To do:
-# * Update for `chronic=True`.
+# * Update for `model='chronic'`.
 
 from matplotlib import pyplot, ticker
 import numpy
@@ -19,9 +19,9 @@ def _get_persistence_time(x):
     return t.max() - t.min()
 
 
-def _load_persistence_times(chronic):
-    # Update here for `chronic=True`.
-    assert chronic == False
+def _load_persistence_times(model):
+    # Update here for `model='chronic'`.
+    assert model == 'acute'
     results = h5.load('run_samples.h5')
     groups = results.groupby(['SAT', 'sample'])
     pt = groups.apply(_get_persistence_time)
@@ -29,20 +29,20 @@ def _load_persistence_times(chronic):
     # Move 'SAT' from row MultiIndex to columns.
     pt = pt.reset_index('SAT').pivot(columns='SAT')
     pt = pt.reorder_levels([1, 0], axis='columns')
-    samples = herd.samples.load(chronic=chronic)
+    samples = herd.samples.load(model=model)
     # Put parameter values and persistence time together.
     df = pandas.concat([samples, pt], axis='columns', copy=False)
     df.columns.set_names('value', level=1, inplace=True)
     return df
 
 
-def load_persistence_times(chronic=False):
-    # Update here for `chronic=True`.
-    assert chronic == False
+def load_persistence_times(model='acute'):
+    # Update here for `model='chronic'`.
+    assert model == 'acute'
     try:
         df = h5.load('plot_samples.h5')
     except FileNotFoundError:
-        df = _load_persistence_times(chronic=chronic)
+        df = _load_persistence_times(model=model)
         h5.dump(df, 'plot_samples.h5')
     return df
 

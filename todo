@@ -1,4 +1,3 @@
-* Use model=['acute'|'chronic'] instead of chronic=[True|False].
 * Combine 'acute' and 'chronic' output.
 ** run_start_times_SATs.h5
 ** run_samples.h5

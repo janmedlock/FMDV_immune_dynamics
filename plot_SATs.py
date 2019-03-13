@@ -16,13 +16,13 @@ import h5
 seaborn.set_context('talk')
 
 
-def load_SIR_data(chronic=False):
-    where = 'model={}'.format('chronic' if chronic else 'acute')
+def load_SIR_data(model='acute'):
+    where = f'model={model}'
     return h5.load('run_SATs.h5', where=where)
 
 
-def load_extinction_data(chronic=False):
-    # FIXME: doesn't work with `chronic=True`.
+def load_extinction_data(model='acute'):
+    # FIXME: doesn't work with `model='chronic'`.
     def translate(row):
         def f(x):
             if x == '':
@@ -61,8 +61,8 @@ def load_extinction_data(chronic=False):
     return data
 
 
-def make_SIR_plots(chronic=False, show=True):
-    data = load_SIR_data(chronic)
+def make_SIR_plots(model='acute', show=True):
+    data = load_SIR_data(model)
 
     (models, SATs, reps) = data.index.levels[:3]
     assert len(models) == 1
@@ -98,7 +98,7 @@ def make_SIR_plots(chronic=False, show=True):
     ax[1].set_ylabel('susceptible')
     ax[2].set_ylabel('exposed')
     ax[3].set_ylabel('infected')
-    ax[4].set_ylabel('chronic')  # added!
+    ax[4].set_ylabel('chronic')
     ax[5].set_ylabel('recovered')
 
     mid = (axes.shape[-1] - 1) // 2
@@ -109,20 +109,17 @@ def make_SIR_plots(chronic=False, show=True):
         if yl[0] < 0:
             ax.set_ylim(bottom=0)
 
-    filename = 'plot_SATs'
-    if chronic:
-        filename += '_chronic'
-    filename += '_SIR.pdf'
+    filename = f'plot_SATs_SIR_{model}.pdf'
     fig.savefig(filename)
     if show:
         pyplot.show()
 
 
-def make_extinction_hist(population_size=1000,
+def make_extinction_hist(model='acute',
+                         population_size=1000,
                          birth_seasonal_coefficient_of_variation=0.61,
-                         chronic=False,
                          show=True):
-    data = load_extinction_data(chronic)
+    data = load_extinction_data(model)
     data = data.loc(axis = 0)[:,
                               population_size,
                               birth_seasonal_coefficient_of_variation]
@@ -142,17 +139,14 @@ def make_extinction_hist(population_size=1000,
     mid = (axes.shape[-1] - 1) // 2
     axes[mid].set_xlabel('time (days)')
 
-    filename = 'plot_SATs'
-    if chronic:
-        filename += '_chronic'
-    filename += '_hist.pdf'
+    filename = f'plot_SATs_hist_{model}.pdf'
     fig.savefig(filename)
     if show:
         pyplot.show()
 
 
-def make_full(chronic=False, show=True):
-    data = load_extinction_data(chronic)
+def make_full(model='acute', show=True):
+    data = load_extinction_data(model)
 
     palette = 'Set2'
     linewidth = 0.75
@@ -206,17 +200,14 @@ def make_full(chronic=False, show=True):
             leg.set_visible(False)
 
     fig.tight_layout()
-    filename = 'plot_SATs'
-    if chronic:
-        filename += '_chronic'
-    filename += '_full.pdf'
+    filename = f'plot_SATs_full_{model}.pdf'
     fig.savefig(filename)
     if show:
         pyplot.show()
 
 
 if __name__ == '__main__':
-    chronic = True
-    make_SIR_plots(chronic)
-    # make_extinction_hist(chronic)
-    # make_full(chronic)
+    model = 'chronic'
+    make_SIR_plots(model)
+    # make_extinction_hist(model)
+    # make_full(model)

@@ -9,7 +9,16 @@ import herd
 import herd.samples
 
 
+_models = ('acute', 'chronic')
+# Leave enough space in hdf for all model names.
+_min_itemsize = {'model': max(m.len() for m in _models)}
 _SATs = (1, 2, 3)
+
+
+def _prepend_index_levels(df, **levels):
+    df.index = pandas.MultiIndex.from_arrays(
+        [pandas.Index(v, name=k).repeat(len(df)) for (k, v) in levels.items()]
+        + [df.index.get_level_values(n) for n in df.index.names])
 
 
 def run_one(parameters, tmax, run_number, *args, **kwargs):
@@ -28,17 +37,9 @@ def run_many(parameters, tmax, nruns, *args, **kwargs):
                          copy=False)
 
 
-def get_model(chronic):
-    # Use a `pandas.CategoricalIndex()` to store the alternatives
-    # to encode string widths for HDF.
-    models = ['acute', 'chronic']
-    val = model[1] if chronic else model[0]
-    return pandas.CategoricalIndex([val], models, name='model')
-
-
-def run_SATs(chronic, tmax, nruns, hdfstore, *args, **kwargs):
+def run_SATs(model, tmax, nruns, hdfstore, *args, **kwargs):
     for SAT in _SATs:
-        p = herd.Parameters(chronic=chronic, SAT=SAT)
+        p = herd.Parameters(model=model, SAT=SAT)
         print(f'Running SAT {SAT}.')
         t0 = time.time()
         df = run_many(p, tmax, nruns, *args, **kwargs)
@@ -46,22 +47,16 @@ def run_SATs(chronic, tmax, nruns, hdfstore, *args, **kwargs):
         print(f'Run time: {t1 - t0} seconds.')
         # Save the data for this `SAT`.
         # Add 'model' and 'SAT' levels to the index.
-        ix_model = get_model(chronic)
-        # Leave enough space for all possible model names.
-        min_itemsize = {ix_model.name: ix_model.categories.len().max()}
-        ix_model = ix_model.astype('str')
-        ix_SAT = pandas.Index([SAT], name='SAT')
-        df.index = pandas.MultiIndex.from_arrays(
-            [ix.repeat(len(df)) for ix in (ix_model, ix_SAT)]
-            + [df.index.get_level_values(l) for l in df.index.names])
+        _prepend_index_levels(df, model=model, SAT=SAT)
         hdfstore.put(df, format='table', append=True,
-                     min_itemsize=min_itemsize)
+                     min_itemsize=_min_itemsize)
 
-def run_start_times(chronic, SAT, tmax, nruns, hdfstore, logging_prefix='',
+
+def run_start_times(model, SAT, tmax, nruns, hdfstore, logging_prefix='',
                     *args, **kwargs):
     # Every month.
     for start_time in numpy.arange(0, 1, 1 / 12):
-        p = herd.Parameters(chronic=chronic, SAT=SAT)
+        p = herd.Parameters(model=model, SAT=SAT)
         p.start_time = start_time
         logging_prefix_ = (logging_prefix
                            + f'Start time {start_time * 12:g} / 12')
@@ -75,22 +70,14 @@ def run_start_times(chronic, SAT, tmax, nruns, hdfstore, logging_prefix='',
         print(f'Run time: {t1 - t0} seconds.')
         # Save the data for this `start_time`.
         # Add 'model', 'SAT', and 'start_time' levels to the index.
-        ix_model = get_model(chronic)
-        # Leave enough space for all possible model names.
-        min_itemsize = {ix_model.name: ix_model.categories.len().max()}
-        ix_model = ix_model.astype('str')
-        ix_SAT = pandas.Index([SAT], name='SAT')
-        ix_start_time = pandas.Index([start_time], name='start_time')
-        df.index = pandas.MultiIndex.from_arrays(
-            [ix.repeat(len(df)) for ix in (ix_model, ix_SAT, ix_start_time)]
-            + [df.index.get_level_values(l) for l in df.index.names])
+        _prepend_index_levels(df, model=model, SAT=SAT, start_time=start_time)
         hdfstore.put(df, format='table', append=True,
-                     min_itemsize=min_itemsize)
+                     min_itemsize=_min_itemsize)
 
 
-def run_start_times_SATs(chronic, tmax, nruns, hdfstore, *args, **kwargs):
+def run_start_times_SATs(model, tmax, nruns, hdfstore, *args, **kwargs):
     for SAT in _SATs:
-        run_start_times(chronic, SAT, tmax, nruns, hdfstore,
+        run_start_times(model, SAT, tmax, nruns, hdfstore,
                         logging_prefix=f'SAT {SAT}, ',
                         *args, **kwargs)
 
@@ -104,10 +91,10 @@ def _run_sample(parameters, sample, tmax, run_number, *args, **kwargs):
     return h.run(tmax)
 
 
-def _run_samples_SAT(chronic, SAT, tmax, *args, **kwargs):
+def _run_samples_SAT(model, SAT, tmax, *args, **kwargs):
     '''Run many simulations in parallel.'''
-    samples = herd.samples.load(chronic=chronic, SAT=SAT)
-    parameters = herd.Parameters(chronic=chronic, SAT=SAT)
+    samples = herd.samples.load(model=model, SAT=SAT)
+    parameters = herd.Parameters(model=model, SAT=SAT)
     print(f'Running SAT {SAT}.')
     t0 = time.time()
     results = Parallel(n_jobs=-1)(
@@ -115,23 +102,15 @@ def _run_samples_SAT(chronic, SAT, tmax, *args, **kwargs):
         for i, s in samples.iterrows())
     t1 = time.time()
     print(f'Run time: {t1 - t0} seconds.')
-    df = pandas.concat(results, keys=range(len(samples)),
-                    names=['sample'], copy=False)
-    # Add 'model' and 'SAT' levels to the index.
-    ix_model = get_model(chronic)
-    # Leave enough space for all possible model names.
-    min_itemsize = {ix_model.name: ix_model.categories.len().max()}
-    ix_model = ix_model.astype('str')
-    ix_SAT = pandas.Index([SAT], name='SAT')
-    df.index = pandas.MultiIndex.from_arrays(
-        [ix.repeat(len(df)) for ix in (ix_model, ix_SAT)]
-        + [df.index.get_level_values(l) for l in df.index.names])
-    return df
+    return pandas.concat(results, keys=range(len(samples)),
+                         names=['sample'], copy=False)
 
 
-def run_samples(chronic, tmax, hdfstore, *args, **kwargs):
+def run_samples(model, tmax, hdfstore, *args, **kwargs):
     for SAT in (1, 2, 3):
-        _run_samples_SAT(chronic, SAT, tmax, hdfstore, *args, **kwargs)
+        _run_samples_SAT(model, SAT, tmax, *args, **kwargs)
         # Save the data for this `SAT`.
+        # Add 'model' and 'SAT' levels to the index.
+        _prepend_index_levels(df, model=model, SAT=SAT)
         hdfstore.put(df, format='table', append=True,
-                     min_itemsize=min_itemsize)
+                     min_itemsize=_min_itemsize)

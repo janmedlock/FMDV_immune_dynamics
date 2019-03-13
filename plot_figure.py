@@ -49,22 +49,22 @@ rc['xtick.labelsize'] = rc['ytick.labelsize'] = 5
 def load():
     infected = []
     extinction_time = []
-    for chronic in (False, True):
-        i = plot_start_times_SATs.get_infected(chronic=chronic)
-        i['chronic'] = chronic
+    for model in ('acute', 'chronic'):
+        i = plot_start_times_SATs.get_infected(model=model)
+        i['model'] = model
         infected.append(i)
-        e = plot_start_times_SATs.get_extinction_time(chronic=chronic)
-        e['chronic'] = chronic
+        e = plot_start_times_SATs.get_extinction_time(model=model)
+        e['model'] = model
         extinction_time.append(e)
     infected = pandas.concat(infected)
     extinction_time = pandas.concat(extinction_time)
     return (infected, extinction_time)
 
 
-def plot_infected(ax, infected, SAT, chronic):
+def plot_infected(ax, infected, model, SAT):
     nruns = 1000
-    mask = ((infected.SAT == SAT)
-            & (infected.chronic == chronic)
+    mask = ((infected.model == model)
+            & (infected.SAT == SAT)
             & (infected.index.get_level_values('run') < nruns))
     # .unstack('run') puts 'run' on columns, time on rows.
     i = infected.infected[mask].unstack('run')
@@ -93,13 +93,12 @@ def plot_infected(ax, infected, SAT, chronic):
                                  labelleft=False, labelright=False)
         ax.yaxis.offsetText.set_visible(False)
     if ax.is_first_row():
-        ax.set_title(('Chronic' if chronic else 'Acute') + ' model',
-                     loc='center')
+        ax.set_title(f'{model.capitalize()} model', loc='center')
 
 
-def plot_extinction_time(ax, extinction_time, SAT, chronic):
-    mask = ((extinction_time.SAT == SAT)
-            & (extinction_time.chronic == chronic))
+def plot_extinction_time(ax, extinction_time, model, SAT):
+    mask = ((extinction_time.model == model)
+            & (extinction_time.SAT == SAT))
     e = extinction_time['extinction time (days)'][mask]
     color = SAT_colors[SAT]
     if len(e.dropna()) > 0:
@@ -132,9 +131,9 @@ def plot_extinction_time(ax, extinction_time, SAT, chronic):
 
 def plot(infected, extinction_time):
     SATs = infected.SAT.unique()
-    chronics = infected.chronic.unique()
+    models = infected.model.unique()
     nrows = len(SATs) * 2
-    ncols = len(chronics)
+    ncols = len(models)
     height_ratios = (3, 1) * (nrows // 2)
     width_ratios = (1, 1)
     with seaborn.axes_style('whitegrid'), pyplot.rc_context(rc=rc):
@@ -154,16 +153,16 @@ def plot(infected, extinction_time):
                                                  sharex=sharex,
                                                  sharey=sharey)
         for (i, SAT) in enumerate(SATs):
-            for (col, chronic) in enumerate(chronics):
+            for (col, model) in enumerate(models):
                 row_i = 2 * i
                 row_e = 2 * i + 1
-                plot_infected(axes[row_i, col], infected, SAT, chronic)
+                plot_infected(axes[row_i, col], infected, model, SAT)
                 plot_extinction_time(axes[row_e, col], extinction_time,
-                                     SAT, chronic)
+                                     model, SAT)
         # Shade time region from acute-model column
         # in chronic-model column.
-        col_chronic = numpy.where(chronics == True)[0][0]
-        mask = (extinction_time.chronic == False)
+        col_chronic = numpy.where(model  == 'chronic')[0][0]
+        mask = (extinction_time.model == 'acute')
         e_acute = extinction_time['extinction time (days)'][mask]
         assert e_acute.notnull().all()
         e_acute_mask = e_acute.max()

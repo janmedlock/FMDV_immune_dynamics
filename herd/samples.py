@@ -112,11 +112,11 @@ def _load_probability_chronic(size, seed=1):
     return df
 
 
-def load(chronic=False, SAT=None):
+def load(model='acute', SAT=None):
     df = pandas.concat([_load_acute_transmission(),
                         _load_maternal_immunity_duration()],
                        axis='columns')
-    if chronic:
+    if model == 'chronic':
         size = len(df)
         df = pandas.concat([df,
                             _load_chronic_transmission_rate(),

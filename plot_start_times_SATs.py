@@ -9,16 +9,13 @@ import h5
 import plot_common
 
 
-def get_filename(chronic=False):
-    filename = 'run_start_times_SATs'
-    if chronic:
-        filename += '_chronic'
-    filename += '.h5'
+def get_filename(model='acute'):
+    filename = f'run_start_times_SATs_{model}.h5'
     return filename
 
 
-def get_downsampled(chronic=False):
-    filename = get_filename(chronic=chronic)
+def get_downsampled(model='acute'):
+    filename = get_filename(model=model)
     base, ext = os.path.splitext(filename)
     filename_ds = base + '_downsampled' + ext
     try:
@@ -29,18 +26,15 @@ def get_downsampled(chronic=False):
     return data_ds
 
 
-def get_infected(chronic=False):
-    filename = 'plot_start_times_SATs_infected'
-    if chronic:
-        filename += '_chronic'
-    filename += '.h5'
+def get_infected(model='acute'):
+    filename = f'plot_start_times_SATs_infected_{model}.h5'
     try:
         infected = h5.load(filename)
     except FileNotFoundError:
         # It might be helpful to reduce what is loaded here to
         # `where='start_time=0'` and
         # `columns=['exposed', 'infectious', 'chronic']`.
-        data = get_downsampled(chronic=chronic)
+        data = get_downsampled(model=model)
         # Only plot the first start time.
         mask = (data.index.get_level_values('start_time') == 0.)
         data = data[mask]
@@ -62,8 +56,8 @@ def plot_infected_facet(infected, color=None, alpha=1, **kwargs):
                 color='black', alpha=1, **kwargs)
 
 
-def plot_infected(chronic=False):
-    infected = get_infected(chronic=chronic)
+def plot_infected(model='acute'):
+    infected = get_infected(model=model)
     pyplot.figure()
     # g = seaborn.FacetGrid(data=infected, row='SAT', col='start_time',
     #                       sharey='row')
@@ -72,10 +66,7 @@ def plot_infected(chronic=False):
     g.set_axis_labels('time (days)', 'number infected')
     g.set_titles('{col_var} {col_name}')
     pyplot.tight_layout()
-    filename = 'plot_start_times_SATs_infected'
-    if chronic:
-        filename += '_chronic'
-    filename += '.pdf'
+    filename = f'plot_start_times_SATs_infected_{model}.pdf'
     pyplot.savefig(filename)
 
 
@@ -87,18 +78,15 @@ def get_extinction_time_one(infected):
         return None
 
 
-def get_extinction_time(chronic=False):
-    filename = 'plot_start_times_SATs_extinction_time'
-    if chronic:
-        filename += '_chronic'
-    filename += '.h5'
+def get_extinction_time(model='acute'):
+    filename = f'plot_start_times_SATs_extinction_time_{model}.h5'
     try:
         extinction_time = h5.load(filename)
     except FileNotFoundError:
         # Only plot the first start time.
         where = 'start_time=0'
         columns = ['exposed', 'infectious', 'chronic']
-        data = h5.load(get_filename(chronic=chronic),
+        data = h5.load(get_filename(model=model),
                        where=where, columns=columns)
         not_t_names = [n for n in data.index.names if n != plot_common.t_name]
         infected = data[['exposed', 'infectious', 'chronic']].sum(axis=1)
@@ -112,8 +100,8 @@ def get_extinction_time(chronic=False):
     return extinction_time
 
 
-def plot_extinction_time(chronic=False):
-    extinction_time = get_extinction_time(chronic=chronic)
+def plot_extinction_time(model='acute'):
+    extinction_time = get_extinction_time(model=model)
     pyplot.figure()
     # seaborn.factorplot(data=extinction_time,
     #                    x='extinction time (days)', y='start_time', col='SAT',
@@ -128,9 +116,7 @@ def plot_extinction_time(chronic=False):
     pyplot.yticks(locs, ['SAT {}'.format(i.get_text()) for i in labels])
     pyplot.xlim(left=0)
     pyplot.tight_layout()
-    filename = 'plot_start_times_SATs_extinction_time'
-    if chronic:
-        filename += '_chronic'
+    filename = f'plot_start_times_SATs_extinction_time_{model}.pdf'
     filename += '.pdf'
     pyplot.savefig(filename)
 
@@ -141,18 +127,15 @@ def get_time_to_peak_one(infected):
     return (t[m] - t.min())
 
 
-def get_time_to_peak(chronic=False):
-    filename = 'plot_start_times_SATs_time_to_peak'
-    if chronic:
-        filename += '_chronic'
-    filename += '.h5'
+def get_time_to_peak(model='acute'):
+    filename = f'plot_start_times_SATs_time_to_peak_{model}.h5'
     try:
         extinction_time = h5.load(filename)
     except FileNotFoundError:
         # Only plot the first start time.
         where = 'start_time=0'
         columns = ['exposed', 'infectious', 'chronic']
-        data = h5.load(get_filename(chronic=chronic),
+        data = h5.load(get_filename(model=model),
                        where=where, columns=columns)
         not_t_names = [n for n in data.index.names if n != plot_common.t_name]
         infected = data[['exposed', 'infectious', 'chronic']].sum(axis=1)
@@ -166,8 +149,8 @@ def get_time_to_peak(chronic=False):
     return time_to_peak
 
 
-def plot_time_to_peak(chronic=False):
-    time_to_peak = get_time_to_peak(chronic=chronic)
+def plot_time_to_peak(model='acute'):
+    time_to_peak = get_time_to_peak(model=model)
     pyplot.figure()
     # seaborn.factorplot(data=time_to_peak,
     #                    x='time to peak (days)', y='start_time', col='SAT',
@@ -183,10 +166,7 @@ def plot_time_to_peak(chronic=False):
     locs, labels = pyplot.yticks()
     pyplot.yticks(locs, ['SAT {}'.format(i.get_text()) for i in labels])
     pyplot.tight_layout()
-    filename = 'plot_start_times_SATs_time_to_peak'
-    if chronic:
-        filename += '_chronic'
-    filename += '.pdf'
+    filename = f'plot_start_times_SATs_time_to_peak_{model}.pdf'
     pyplot.savefig(filename)
 
 
@@ -196,18 +176,15 @@ def get_total_infected_one(x):
     return R.iloc[-1] - R.iloc[0]
 
 
-def get_total_infected(chronic=False):
-    filename = 'plot_start_times_SATs_total_infected'
-    if chronic:
-        filename += '_chronic'
-    filename += '.h5'
+def get_total_infected(model='acute'):
+    filename = f'plot_start_times_SATs_total_infected_{model}.h5'
     try:
         total_infected = h5.load(filename)
     except FileNotFoundError:
         # Only plot the first start time.
         where = 'start_time=0'
         columns = ['recovered']
-        data = h5.load(get_filename(chronic=chronic),
+        data = h5.load(get_filename(model=model),
                        where=where, columns=columns)
         not_t_names = [n for n in data.index.names if n != plot_common.t_name]
         total_infected = data.groupby(level=not_t_names).apply(
@@ -219,8 +196,8 @@ def get_total_infected(chronic=False):
     return total_infected
 
 
-def plot_total_infected(chronic=False):
-    total_infected = get_total_infected(chronic=chronic)
+def plot_total_infected(model='acute'):
+    total_infected = get_total_infected(model=model)
     pyplot.figure()
     # seaborn.factorplot(data=total_infected,
     #                    x='total infected', y='start_time', col='SAT',
@@ -236,18 +213,15 @@ def plot_total_infected(chronic=False):
     locs, labels = pyplot.yticks()
     pyplot.yticks(locs, ['SAT {}'.format(i.get_text()) for i in labels])
     pyplot.tight_layout()
-    filename = 'plot_start_times_SATs_total_infected'
-    if chronic:
-        filename += '_chronic'
-    filename += '.pdf'
+    filename = f'plot_start_times_SATs_total_infected_{model}.pdf'
     pyplot.savefig(filename)
 
 
 if __name__ == '__main__':
-    chronic = True
+    model = 'chronic'
 
-    plot_infected(chronic)
-    # plot_extinction_time(chronic)
-    # plot_time_to_peak(chronic)
-    # plot_total_infected(chronic)
+    plot_infected(model)
+    # plot_extinction_time(model)
+    # plot_time_to_peak(model)
+    # plot_total_infected(model)
     # pyplot.show()

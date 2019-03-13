@@ -8,9 +8,9 @@ import numpy
 from herd import Parameters, RandomVariables
 
 
-chronic = True
+model = 'chronic'
 
-parameters = Parameters(chronic=chronic)
+parameters = Parameters(model=model)
 RVs = RandomVariables(parameters)
 ICs = RVs.initial_conditions
 

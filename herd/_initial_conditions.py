@@ -20,7 +20,7 @@ _filename = os.path.join(os.path.dirname(__file__), _filename)
 
 def _load_data(params):
     '''Load and format the data.'''
-    if params.chronic:
+    if params.model == 'chronic':
         sheet_name = 'all groups'
     else:
         sheet_name = 'reclassified_no carriers'
@@ -75,7 +75,7 @@ class SParameters(parameters.Parameters):
     only has the parameters needed by `S_logprob()` etc
     so that they can be efficiently cached.'''
     def __init__(self, params):
-        self.chronic = params.chronic
+        self.model = params.model
         # Generally, the values of these parameters should be
         # floats, so explicitly convert them so the cache doesn't
         # get duplicated keys for the float and int representation
@@ -175,7 +175,7 @@ def C_logprob(age, hazard_infection, params):
       + \log hazard_infection
       + \log probabilty_chronic.'''
     assert hazard_infection >= 0, hazard_infection
-    if not params.chronic:
+    if params.model != 'chronic':
         # Shortcut to probability = 0.
         return - numpy.inf * numpy.ones_like(age)
     params_cache = CParameters(params)
@@ -263,7 +263,7 @@ def find_AIC(hazard_infection, params):
     return 2 * mll + 2 * n_params
 
 
-def plot(hazard_infection, params, CI=0.5, show=True):
+def plot(hazard_infection, params, CI=0.5, show=True, label=None, **kwds):
     from matplotlib import pyplot
     from scipy.stats import beta
     data = _load_data(params)
@@ -277,8 +277,9 @@ def plot(hazard_infection, params, CI=0.5, show=True):
         (p_bar - beta.ppf(CI / 2, S + 1, N - S + 1),
          beta.ppf(1 - CI / 2, S + 1, N - S + 1) - p_bar))
     pyplot.errorbar(data.index.mid, p_bar, yerr=p_err,
-                    label=None, color=color,
-                    marker='_', linestyle='dotted')
+                    label=label, color=color,
+                    marker='_', linestyle='dotted',
+                    **kwds)
     pyplot.xlabel(data.index.name)
     pyplot.ylabel('Fraction susceptible')
     if show:

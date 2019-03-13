@@ -27,12 +27,12 @@ def make_plot(data, show=True):
 
 if __name__ == '__main__':
     SAT = 1
-    chronic = True
+    model = 'chronic'
     seed = 1
     tmax = 10
     debug = False
 
-    p = herd.Parameters(SAT=SAT, chronic=chronic)
+    p = herd.Parameters(model=model, SAT=SAT)
     t0 = time.time()
     data = run_common.run_one(p, tmax, seed, debug=debug)
     t1 = time.time()

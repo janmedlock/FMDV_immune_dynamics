@@ -11,18 +11,18 @@
 import herd.samples
 
 
-def calculate(SAT, chronic, alpha=0.05):
-    s = herd.samples.load(chronic=chronic, SAT=SAT)
+def calculate(model, SAT, alpha=0.05):
+    s = herd.samples.load(model=model, SAT=SAT)
     R0 = s.recovery_mean * s.transmission_rate
-    if chronic:
+    if model == 'chronic':
         R0 += s.probability_chronic * s.chronic_recovery_mean
     R0 = R0.quantile([0.5, alpha / 2, 1 - alpha / 2])
     return R0
 
 
 if __name__ == '__main__':
-    print('Chronic\tSAT\tR_0')
-    for chronic in (False, True):
+    print('model\tSAT\tR_0')
+    for model in ('acute', 'chronic'):
         for SAT in (1, 2, 3):
             print('{}\t{}\t{:.1f}\t({:.1f}, {:.1f})'.format(
-                chronic, SAT, *calculate(SAT, chronic)))
+                model, SAT, *calculate(model, SAT)))

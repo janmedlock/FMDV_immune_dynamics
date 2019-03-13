@@ -42,7 +42,7 @@ def search_parameter(parameter_name, values, parameters, tmax, nruns,
 if __name__ == '__main__':
     import numpy
 
-    chronic = True
+    model = 'chronic'
 
     population_sizes = (100, 200, 500, 1000)
     birth_seasonal_coefficients_of_variation = (
@@ -54,7 +54,7 @@ if __name__ == '__main__':
 
     for bscov in birth_seasonal_coefficients_of_variation:
         for SAT in (1, 2, 3):
-            parameters = herd.Parameters(SAT=SAT, chronic=chronic)
+            parameters = herd.Parameters(model=model, SAT=SAT)
             parameters.birth_seasonal_coefficient_of_variation = bscov
             search_parameter('population_size',
                              population_sizes,
