@@ -8,14 +8,13 @@ import run_common
 
 if __name__ == '__main__':
     SAT = 1
-    chronic = True
     nruns = 100
     tmax = 10
 
-    data = run_common.run_start_times(nruns, SAT, chronic, tmax)
-
     _filebase, _ = os.path.splitext(__file__)
-    if chronic:
-        _filebase += '_chronic'
-    _h5file = _filebase + '.h5'
-    h5.dump(data, _h5file)
+    _filename = _filebase + '.h5'
+    store = h5.HDFStore(_filename)
+    for chronic in (False, True):
+        run_common.run_start_times(nruns, SAT, chronic, tmax, store)
+    store.close()
+    h5.repack(_filename)
