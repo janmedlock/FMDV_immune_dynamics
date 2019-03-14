@@ -1,18 +1,18 @@
-* Combine 'acute' and 'chronic' output.
-** run_start_times_SATs.h5
-** run_samples.h5
-** plot_start_times_SATs.py
-** plot_samples.py
-
-* Edit manuscript and methods.
-
-* Run over population size and over birth variance.
-
-* Run chronic model with posterior samples.
+* plot_start_times_SATs.py
+** plot_start_times_SATs_infected.h5
+*** Moved 'SAT', 'start_time' column to index levels.
+** plot_start_times_SATs_extinction_time.h5
+*** Moved 'SAT', 'start_time', 'run' columns to index levels.
 
 * Re-run acute samples since they weren't updating the initial
   conditions for different parameter values for the duration maternal
   immunity.
+
+* Run chronic model with posterior samples.
+
+* Run over population size and over birth variance.
+
+* Edit manuscript and methods.
 
 * Work on figures 3 & 4.
 

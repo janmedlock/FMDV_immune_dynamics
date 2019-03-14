@@ -146,9 +146,9 @@ def plot_susceptible_recruitment(ser):
     # Use month for tick label.
     ax.xaxis.set_major_formatter(dates.DateFormatter('%b'))
     seaborn.despine(fig, top=True, right=True)
-    fig.savefig('susceptible_recruitment.png', dpi=300)
+    # fig.savefig('susceptible_recruitment.png', dpi=300)
     fig.savefig('susceptible_recruitment.pdf')
-    fig.savefig('susceptible_recruitment.pgf')
+    # fig.savefig('susceptible_recruitment.pgf')
 
 
 if __name__ == '__main__':

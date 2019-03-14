@@ -1,9 +1,9 @@
 #!/usr/bin/python3
-#
-# To do:
-# * Update for `model='chronic'`.
+
+import itertools
 
 from matplotlib import pyplot, ticker
+from matplotlib.backends import backend_pdf
 import numpy
 import pandas
 import seaborn
@@ -14,35 +14,36 @@ import herd.samples
 import stats
 
 
-def _get_persistence_time(x):
-    t = x.index.get_level_values('time (y)')
-    return t.max() - t.min()
+def _get_persistence_time(ser):
+    infected = ser[['exposed', 'infectious', 'chronic']].sum(axis='columns')
+    if infected.iloc[-1] == 0:
+        t = x.index.get_level_values('time (y)')
+        return t.max() - t.min()
+    else:
+        return numpy.nan
 
 
-def _load_persistence_times(model):
-    # Update here for `model='chronic'`.
-    assert model == 'acute'
-    results = h5.load('run_samples.h5')
-    groups = results.groupby(['SAT', 'sample'])
-    pt = groups.apply(_get_persistence_time)
-    pt.name = 'persistence_time'
-    # Move 'SAT' from row MultiIndex to columns.
-    pt = pt.reset_index('SAT').pivot(columns='SAT')
-    pt = pt.reorder_levels([1, 0], axis='columns')
-    samples = herd.samples.load(model=model)
-    # Put parameter values and persistence time together.
-    df = pandas.concat([samples, pt], axis='columns', copy=False)
-    df.columns.set_names('value', level=1, inplace=True)
-    return df
+def _load_persistence_times():
+    with h5.HDFStore('run_samples.h5', mode='r') as store:
+        df = []
+        for model in ('acute', 'chronic'):
+            for SAT in (1, 2, 3):
+                results = store.select(f'model={model} & SAT={SAT}')
+                groups = results.groupby(['model', 'SAT', 'sample'])
+                pt = groups.aggregate(_get_persistence_time)
+                pt.name = 'persistence_time'
+                samples = herd.samples.load(model=model, SAT=SAT)
+                samples.index = pt.index
+                df.append(pandas.concat([pt, samples], axis='columns',
+                                        copy=False))
+        return pandas.concat(df, axis='index', copy=False)
 
 
-def load_persistence_times(model='acute'):
-    # Update here for `model='chronic'`.
-    assert model == 'acute'
+def load_persistence_times():
     try:
         df = h5.load('plot_samples.h5')
     except FileNotFoundError:
-        df = _load_persistence_times(model=model)
+        df = _load_persistence_times()
         h5.dump(df, 'plot_samples.h5')
     return df
 
@@ -59,13 +60,13 @@ def _get_labels(name, rank):
 
 
 def plot_times(df):
-    outcome = 'persistence_time'
-    df = df.reorder_levels(order=[1, 0], axis='columns')
     fig, ax = pyplot.subplots()
-    for SAT, col in df[outcome].items():
-        x = numpy.hstack([0, col.sort_values()])
-        cdf = numpy.linspace(0, 1, len(x))
-        ax.step(x, 1 - cdf, where='post', label='SAT {}'.format(SAT))
+    groups = df['persistence_time'].groupby(['model', 'SAT'])
+    for ((model, SAT), ser) in groups:
+        x = numpy.hstack([0, ser.sort_values()])
+        survival = numpy.linspace(1, 0, len(x))
+        ax.step(x, survival, where='post',
+                label=f'{model.capitalize()} model, SAT {SAT}')
     ax.set_xlabel('time (y)')
     ax.set_ylabel('Survival')
     ax.set_yscale('log')
@@ -78,57 +79,65 @@ def plot_times(df):
 
 def plot_parameters(df, rank=True, marker='.', s=1, alpha=0.6):
     outcome = 'persistence_time'
-    SATs = df.columns.get_level_values('SAT').unique()
-    params = df.columns.get_level_values('value').unique().drop(outcome)
+    models = df.index.get_level_values('model').unique()
+    SATs = df.index.get_level_values('SAT').unique()
+    params = df.columns.drop(outcome)
     (ylabel, ylabel_resid) = _get_labels(outcome, rank)
-    for SAT in SATs:
-        X = df.loc[:, (SAT, params)]
-        y = df.loc[:, (SAT, outcome)]
-        if rank:
-            X = (X.rank() - 1) / (len(X) - 1)
-            y = (y.rank() - 1) / (len(y) - 1)
-        fig, axes = pyplot.subplots(X.shape[1], 2)
-        for (i, (col, x)) in enumerate(X.items()):
-            _, param = col
-            color = 'C{}'.format(i)
-            (xlabel, xlabel_resid) = _get_labels(param, rank)
-            axes[i, 0].scatter(x, y,
-                               color=color, marker=marker, s=s, alpha=alpha)
-            Z = X.drop(columns=col)
-            x_res = stats.get_residuals(Z, x)
-            y_res = stats.get_residuals(Z, y)
-            axes[i, 1].scatter(x_res, y_res,
-                               color=color, marker=marker, s=s, alpha=alpha)
-            for j in (0, 1):
-                axes[i, j].tick_params(pad=0, labelsize='small')
-            axes[i, 1].yaxis.set_ticks_position('right')
-            axes[i, 1].yaxis.set_label_position('right')
-            for (j, l) in enumerate([xlabel, xlabel_resid]):
-                axes[i, j].set_xlabel(l, labelpad=0, size='small')
-        # Single ylabel per column.
-        for (x, l, ha) in [[0, ylabel, 'left'], [1, ylabel_resid, 'right']]:
-            fig.text(x, 0.5, l, size='small', rotation=90,
-                     horizontalalignment=ha, verticalalignment='center')
-        fig.suptitle('SAT {}'.format(SAT), y=1, size='medium')
-        w = 0.02
-        fig.tight_layout(pad=0, h_pad=0, w_pad=0,
-                         rect=[w, 0, 1 - w, 0.98])
-        fig.savefig('plot_samples_parameters.pdf')
+    with backend_pdf.PdfPages('plot_samples_parameters.pdf') as pdf:
+        for model in models:
+            for SAT in SATs:
+                X = df.loc[(model, SAT, slice(None)), params]
+                y = df.loc[(model, SAT, slice(None)), outcome]
+                if rank:
+                    X = (X.rank() - 1) / (len(X) - 1)
+                    y = (y.rank() - 1) / (len(y) - 1)
+                fig, axes = pyplot.subplots(X.shape[1], 2)
+                for (i, (param, x)) in enumerate(X.items()):
+                    color = f'C{i}'
+                    (xlabel, xlabel_resid) = _get_labels(param, rank)
+                    axes[i, 0].scatter(x, y,
+                                       color=color, marker=marker, s=s,
+                                       alpha=alpha)
+                    Z = X.drop(columns=param)
+                    x_res = stats.get_residuals(Z, x)
+                    y_res = stats.get_residuals(Z, y)
+                    axes[i, 1].scatter(x_res, y_res,
+                                       color=color, marker=marker, s=s,
+                                       alpha=alpha)
+                    for j in (0, 1):
+                        axes[i, j].tick_params(pad=0, labelsize='small')
+                    axes[i, 1].yaxis.set_ticks_position('right')
+                    axes[i, 1].yaxis.set_label_position('right')
+                    for (j, l) in enumerate([xlabel, xlabel_resid]):
+                        axes[i, j].set_xlabel(l, labelpad=0, size='small')
+                # Single ylabel per column.
+                for (x, l, ha) in [[0, ylabel, 'left'], [1, ylabel_resid, 'right']]:
+                    fig.text(x, 0.5, l, size='small', rotation=90,
+                             horizontalalignment=ha, verticalalignment='center')
+                fig.suptitle(f'{model.capitalize()} model, SAT {SAT}',
+                             y=1, size='medium')
+                w = 0.02
+                fig.tight_layout(pad=0, h_pad=0, w_pad=0,
+                                 rect=[w, 0, 1 - w, 0.98])
+                pdf.savefig(fig)
 
 
 def plot_sensitivity(df, rank=True, errorbars=False):
     outcome = 'persistence_time'
-    SATs = df.columns.get_level_values('SAT').unique()
-    params = df.columns.get_level_values('value').unique().drop(outcome)
-    n_samples = len(df)
+    models = df.index.get_level_values('model').unique()
+    SATs = df.index.get_level_values('SAT').unique()
+    models_SATs = list(itertools.product(models, SATs))
+    samples = df.index.get_level_values('sample').unique()
+    params = df.columns.drop(outcome)
+    n_samples = len(samples)
     n_params = len(params)
     y = range(n_params)
     colors = None  # Set the first time through.
     with seaborn.axes_style('whitegrid'):
-        fig, axes = pyplot.subplots(1, len(SATs), sharex='row')
-        for (SAT, ax) in zip(SATs, axes):
-            p = df.loc[:, (SAT, params)]
-            o = df.loc[:, (SAT, outcome)]
+        fig, axes = pyplot.subplots(1, len(models) * len(SATs), sharex='row')
+        for ((model, SAT), ax) in zip(models_SATs, axes):
+            p = df.loc[(model, SAT, slice(None)), params]
+            o = df.loc[(model, SAT, slice(None)), outcome]
             if rank:
                 rho = stats.prcc(p, o)
                 xlabel = 'PRCC'
@@ -141,12 +150,11 @@ def plot_sensitivity(df, rank=True, errorbars=False):
                     rho_CI = stats.pcc_CI(rho, n_samples)
             ix = rho.abs().sort_values().index
             x = rho[ix]
-            labels = ix.get_level_values('value')
             # Colors are defined by the order in the first SAT.
             if colors is None:
-                colors = dict(zip(reversed(labels),
+                colors = dict(zip(reversed(params),
                                   seaborn.color_palette('tab10', n_params)))
-            c = [colors[l] for l in labels]
+            c = [colors[p] for p in params]
             if errorbars:
                 rho_err = pandas.DataFrame({'lower': rho - rho_CI['lower'],
                                             'upper': rho_CI['upper'] - rho}).T
@@ -167,10 +175,10 @@ def plot_sensitivity(df, rank=True, errorbars=False):
             ax.tick_params(axis='y', pad=35)
             ax.set_yticks(y)
             ax.set_ylim(- 0.5, n_params - 0.5)
-            ylabels = [l.replace('_', '\n') for l in labels]
+            ylabels = [p.replace('_', '\n') for p in params]
             ax.set_yticklabels(ylabels, horizontalalignment='center')
             ax.set_xlabel(xlabel)
-            ax.set_title('SAT {}'.format(SAT))
+            ax.set_title(f'{model.capitalize()} model, SAT {SAT}')
             ax.grid(False, axis='y', which='both')
         seaborn.despine(fig, top=True, bottom=False, left=True, right=True)
         fig.tight_layout()
