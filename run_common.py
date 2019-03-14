@@ -17,7 +17,7 @@ _SATs = (1, 2, 3)
 
 def _prepend_index_levels(df, **levels):
     df.index = pandas.MultiIndex.from_arrays(
-        [pandas.Index(v, name=k).repeat(len(df)) for (k, v) in levels.items()]
+        [pandas.Index([v], name=k).repeat(len(df)) for (k, v) in levels.items()]
         + [df.index.get_level_values(n) for n in df.index.names])
 
 
