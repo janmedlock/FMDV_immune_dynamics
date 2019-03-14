@@ -11,7 +11,7 @@ import herd.samples
 
 _models = ('acute', 'chronic')
 # Leave enough space in hdf for all model names.
-_min_itemsize = {'model': max(m.len() for m in _models)}
+_min_itemsize = {'model': max(len(m) for m in _models)}
 _SATs = (1, 2, 3)
 
 
