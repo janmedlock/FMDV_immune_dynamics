@@ -87,7 +87,6 @@ class HDFStore(pandas.HDFStore):
     def repack(self):
         self.close()
         repack(self._path)
-        self.open(self._mode)
 
 
 def load(filename, key='df', **kwds):
