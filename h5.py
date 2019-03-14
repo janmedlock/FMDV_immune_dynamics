@@ -39,9 +39,11 @@ class HDFStore(pandas.HDFStore):
     '''
     pandas.HDFStore() with improved defaults.
     '''
-    def __init__(self, path, *args, key='df', **kwds):
+    def __init__(self, path, *args, key='df', complevel=6,
+                 complib='blosc:zstd', fletcher32=True, **kwds):
         self.key = key
-        super().__init__(path, *args, **kwds)
+        super().__init__(path, *args, complevel=complevel,
+                         complib=complib, fletcher32=fletcher32, **kwds)
 
     def get(self, key=None):
         if key is None:
@@ -94,8 +96,9 @@ def load(filename, key='df', **kwds):
 
 
 def dump(df, filename, key='df', mode='w', format='table', append=True,
-         **kwds):
+         complevel=6, complib='blosc:zstd', fletcher32=True, **kwds):
     with _catch_natural_name_warnings():
         df.to_hdf(filename, key, mode=mode, format=format, append=append,
+                  complevel=complevel, complib=complib, fletcher32=fletcher32,
                   **kwds)
     repack(filename)
