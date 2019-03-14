@@ -1,9 +1,3 @@
-* plot_start_times_SATs.py
-** plot_start_times_SATs_infected.h5
-*** Moved 'SAT', 'start_time' column to index levels.
-** plot_start_times_SATs_extinction_time.h5
-*** Moved 'SAT', 'start_time', 'run' columns to index levels.
-
 * Re-run acute samples since they weren't updating the initial
   conditions for different parameter values for the duration maternal
   immunity.
