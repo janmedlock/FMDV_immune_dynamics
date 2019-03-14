@@ -9,13 +9,10 @@ import h5
 import plot_common
 
 
-def get_filename(model='acute'):
-    filename = f'run_start_times_SATs_{model}.h5'
-    return filename
+filename = f'run_start_times_SATs.h5'
 
 
 def get_downsampled(model='acute'):
-    filename = get_filename(model=model)
     base, ext = os.path.splitext(filename)
     filename_ds = base + '_downsampled' + ext
     try:
@@ -23,11 +20,11 @@ def get_downsampled(model='acute'):
     except FileNotFoundError:
         data_ds = plot_common.downsample(filename)
         h5.dump(data_ds, filename_ds)
-    return data_ds
+    return data_ds.loc[model]
 
 
 def get_infected(model='acute'):
-    filename = f'plot_start_times_SATs_infected_{model}.h5'
+    filename = f'plot_start_times_SATs_infected.h5'
     try:
         infected = h5.load(filename)
     except FileNotFoundError:
@@ -42,7 +39,7 @@ def get_infected(model='acute'):
         infected = infected.reset_index(level=['SAT', 'start_time'],
                                         name='infected')
         h5.dump(infected, filename)
-    return infected
+    return infected.loc[model]
 
 
 def plot_infected_facet(infected, color=None, alpha=1, **kwargs):
@@ -79,7 +76,7 @@ def get_extinction_time_one(infected):
 
 
 def get_extinction_time(model='acute'):
-    filename = f'plot_start_times_SATs_extinction_time_{model}.h5'
+    filename = f'plot_start_times_SATs_extinction_time.h5'
     try:
         extinction_time = h5.load(filename)
     except FileNotFoundError:
@@ -97,7 +94,7 @@ def get_extinction_time(model='acute'):
         extinction_time = extinction_time.reset_index(
             name='extinction time (days)')
         h5.dump(extinction_time, filename)
-    return extinction_time
+    return extinction_time.loc[model]
 
 
 def plot_extinction_time(model='acute'):
@@ -128,7 +125,7 @@ def get_time_to_peak_one(infected):
 
 
 def get_time_to_peak(model='acute'):
-    filename = f'plot_start_times_SATs_time_to_peak_{model}.h5'
+    filename = f'plot_start_times_SATs_time_to_peak.h5'
     try:
         extinction_time = h5.load(filename)
     except FileNotFoundError:
@@ -146,7 +143,7 @@ def get_time_to_peak(model='acute'):
         time_to_peak = time_to_peak.reset_index(level=['SAT', 'start_time'],
                                                 name='time to peak (days)')
         h5.dump(time_to_peak, filename)
-    return time_to_peak
+    return time_to_peak.loc[model]
 
 
 def plot_time_to_peak(model='acute'):
@@ -177,7 +174,7 @@ def get_total_infected_one(x):
 
 
 def get_total_infected(model='acute'):
-    filename = f'plot_start_times_SATs_total_infected_{model}.h5'
+    filename = f'plot_start_times_SATs_total_infected.h5'
     try:
         total_infected = h5.load(filename)
     except FileNotFoundError:
@@ -193,7 +190,7 @@ def get_total_infected(model='acute'):
         total_infected = total_infected.reset_index(level=['SAT', 'start_time'],
                                                     name='total infected')
         h5.dump(total_infected, filename)
-    return total_infected
+    return total_infected.loc[model]
 
 
 def plot_total_infected(model='acute'):
