@@ -17,7 +17,7 @@ import stats
 def _get_persistence_time(ser):
     infected = ser[['exposed', 'infectious', 'chronic']].sum(axis='columns')
     if infected.iloc[-1] == 0:
-        t = x.index.get_level_values('time (y)')
+        t = ser.index.get_level_values('time (y)')
         return t.max() - t.min()
     else:
         return numpy.nan
