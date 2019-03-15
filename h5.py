@@ -71,19 +71,27 @@ class HDFStore(pandas.HDFStore):
             return super().append(key, value, format=format, append=append,
                                   *args, **kwds)
 
-    def get_index(self, *args, key=None, **kwds):
+    def get_index(self, *args, key=None, iterator=False, **kwds):
         # For speed, don't read any columns.
-        df = self.select(*args, key=key, columns=[], **kwds)
-        return df.index
+        df = self.select(*args, key=key, iterator=iterator, columns=[], **kwds)
+        if iterator:
+            return (chunk.index for chunk in df)
+        else:
+            return df.index
 
-    def get_index_names(self, *args, key=None, **kwds):
+    def get_index_names(self, *args, key=None, iterator=False, **kwds):
+        if iterator:
+            raise NotImplementedError
         # For speed, don't read any rows or columns.
-        df = self.select(*args, key=key, stop=0, columns=[], **kwds)
+        df = self.select(*args, key=key, iterator=iterator, stop=0, columns=[],
+                         **kwds)
         return df.index.names
 
-    def get_columns(self, *args, key=None, **kwds):
+    def get_columns(self, *args, key=None, iterator=False, **kwds):
+        if iterator:
+            raise NotImplementedError
         # For speed, don't read any rows.
-        df = self.select(*args, key=key, stop=0, **kwds)
+        df = self.select(*args, key=key, iterator=iterator, stop=0, **kwds)
         return df.columns
 
     def repack(self):
