@@ -14,36 +14,38 @@ import herd.samples
 import stats
 
 
-def _get_persistence_time(ser):
-    infected = ser[['exposed', 'infectious', 'chronic']].sum(axis='columns')
-    if infected.iloc[-1] == 0:
-        t = ser.index.get_level_values('time (y)')
-        return t.max() - t.min()
-    else:
-        return numpy.nan
+def _get_extinction(infected):
+    t = df.index.get_level_values('time (y)')
+    time = t.max() - t.min()
+    observed = (infected.iloc[-1] == 0)
+    return [time, observed]
 
 
-def _load_persistence_times():
+def _load_extinction_times():
     with h5.HDFStore('run_samples.h5', mode='r') as store:
         df = []
         for model in ('acute', 'chronic'):
             for SAT in (1, 2, 3):
-                results = store.select(f'model={model} & SAT={SAT}')
-                groups = results.groupby(['model', 'SAT', 'sample'])
-                pt = groups.aggregate(_get_persistence_time)
-                pt.name = 'persistence_time'
+                infected = store.select(
+                    f'model={model} & SAT={SAT}',
+                    columns=['exposed', 'infectious', 'chronic'])
+                infected = infected.sum(axis='columns')
+                groups = infected.groupby(['model', 'SAT', 'sample'])
+                extinction = groups.apply(_get_extinction)
+                extinction.columns = ['extinction_time',
+                                      'extinction_observed']
                 samples = herd.samples.load(model=model, SAT=SAT)
-                samples.index = pt.index
-                df.append(pandas.concat([pt, samples], axis='columns',
-                                        copy=False))
+                samples.index = extinction.index
+                df.append(pandas.concat([extinction, samples],
+                                        axis='columns', copy=False))
         return pandas.concat(df, axis='index', copy=False)
 
 
-def load_persistence_times():
+def load_extinction_times():
     try:
         df = h5.load('plot_samples.h5')
     except FileNotFoundError:
-        df = _load_persistence_times()
+        df = _load_extinction_times()
         h5.dump(df, 'plot_samples.h5')
     return df
 
@@ -61,7 +63,7 @@ def _get_labels(name, rank):
 
 def plot_times(df):
     fig, ax = pyplot.subplots()
-    groups = df['persistence_time'].groupby(['model', 'SAT'])
+    groups = df['extinction_time'].groupby(['model', 'SAT'])
     for ((model, SAT), ser) in groups:
         x = numpy.hstack([0, ser.sort_values()])
         survival = numpy.linspace(1, 0, len(x))
@@ -78,7 +80,7 @@ def plot_times(df):
 
 
 def plot_parameters(df, rank=True, marker='.', s=1, alpha=0.6):
-    outcome = 'persistence_time'
+    outcome = 'extinction_time'
     models = df.index.get_level_values('model').unique()
     SATs = df.index.get_level_values('SAT').unique()
     params = df.columns.drop(outcome)
@@ -123,7 +125,7 @@ def plot_parameters(df, rank=True, marker='.', s=1, alpha=0.6):
 
 
 def plot_sensitivity(df, rank=True, errorbars=False):
-    outcome = 'persistence_time'
+    outcome = 'extinction_time'
     models = df.index.get_level_values('model').unique()
     SATs = df.index.get_level_values('SAT').unique()
     models_SATs = list(itertools.product(models, SATs))
@@ -186,7 +188,7 @@ def plot_sensitivity(df, rank=True, errorbars=False):
 
 
 if __name__ == '__main__':
-    df = load_persistence_times()
+    df = load_extinction_times()
     plot_times(df)
     # plot_parameters(df)
     plot_sensitivity(df)
