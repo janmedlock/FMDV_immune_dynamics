@@ -47,8 +47,9 @@ def downsample(filename, t_min=0, t_max=10, t_step=1/365):
             data_ds.rename_axis(not_t_names + [t_name],
                                 inplace=True, copy=False)
             data_ds.dropna(axis=0, inplace=True)
-            store_out.put(data_ds,
-                          min_itemsize=run_common._min_itemsize)
+            if len(data_ds) > 0:
+                store_out.put(data_ds,
+                              min_itemsize=run_common._min_itemsize)
 
 
 def set_violins_linewidth(ax, lw):
