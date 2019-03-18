@@ -12,7 +12,7 @@ import run_common
 t_name = 'time (y)'
 
 
-def _downsample_group(group, t, not_t_names):
+def _build_downsample_group(group, t, not_t_names):
     # Only keep time index.
     group = group.reset_index(not_t_names, drop=True)
     # Only interpolate between start and extinction.
@@ -21,7 +21,7 @@ def _downsample_group(group, t, not_t_names):
     return group.reindex(t[mask], method='ffill')
 
 
-def downsample(filename, t_min=0, t_max=10, t_step=1/365):
+def build_downsample(filename, t_min=0, t_max=10, t_step=1/365):
     t = numpy.arange(t_min, t_max, t_step)
     base, ext = os.path.splitext(filename)
     filename_ds = base + '_downsampled' + ext
@@ -39,7 +39,8 @@ def downsample(filename, t_min=0, t_max=10, t_step=1/365):
                 if (chunk is None) or (i < (len(grouper) - 1)):
                     print(', '.join(f'{k}={v}'
                                     for k, v in zip(not_t_names, ix)))
-                    data_ds[ix] = _downsample_group(group, t, not_t_names)
+                    data_ds[ix] = _build_downsample_group(group, t,
+                                                          not_t_names)
                 else:
                     # The last group might be continued in the next chunk.
                     remainder = group
@@ -47,9 +48,7 @@ def downsample(filename, t_min=0, t_max=10, t_step=1/365):
             data_ds.rename_axis(not_t_names + [t_name],
                                 inplace=True, copy=False)
             data_ds.dropna(axis=0, inplace=True)
-            if len(data_ds) > 0:
-                store_out.put(data_ds,
-                              min_itemsize=run_common._min_itemsize)
+            store_out.put(data_ds, min_itemsize=run_common._min_itemsize)
 
 
 def set_violins_linewidth(ax, lw):
