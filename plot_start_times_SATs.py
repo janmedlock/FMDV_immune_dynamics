@@ -18,7 +18,8 @@ def get_downsampled(model='acute'):
     try:
         data_ds = h5.load(filename_ds)
     except FileNotFoundError:
-        plot_common.downsample(filename)
+        t_max = 10 + 11 / 12
+        plot_common.downsample(filename, t_max=t_max)
         data_ds = h5.load(filename_ds)
     return data_ds.loc[model]
 
