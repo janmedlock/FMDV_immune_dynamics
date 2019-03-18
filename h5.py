@@ -56,6 +56,8 @@ class HDFStore(pandas.HDFStore):
         return super().select(key, *args, **kwds)
 
     def put(self, value, format='table', append=True, *args, key=None, **kwds):
+        if len(value) == 0:
+            return
         if key is None:
             key = self.key
         with _catch_natural_name_warnings():
