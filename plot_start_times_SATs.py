@@ -7,6 +7,7 @@ import seaborn
 
 import h5
 import plot_common
+import run_common
 
 
 filename = f'run_start_times_SATs.h5'
@@ -79,20 +80,40 @@ def get_extinction_time(model='acute'):
     try:
         extinction_time = h5.load(filename_et)
     except FileNotFoundError:
-        # Only plot the first start time.
-        where = 'start_time=0'
-        columns = ['exposed', 'infectious', 'chronic']
-        # This should operate on chunks.
-        data = h5.load(filename, where=where, columns=columns)
-        not_t_names = [n for n in data.index.names if n != plot_common.t_name]
-        infected = data.sum(axis='columns')
-        infected.name = 'infected'
-        extinction_time = infected.groupby(level=not_t_names).aggregate(
-            get_extinction_time_one)
-        extinction_time *= 365
-        extinction_time = extinction_time.to_frame(
-            name='extinction time (days)')
-        h5.dump(extinction_time, filename_et)
+        with h5.HDFStore(filename, mode='r') as store_in, \
+             h5.HDFStore(filename_et, mode='w') as store_out:
+            index_names = store_in.get_index_names()
+            not_t_names = [n for n in index_names if n != plot_common.t_name]
+            # Only plot the first start time.
+            where = 'start_time=0'
+            columns = ['exposed', 'infectious', 'chronic']
+            remainder = None
+            # One more empty chunk at the end.
+            for chunk in itertools.chain(store_in.select(where=where,
+                                                         columns=columns,
+                                                         iterator=True),
+                                         [None]):
+                data = pandas.concat([remainder, chunk], copy=False)
+                infected = data.sum(axis='columns')
+                grouper = infected.groupby(not_t_names)
+                data_et = {}
+                for (i, (ix, group)) in enumerate(grouper):
+                    if (chunk is None) or (i < (len(grouper) - 1)):
+                        print(', '.join(f'{k}={v}'
+                                        for k, v in zip(not_t_names, ix)))
+                        data_et[ix] = get_extinction_time_one(group)
+                    else:
+                        # The last group might be continued in the next chunk.
+                        remainder = group
+                data_et = pandas.concat(data_et, copy=False)
+                data_et.rename_axis(not_t_names + [t_name],
+                                    inplace=True, copy=False)
+                data_et *= 365
+                data_et = data_et.to_frame(name='extinction time (days)')
+                if len(data_et) > 0:
+                    store_out.put(data_et,
+                                  min_itemsize=run_common._min_itemsize)
+        extinction_time = h5.load(filename_et)
     return extinction_time.loc[model]
 
 
