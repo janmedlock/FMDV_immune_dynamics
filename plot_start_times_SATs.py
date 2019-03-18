@@ -29,15 +29,10 @@ def get_infected(model='acute'):
     try:
         infected = h5.load(filename_infected)
     except FileNotFoundError:
-        # It might be helpful to reduce what is loaded here to
-        # `where='start_time=0'` and
-        # `columns=['exposed', 'infectious', 'chronic']`.
-        data = get_downsampled(model=model)
-        # Only plot the first start time.
-        mask = (data.index.get_level_values('start_time') == 0.)
-        data = data[mask]
-        infected = data[['exposed', 'infectious', 'chronic']].sum(axis=1)
-        infected = infected.to_frame(name='infected')
+        where = 'start_time=0'
+        columns = ['exposed', 'infectious', 'chronic']
+        data = get_downsampled(model=model, where=where, columns=columns)
+        infected = data.sum(axis='columns').to_frame(name='infected')
         h5.dump(infected, filename_infected)
     return infected.loc[model]
 
@@ -87,9 +82,10 @@ def get_extinction_time(model='acute'):
         # Only plot the first start time.
         where = 'start_time=0'
         columns = ['exposed', 'infectious', 'chronic']
+        # This should operate on chunks.
         data = h5.load(filename, where=where, columns=columns)
         not_t_names = [n for n in data.index.names if n != plot_common.t_name]
-        infected = data[['exposed', 'infectious', 'chronic']].sum(axis=1)
+        infected = data.sum(axis='columns')
         infected.name = 'infected'
         extinction_time = infected.groupby(level=not_t_names).aggregate(
             get_extinction_time_one)
@@ -134,9 +130,10 @@ def get_time_to_peak(model='acute'):
         # Only plot the first start time.
         where = 'start_time=0'
         columns = ['exposed', 'infectious', 'chronic']
+        # This should operate on chunks.
         data = h5.load(filename, where=where, columns=columns)
         not_t_names = [n for n in data.index.names if n != plot_common.t_name]
-        infected = data[['exposed', 'infectious', 'chronic']].sum(axis=1)
+        infected = data.sum(axis='columns')
         infected.name = 'infected'
         time_to_peak = infected.groupby(level=not_t_names).aggregate(
             get_time_to_peak_one)
@@ -181,6 +178,7 @@ def get_total_infected(model='acute'):
         # Only plot the first start time.
         where = 'start_time=0'
         columns = ['recovered']
+        # This should operate on chunks.
         data = h5.load(filename, where=where, columns=columns)
         not_t_names = [n for n in data.index.names if n != plot_common.t_name]
         total_infected = data.groupby(level=not_t_names).aggregate(
