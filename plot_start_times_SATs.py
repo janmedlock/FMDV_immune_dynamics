@@ -3,6 +3,7 @@
 import os.path
 
 from matplotlib import pyplot
+import numpy
 import pandas
 import seaborn
 
@@ -79,7 +80,7 @@ def _build_extinction_time_group(infected):
         t = infected.index.get_level_values(plot_common.t_name)
         return t.max() - t.min()
     else:
-        return None
+        return numpy.nan
 
 
 def _build_extinction_time(filename_out):
