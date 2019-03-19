@@ -1,5 +1,6 @@
 #!/usr/bin/python3
 
+import itertools
 import os
 import subprocess
 import warnings
@@ -107,29 +108,41 @@ class HDFStore(pandas.HDFStore):
 
     def groupby(self, by, *args, key=None, **kwargs):
         # `self.select(iterator=True)` has a chunk size that generally
-        # doesn't not align with groups defined by `.groupby(by)`, so we
-        # carry the last group from one chunk, `remainder`, over to
-        # beginning of the next chunk.
-        chunker = self.select(*args, key=key, iterator=True, **kwargs)
-        n_chunks = int(numpy.ceil((chunker.stop - chunker.start)
-                                  / chunker.chunksize))
-        remainder = None
-        for (i, chunk) in enumerate(chunker):
+        # doesn't not align with groups defined by `.groupby(by)`, so
+        # we carry the last group from one chunk over to beginning of
+        # the next chunk.
+        chunk_iterator = iter(self.select(*args, key=key,
+                                          iterator=True, **kwargs))
+        carryover = None
+        is_last_chunk = False
+        while True:
+            try:
+                chunk = next(chunk_iterator)
+            except StopIteration:
+                # No new data, but we need to handle `carryover`.
+                chunk = None
+                is_last_chunk = True
             # Append the last group from the previous chunk to this chunk.
-            data = pandas.concat((remainder, chunk), copy=False)
+            try:
+                data = pandas.concat((carryover, chunk), copy=False)
+            except ValueError:
+                # No data.  `pandas.concat((None, None))`.
+                break
             grouper = data.groupby(by)
+            group_iterator = iter(grouper)
+            n_groups = len(grouper)
             # If this is not the final chunk, carry the last group over to
             # the next chunk.
-            is_last_chunk = (i == (n_chunks - 1))
-            n_groups = len(grouper)
             stop = n_groups if is_last_chunk else (n_groups - 1)
-            for (j, (ix, group)) in enumerate(grouper):
-                if (j < stop):
-                    print(', '.join(f'{k}={v}' for k, v in zip(by, ix)))
-                    yield (ix, group)
-                else:
-                    # Carry the last group over to the next chunk.
-                    remainder = group
+            for (idx, group) in itertools.islice(group_iterator, stop):
+                print(', '.join(f'{k}={v}' for k, v in zip(by, idx)))
+                yield (idx, group)
+            try:
+                # Carry the last group over to the next chunk.
+                (idx, carryover) = next(group_iterator)
+            except StopIteration:
+                assert is_last_chunk
+                break
 
     def repack(self):
         self.close()
