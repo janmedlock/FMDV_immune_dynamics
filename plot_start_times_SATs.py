@@ -13,23 +13,23 @@ import run_common
 filename = f'run_start_times_SATs.h5'
 
 
-def get_downsampled(model='acute'):
+def get_downsampled():
     t_max = 10 + 11 / 12
     base, ext = os.path.splitext(filename)
     filename_ds = base + '_downsampled' + ext
-    try:
-        data_ds = h5.load(filename_ds)
-    except FileNotFoundError:
+    if not os.path.exists(filename_ds):
         plot_common.build_downsampled(filename, t_max=t_max)
-        data_ds = h5.load(filename_ds)
-    return data_ds.loc[model]
+    return h5.HDFStore(filename_ds, mode='r')
 
 
 def _build_infected(filename_out):
+    store = get_downsampled()
     where = 'start_time=0'
     columns = ['exposed', 'infectious', 'chronic']
-    data = get_downsampled(model=model, where=where, columns=columns)
-    infected = data.sum(axis='columns')
+    infected = []
+    for chunk in store.select(where=where, columns=columns, iterator=True):
+        infected.append(chunk.sum(axis='columns'))
+    infected = pandas.concat(infected)
     infected.name = 'infected'
     h5.dump(infected, filename_out)
 
