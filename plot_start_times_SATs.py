@@ -25,13 +25,13 @@ def get_downsampled(model='acute'):
     return data_ds.loc[model]
 
 
-def _build_infected(filename_infected):
+def _build_infected(filename_out):
     where = 'start_time=0'
     columns = ['exposed', 'infectious', 'chronic']
     data = get_downsampled(model=model, where=where, columns=columns)
     infected = data.sum(axis='columns')
     infected.name = 'infected'
-    h5.dump(infected, filename_infected)
+    h5.dump(infected, filename_out)
 
 
 def get_infected(model='acute'):
@@ -81,7 +81,7 @@ def _build_extinction_time_group(infected):
         return None
 
 
-def _build_extinction_time(filename_et):
+def _build_extinction_time(filename_out):
     with h5.HDFStore(filename, mode='r') as store:
         by = [n for n in store.get_index_names() if n != plot_common.t_name]
         # Only the first start time.
@@ -95,7 +95,7 @@ def _build_extinction_time(filename_et):
     ser = pandas.Series(ser, name='extinction time (days)')
     ser.rename_axis(by, inplace=True)
     ser *= 365
-    h5.dump(ser, filename_et, mode='w',
+    h5.dump(ser, filename_out, mode='w',
             min_itemsize=run_common._min_itemsize)
 
 
@@ -135,7 +135,7 @@ def _build_time_to_peak_group(infected):
     return (t[m] - t.min())
 
 
-def _build_time_to_peak(filename_ttp):
+def _build_time_to_peak(filename_out):
     with h5.HDFStore(filename, mode='r') as store:
         by = [n for n in store.get_index_names() if n != plot_common.t_name]
         # Only the first start time.
@@ -149,7 +149,7 @@ def _build_time_to_peak(filename_ttp):
     ser = pandas.Series(ser, name='time to peak (days)')
     ser.rename_axis(by, inplace=True)
     ser *= 365
-    h5.dump(ser, filename_ttp, mode='w',
+    h5.dump(ser, filename_out, mode='w',
             min_itemsize=run_common._min_itemsize)
 
 
@@ -190,7 +190,7 @@ def _build_total_infected_group(df):
     return R.iloc[-1] - R.iloc[0]
 
 
-def _build_total_infected(filename_ti):
+def _build_total_infected(filename_out):
     with h5.HDFStore(filename, mode='r') as store:
         by = [n for n in store.get_index_names() if n != plot_common.t_name]
         # Only the first start time.
@@ -203,7 +203,7 @@ def _build_total_infected(filename_ti):
     ser = pandas.Series(ser, name='total infected')
     ser.rename_axis(by, inplace=True)
     ser.clip_lower(0, inplace=True)
-    h5.dump(ser, filename_ti, mode='w',
+    h5.dump(ser, filename_out, mode='w',
             min_itemsize=run_common._min_itemsize)
 
 

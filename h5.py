@@ -74,6 +74,11 @@ class HDFStore(pandas.HDFStore):
                                   format=format, append=append,
                                   **kwargs)
 
+    def create_table_index(self, key=None, **kwargs):
+        if key is None:
+            key = self.key
+        return super().create_table_index(key, **kwargs)
+
     def get_index(self, *args, key=None, iterator=False, **kwargs):
         # For speed, don't read any columns.
         df = self.select(*args, key=key, iterator=iterator, columns=[],
