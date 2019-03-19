@@ -13,6 +13,7 @@ def repack(path):
     '''
     Use `ptrepack` to compress the HDF file.
     '''
+    # TODO: Call from Python: something in tables.scripts.ptrepack.
     tmp = path + '.repack'
     try:
         subprocess.run(['ptrepack', '--chunkshape=auto',
