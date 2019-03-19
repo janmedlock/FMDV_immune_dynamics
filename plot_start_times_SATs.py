@@ -3,6 +3,7 @@
 import os.path
 
 from matplotlib import pyplot
+import pandas
 import seaborn
 
 import h5
@@ -29,7 +30,7 @@ def _build_infected(filename_out):
     infected = []
     for chunk in store.select(where=where, columns=columns, iterator=True):
         infected.append(chunk.sum(axis='columns'))
-    infected = pandas.concat(infected)
+    infected = pandas.concat(infected, copy=False)
     infected.name = 'infected'
     h5.dump(infected, filename_out)
 
