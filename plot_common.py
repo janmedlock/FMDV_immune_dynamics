@@ -1,4 +1,3 @@
-import itertools
 import os.path
 
 import matplotlib.collections
@@ -12,43 +11,31 @@ import run_common
 t_name = 'time (y)'
 
 
-def _build_downsample_group(group, t, not_t_names):
+def _build_downsample_group(group, t, by):
     # Only keep time index.
-    group = group.reset_index(not_t_names, drop=True)
+    group = group.reset_index(by, drop=True)
     # Only interpolate between start and extinction.
     mask = ((t >= group.index.min()) & (t <= group.index.max()))
     # Interpolate from the closest point <= t.
     return group.reindex(t[mask], method='ffill')
 
 
-def build_downsample(filename, t_min=0, t_max=10, t_step=1/365):
+def build_downsample(filename_in, t_min=0, t_max=10, t_step=1/365):
     t = numpy.arange(t_min, t_max, t_step)
-    base, ext = os.path.splitext(filename)
-    filename_ds = base + '_downsampled' + ext
-    with h5.HDFStore(filename, mode='r') as store_in, \
-         h5.HDFStore(filename_ds, mode='w') as store_out:
-        index_names = store_in.get_index_names()
-        not_t_names = [n for n in index_names if n != t_name]
-        remainder = None
-        # One more empty chunk at the end.
-        for chunk in itertools.chain(store_in.select(iterator=True), [None]):
-            data = pandas.concat([remainder, chunk], copy=False)
-            grouper = data.groupby(not_t_names)
-            data_ds = {}
-            for (i, (ix, group)) in enumerate(grouper):
-                if (chunk is None) or (i < (len(grouper) - 1)):
-                    print(', '.join(f'{k}={v}'
-                                    for k, v in zip(not_t_names, ix)))
-                    data_ds[ix] = _build_downsample_group(group, t,
-                                                          not_t_names)
-                else:
-                    # The last group might be continued in the next chunk.
-                    remainder = group
-            data_ds = pandas.concat(data_ds, copy=False)
-            data_ds.rename_axis(not_t_names + [t_name],
-                                inplace=True, copy=False)
-            data_ds.dropna(axis=0, inplace=True)
-            store_out.put(data_ds, min_itemsize=run_common._min_itemsize)
+    base, ext = os.path.splitext(filename_in)
+    filename_out = base + '_downsampled' + ext
+    with h5.HDFStore(filename_in, mode='r') as store_in, \
+         h5.HDFStore(filename_out, mode='w') as store_out:
+        by = [n for n in store_in.get_index_names() if n != t_name]
+        for (ix, group) in store_in.groupby(by):
+            downsample = _build_downsample_group(group, t, by)
+            # Append `ix` to the index levels.
+            downsample = pandas.concat({ix: downsample},
+                                       names=by, copy=False)
+            downsample.dropna(axis=0, inplace=True)
+            store_out.put(downsample,
+                          min_itemsize=run_common._min_itemsize)
+        store_out.repack()
 
 
 def set_violins_linewidth(ax, lw):

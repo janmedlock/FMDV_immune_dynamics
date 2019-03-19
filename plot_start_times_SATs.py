@@ -29,7 +29,8 @@ def _build_infected(filename_infected):
     where = 'start_time=0'
     columns = ['exposed', 'infectious', 'chronic']
     data = get_downsampled(model=model, where=where, columns=columns)
-    infected = data.sum(axis='columns').to_frame(name='infected')
+    infected = data.sum(axis='columns')
+    infected.name = 'infected'
     h5.dump(infected, filename_infected)
 
 
@@ -72,7 +73,7 @@ def plot_infected(model='acute'):
     pyplot.savefig(f'plot_start_times_SATs_infected_{model}.pdf')
 
 
-def _build_extinction_time_one(infected):
+def _build_extinction_time_group(infected):
     if infected.iloc[-1] == 0:
         t = infected.index.get_level_values(plot_common.t_name)
         return t.max() - t.min()
@@ -81,37 +82,21 @@ def _build_extinction_time_one(infected):
 
 
 def _build_extinction_time(filename_et):
-    with h5.HDFStore(filename, mode='r') as store_in, \
-         h5.HDFStore(filename_et, mode='w') as store_out:
-        index_names = store_in.get_index_names()
-        not_t_names = [n for n in index_names if n != plot_common.t_name]
-        # Only plot the first start time.
+    with h5.HDFStore(filename, mode='r') as store:
+        by = [n for n in store.get_index_names() if n != plot_common.t_name]
+        # Only the first start time.
         where = 'start_time=0'
+        # Only the infected columns.
         columns = ['exposed', 'infectious', 'chronic']
-        remainder = None
-        # One more empty chunk at the end.
-        for chunk in itertools.chain(store_in.select(where=where,
-                                                     columns=columns,
-                                                     iterator=True),
-                                     [None]):
-            data = pandas.concat([remainder, chunk], copy=False)
-            infected = data.sum(axis='columns')
-            grouper = infected.groupby(not_t_names)
-            data_et = {}
-            for (i, (ix, group)) in enumerate(grouper):
-                if (chunk is None) or (i < (len(grouper) - 1)):
-                    print(', '.join(f'{k}={v}'
-                                    for k, v in zip(not_t_names, ix)))
-                    data_et[ix] = _build_extinction_time_one(group)
-                else:
-                    # The last group might be continued in the next chunk.
-                    remainder = group
-            data_et = pandas.concat(data_et, copy=False)
-            data_et.rename_axis(not_t_names + [t_name],
-                                inplace=True, copy=False)
-            data_et *= 365
-            data_et = data_et.to_frame(name='extinction time (days)')
-            store_out.put(data_et, min_itemsize=run_common._min_itemsize)
+        ser = {}
+        for (ix, group) in store.groupby(by, where=where, columns=columns):
+            infected = group.sum(axis='columns')
+            ser[ix] = _build_extinction_time_group(infected)
+    ser = pandas.Series(ser, name='extinction time (days)')
+    ser.rename_axis(by, inplace=True)
+    ser *= 365
+    h5.dump(ser, filename_et, mode='w',
+            min_itemsize=run_common._min_itemsize)
 
 
 def get_extinction_time(model='acute'):
@@ -144,42 +129,28 @@ def plot_extinction_time(model='acute'):
     pyplot.savefig(f'plot_start_times_SATs_extinction_time_{model}.pdf')
 
 
-def _build_time_to_peak_one(infected):
+def _build_time_to_peak_group(infected):
     t = infected.index.get_level_values(plot_common.t_name)
     m = infected.index.get_loc(infected.idxmax())
     return (t[m] - t.min())
 
 
 def _build_time_to_peak(filename_ttp):
-    with h5.HDFStore(filename, mode='r') as store_in, \
-         h5.HDFStore(filename_ttp, mode='w') as store_out:
-        index_names = store_in.get_index_names()
-        not_t_names = [n for n in index_names if n != plot_common.t_name]
-        # Only plot the first start time.
+    with h5.HDFStore(filename, mode='r') as store:
+        by = [n for n in store.get_index_names() if n != plot_common.t_name]
+        # Only the first start time.
         where = 'start_time=0'
+        # Only the infected columns.
         columns = ['exposed', 'infectious', 'chronic']
-        for chunk in itertools.chain(store_in.select(where=where,
-                                                     columns=columns,
-                                                     iterator=True),
-                                     [None]):
-            data = pandas.concat([remainder, chunk], copy=False)
-            infected = data.sum(axis='columns')
-            grouper = infected.groupby(not_t_names)
-            data_ttp = {}
-            for (i, (ix, group)) in enumerate(grouper):
-                if (chunk is None) or (i < (len(grouper) - 1)):
-                    print(', '.join(f'{k}={v}'
-                                    for k, v in zip(not_t_names, ix)))
-                    data_ttp[ix] = _build_time_to_peak_one(group)
-                else:
-                    # The last group might be continued in the next chunk.
-                    remainder = group
-            data_ttp = pandas.concat(data_ttp, copy=False)
-            data_ttp.rename_axis(not_t_names + [t_name],
-                                 inplace=True, copy=False)
-            data_ttp *= 365
-            data_ttp = data_ttp.to_frame(name='time to peak (days)')
-            store_out.put(data_ttp, min_itemsize=run_common._min_itemsize)
+        ser = {}
+        for (ix, group) in store.groupby(by, where=where, columns=columns):
+            infected = group.sum(axis='columns')
+            ser[ix] = _build_time_to_peak_group(infected)
+    ser = pandas.Series(ser, name='time to peak (days)')
+    ser.rename_axis(by, inplace=True)
+    ser *= 365
+    h5.dump(ser, filename_ttp, mode='w',
+            min_itemsize=run_common._min_itemsize)
 
 
 def get_time_to_peak(model='acute'):
@@ -213,41 +184,27 @@ def plot_time_to_peak(model='acute'):
     pyplot.savefig(f'plot_start_times_SATs_time_to_peak_{model}.pdf')
 
 
-def _build_total_infected_one(df):
+def _build_total_infected_group(df):
     R = df['recovered']
     # This sucks to approximate total infected.
     return R.iloc[-1] - R.iloc[0]
 
 
 def _build_total_infected(filename_ti):
-    with h5.HDFStore(filename, mode='r') as store_in, \
-         h5.HDFStore(filename_ti, mode='w') as store_out:
-        index_names = store_in.get_index_names()
-        not_t_names = [n for n in index_names if n != plot_common.t_name]
-        # Only plot the first start time.
+    with h5.HDFStore(filename, mode='r') as store:
+        by = [n for n in store.get_index_names() if n != plot_common.t_name]
+        # Only the first start time.
         where = 'start_time=0'
+        # Only the recovered column.
         columns = ['recovered']
-        remainder = None
-        # One more empty chunk at the end.
-        for chunk in itertools.chain(store_in.select(where=where,
-                                                     columns=columns,
-                                                     iterator=True),
-                                     [None]):
-            data = pandas.concat([remainder, chunk], copy=False)
-            grouper = data.groupby(not_t_names)
-            data_ti = {}
-            for (i, (ix, group)) in enumerate(grouper):
-                if (chunk is None) or (i < (len(grouper) - 1)):
-                    print(', '.join(f'{k}={v}'
-                                    for k, v in zip(not_t_names, ix)))
-                    data_ti[ix] = _build_total_infected_one(group)
-                else:
-                    # The last group might be continued in the next chunk.
-                    remainder = group
-            data_ti = pandas.concat(data_ti, copy=False)
-            data_ti.clip_lower(0, inplace=True)
-            data_ti = data_ti.to_frame(name='total infected')
-            store_out.put(data_ti, min_itemsize=run_common._min_itemsize)
+        ser = {}
+        for (ix, group) in store.groupby(by, where=where, columns=columns):
+            ser[ix] = _build_total_infected_group(group)
+    ser = pandas.Series(ser, name='total infected')
+    ser.rename_axis(by, inplace=True)
+    ser.clip_lower(0, inplace=True)
+    h5.dump(ser, filename_ti, mode='w',
+            min_itemsize=run_common._min_itemsize)
 
 
 def get_total_infected(model='acute'):

@@ -9,20 +9,20 @@ import pandas
 import tables
 
 
-def repack(filename):
+def repack(path):
     '''
     Use `ptrepack` to compress the HDF file.
     '''
-    tmp = filename + '.repack'
+    tmp = path + '.repack'
     try:
         subprocess.run(['ptrepack', '--chunkshape=auto',
                         '--propindexes', '--complevel=6',
                         '--complib=blosc:zstd', '--fletcher32=1',
-                        filename, tmp],
+                        path, tmp],
                        check=True)
     except subprocess.CalledProcessError:
         os.remove(tmp)
-    os.rename(tmp, filename)
+    os.rename(tmp, path)
 
 
 class _catch_natural_name_warnings(warnings.catch_warnings):
@@ -39,23 +39,24 @@ class HDFStore(pandas.HDFStore):
     '''
     pandas.HDFStore() with improved defaults.
     '''
-    def __init__(self, path, *args, key='df', complevel=6,
-                 complib='blosc:zstd', fletcher32=True, **kwds):
+    def __init__(self, path, key='df',
+                 complevel=6, complib='blosc:zstd', fletcher32=True,
+                 **kwargs):
         self.key = key
-        super().__init__(path, *args, complevel=complevel,
-                         complib=complib, fletcher32=fletcher32, **kwds)
+        super().__init__(path, complevel=complevel,
+                         complib=complib, fletcher32=fletcher32, **kwargs)
 
     def get(self, key=None):
         if key is None:
             key = self.key
         return super().get(key)
 
-    def select(self, *args, key=None, **kwds):
+    def select(self, *args, key=None, **kwargs):
         if key is None:
             key = self.key
-        return super().select(key, *args, **kwds)
+        return super().select(key, *args, **kwargs)
 
-    def put(self, value, format='table', append=True, *args, key=None, **kwds):
+    def put(self, value, key=None, format='table', append=True, **kwargs):
         if len(value) == 0:
             return
         if key is None:
@@ -63,52 +64,77 @@ class HDFStore(pandas.HDFStore):
         with _catch_natural_name_warnings():
             return super().put(key, value,
                                format=format, append=append,
-                               *args, **kwds)
+                               **kwargs)
 
-    def append(self, value, format='table', append=True, *args, key=None,
-               **kwds):
+    def append(self, value, key=None, format='table', append=True, **kwargs):
         if key is None:
             key = self.key
         with _catch_natural_name_warnings():
-            return super().append(key, value, format=format, append=append,
-                                  *args, **kwds)
+            return super().append(key, value,
+                                  format=format, append=append,
+                                  **kwargs)
 
-    def get_index(self, *args, key=None, iterator=False, **kwds):
+    def get_index(self, *args, key=None, iterator=False, **kwargs):
         # For speed, don't read any columns.
-        df = self.select(*args, key=key, iterator=iterator, columns=[], **kwds)
+        df = self.select(*args, key=key, iterator=iterator, columns=[],
+                         **kwargs)
         if iterator:
             return (chunk.index for chunk in df)
         else:
             return df.index
 
-    def get_index_names(self, *args, key=None, iterator=False, **kwds):
+    def get_index_names(self, *args, key=None, iterator=False, **kwargs):
         if iterator:
             raise NotImplementedError
         # For speed, don't read any rows or columns.
         df = self.select(*args, key=key, iterator=iterator, stop=0, columns=[],
-                         **kwds)
+                         **kwargs)
         return df.index.names
 
-    def get_columns(self, *args, key=None, iterator=False, **kwds):
+    def get_columns(self, *args, key=None, iterator=False, **kwargs):
         if iterator:
             raise NotImplementedError
         # For speed, don't read any rows.
-        df = self.select(*args, key=key, iterator=iterator, stop=0, **kwds)
+        df = self.select(*args, key=key, iterator=iterator, stop=0, **kwargs)
         return df.columns
+
+    def groupby(self, by, *args, key=None, **kwargs):
+        # `self.select(iterator=True)` has a chunk size that generally
+        # doesn't not align with groups defined by `.groupby(by)`, so we
+        # carry the last group from one chunk, `remainder`, over to
+        # beginning of the next chunk.
+        chunker = self.select(*args, key=key, iterator=True, **kwargs)
+        n_chunks = int(numpy.ceil((chunker.stop - chunker.start)
+                                  / chunker.chunksize))
+        remainder = None
+        for (i, chunk) in enumerate(chunker):
+            # Append the last group from the previous chunk to this chunk.
+            data = pandas.concat((remainder, chunk), copy=False)
+            grouper = data.groupby(by)
+            # If this is not the final chunk, carry the last group over to
+            # the next chunk.
+            is_last_chunk = (i == (n_chunks - 1))
+            n_groups = len(grouper)
+            stop = n_groups if is_last_chunk else (n_groups - 1)
+            for (j, (ix, group)) in enumerate(grouper):
+                if (j < stop):
+                    print(', '.join(f'{k}={v}' for k, v in zip(by, ix)))
+                    yield (ix, group)
+                else:
+                    # Carry the last group over to the next chunk.
+                    remainder = group
 
     def repack(self):
         self.close()
         repack(self._path)
 
 
-def load(filename, key='df', **kwds):
-    return pandas.read_hdf(filename, key, **kwds)
+def load(path, *args, **kwargs):
+    with HDFStore(path, mode='r') as store:
+        return store.select(*args, **kwargs)
 
 
-def dump(df, filename, key='df', mode='w', format='table', append=True,
-         complevel=6, complib='blosc:zstd', fletcher32=True, **kwds):
-    with _catch_natural_name_warnings():
-        df.to_hdf(filename, key, mode=mode, format=format, append=append,
-                  complevel=complevel, complib=complib, fletcher32=fletcher32,
-                  **kwds)
-    repack(filename)
+def dump(df, path, **kwargs):
+    with HDFStore(path) as store:
+        store.put(df, **kwargs)
+        store.repack()
