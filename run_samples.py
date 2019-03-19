@@ -3,7 +3,7 @@
 import os.path
 
 import h5
-import herd
+import run_common
 
 
 if __name__ == '__main__':
