@@ -33,7 +33,8 @@ def _build_infected(filename_out):
         infected.append(chunk.sum(axis='columns'))
     infected = pandas.concat(infected, copy=False)
     infected.name = 'infected'
-    h5.dump(infected, filename_out)
+    h5.dump(infected, filename_out, mode='w',
+            min_itemsize=run_common._min_itemsize)
 
 
 def get_infected(model='acute'):

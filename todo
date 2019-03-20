@@ -1,8 +1,4 @@
-* Re-run acute samples since they weren't updating the initial
-  conditions for different parameter values for the duration maternal
-  immunity.
-
-* Run chronic model with posterior samples.
+* run_samples.py is running on barney.
 
 * Run over population size and over birth variance.
 

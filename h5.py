@@ -154,7 +154,7 @@ def load(path, *args, **kwargs):
         return store.select(*args, **kwargs)
 
 
-def dump(df, path, **kwargs):
-    with HDFStore(path) as store:
+def dump(df, path, mode='a', **kwargs):
+    with HDFStore(path, mode=mode) as store:
         store.put(df, **kwargs)
         store.repack()
