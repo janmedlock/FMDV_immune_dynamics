@@ -6,7 +6,7 @@ from matplotlib import pyplot
 sys.path.append('..')
 import herd
 from herd._initial_conditions import find_hazard_infection, plot
-sys.path.pop(-1)
+sys.path.pop()
 
 
 models = ('acute', 'chronic')
