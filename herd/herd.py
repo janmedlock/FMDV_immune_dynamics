@@ -109,7 +109,7 @@ class Herd(set):
                 break
         if self.run_number is not None:
             t_last = result[-1][0]
-            print('{}Simulation #{} ended after {:g} days.'.format(
+            print('{}simulation #{} ended after {:g} days.'.format(
                 self.logging_prefix, self.run_number,
                 365 * (t_last - self.params.start_time)))
         result = DataFrame.from_dict(dict(result),
