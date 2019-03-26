@@ -37,12 +37,14 @@ def run_many(parameters, tmax, nruns, *args, **kwargs):
                          copy=False)
 
 
-def run_SATs(model, tmax, nruns, hdfstore, *args, **kwargs):
+def run_SATs(model, tmax, nruns, hdfstore, logging_prefix='', *args, **kwargs):
     for SAT in _SATs:
         p = herd.Parameters(model=model, SAT=SAT)
-        print(f'Running SAT {SAT}.')
+        logging_prefix_SAT = logging_prefix + f'SAT {SAT}, '
         t0 = time.time()
-        df = run_many(p, tmax, nruns, *args, **kwargs)
+        df = run_many(p, tmax, nruns,
+                      logging_prefix=logging_prefix_SAT,
+                      *args, **kwargs)
         t1 = time.time()
         print(f'Run time: {t1 - t0} seconds.')
         # Save the data for this `SAT`.
@@ -58,13 +60,11 @@ def run_start_times(model, SAT, tmax, nruns, hdfstore, logging_prefix='',
     for start_time in numpy.arange(0, 1, 1 / 12):
         p = herd.Parameters(model=model, SAT=SAT)
         p.start_time = start_time
-        logging_prefix_ = (logging_prefix
-                           + f'Start time {start_time * 12:g} / 12')
-        print(f'Running {logging_prefix_}.')
-        logging_prefix_ += ', '
+        logging_prefix_start = (logging_prefix
+                                + f'Start time {start_time * 12:g} / 12, ')
         t0 = time.time()
         df = run_many(p, tmax, nruns,
-                      logging_prefix=logging_prefix_,
+                      logging_prefix=logging_prefix_start,
                       *args, **kwargs)
         t1 = time.time()
         print(f'Run time: {t1 - t0} seconds.')
@@ -75,10 +75,12 @@ def run_start_times(model, SAT, tmax, nruns, hdfstore, logging_prefix='',
                      min_itemsize=_min_itemsize)
 
 
-def run_start_times_SATs(model, tmax, nruns, hdfstore, *args, **kwargs):
+def run_start_times_SATs(model, tmax, nruns, hdfstore, logging_prefix='',
+                         *args, **kwargs):
     for SAT in _SATs:
+        logging_prefix_SAT = logging_prefix + f'SAT {SAT}, '
         run_start_times(model, SAT, tmax, nruns, hdfstore,
-                        logging_prefix=f'SAT {SAT}, ',
+                        logging_prefix=logging_prefix_SAT,
                         *args, **kwargs)
 
 
@@ -95,7 +97,6 @@ def _run_samples_SAT(model, SAT, tmax, *args, **kwargs):
     '''Run many simulations in parallel.'''
     samples = herd.samples.load(model=model, SAT=SAT)
     parameters = herd.Parameters(model=model, SAT=SAT)
-    print(f'Running SAT {SAT}.')
     t0 = time.time()
     results = Parallel(n_jobs=-1)(
         delayed(_run_sample)(parameters, s, tmax, i, *args, **kwargs)
@@ -106,9 +107,12 @@ def _run_samples_SAT(model, SAT, tmax, *args, **kwargs):
                          names=['sample'], copy=False)
 
 
-def run_samples(model, tmax, hdfstore, *args, **kwargs):
+def run_samples(model, tmax, hdfstore, logging_prefix='', *args, **kwargs):
     for SAT in (1, 2, 3):
-        _run_samples_SAT(model, SAT, tmax, *args, **kwargs)
+        logging_prefix_SAT = logging_prefix + f'SAT {SAT}, '
+        df = _run_samples_SAT(model, SAT, tmax,
+                              logging_prefix=logging_prefix_SAT,
+                              *args, **kwargs)
         # Save the data for this `SAT`.
         # Add 'model' and 'SAT' levels to the index.
         _prepend_index_levels(df, model=model, SAT=SAT)

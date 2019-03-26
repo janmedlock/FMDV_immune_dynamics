@@ -13,5 +13,6 @@ if __name__ == '__main__':
     _filename = _filebase + '.h5'
     with h5.HDFStore(_filename) as store:
         for model in ('acute', 'chronic'):
-            run_common.run_samples(model, tmax, store)
+            run_common.run_samples(model, tmax, store,
+                                   logging_prefix=f'model {model}, ')
         store.repack(_filename)
