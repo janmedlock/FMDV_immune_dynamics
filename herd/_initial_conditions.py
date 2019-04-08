@@ -4,13 +4,13 @@ from functools import partial
 import os.path
 import re
 
-from joblib import Memory
 import numpy
 import pandas
 from scipy.integrate import quadrature
 from scipy.optimize import minimize
 
 from herd import chronic_recovery, maternal_immunity_waning, parameters
+from herd._memory import Memory
 
 
 _filename = 'data/Hedger_1972_survey_data.xlsx'
