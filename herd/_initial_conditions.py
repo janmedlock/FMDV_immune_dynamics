@@ -67,7 +67,7 @@ def _vectorize(**kwds):
 # Set up the cache in a subdirectory of the directory that this source
 # file is in.
 _cachedir = os.path.join(os.path.dirname(__file__), '_cache')
-_cache = Memory(_cachedir, verbose=0)
+_cache = Memory(_cachedir, verbose=1)
 
 
 class SParameters(parameters.Parameters):
