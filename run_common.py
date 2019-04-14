@@ -87,34 +87,38 @@ def run_start_times_SATs(model, tmax, nruns, hdfstore, logging_prefix='',
 def _run_sample(parameters, sample, tmax, run_number, *args, **kwargs):
     '''Run one simulation.'''
     p = copy.copy(parameters)
-    for k, v in sample.items():
+    for (k, v) in sample.items():
         setattr(p, k, v)
     h = herd.Herd(p, run_number=run_number, *args, **kwargs)
     return h.run(tmax)
 
 
-def _run_samples_SAT(model, SAT, tmax, *args, **kwargs):
+def _run_samples_SAT(model, SAT, tmax, hdfstore, *args, save_every=100,
+                     **kwargs):
     '''Run many simulations in parallel.'''
     samples = herd.samples.load(model=model, SAT=SAT)
     parameters = herd.Parameters(model=model, SAT=SAT)
     t0 = time.time()
-    results = Parallel(n_jobs=-1)(
-        delayed(_run_sample)(parameters, s, tmax, i, *args, **kwargs)
-        for i, s in samples.iterrows())
+    with Parallel(n_jobs=-1) as parallel:
+        for start in range(0, len(samples), save_every):
+            end = start + save_every
+            idx = samples.index[start:end]
+            results = parallel(
+                delayed(_run_sample)(parameters, s, tmax, i, *args, **kwargs)
+                for (i, s) in samples.loc[idx].iterrows())
+            # Save the data for these samples.
+            df = pandas.concat(results, keys=idx, copy=False)
+            # Add 'model' and 'SAT' levels to the index.
+            _prepend_index_levels(df, model=model, SAT=SAT)
+            hdfstore.put(df, format='table', append=True,
+                         min_itemsize=_min_itemsize)
     t1 = time.time()
     print(f'Run time: {t1 - t0} seconds.')
-    return pandas.concat(results, keys=range(len(samples)),
-                         names=['sample'], copy=False)
 
 
 def run_samples(model, tmax, hdfstore, logging_prefix='', *args, **kwargs):
     for SAT in (1, 2, 3):
         logging_prefix_SAT = logging_prefix + f'SAT {SAT}, '
-        df = _run_samples_SAT(model, SAT, tmax,
-                              logging_prefix=logging_prefix_SAT,
-                              *args, **kwargs)
-        # Save the data for this `SAT`.
-        # Add 'model' and 'SAT' levels to the index.
-        _prepend_index_levels(df, model=model, SAT=SAT)
-        hdfstore.put(df, format='table', append=True,
-                     min_itemsize=_min_itemsize)
+        _run_samples_SAT(model, SAT, tmax, hdfstore,
+                         logging_prefix=logging_prefix_SAT,
+                         *args, **kwargs)
