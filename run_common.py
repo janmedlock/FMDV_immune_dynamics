@@ -93,8 +93,7 @@ def _run_sample(parameters, sample, tmax, model, SAT, sample_number,
         setattr(p, k, v)
     h = herd.Herd(p, run_number=sample_number, *args, **kwargs)
     df = h.run(tmax)
-    # Add 'model', 'SAT', and 'sample' levels to the index.
-    # _prepend_index_levels(df, model=model, SAT=SAT, sample=sample_number)
+    df.reset_index(inplace=True)
     # Save the data for this sample.
     filename = f'run_samples/{model}/{SAT}/{sample_number}.npy'
     numpy.save(filename, df)
