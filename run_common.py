@@ -85,7 +85,8 @@ def run_start_times_SATs(model, tmax, nruns, hdfstore, logging_prefix='',
                         *args, **kwargs)
 
 
-def _run_sample(parameters, sample, tmax, sample_number, *args, **kwargs):
+def _run_sample(parameters, sample, tmax, model, SAT, sample_number,
+                *args, **kwargs):
     '''Run one simulation.'''
     p = copy.copy(parameters)
     for (k, v) in sample.items():
@@ -106,7 +107,8 @@ def _run_samples_SAT(model, SAT, tmax, *args, **kwargs):
     parameters = herd.Parameters(model=model, SAT=SAT)
     t0 = time.time()
     Parallel(n_jobs=-1)(
-        delayed(_run_sample)(parameters, s, tmax, i, *args, **kwargs)
+        delayed(_run_sample)(parameters, s, tmax, model, SAT, i,
+                             *args, **kwargs)
         for (i, s) in samples.iterrows())
     t1 = time.time()
     print(f'Run time: {t1 - t0} seconds.')
