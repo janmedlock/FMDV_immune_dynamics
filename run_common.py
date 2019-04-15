@@ -1,4 +1,5 @@
 import copy
+import os
 import time
 
 from joblib import delayed, Parallel
@@ -84,41 +85,37 @@ def run_start_times_SATs(model, tmax, nruns, hdfstore, logging_prefix='',
                         *args, **kwargs)
 
 
-def _run_sample(parameters, sample, tmax, run_number, *args, **kwargs):
+def _run_sample(parameters, sample, tmax, sample_number, *args, **kwargs):
     '''Run one simulation.'''
     p = copy.copy(parameters)
     for (k, v) in sample.items():
         setattr(p, k, v)
-    h = herd.Herd(p, run_number=run_number, *args, **kwargs)
-    return h.run(tmax)
+    h = herd.Herd(p, run_number=sample_number, *args, **kwargs)
+    df = h.run(tmax)
+    # Add 'model', 'SAT', and 'sample' levels to the index.
+    # _prepend_index_levels(df, model=model, SAT=SAT, sample=sample_number)
+    # Save the data for this sample.
+    filename = f'run_samples/{model}/{SAT}/{sample_number}.npy'
+    numpy.save(filename, df)
 
 
-def _run_samples_SAT(model, SAT, tmax, hdfstore, *args, save_every=100,
-                     **kwargs):
+def _run_samples_SAT(model, SAT, tmax, *args, **kwargs):
     '''Run many simulations in parallel.'''
+    os.makedirs(f'run_samples/{model}/{SAT}/', exist_ok=True)
     samples = herd.samples.load(model=model, SAT=SAT)
     parameters = herd.Parameters(model=model, SAT=SAT)
     t0 = time.time()
-    with Parallel(n_jobs=-1) as parallel:
-        for start in range(0, len(samples), save_every):
-            end = start + save_every
-            idx = samples.index[start:end]
-            results = parallel(
-                delayed(_run_sample)(parameters, s, tmax, i, *args, **kwargs)
-                for (i, s) in samples.loc[idx].iterrows())
-            # Save the data for these samples.
-            df = pandas.concat(results, keys=idx, copy=False)
-            # Add 'model' and 'SAT' levels to the index.
-            _prepend_index_levels(df, model=model, SAT=SAT)
-            hdfstore.put(df, format='table', append=True,
-                         min_itemsize=_min_itemsize)
+    Parallel(n_jobs=-1)(
+        delayed(_run_sample)(parameters, s, tmax, i, *args, **kwargs)
+        for (i, s) in samples.iterrows())
     t1 = time.time()
     print(f'Run time: {t1 - t0} seconds.')
 
 
-def run_samples(model, tmax, hdfstore, logging_prefix='', *args, **kwargs):
+def run_samples(model, tmax, logging_prefix='', *args, **kwargs):
+    os.makedirs(f'run_samples/{model}/', exist_ok=True)
     for SAT in (1, 2, 3):
         logging_prefix_SAT = logging_prefix + f'SAT {SAT}, '
-        _run_samples_SAT(model, SAT, tmax, hdfstore,
+        _run_samples_SAT(model, SAT, tmax,
                          logging_prefix=logging_prefix_SAT,
                          *args, **kwargs)
