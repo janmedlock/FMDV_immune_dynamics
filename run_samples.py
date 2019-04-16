@@ -38,7 +38,8 @@ def _run_samples_SAT(model, SAT, tmax, path, logging_prefix):
     samples = herd.samples.load(model=model, SAT=SAT)
     parameters = herd.Parameters(model=model, SAT=SAT)
     Parallel(n_jobs=-1)(
-        delayed(_run_sample)(parameters, s, tmax, path, i, logging_prefix_SAT)
+        delayed(_run_sample)(parameters, s, tmax, path_SAT, i,
+                             logging_prefix_SAT)
         for (i, s) in samples.iterrows())
 
 
@@ -65,7 +66,7 @@ def combine():
     with h5.HDFStore('run_samples.h5', mode='r') as store:
         idx = store.get_index().droplevel(_index).unique()
         for model in os.listdir(_path):
-            path_model = os.path.join(path, model)
+            path_model = os.path.join(_path, model)
             for SAT_s in os.listdir(path_model):
                 SAT = int(SAT_s)
                 path_SAT = os.path.join(path_model, SAT_s)
