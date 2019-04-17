@@ -24,7 +24,6 @@ def _run_sample(parameters, sample, tmax, path, sample_number, logging_prefix):
         setattr(p, k, v)
     h = herd.Herd(p, run_number=sample_number, logging_prefix=logging_prefix)
     df = h.run(tmax)
-    df.reset_index(inplace=True)
     # Save the data for this sample.
     filename = os.path.join(path, f'{sample_number}.npy')
     numpy.save(filename, df.to_records())
