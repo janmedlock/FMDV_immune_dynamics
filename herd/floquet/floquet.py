@@ -1,12 +1,12 @@
 import os.path
 
+from joblib import Memory
 import numpy
 from scipy.integrate import trapz
 from scipy.optimize import brentq
 
 from herd.floquet import dominant_eigen, monodromy
 from herd.floquet.period import period
-from herd._memory import Memory
 
 
 _agemax_default = 35
