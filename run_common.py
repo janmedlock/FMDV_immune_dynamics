@@ -46,8 +46,7 @@ def run_SATs(model, tmax, nruns, hdfstore, logging_prefix='', *args, **kwargs):
         # Save the data for this `SAT`.
         # Add 'model' and 'SAT' levels to the index.
         _prepend_index_levels(df, model=model, SAT=SAT)
-        hdfstore.put(df, format='table', append=True,
-                     min_itemsize=_min_itemsize)
+        hdfstore.put(df, min_itemsize=_min_itemsize)
 
 
 def run_start_times(model, SAT, tmax, nruns, hdfstore, logging_prefix='',
@@ -67,8 +66,7 @@ def run_start_times(model, SAT, tmax, nruns, hdfstore, logging_prefix='',
         # Save the data for this `start_time`.
         # Add 'model', 'SAT', and 'start_time' levels to the index.
         _prepend_index_levels(df, model=model, SAT=SAT, start_time=start_time)
-        hdfstore.put(df, format='table', append=True,
-                     min_itemsize=_min_itemsize)
+        hdfstore.put(df, min_itemsize=_min_itemsize)
 
 
 def run_start_times_SATs(model, tmax, nruns, hdfstore, logging_prefix='',

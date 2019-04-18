@@ -62,27 +62,27 @@ def _get_sample_number(filename):
 
 
 def combine():
-    with h5.HDFStore('run_samples.h5', mode='r') as store:
-        idx = store.get_index().droplevel(_index).unique()
+    with h5.HDFStore('run_samples.h5', mode='a') as store:
+        # (model, SAT, sample) that are already in `store`.
+        store_idx = store.get_index().droplevel(_index).unique()
         for model in os.listdir(_path):
             path_model = os.path.join(_path, model)
-            for SAT_s in os.listdir(path_model):
-                SAT = int(SAT_s)
-                path_SAT = os.path.join(path_model, SAT_s)
+            for SAT in map(int, os.listdir(path_model)):
+                path_SAT = os.path.join(path_model, str(SAT))
                 # Sort in integer order.
                 for filename in sorted(os.listdir(path_SAT),
                                        key=_get_sample_number):
                     sample = _get_sample_number(filename)
-                    if (model, SAT, sample) not in idx:
+                    if (model, SAT, sample) not in store_idx:
                         path_sample = os.path.join(path_SAT, filename)
-                        df = pandas.DataFrame(numpy.load(path_sample))
-                        df.set_index(_index, inplace=True)
+                        recarray = numpy.load(path_sample)
+                        df = pandas.DataFrame.from_records(recarray,
+                                                           index=_index)
                         run_common._prepend_index_levels(df,
                                                          model=model,
                                                          SAT=SAT,
                                                          sample=sample)
-                        store.put(df, format='table', append=True,
-                                  min_itemsize=run_common._min_itemsize)
+                        store.put(df, min_itemsize=run_common._min_itemsize)
 
 
 if __name__ == '__main__':
