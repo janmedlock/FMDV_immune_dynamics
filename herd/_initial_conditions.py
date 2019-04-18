@@ -56,30 +56,6 @@ def _load_data(params):
     return data
 
 
-# Some of the functions below are slow, so the values are cached
-# to disk with `joblib.Memory()` so that they are only computed once.
-# Set up the cache in a subdirectory of the directory that this source
-# file is in.
-_cachedir = os.path.join(os.path.dirname(__file__), '_cache')
-_cache = Memory(_cachedir, verbose=0)
-
-
-class SParameters(parameters.Parameters):
-    '''Build a `herd.parameters.Parameters()`-like object that
-    only has the parameters needed by `S_logprob()` etc
-    so that they can be efficiently cached.'''
-    def __init__(self, params):
-        self.model = params.model
-        # Generally, the values of these parameters should be
-        # floats, so explicitly convert them so the cache doesn't
-        # get duplicated keys for the float and int representation
-        # of the same number, e.g. `float(0)` and `int(0)`.
-        self.maternal_immunity_duration_mean = float(
-            params.maternal_immunity_duration_mean)
-        self.maternal_immunity_duration_shape = float(
-            params.maternal_immunity_duration_shape)
-
-
 def _S_logprob_integrand(b, hazard_infection, maternal_immunity_waningRV):
     return numpy.exp(maternal_immunity_waningRV.logpdf(b)
                      + hazard_infection * b)
@@ -93,8 +69,6 @@ def _vectorize(**kwds):
 
 # Make the function able to handle vector-valued `age`.
 @_vectorize(otypes=[float])
-# The function is slow because of the calls to `scipy.integrate.quadrature()`.
-@_cache.cache
 def _S_logprob_integral(age, hazard_infection, params):
     maternal_immunity_waningRV = maternal_immunity_waning.gen(params)
     val, _ = quadrature(_S_logprob_integrand, 0, age,
@@ -112,10 +86,9 @@ def S_logprob(age, hazard_infection, params):
                     * exp(hazard_infection * b) db
       - hazard_infection * a.'''
     assert hazard_infection >= 0, hazard_infection
-    params_cache = SParameters(params)
     # Handle log(0).
     return numpy.ma.filled(
-        numpy.ma.log(_S_logprob_integral(age, hazard_infection, params_cache))
+        numpy.ma.log(_S_logprob_integral(age, hazard_infection, params))
         - hazard_infection * age,
         - numpy.inf)
 
@@ -125,32 +98,12 @@ def S_prob(age, hazard_infection, params):
     return numpy.exp(S_logprob(age, hazard_infection, params))
 
 
-class CParameters(SParameters):
-    '''Build a `herd.parameters.Parameters()`-like object that
-    only has the parameters needed by `C_logprob()` etc
-    so that they can be efficiently cached.'''
-    def __init__(self, params):
-        # This needs the parameters in `SParameters()`
-        # and a few more.
-        super().__init__(params)
-        # Generally, the values of these parameters should be
-        # floats, so explicitly convert them so the cache doesn't
-        # get duplicated keys for the float and int representation
-        # of the same number, e.g. `float(0)` and `int(0)`.
-        self.chronic_recovery_mean = float(
-            params.chronic_recovery_mean)
-        self.chronic_recovery_shape = float(
-            params.chronic_recovery_shape)
-
-
 def _C_logprob_integrand(b, a, hazard_infection, params, chronic_recoveryRV):
     return numpy.exp(S_logprob(b, hazard_infection, params)
                      + chronic_recoveryRV.logsf(a - b))
 
 # Make the function able to handle vector-valued `age`.
 @_vectorize(otypes=[float])
-# The function is slow because of the calls to `scipy.integrate.quadrature()`.
-@_cache.cache
 def _C_logprob_integral(age, hazard_infection, params):
     chronic_recoveryRV = chronic_recovery.gen(params)
     val, _ = quadrature(_C_logprob_integrand, 0, age,
@@ -178,10 +131,9 @@ def C_logprob(age, hazard_infection, params):
     if params.model != 'chronic':
         # Shortcut to probability = 0.
         return - numpy.inf * numpy.ones_like(age)
-    params_cache = CParameters(params)
     # Handle log(0).
     return numpy.ma.filled(
-        numpy.ma.log(_C_logprob_integral(age, hazard_infection, params_cache))
+        numpy.ma.log(_C_logprob_integral(age, hazard_infection, params))
         + numpy.ma.log(hazard_infection)
         + numpy.ma.log(params.probability_chronic),
         - numpy.inf)
@@ -192,7 +144,7 @@ def C_prob(age, hazard_infection, params):
     return numpy.exp(C_logprob(age, hazard_infection, params))
 
 
-def _minus_loglikelihood(hazard_infection, params, data):
+def minus_loglikelihood(hazard_infection, params, data):
     '''This gets optimized over `hazard_infection`.'''
     # Convert the length-1 `hazard_infection` to a scalar Python float,
     # (not a size-() `numpy.array()`).
@@ -229,18 +181,19 @@ def _minus_loglikelihood(hazard_infection, params, data):
     return -l
 
 
-def minus_loglikelihood(hazard_infection, params, data):
-    params_cache = SParameters(params)
-    return _minus_loglikelihood(hazard_infection, params_cache, data)
-
-
-# The function is very slow because of the call to `scipy.optimize.minimize()`.
+# The function is very slow because of the call to
+# `scipy.optimize.minimize()`, so the values are cached to disk with
+# `joblib.Memory()` so that they are only computed once.
+# Set up the cache in a subdirectory of the directory that this source
+# file is in.
+_cachedir = os.path.join(os.path.dirname(__file__), '_cache')
+_cache = Memory(_cachedir, verbose=0)
 @_cache.cache
 def _find_hazard_infection(params):
     '''Find the MLE for the infection hazard.'''
     data = _load_data(params)
     x0 = 0.4
-    res = minimize(_minus_loglikelihood, x0,
+    res = minimize(minus_loglikelihood, x0,
                    args=(params, data),
                    bounds=[(0, numpy.inf)])
     assert res.success, res
@@ -249,10 +202,25 @@ def _find_hazard_infection(params):
     return numpy.squeeze(res.x)[()]
 
 
+class CacheParameters(parameters.Parameters):
+    '''Build a `herd.parameters.Parameters()`-like object that
+    only has the parameters needed by `_find_infection_hazard()`
+    so that it can be efficiently cached.'''
+    def __init__(self, params):
+        self.model = params.model
+        # Generally, the values of these parameters should be
+        # floats, so explicitly convert them so the cache doesn't
+        # get duplicated keys for the float and int representation
+        # of the same number, e.g. `float(0)` and `int(0)`.
+        self.maternal_immunity_duration_mean = float(
+            params.maternal_immunity_duration_mean)
+        self.maternal_immunity_duration_shape = float(
+            params.maternal_immunity_duration_shape)
+
+
 def find_hazard_infection(params):
     '''Find the MLE for the infection hazard for each SAT.'''
-    params_cache = SParameters(params)
-    return _find_hazard_infection(params_cache)
+    return _find_hazard_infection(CacheParameters(params))
 
 
 def find_AIC(hazard_infection, params):
