@@ -56,11 +56,6 @@ def _load_data(params):
     return data
 
 
-def _S_logprob_integrand(b, hazard_infection, maternal_immunity_waningRV):
-    return numpy.exp(maternal_immunity_waningRV.logpdf(b)
-                     + hazard_infection * b)
-
-
 # Some of the functions below are slow, so the values are cached
 # to disk with `joblib.Memory()` so that they are only computed once.
 # Set up the cache in a subdirectory of the directory that this source
