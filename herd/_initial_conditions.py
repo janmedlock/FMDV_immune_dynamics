@@ -56,10 +56,9 @@ def _load_data(params):
     return data
 
 
-def _vectorize(**kwds):
-    '''Decorator to vectorize a scalar function.'''
-    # Just make `numpy.vectorize()` easier to use as a decorator.
-    return partial(numpy.vectorize, **kwds)
+def _S_logprob_integrand(b, hazard_infection, maternal_immunity_waningRV):
+    return numpy.exp(maternal_immunity_waningRV.logpdf(b)
+                     + hazard_infection * b)
 
 
 # Some of the functions below are slow, so the values are cached
@@ -89,6 +88,12 @@ class SParameters(parameters.Parameters):
 def _S_logprob_integrand(b, hazard_infection, maternal_immunity_waningRV):
     return numpy.exp(maternal_immunity_waningRV.logpdf(b)
                      + hazard_infection * b)
+
+
+def _vectorize(**kwds):
+    '''Decorator to vectorize a scalar function.'''
+    # Just make `numpy.vectorize()` easier to use as a decorator.
+    return partial(numpy.vectorize, **kwds)
 
 
 # Make the function able to handle vector-valued `age`.
