@@ -204,7 +204,7 @@ def _find_hazard_infection(params):
 
 class CacheParameters(parameters.Parameters):
     '''Build a `herd.parameters.Parameters()`-like object that
-    only has the parameters needed by `_find_infection_hazard()`
+    only has the parameters needed by `_find_hazard_infection()`
     so that it can be efficiently cached.'''
     def __init__(self, params):
         self.model = params.model
