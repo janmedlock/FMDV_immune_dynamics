@@ -68,7 +68,7 @@ def _get_sample_number(filename):
     return int(base)
 
 
-def combine(n_subsamples, seed):
+def combine():
     with h5.HDFStore('run_samples.h5', mode='a') as store:
         # (model, SAT, sample) that are already in `store`.
         store_idx = store.get_index().droplevel(_index).unique()
@@ -76,12 +76,12 @@ def combine(n_subsamples, seed):
             path_model = os.path.join(_path, model)
             for SAT in map(int, os.listdir(path_model)):
                 path_SAT = os.path.join(path_model, str(SAT))
-                samples = herd.samples.load(model=model, SAT=SAT)
-                subsamples = samples.sample(n_subsamples,
-                                            random_state=seed).sort_index()
-                for sample in subsample.index:
+                # Sort in integer order.
+                for filename in sorted(os.listdir(path_SAT),
+                                       key=_get_sample_number):
+                    sample = _get_sample_number(filename)
                     if (model, SAT, sample) not in store_idx:
-                        path_sample = os.path.join(path_SAT, f'{sample}.npy')
+                        path_sample = os.path.join(path_SAT, filename)
                         recarray = numpy.load(path_sample)
                         df = pandas.DataFrame.from_records(recarray,
                                                            index=_index)
@@ -90,6 +90,7 @@ def combine(n_subsamples, seed):
                                                          SAT=SAT,
                                                          sample=sample)
                         store.put(df, min_itemsize=run_common._min_itemsize)
+                        # os.remove(path_sample)
 
 
 if __name__ == '__main__':
@@ -98,4 +99,4 @@ if __name__ == '__main__':
     seed = 1
 
     run_samples(tmax, n_subsamples, seed)
-    # combine(n_subsamples, seed)
+    # combine()
