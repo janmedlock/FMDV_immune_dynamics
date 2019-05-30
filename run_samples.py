@@ -19,41 +19,48 @@ _index = 'time (y)'
 
 def _run_sample(parameters, sample, tmax, path, sample_number, logging_prefix):
     '''Run one simulation.'''
-    p = copy.copy(parameters)
-    for (k, v) in sample.items():
-        setattr(p, k, v)
-    h = herd.Herd(p, run_number=sample_number, logging_prefix=logging_prefix)
-    df = h.run(tmax)
-    # Save the data for this sample.
     filename = os.path.join(path, f'{sample_number}.npy')
-    numpy.save(filename, df.to_records())
+    if not os.path.exists(filename):
+        p = copy.copy(parameters)
+        for (k, v) in sample.items():
+            setattr(p, k, v)
+        h = herd.Herd(p, run_number=sample_number,
+                      logging_prefix=logging_prefix)
+        df = h.run(tmax)
+        # Save the data for this sample.
+        numpy.save(filename, df.to_records())
+    else:
+        print(f'{logging_prefix}simulation #{sample_number} already run.')
 
 
-def _run_samples_SAT(model, SAT, tmax, path, logging_prefix):
+def _run_samples_SAT(model, SAT, tmax, n_subsamples, seed, path,
+                     logging_prefix):
     '''Run many simulations in parallel.'''
     path_SAT = os.path.join(path, str(SAT))
     os.makedirs(path_SAT, exist_ok=True)
     logging_prefix_SAT = logging_prefix + f'SAT {SAT}, '
-    samples = herd.samples.load(model=model, SAT=SAT)
     parameters = herd.Parameters(model=model, SAT=SAT)
+    samples = herd.samples.load(model=model, SAT=SAT)
+    subsamples = samples.sample(n_subsamples, random_state=seed).sort_index()
     Parallel(n_jobs=-1)(
         delayed(_run_sample)(parameters, s, tmax, path_SAT, i,
                              logging_prefix_SAT)
-        for (i, s) in samples.iterrows())
+        for (i, s) in subsamples.iterrows())
 
 
-def _run_samples_model(model, tmax, path):
+def _run_samples_model(model, tmax, n_subsamples, seed, path):
     path_model = os.path.join(path, model)
     os.makedirs(path_model, exist_ok=True)
     logging_prefix = f'model {model}, '
     for SAT in run_common._SATs:
-        _run_samples_SAT(model, SAT, tmax, path_model, logging_prefix)
+        _run_samples_SAT(model, SAT, tmax, n_subsamples, seed, path_model,
+                         logging_prefix)
 
 
-def run_samples(tmax):
+def run_samples(tmax, n_subsamples, seed):
     os.makedirs(_path, exist_ok=True)
     for model in run_common._models:
-        _run_samples_model(model, tmax, _path)
+        _run_samples_model(model, tmax, n_subsamples, seed, _path)
 
 
 def _get_sample_number(filename):
@@ -61,7 +68,7 @@ def _get_sample_number(filename):
     return int(base)
 
 
-def combine():
+def combine(n_subsamples, seed):
     with h5.HDFStore('run_samples.h5', mode='a') as store:
         # (model, SAT, sample) that are already in `store`.
         store_idx = store.get_index().droplevel(_index).unique()
@@ -69,12 +76,12 @@ def combine():
             path_model = os.path.join(_path, model)
             for SAT in map(int, os.listdir(path_model)):
                 path_SAT = os.path.join(path_model, str(SAT))
-                # Sort in integer order.
-                for filename in sorted(os.listdir(path_SAT),
-                                       key=_get_sample_number):
-                    sample = _get_sample_number(filename)
+                samples = herd.samples.load(model=model, SAT=SAT)
+                subsamples = samples.sample(n_subsamples,
+                                            random_state=seed).sort_index()
+                for sample in subsample.index:
                     if (model, SAT, sample) not in store_idx:
-                        path_sample = os.path.join(path_SAT, filename)
+                        path_sample = os.path.join(path_SAT, f'{sample}.npy')
                         recarray = numpy.load(path_sample)
                         df = pandas.DataFrame.from_records(recarray,
                                                            index=_index)
@@ -87,5 +94,8 @@ def combine():
 
 if __name__ == '__main__':
     tmax = 10
+    n_subsamples = 2000
+    seed = 1
 
-    run_samples(tmax)
+    run_samples(tmax, n_subsamples, seed)
+    # combine(n_subsamples, seed)
