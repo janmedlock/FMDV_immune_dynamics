@@ -17,6 +17,8 @@ _filename = 'data/Hedger_1972_survey_data.xlsx'
 # It is relative to directory as this source file.
 _filename = os.path.join(os.path.dirname(__file__), _filename)
 
+_quadrature_kwds = dict(tol=1e-5, rtol=1e-5, maxiter=1000)
+
 
 def _load_data(params):
     '''Load and format the data.'''
@@ -57,6 +59,11 @@ def _load_data(params):
 
 
 def _S_logprob_integrand(b, hazard_infection, maternal_immunity_waningRV):
+    '''The integrand is
+    Prob{Transitioning from M to S at age b}
+      * exp(hazard_infection * b)
+    = exp(\log Prob{Transitioning from M to S at age b}
+          + hazard_infection * b).'''
     return numpy.exp(maternal_immunity_waningRV.logpdf(b)
                      + hazard_infection * b)
 
@@ -73,7 +80,7 @@ def _S_logprob_integral(age, hazard_infection, params):
     maternal_immunity_waningRV = maternal_immunity_waning.gen(params)
     val, _ = quadrature(_S_logprob_integrand, 0, age,
                         args=(hazard_infection, maternal_immunity_waningRV),
-                        maxiter=10000)
+                        **_quadrature_kwds)
     return val
 
 
@@ -109,7 +116,7 @@ def _C_logprob_integral(age, hazard_infection, params):
     val, _ = quadrature(_C_logprob_integrand, 0, age,
                         args=(age, hazard_infection, params,
                               chronic_recoveryRV),
-                        maxiter=10000)
+                        **_quadrature_kwds)
     return val
 
 
