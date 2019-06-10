@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 
 import copy
+import itertools
 import os
 
 from joblib import delayed, Parallel
@@ -29,8 +30,6 @@ def _run_sample(parameters, sample, tmax, path, sample_number, logging_prefix):
         df = h.run(tmax)
         # Save the data for this sample.
         numpy.save(filename, df.to_records())
-    else:
-        print(f'{logging_prefix}simulation #{sample_number} already run.')
 
 
 def _run_samples_SAT(model, SAT, tmax, n_subsamples, seed, path,
@@ -42,25 +41,27 @@ def _run_samples_SAT(model, SAT, tmax, n_subsamples, seed, path,
     parameters = herd.Parameters(model=model, SAT=SAT)
     samples = herd.samples.load(model=model, SAT=SAT)
     subsamples = samples.sample(n_subsamples, random_state=seed).sort_index()
-    Parallel(n_jobs=-1)(
-        delayed(_run_sample)(parameters, s, tmax, path_SAT, i,
-                             logging_prefix_SAT)
-        for (i, s) in subsamples.iterrows())
+    return (delayed(_run_sample)(parameters, s, tmax, path_SAT, i,
+                                 logging_prefix_SAT)
+            for (i, s) in subsamples.iterrows())
 
 
 def _run_samples_model(model, tmax, n_subsamples, seed, path):
     path_model = os.path.join(path, model)
     os.makedirs(path_model, exist_ok=True)
     logging_prefix = f'model {model}, '
-    for SAT in run_common._SATs:
+    return itertools.chain.from_iterable(
         _run_samples_SAT(model, SAT, tmax, n_subsamples, seed, path_model,
                          logging_prefix)
+        for SAT in run_common._SATs)
 
 
 def run_samples(tmax, n_subsamples, seed):
     os.makedirs(_path, exist_ok=True)
-    for model in run_common._models:
+    jobs = itertools.chain.from_iterable(
         _run_samples_model(model, tmax, n_subsamples, seed, _path)
+        for model in run_common._models)
+    Parallel(n_jobs=-1)(jobs)
 
 
 def _get_sample_number(filename):
