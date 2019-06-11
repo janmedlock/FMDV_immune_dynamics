@@ -17,7 +17,7 @@ _filename = 'data/Hedger_1972_survey_data.xlsx'
 # It is relative to directory as this source file.
 _filename = os.path.join(os.path.dirname(__file__), _filename)
 
-_quadrature_kwds = dict(tol=1e-5, rtol=1e-5, maxiter=1000)
+_quadrature_kwds = dict(tol=1e-6, rtol=1e-6, maxiter=2000)
 
 
 def _load_data(params):
