@@ -17,7 +17,7 @@ _filename = 'data/Hedger_1972_survey_data.xlsx'
 # It is relative to directory as this source file.
 _filename = os.path.join(os.path.dirname(__file__), _filename)
 
-_quadrature_kwds = dict(tol=1e-6, rtol=1e-6, maxiter=2000)
+_quadrature_options = dict(tol=1e-6, rtol=1e-6, maxiter=2000)
 
 
 def _load_data(params):
@@ -80,7 +80,7 @@ def _S_logprob_integral(age, hazard_infection, params):
     maternal_immunity_waningRV = maternal_immunity_waning.gen(params)
     val, _ = quadrature(_S_logprob_integrand, 0, age,
                         args=(hazard_infection, maternal_immunity_waningRV),
-                        **_quadrature_kwds)
+                        **_quadrature_options)
     return val
 
 
@@ -116,7 +116,7 @@ def _C_logprob_integral(age, hazard_infection, params):
     val, _ = quadrature(_C_logprob_integrand, 0, age,
                         args=(age, hazard_infection, params,
                               chronic_recoveryRV),
-                        **_quadrature_kwds)
+                        **_quadrature_options)
     return val
 
 
