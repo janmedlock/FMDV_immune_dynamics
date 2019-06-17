@@ -25,11 +25,19 @@ def _run_sample(parameters, sample, tmax, path, sample_number, logging_prefix):
         p = copy.copy(parameters)
         for (k, v) in sample.items():
             setattr(p, k, v)
-        h = herd.Herd(p, run_number=sample_number,
-                      logging_prefix=logging_prefix)
-        df = h.run(tmax)
-        # Save the data for this sample.
-        numpy.save(filename, df.to_records())
+        try:
+            # Catch AssertionError from failed optimization in
+            # `herd._initial_conditions._find_hazard_infection()`.
+            h = herd.Herd(p, run_number=sample_number,
+                          logging_prefix=logging_prefix)
+        except AssertionError:
+            # Failed runs will get run with tighter integration tolerances
+            # in `herd._initial_conditions`.
+            pass
+        else:
+            df = h.run(tmax)
+            # Save the data for this sample.
+            numpy.save(filename, df.to_records())
 
 
 def _run_samples_SAT(model, SAT, tmax, path, logging_prefix):
