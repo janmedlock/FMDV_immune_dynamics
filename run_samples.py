@@ -80,7 +80,7 @@ def combine():
         store_idx = store.get_index().droplevel(_index).unique()
         for model in os.listdir(_path):
             path_model = os.path.join(_path, model)
-            for SAT in map(int, os.listdir(path_model)):
+            for SAT in map(int, sorted(os.listdir(path_model))):
                 path_SAT = os.path.join(path_model, str(SAT))
                 # Sort in integer order.
                 for filename in sorted(os.listdir(path_SAT),
@@ -95,6 +95,11 @@ def combine():
                                                          model=model,
                                                          SAT=SAT,
                                                          sample=sample)
+                        print('Inserting '
+                              + ', '.join((f'model={model}',
+                                           f'SAT={SAT}',
+                                           f'sample={sample}'))
+                              + '.')
                         store.put(df, min_itemsize=run_common._min_itemsize)
                         # os.remove(path_sample)
 
