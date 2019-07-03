@@ -26,6 +26,7 @@ def _load_extinction_times():
         df = []
         for model in ('acute', 'chronic'):
             for SAT in (1, 2, 3):
+                print(f'model={model} & SAT={SAT}')
                 infected = store.select(
                     f'model={model} & SAT={SAT}',
                     columns=['exposed', 'infectious', 'chronic'])
@@ -44,7 +45,7 @@ def _load_extinction_times():
 def load_extinction_times():
     try:
         df = h5.load('plot_samples.h5')
-    except FileNotFoundError:
+    except OSError:
         df = _load_extinction_times()
         h5.dump(df, 'plot_samples.h5')
     return df
@@ -190,6 +191,6 @@ def plot_sensitivity(df, rank=True, errorbars=False):
 if __name__ == '__main__':
     df = load_extinction_times()
     plot_times(df)
-    # plot_parameters(df)
+    plot_parameters(df)
     plot_sensitivity(df)
     pyplot.show()
