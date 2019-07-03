@@ -15,7 +15,7 @@ import stats
 
 
 def _get_extinction(infected):
-    t = df.index.get_level_values('time (y)')
+    t = infected.index.get_level_values('time (y)')
     time = t.max() - t.min()
     observed = (infected.iloc[-1] == 0)
     return [time, observed]
