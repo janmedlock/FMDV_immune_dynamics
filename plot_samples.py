@@ -1,7 +1,5 @@
 #!/usr/bin/python3
 
-import itertools
-
 from matplotlib import pyplot, ticker
 from matplotlib.backends import backend_pdf
 import numpy
@@ -118,21 +116,23 @@ def plot_parameters(df, rank=True, marker='.', s=1, alpha=0.6):
     outcome = 'extinction_time'
     models = df.index.get_level_values('model').unique()
     SATs = df.index.get_level_values('SAT').unique()
-    # TODO: Drop 'extinction_observed'.
-    params = df.columns.drop(outcome)
+    params = df.columns.drop([outcome, 'extinction_observed'])
     (ylabel, ylabel_resid) = _get_labels(outcome, rank)
+    colors = seaborn.color_palette('tab20', 20)
+    # Put dark colors first, then light.
+    colors = colors[0::2] + colors[1::2]
     with backend_pdf.PdfPages('plot_samples_parameters.pdf') as pdf:
         for model in models:
             for SAT in SATs:
-                # TODO: Drop NaN columns.
                 X = df.loc[(model, SAT, slice(None)), params]
+                X = X.dropna(axis='columns', how='all')
                 y = df.loc[(model, SAT, slice(None)), outcome]
                 if rank:
                     X = (X.rank() - 1) / (len(X) - 1)
                     y = (y.rank() - 1) / (len(y) - 1)
                 fig, axes = pyplot.subplots(X.shape[1], 2)
                 for (i, (param, x)) in enumerate(X.items()):
-                    color = f'C{i}'
+                    color = colors[i]
                     (xlabel, xlabel_resid) = _get_labels(param, rank)
                     axes[i, 0].scatter(x, y,
                                        color=color, marker=marker, s=s,
@@ -162,72 +162,92 @@ def plot_parameters(df, rank=True, marker='.', s=1, alpha=0.6):
                 pdf.savefig(fig)
 
 
+class Colors:
+    '''Add colors to dictionary dynamically as requested.'''
+
+    def __init__(self):
+        palette = seaborn.color_palette('tab20', 20)
+        # Put dark colors first, then light.
+        self._palette = palette[0::2] + palette[1::2]
+        self._colors = {}
+
+    def __getitem__(self, k):
+        if k not in self._colors:
+            self._colors[k] = self._palette.pop(0)
+        return self._colors[k]
+
+
+
 def plot_sensitivity(df, rank=True, errorbars=False):
     outcome = 'extinction_time'
     models = df.index.get_level_values('model').unique()
     SATs = df.index.get_level_values('SAT').unique()
-    models_SATs = list(itertools.product(models, SATs))
     samples = df.index.get_level_values('sample').unique()
-    params = df.columns.drop(outcome)
+    params = df.columns.drop([outcome, 'extinction_observed'])
     n_samples = len(samples)
-    n_params = len(params)
-    y = range(n_params)
-    colors = None  # Set the first time through.
-    with seaborn.axes_style('whitegrid'):
-        fig, axes = pyplot.subplots(1, len(models) * len(SATs), sharex='row')
-        for ((model, SAT), ax) in zip(models_SATs, axes):
-            p = df.loc[(model, SAT, slice(None)), params]
-            o = df.loc[(model, SAT, slice(None)), outcome]
-            if rank:
-                rho = stats.prcc(p, o)
-                xlabel = 'PRCC'
+    colors = Colors()
+    rc = {'xtick.labelsize': 8,
+          'ytick.labelsize': 6,
+          'axes.labelsize': 9,
+          'axes.titlesize': 10,
+          'figure.titlesize': 11}
+    with seaborn.axes_style('whitegrid'), pyplot.rc_context(rc), \
+         backend_pdf.PdfPages('plot_samples_sensitivity.pdf') as pdf:
+        for model in models:
+            fig, axes = pyplot.subplots(1, len(SATs), sharex='row')
+            for (SAT, ax) in zip(SATs, axes):
+                p = df.loc[(model, SAT, slice(None)), params]
+                p = p.dropna(axis='columns', how='all')
+                o = df.loc[(model, SAT, slice(None)), outcome]
+                if rank:
+                    rho = stats.prcc(p, o)
+                    xlabel = 'PRCC'
+                    if errorbars:
+                        rho_CI = stats.prcc_CI(rho, n_samples)
+                else:
+                    rho = stats.pcc(p, o)
+                    xlabel = 'PCC'
+                    if errorbars:
+                        rho_CI = stats.pcc_CI(rho, n_samples)
+                ix = rho.abs().sort_values().index
+                x = rho[ix]
+                c = [colors[z] for z in ix[::-1]][::-1]
                 if errorbars:
-                    rho_CI = stats.prcc_CI(rho, n_samples)
-            else:
-                rho = stats.pcc(p, o)
-                xlabel = 'PCC'
-                if errorbars:
-                    rho_CI = stats.pcc_CI(rho, n_samples)
-            ix = rho.abs().sort_values().index
-            x = rho[ix]
-            # Colors are defined by the order in the first SAT.
-            if colors is None:
-                colors = dict(zip(reversed(params),
-                                  seaborn.color_palette('tab10', n_params)))
-            c = [colors[p] for p in params]
-            if errorbars:
-                rho_err = pandas.DataFrame({'lower': rho - rho_CI['lower'],
-                                            'upper': rho_CI['upper'] - rho}).T
-                xerr = rho_err[ix].values
-                kwds = dict(xerr=xerr,
-                            error_kw=dict(ecolor='black',
-                                          elinewidth=1.5,
-                                          capthick=1.5,
-                                          capsize=5,
-                                          alpha=0.6))
-            else:
-                kwds = dict()
-            ax.barh(y, x, height=1, left=0,
-                    align='center', color=c, edgecolor=c,
-                    **kwds)
-            ax.xaxis.set_major_formatter(ticker.StrMethodFormatter('{x:g}'))
-            # ax.xaxis.set_minor_locator(ticker.AutoMinorLocator(n=2))
-            ax.tick_params(axis='y', pad=35)
-            ax.set_yticks(y)
-            ax.set_ylim(- 0.5, n_params - 0.5)
-            ylabels = [p.replace('_', '\n') for p in params]
-            ax.set_yticklabels(ylabels, horizontalalignment='center')
-            ax.set_xlabel(xlabel)
-            ax.set_title(f'{model.capitalize()} model, SAT {SAT}')
-            ax.grid(False, axis='y', which='both')
-        seaborn.despine(fig, top=True, bottom=False, left=True, right=True)
-        fig.tight_layout()
-    fig.savefig('plot_samples_sensitivity.pdf')
+                    rho_err = pandas.DataFrame(
+                        {'lower': rho - rho_CI['lower'],
+                         'upper': rho_CI['upper'] - rho}).T
+                    xerr = rho_err[ix].values
+                    kwds = dict(xerr=xerr,
+                                error_kw=dict(ecolor='black',
+                                              elinewidth=1.5,
+                                              capthick=1.5,
+                                              capsize=5,
+                                              alpha=0.6))
+                else:
+                    kwds = dict()
+                y = range(len(x))
+                ax.barh(y, x, height=1, left=0,
+                        align='center', color=c, edgecolor=c,
+                        **kwds)
+                ax.xaxis.set_major_formatter(ticker.StrMethodFormatter('{x:g}'))
+                # ax.xaxis.set_minor_locator(ticker.AutoMinorLocator(n=2))
+                ax.tick_params(axis='y', pad=35)
+                ax.set_yticks(y)
+                ax.set_ylim(- 0.5, len(x) - 0.5)
+                ylabels = [x.replace('_', '\n') for x in ix]
+                ax.set_yticklabels(ylabels, horizontalalignment='center')
+                ax.set_xlabel(xlabel)
+                ax.set_title(f'SAT {SAT}')
+                ax.grid(False, axis='y', which='both')
+            fig.suptitle(f'{model.capitalize()} model')
+            seaborn.despine(fig, top=True, bottom=False, left=True, right=True)
+            fig.tight_layout(rect=(0, 0, 1, 0.96))
+            pdf.savefig(fig)
 
 
 if __name__ == '__main__':
     df = load_extinction_times()
-    plot_times(df)
-    plot_parameters(df)
+    # plot_times(df)
+    # plot_parameters(df)
     plot_sensitivity(df)
     pyplot.show()
