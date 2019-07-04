@@ -18,7 +18,8 @@ def _get_extinction(infected):
     t = infected.index.get_level_values('time (y)')
     time = t.max() - t.min()
     observed = (infected.iloc[-1] == 0)
-    return [time, observed]
+    return {'extinction_time': time,
+            'extinction_observed': observed}
 
 
 def _load_extinction_times():
@@ -26,15 +27,18 @@ def _load_extinction_times():
         df = []
         for model in ('acute', 'chronic'):
             for SAT in (1, 2, 3):
-                print(f'model={model} & SAT={SAT}')
-                infected = store.select(
-                    f'model={model} & SAT={SAT}',
-                    columns=['exposed', 'infectious', 'chronic'])
-                infected = infected.sum(axis='columns')
-                groups = infected.groupby(['model', 'SAT', 'sample'])
-                extinction = groups.apply(_get_extinction)
-                extinction.columns = ['extinction_time',
-                                      'extinction_observed']
+                by = ['model', 'SAT', 'sample']
+                columns=['exposed', 'infectious', 'chronic']
+                where = f'model={model} & SAT={SAT}'
+                print(where)
+                extinction = {}
+                for (ix, group) in store.groupby(by, where=where,
+                                                 columns=columns):
+                    infected = group.sum(axis='columns')
+                    extinction[ix] = _get_extinction(infected)
+                extinction = pandas.DataFrame.from_dict(extinction,
+                                                        orient='index')
+                extinction.index.names = by
                 samples = herd.samples.load(model=model, SAT=SAT)
                 samples.index = extinction.index
                 df.append(pandas.concat([extinction, samples],
