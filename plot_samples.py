@@ -96,20 +96,30 @@ def get_survival(df, time, observed):
 
 
 def plot_times(df):
-    fig, ax = pyplot.subplots()
-    groups = df.groupby(['model', 'SAT'])
-    for ((model, SAT), group) in groups:
-        survival = get_survival(group, 'extinction_time', 'extinction_observed')
-        ax.step(survival.index, survival, where='post',
-                label=f'{model.capitalize()} model, SAT {SAT}')
-    ax.set_xlabel('time (y)')
-    ax.set_ylabel('Survival')
-    ax.set_yscale('log')
-    # Next smaller power of 10.
-    # a = numpy.ceil(numpy.log10(1 / len(df)) - 1)
-    # ax.set_ylim(10 ** a, 1)
-    ax.legend()
-    fig.savefig('plot_samples_times.pdf')
+    groups = df.groupby(['SAT', 'model'])
+    palette = seaborn.color_palette('Paired', len(groups))
+    colors = {}
+    for k in groups.groups.keys():
+        (SAT, model) = k
+        i = 2 * (SAT - 1)
+        if model == 'chronic': i += 1
+        colors[k] = palette[i]
+    with seaborn.color_palette(palette):
+        fig, ax = pyplot.subplots()
+        for ((SAT, model), group) in groups:
+            survival = get_survival(group,
+                                    'extinction_time',
+                                    'extinction_observed')
+            ax.step(survival.index, survival, color=colors[(SAT, model)],
+                    where='post', label=f'SAT {SAT}, {model} model')
+        ax.set_xlabel('time (y)')
+        ax.set_ylabel('Survival')
+        # ax.set_yscale('log')
+        # Next smaller power of 10.
+        # a = numpy.ceil(numpy.log10(1 / len(df)) - 1)
+        # ax.set_ylim(10 ** a, 1)
+        ax.legend()
+        fig.savefig('plot_samples_times.pdf')
 
 
 def plot_parameters(df, rank=True, marker='.', s=1, alpha=0.6):
@@ -229,7 +239,8 @@ def plot_sensitivity(df, rank=True, errorbars=False):
                 ax.barh(y, x, height=1, left=0,
                         align='center', color=c, edgecolor=c,
                         **kwds)
-                ax.xaxis.set_major_formatter(ticker.StrMethodFormatter('{x:g}'))
+                ax.xaxis.set_major_formatter(
+                    ticker.StrMethodFormatter('{x:g}'))
                 # ax.xaxis.set_minor_locator(ticker.AutoMinorLocator(n=2))
                 ax.tick_params(axis='y', pad=35)
                 ax.set_yticks(y)
@@ -247,7 +258,7 @@ def plot_sensitivity(df, rank=True, errorbars=False):
 
 if __name__ == '__main__':
     df = load_extinction_times()
-    # plot_times(df)
+    plot_times(df)
     # plot_parameters(df)
     plot_sensitivity(df)
     pyplot.show()
