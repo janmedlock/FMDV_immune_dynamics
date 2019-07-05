@@ -13,6 +13,7 @@ import statsmodels
 import pandas
 
 import plot_start_times_SATs
+import run_common
 
 
 # Erin's colors.
@@ -51,10 +52,10 @@ def load():
     extinction_time = []
     for model in ('acute', 'chronic'):
         i = plot_start_times_SATs.get_infected(model=model)
-        i['model'] = model
+        run_common._prepend_index_levels(i, model=model)
         infected.append(i)
         e = plot_start_times_SATs.get_extinction_time(model=model)
-        e['model'] = model
+        run_common._prepend_index_levels(e, model=model)
         extinction_time.append(e)
     infected = pandas.concat(infected)
     extinction_time = pandas.concat(extinction_time)
@@ -63,11 +64,11 @@ def load():
 
 def plot_infected(ax, infected, model, SAT):
     nruns = 1000
-    mask = ((infected.model == model)
-            & (infected.SAT == SAT)
-            & (infected.index.get_level_values('run') < nruns))
+    ix = (model, SAT, slice(None), slice(0, nruns))
+    # Remove all indices except 'run' and 'time'.
+    to_drop = infected.index.names[:-2]
     # .unstack('run') puts 'run' on columns, time on rows.
-    i = infected.infected[mask].unstack('run')
+    i = infected.loc[ix].unstack('run').reset_index(to_drop, drop=True)
     # Start time at 0.
     t = i.index - i.index.min()
     ax.plot(365 * t, i, color=SAT_colors[SAT],
@@ -97,9 +98,7 @@ def plot_infected(ax, infected, model, SAT):
 
 
 def plot_extinction_time(ax, extinction_time, model, SAT):
-    mask = ((extinction_time.model == model)
-            & (extinction_time.SAT == SAT))
-    e = extinction_time['extinction time (days)'][mask]
+    e = extinction_time.loc[(model, SAT)]
     color = SAT_colors[SAT]
     if len(e.dropna()) > 0:
         seaborn.kdeplot(e.dropna(), ax=ax, color=color,
@@ -111,7 +110,7 @@ def plot_extinction_time(ax, extinction_time, model, SAT):
         bbox = dict(boxstyle=f'rarrow, pad={pad}',
                     facecolor=color, linewidth=0)
         ax.annotate('{:g}%'.format(not_extinct * 100),
-                    (0.98, 0.8), xycoords='axes fraction',
+                    (0.97, 0.8), xycoords='axes fraction',
                     bbox=bbox, color='white',
                     verticalalignment='bottom',
                     horizontalalignment='right')
@@ -130,8 +129,8 @@ def plot_extinction_time(ax, extinction_time, model, SAT):
 
 
 def plot(infected, extinction_time):
-    SATs = infected.SAT.unique()
-    models = infected.model.unique()
+    SATs = infected.index.get_level_values('SAT').unique()
+    models = infected.index.get_level_values('model').unique()
     nrows = len(SATs) * 2
     ncols = len(models)
     height_ratios = (3, 1) * (nrows // 2)
@@ -161,9 +160,9 @@ def plot(infected, extinction_time):
                                      model, SAT)
         # Shade time region from acute-model column
         # in chronic-model column.
-        col_chronic = numpy.where(model  == 'chronic')[0][0]
-        mask = (extinction_time.model == 'acute')
-        e_acute = extinction_time['extinction time (days)'][mask]
+        col_chronic = numpy.where(models == 'chronic')[0][0]
+        ix = ('acute', )
+        e_acute = extinction_time.loc[('acute', )]
         assert e_acute.notnull().all()
         e_acute_mask = e_acute.max()
         color = pyplot.rcParams['grid.color']
@@ -186,4 +185,4 @@ def plot(infected, extinction_time):
 if __name__ == '__main__':
     infected, extinction_time = load()
     plot(infected, extinction_time)
-    # pyplot.show()
+    pyplot.show()

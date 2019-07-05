@@ -1,8 +1,8 @@
 * Run over population size and over birth variance.
 
-* Edit manuscript and methods.
+* Touch up parameter names in plot_samples.plot_sensitivity().
 
-* Work on figures 3 & 4.
+* Edit manuscript and methods.
 
 * Generate good initial condtions by solving PDEs.
 
