@@ -110,7 +110,7 @@ def plot_extinction_time(ax, extinction_time, model, SAT):
         bbox = dict(boxstyle=f'rarrow, pad={pad}',
                     facecolor=color, linewidth=0)
         ax.annotate('{:g}%'.format(not_extinct * 100),
-                    (0.97, 0.8), xycoords='axes fraction',
+                    (0.95, 0.8), xycoords='axes fraction',
                     bbox=bbox, color='white',
                     verticalalignment='bottom',
                     horizontalalignment='right')
