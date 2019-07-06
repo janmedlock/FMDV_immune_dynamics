@@ -188,6 +188,17 @@ class Colors:
 
 
 
+param_transforms = {
+    'chronic_recovery_mean': 'chronic_duration_mean',
+    'chronic_recovery_mean': 'chronic_duration_shape',
+    'progression_mean': 'latent_duration_mean',
+    'progression_shape': 'latent_duration_shape',
+    'recovery_mean': 'infectious_duration_mean',
+    'recovery_shape': 'infectious_duration_shape',
+    'transmission_rate': 'acute_transmission_rate'
+}
+
+
 def plot_sensitivity(df, rank=True, errorbars=False):
     outcome = 'extinction_time'
     models = df.index.get_level_values('model').unique()
@@ -245,14 +256,14 @@ def plot_sensitivity(df, rank=True, errorbars=False):
                 ax.tick_params(axis='y', pad=35)
                 ax.set_yticks(y)
                 ax.set_ylim(- 0.5, len(x) - 0.5)
-                ylabels = [x.replace('_', '\n') for x in ix]
+                ylabels = [param_transforms.get(x, x).replace('_', '\n')
+                           for x in ix]
                 ax.set_yticklabels(ylabels, horizontalalignment='center')
                 ax.set_xlabel(xlabel)
                 ax.set_title(f'SAT {SAT}')
                 ax.grid(False, axis='y', which='both')
-            fig.suptitle(f'{model.capitalize()} model')
             seaborn.despine(fig, top=True, bottom=False, left=True, right=True)
-            fig.tight_layout(rect=(0, 0, 1, 0.96))
+            fig.tight_layout()
             pdf.savefig(fig)
 
 
