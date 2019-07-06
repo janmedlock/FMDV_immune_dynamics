@@ -12,7 +12,8 @@ def run_population_size(model, SAT, population_size, tmax, nruns, hdfstore):
     p.population_size = population_size
     logging_prefix = ', '.join((f'model {model}',
                                 f'SAT {SAT}',
-                                f'population_size {population_size}'))
+                                f'population_size {population_size}'),
+                               '')
     df = run_common.run_many(p, tmax, nruns,
                              logging_prefix=logging_prefix)
     # Save the data for this `population_size`.
