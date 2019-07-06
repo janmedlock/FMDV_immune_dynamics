@@ -36,6 +36,6 @@ if __name__ == '__main__':
         for model in ('acute', 'chronic'):
             for SAT in (1, 2, 3):
                 for population_size in population_sizes:
-                    run_common.run_population_size(model, SAT, population_size,
-                                                   tmax, nruns, store)
+                    run_population_size(model, SAT, population_size,
+                                        tmax, nruns, store)
         store.repack(_filename)
