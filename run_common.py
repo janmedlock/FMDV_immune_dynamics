@@ -4,6 +4,8 @@ from joblib import delayed, Parallel
 import numpy
 import pandas
 
+import herd
+
 
 _models = ('acute', 'chronic')
 # Leave enough space in hdf for all model names.
