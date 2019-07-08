@@ -25,8 +25,8 @@ def run_population_size(model, SAT, population_size, tmax, nruns, hdfstore):
 
 if __name__ == '__main__':
     population_sizes = (
-        tuple(range(100, 1000, 100))
-        # + tuple(range(1000, 10000, 1000))
+        # tuple(range(100, 1000, 100)) +
+        tuple(range(1000, 3000, 1000))
     )
     nruns = 1000
     tmax = 10
@@ -34,9 +34,9 @@ if __name__ == '__main__':
     _filebase, _ = os.path.splitext(__file__)
     _filename = _filebase + '.h5'
     with h5.HDFStore(_filename) as store:
-        for model in ('acute', 'chronic'):
-            for SAT in (1, 2, 3):
-                for population_size in population_sizes:
+        for population_size in population_sizes:
+            for model in ('acute', 'chronic'):
+                for SAT in (1, 2, 3):
                     run_population_size(model, SAT, population_size,
                                         tmax, nruns, store)
-        store.repack(_filename)
+        store.repack()
