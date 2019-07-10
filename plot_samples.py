@@ -64,37 +64,6 @@ def _get_labels(name, rank):
     return (label, label_resid)
 
 
-def _get_d_dn(observed):
-    # The number of events at this time,
-    # i.e. entries in `observed` that are `True`.
-    d = observed[observed].count()
-    # The number of people lost due to events or lost to followup at this time.
-    dn = observed.count()
-    return pandas.Series((d, dn))
-
-
-def get_survival(df, time, observed):
-    by_time = df.groupby(time)
-    # Get the number of events and total number of people lost at each time.
-    d_dn = by_time[observed].apply(_get_d_dn).unstack()
-    (d, dn) = (col for _, col in d_dn.items())
-    # Shift `dn` so that `n` is the number of people surviving
-    # up to time t (< t), *not* up to and including time t (<= t).
-    # Nobody is yet lost before the first time.
-    dn[:] = numpy.hstack([0, dn.iloc[:-1]])
-    # Total people at start.
-    N = len(df)
-    n = N - dn.cumsum()
-    # S(t) = \prod_{i: t_i <= t}  (1 - d_i / n_i), but use log for accuracy.
-    S = (1 - d / n).apply(numpy.log).cumsum().apply(numpy.exp)
-    # Add point S(0) = 1.
-    S_0 = pandas.Series(1, index=pandas.Index([0], name=S.index.name))
-    assert S.index.min() >= S_0.index.max()
-    S = pandas.concat((S_0 ,S))
-    S.name = 'survival'
-    return S
-
-
 def plot_times(df):
     groups = df.groupby(['SAT', 'model'])
     palette = seaborn.color_palette('Paired', len(groups))
@@ -107,9 +76,9 @@ def plot_times(df):
     with seaborn.color_palette(palette):
         fig, ax = pyplot.subplots()
         for ((SAT, model), group) in groups:
-            survival = get_survival(group,
-                                    'extinction_time',
-                                    'extinction_observed')
+            survival = stats.get_survival(group,
+                                          'extinction_time',
+                                          'extinction_observed')
             ax.step(survival.index, survival, color=colors[(SAT, model)],
                     where='post', label=f'SAT {SAT}, {model} model')
         ax.set_xlabel('time (y)')
