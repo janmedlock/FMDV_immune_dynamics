@@ -13,10 +13,20 @@ _min_itemsize = {'model': max(len(m) for m in _models)}
 _SATs = (1, 2, 3)
 
 
-def _prepend_index_levels(df, **levels):
+def _insert_index_levels(df, i, **levels):
     df.index = pandas.MultiIndex.from_arrays(
-        [pandas.Index([v], name=k).repeat(len(df)) for (k, v) in levels.items()]
-        + [df.index.get_level_values(n) for n in df.index.names])
+        [df.index.get_level_values(n) for n in df.index.names[:i]]
+        + [pandas.Index([v], name=k).repeat(len(df))
+           for (k, v) in levels.items()]
+        + [df.index.get_level_values(n) for n in df.index.names[i:]])
+
+
+def _append_index_levels(df, **levels):
+    _insert_index_levels(df, 0, **levels)
+
+
+def _prepend_index_levels(df, **levels):
+    _insert_index_levels(df, df.index.nlevels, **levels)
 
 
 def run_one(parameters, tmax, run_number, *args, **kwargs):
