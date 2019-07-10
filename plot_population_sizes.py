@@ -42,6 +42,11 @@ def load_extinction_times():
     return df
 
 
+class PercentFormatter(ticker.Formatter):
+    def __call__(self, x, pos=None):
+        return '{:g}%'.format(100 * x)
+
+
 def plot_survival(df):
     row = dict(enumerate(range(3), 1))
     column = {'acute': 0, 'chronic': 1}
@@ -94,47 +99,78 @@ def plot_kde(df):
         fig.tight_layout(rect=(0, 0, 0.82, 1))
 
 
+def _get_cmap(color):
+    '''White to `color`.'''
+    return colors.LinearSegmentedColormap.from_list('name',
+                                                    ['white', color])
+
+
 def plot_kde_2d(df):
-    xmax = {'acute': 0.5, 'chronic': 5}
-    y = df.index.get_level_values('population_size').unique().sort_values()
-    fig, axes = pyplot.subplots(3, 2, sharex='col', sharey='row')
+    persistence_time_max = {'acute': 0.5, 'chronic': 5}
+    SAT_colors = {1: '#2271b5', 2: '#ef3b2c', 3: '#807dba'}
+    population_sizes = (df.index
+                          .get_level_values('population_size')
+                          .unique()
+                          .sort_values())
+    fig, axes = pyplot.subplots(3, 2 + 1, sharex='col', sharey='row',
+                                gridspec_kw=dict(width_ratios=(1, 1, 0.5)))
+    seaborn.despine(fig)
     for (j, (model, group_model)) in enumerate(df.groupby('model')):
-        x = numpy.linspace(0, xmax[model], 301)
+        persistence_time = numpy.linspace(0, persistence_time_max[model], 301)
         for (i, (SAT, group_SAT)) in enumerate(group_model.groupby('SAT')):
             ax = axes[i, j]
-            Z = numpy.zeros((len(y), len(x)))
-            vmax = 0
+            density = numpy.zeros((len(population_sizes),
+                                   len(persistence_time)))
+            proportion_observed = numpy.zeros_like(population_sizes,
+                                                   dtype=float)
             for (k, (p, g)) in enumerate(group_SAT.groupby('population_size')):
                 ser = g.extinction_time[g.extinction_observed]
-                proportion_observed = len(ser) / len(g)
-                if proportion_observed > 0:
+                proportion_observed[k] = len(ser) / len(g)
+                if proportion_observed[k] > 0:
                     kde = statsmodels.nonparametric.api.KDEUnivariate(ser)
                     kde.fit(cut=0)
-                    Z[k] = kde.evaluate(x)
-                    vmax = max(vmax, max(Z[k]))
-                    Z[k] *= proportion_observed
+                    density[k] = kde.evaluate(persistence_time)
                 else:
-                    Z[k] = 0
-            norm = colors.Normalize(vmin=0, vmax=vmax)
-            ax.imshow(Z, interpolation='bilinear', cmap='Purples',
-                      norm=norm, aspect='auto', origin='lower',
-                      extent=(min(x), max(x), min(y), max(y)))
-            if ax.is_first_row():
-                ax.set_title(f'{model.capitalize()} model',
-                             fontdict=dict(fontsize='medium'))
+                    density[k] = 0
+            cmap = _get_cmap(SAT_colors[SAT])
+            # Use raw `density` for color,
+            # but plot `density * proportion_observed`.
+            norm = colors.Normalize(vmin=0, vmax=numpy.max(density))
+            ax.imshow(density * proportion_observed[:, None],
+                      cmap=cmap, norm=norm, interpolation='bilinear',
+                      extent=(min(persistence_time), max(persistence_time),
+                              min(population_sizes), max(population_sizes)),
+                      aspect='auto', origin='lower', clip_on=False)
+            ax.autoscale(tight=True)
+            if model == 'chronic':
+                ax_po = axes[i, -1]
+                ax_po.plot(1 - proportion_observed, population_sizes,
+                           color=SAT_colors[SAT], clip_on=False, zorder=3)
+                ax_po.autoscale(tight=True)
+                if ax.is_last_row():
+                    ax_po.set_xlabel('persisting 10 y')
+                    ax_po.xaxis.set_major_formatter(PercentFormatter())
+                    ax_po.xaxis.set_minor_locator(
+                        ticker.AutoMinorLocator(2))
             if ax.is_last_row():
-                ax.xaxis.set_major_locator(ticker.MultipleLocator(max(x) / 5))
                 ax.set_xlabel('extinction time (y)')
+                ax.xaxis.set_major_locator(
+                    ticker.MultipleLocator(max(persistence_time) / 5))
             if ax.is_first_col():
                 ax.set_yscale('log')
                 ax.yaxis.set_major_formatter(ticker.LogFormatter())
                 ax.yaxis.set_minor_formatter(ticker.LogFormatter())
                 ax.set_ylabel('population size')
-            if ax.is_last_col():
                 ax.annotate(f'SAT {SAT}',
-                            (1.02, 0.5), xycoords='axes fraction',
+                            (-0.5, 0.5), xycoords='axes fraction',
                             rotation=90, verticalalignment='center')
+                title_y = 0.975
+    fig.text(0.31, title_y, 'Acute model',
+             horizontalalignment='center')
+    fig.text(0.73, title_y, 'Chronic model',
+             horizontalalignment='center')
     fig.tight_layout()
+    fig.savefig('plot_population_sizes.pdf')
 
 
 if __name__ == '__main__':
