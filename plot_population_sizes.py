@@ -156,6 +156,7 @@ def plot_kde_2d(df):
                 ax.set_xlabel('extinction time (y)')
                 ax.xaxis.set_major_locator(
                     ticker.MultipleLocator(max(persistence_time) / 5))
+                ax.xaxis.set_minor_locator(ticker.AutoMinorLocator(2))
             if ax.is_first_col():
                 ax.set_yscale('log')
                 ax.yaxis.set_major_formatter(ticker.LogFormatter())
