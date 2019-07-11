@@ -2,6 +2,8 @@
 
 import os.path
 
+import numpy
+
 import h5
 import herd
 import run_common
