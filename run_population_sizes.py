@@ -2,46 +2,48 @@
 
 import os.path
 
+import numpy
+
 import h5
 import herd
 import run_common
 
 
-def run_population_size(model, SAT, population_size, tmax, nruns, hdfstore):
-    p = herd.Parameters(model=model, SAT=SAT)
-    p.population_size = population_size
-    logging_prefix = (', '.join((f'model {model}',
-                                 f'SAT {SAT}',
-                                 f'population_size {population_size}'))
-                      + ', ')
-    df = run_common.run_many(p, tmax, nruns,
-                             logging_prefix=logging_prefix)
-    # Save the data for this `population_size`.
-    # Add 'model', 'SAT', and 'population_size' levels to the index.
-    run_common._prepend_index_levels(df, model=model, SAT=SAT,
-                                     population_size=population_size)
-    hdfstore.put(df, min_itemsize=run_common._min_itemsize)
-
-
-def append_run_SATs(store_out, nruns):
-    '''Append the data from 'run_SATs.h5' to `store_out`.'''
-    p = herd.Parameters()
-    where = f'run<{nruns}'
-    with h5.HDFStore('run_SATs.h5', mode='r') as store_in:
-        for chunk in store_in.select(where=where, iterator=True):
-            # Add 'population_size' level to the index.
+def _copy_run_SATs(model, SAT, population_size, nruns, hdfstore_out):
+    '''Copy the data from 'run_SATs.h5'.'''
+    where = f'model={model} & SAT={SAT} & run<{nruns}'
+    with h5.HDFStore('run_SATs.h5', mode='r') as hdfstore_in:
+        for chunk in hdfstore_in.select(where=where, iterator=True):
             run_common._insert_index_levels(chunk, 2,
-                                            population_size=p.population_size)
-            store_out.put(chunk, min_itemsize=run_common._min_itemsize)
+                                            population_size=population_size)
+            hdfstore_out.put(chunk, min_itemsize=run_common._min_itemsize)
+
+
+def run_population_size(model, SAT, population_size, tmax, nruns, hdfstore):
+    if population_size == 1000:
+        _copy_run_SATs(model, SAT, population_size, nruns, hdfstore)
+    else:
+        p = herd.Parameters(model=model, SAT=SAT)
+        p.population_size = population_size
+        logging_prefix = (', '.join((f'model {model}',
+                                     f'SAT {SAT}',
+                                     f'population_size {population_size}'))
+                          + ', ')
+        df = run_common.run_many(p, tmax, nruns,
+                                 logging_prefix=logging_prefix)
+        run_common._prepend_index_levels(df, model=model, SAT=SAT,
+                                         population_size=population_size)
+        hdfstore.put(df, min_itemsize=run_common._min_itemsize)
+
+
+def arange(start, stop, step):
+    '''Like `numpy.arange()`, but with `stop` in the range.'''
+    return numpy.arange(start, stop + step, step)
 
 
 if __name__ == '__main__':
-    population_sizes = (
-        # tuple(range(100, 1000, 100)) +
-        # population_size = 1000 is in 'run_SATs.h5'.
-        # `append_run_SATs()` will copy these into 'run_population_sizes.h5'.
-        (2000, )
-    )
+    population_sizes = numpy.hstack((arange(100, 900, 100),
+                                     arange(1000, 2000, 1000)))
     nruns = 1000
     tmax = 10
 
