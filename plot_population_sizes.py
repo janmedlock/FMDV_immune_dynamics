@@ -114,7 +114,6 @@ def plot_kde_2d(df):
                           .sort_values())
     fig, axes = pyplot.subplots(3, 2 + 1, sharex='col', sharey='row',
                                 gridspec_kw=dict(width_ratios=(1, 1, 0.5)))
-    seaborn.despine(fig)
     for (j, (model, group_model)) in enumerate(df.groupby('model')):
         persistence_time = numpy.linspace(0, persistence_time_max[model], 301)
         for (i, (SAT, group_SAT)) in enumerate(group_model.groupby('SAT')):
@@ -165,7 +164,10 @@ def plot_kde_2d(df):
                 ax.annotate(f'SAT {SAT}',
                             (-0.5, 0.5), xycoords='axes fraction',
                             rotation=90, verticalalignment='center')
-                title_y = 0.975
+    for ax in fig.axes:
+        for sp in ('top', 'right'):
+            ax.spines[sp].set_visible(False)
+    title_y = 0.975
     fig.text(0.31, title_y, 'Acute model',
              horizontalalignment='center')
     fig.text(0.73, title_y, 'Chronic model',
