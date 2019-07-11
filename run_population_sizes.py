@@ -55,5 +55,4 @@ if __name__ == '__main__':
                 for SAT in (1, 2, 3):
                     run_population_size(model, SAT, population_size,
                                         tmax, nruns, store)
-        # append_run_SATs(store, nruns)
         store.repack()
