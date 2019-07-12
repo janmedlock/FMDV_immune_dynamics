@@ -39,7 +39,7 @@ def run_birth_seasonality(model, SAT, birth_seasonality_scaling, tmax, nruns,
         run_common._prepend_index_levels(
             df, model=model, SAT=SAT,
             birth_seasonal_coefficient_of_variation=bscov)
-    hdfstore.put(df, min_itemsize=run_common._min_itemsize)
+        hdfstore.put(df, min_itemsize=run_common._min_itemsize)
 
 
 if __name__ == '__main__':
