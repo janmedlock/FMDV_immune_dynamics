@@ -112,6 +112,7 @@ def plot_kde_2d(df):
                           .get_level_values('population_size')
                           .unique()
                           .sort_values())
+    population_size_baseline = 1000
     fig, axes = pyplot.subplots(3, 2 + 1, sharex='col', sharey='row',
                                 gridspec_kw=dict(width_ratios=(1, 1, 0.5)))
     for (j, (model, group_model)) in enumerate(df.groupby('model')):
@@ -165,6 +166,8 @@ def plot_kde_2d(df):
                             (-0.5, 0.5), xycoords='axes fraction',
                             rotation=90, verticalalignment='center')
     for ax in fig.axes:
+        ax.axhline(population_size_baseline,
+                   color='black', linestyle='dotted', alpha=0.7)
         for sp in ('top', 'right'):
             ax.spines[sp].set_visible(False)
     title_y = 0.975
