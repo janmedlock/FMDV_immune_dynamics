@@ -107,42 +107,51 @@ class HDFStore(pandas.HDFStore):
         return df.columns
 
     def groupby(self, by, *args, key=None, **kwargs):
+        # Iterate through `by` values,
+        # then select() each chunk of data.
+        kwargs_ = kwargs.copy()
+        for k in ('columns', 'iterator'):
+            kwargs_.pop(k, None)
+        by_iterator = iter(self.select(*args, key=key, columns=by,
+                                       iterator=True, **kwargs_))
         # `self.select(iterator=True)` has a chunk size that generally
         # doesn't not align with groups defined by `.groupby(by)`, so
         # we carry the last group from one chunk over to beginning of
         # the next chunk.
-        chunk_iterator = iter(self.select(*args, key=key,
-                                          iterator=True, **kwargs))
-        carryover = None
-        is_last_chunk = False
+        by_carryover = None
+        is_last_by_chunk = False
+        where_base = kwargs.pop('where', None)
         while True:
             try:
-                chunk = next(chunk_iterator)
+                by_chunk = next(by_iterator)
             except StopIteration:
                 # No new data, but we need to handle `carryover`.
-                chunk = None
-                is_last_chunk = True
-            # Append the last group from the previous chunk to this chunk.
+                by_chunk = None
+                is_last_by_chunk = True
+            # Handle carryover.
             try:
-                data = pandas.concat((carryover, chunk), copy=False)
+                by_values = pandas.concat((by_carryover, by_chunk),
+                                          copy=False)
             except ValueError:
                 # No data.  `pandas.concat((None, None))`.
                 break
-            grouper = data.groupby(by)
-            group_iterator = iter(grouper)
-            n_groups = len(grouper)
-            # If this is not the final chunk, carry the last group over to
-            # the next chunk.
-            stop = n_groups if is_last_chunk else (n_groups - 1)
-            for (idx, group) in itertools.islice(group_iterator, stop):
-                print(', '.join(f'{k}={v}' for k, v in zip(by, idx)))
-                yield (idx, group)
-            try:
+            # Iterate through the `by` values.
+            by_grouper = by_values.groupby(by)
+            by_group_iterator = iter(by_grouper)
+            # If this is not the final chunk,
+            # carry the last group over to the next chunk.
+            n_groups = len(by_grouper)
+            stop = n_groups if is_last_by_chunk else (n_groups - 1)
+            for (by_value, _) in itertools.islice(by_grouper, stop):
+                where = ' & '.join(f'{k}={v}' for k, v in zip(by, by_value))
+                print(where.replace(' & ', ', '))
+                if where_base is not None:
+                    where = where_base + ' & ' + where
+                group = self.select(*args, key=key, where=where, **kwargs)
+                yield (by_value, group)
+            if not is_last_by_chunk:
                 # Carry the last group over to the next chunk.
-                (idx, carryover) = next(group_iterator)
-            except StopIteration:
-                assert is_last_chunk
-                break
+                (_, by_carryover) = next(by_group_iterator)
 
     def repack(self):
         self.close()
