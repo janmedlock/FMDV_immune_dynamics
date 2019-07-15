@@ -106,7 +106,7 @@ class HDFStore(pandas.HDFStore):
         df = self.select(*args, key=key, iterator=iterator, stop=0, **kwargs)
         return df.columns
 
-    def groupby(self, by, *args, key=None, **kwargs):
+    def groupby(self, by, *args, key=None, debug=False, **kwargs):
         # Iterate through `by` values,
         # then select() each chunk of data.
         kwargs_ = kwargs.copy()
@@ -121,6 +121,8 @@ class HDFStore(pandas.HDFStore):
         by_carryover = None
         is_last_by_chunk = False
         where_base = kwargs.pop('where', None)
+        if debug:
+            by_seen = set()
         while True:
             try:
                 by_chunk = next(by_iterator)
@@ -143,6 +145,9 @@ class HDFStore(pandas.HDFStore):
             n_groups = len(by_grouper)
             stop = n_groups if is_last_by_chunk else (n_groups - 1)
             for (by_value, _) in itertools.islice(by_grouper, stop):
+                if debug:
+                    assert by_value not in by_seen
+                    by_seen.add(by_value)
                 where = ' & '.join(f'{k}={v}' for k, v in zip(by, by_value))
                 print(where.replace(' & ', ', '))
                 if where_base is not None:
@@ -152,6 +157,10 @@ class HDFStore(pandas.HDFStore):
             if not is_last_by_chunk:
                 # Carry the last group over to the next chunk.
                 (_, by_carryover) = next(by_group_iterator)
+            elif debug:
+                try: next(by_group_iterator)
+                except StopIteration: pass
+                else: assert False
 
     def repack(self):
         self.close()
