@@ -11,10 +11,11 @@ import stats
 
 
 def _get_extinction(infected):
-    level = 'time (y)'
-    t = infected.index.get_level_values(level)
-    return {'time': t.max() - t.min(),
-            'observed': infected.sort_index(level=level).iloc[-1] == 0}
+    t = infected.index.get_level_values('time (y)')
+    time = t.max() - t.min()
+    observed = (infected.iloc[-1] == 0)
+    assert observed or (time == 10)
+    return dict(time=time, observed=observed)
 
 
 def _load_extinction_times():
@@ -22,12 +23,9 @@ def _load_extinction_times():
         by = ['model', 'SAT', 'birth_seasonal_coefficient_of_variation', 'run']
         columns = ['exposed', 'infectious', 'chronic']
         extinction = {}
-        for (ix, group) in store.groupby(by):
-            infected = group[columns].sum(axis='columns')
+        for (ix, group) in store.groupby(by, columns=columns):
+            infected = group.sum(axis='columns')
             extinction[ix] = _get_extinction(infected)
-            t = infected.index.get_level_values('time (y)')
-            time = t.max() - t.min()
-            assert ((time == 10) or extinction[ix]['observed'])
         extinction = pandas.DataFrame.from_dict(extinction,
                                                 orient='index')
         extinction.index.names = by

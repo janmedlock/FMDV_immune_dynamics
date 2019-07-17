@@ -14,8 +14,8 @@ def _get_extinction(infected):
     t = infected.index.get_level_values('time (y)')
     time = t.max() - t.min()
     observed = (infected.iloc[-1] == 0)
-    return {'extinction_time': time,
-            'extinction_observed': observed}
+    assert observed or (time == 10)
+    return dict(time=time, observed=observed)
 
 
 def _load_extinction_times():
@@ -55,23 +55,21 @@ def plot_survival(df):
         i, j = row[SAT], column[model]
         ax = axes[i, j]
         for (p, g) in group.groupby('population_size'):
-            survival = stats.get_survival(g,
-                                          'extinction_time',
-                                          'extinction_observed')
+            survival = stats.get_survival(g, 'time', 'observed')
             ax.step(survival.index, survival,
                     where='post', label=f'population size {p}')
 
 
 def plot_kde(df):
     row = dict(enumerate(range(3), 1))
-    column = {'acute': 0, 'chronic': 1}
+    column = dict(acute=0, chronic=1)
     with seaborn.axes_style('darkgrid'):
         fig, axes = pyplot.subplots(3, 2, sharex='col')
         for ((model, SAT), group) in df.groupby(['model', 'SAT']):
             i, j = row[SAT], column[model]
             ax = axes[i, j]
             for (p, g) in group.groupby('population_size'):
-                ser = g.extinction_time[g.extinction_observed]
+                ser = g.time[g.observed]
                 proportion_observed = len(ser) / len(g)
                 if proportion_observed > 0:
                     kde = statsmodels.nonparametric.api.KDEUnivariate(ser)
@@ -106,7 +104,7 @@ def _get_cmap(color):
 
 
 def plot_kde_2d(df):
-    persistence_time_max = {'acute': 0.5, 'chronic': 5}
+    column = dict(acute=0, chronic=1)
     SAT_colors = {1: '#2271b5', 2: '#ef3b2c', 3: '#807dba'}
     population_sizes = (df.index
                           .get_level_values('population_size')
@@ -124,7 +122,7 @@ def plot_kde_2d(df):
             proportion_observed = numpy.zeros_like(population_sizes,
                                                    dtype=float)
             for (k, (p, g)) in enumerate(group_SAT.groupby('population_size')):
-                ser = g.extinction_time[g.extinction_observed]
+                ser = g.time[g.observed]
                 proportion_observed[k] = len(ser) / len(g)
                 if proportion_observed[k] > 0:
                     kde = statsmodels.nonparametric.api.KDEUnivariate(ser)
