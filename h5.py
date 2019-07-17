@@ -107,67 +107,48 @@ class HDFStore(pandas.HDFStore):
         return df.columns
 
     def groupby(self, by, *args, key=None, debug=True, **kwargs):
-        # Iterate through `by` values,
-        # then select() each chunk of data.
-        kwargs_ = kwargs.copy()
-        for k in ('columns', 'iterator'):
-            kwargs_.pop(k, None)
-        by_iterator = iter(self.select(*args, key=key, columns=by,
-                                       iterator=True, **kwargs_))
         # `self.select(iterator=True)` has a chunk size that generally
         # doesn't not align with groups defined by `.groupby(by)`, so
         # we carry the last group from one chunk over to beginning of
         # the next chunk.
-        by_carryover = None
-        is_last_by_chunk = False
-        where_base = kwargs.pop('where', None)
-        if debug:
-            by_seen = set()
+        chunk_iterator = iter(self.select(*args, key=key,
+                                          iterator=True, **kwargs))
+        carryover = None
+        is_last_chunk = False
         while True:
             try:
-                by_chunk = next(by_iterator)
+                chunk = next(chunk_iterator)
             except StopIteration:
-                # No new data, but we need to handle `by_carryover`.
-                by_chunk = None
-                is_last_by_chunk = True
-            # Handle carryover.
+                # No new data, but we need to handle `carryover`.
+                chunk = None
+                is_last_chunk = True
+            # Append the last group from the previous chunk to this chunk.
             try:
-                by_values = pandas.concat((by_carryover, by_chunk),
-                                          copy=False)
+                data = pandas.concat((carryover, chunk), copy=False)
             except ValueError:
                 # No data.  `pandas.concat((None, None))`.
                 break
-            # Iterate through the `by` values.
-            by_grouper = by_values.groupby(by)
-            by_group_iterator = iter(by_grouper)
-            # If this is not the final chunk,
-            # carry the last group over to the next chunk.
-            n_groups = len(by_grouper)
-            stop = n_groups if is_last_by_chunk else (n_groups - 1)
-            for (by_value, _) in itertools.islice(by_group_iterator, stop):
+            grouper = data.groupby(by)
+            group_iterator = iter(grouper)
+            n_groups = len(grouper)
+            # If this is not the final chunk, carry the last group over to
+            # the next chunk.
+            stop = n_groups if is_last_chunk else (n_groups - 1)
+            for (idx, group) in itertools.islice(group_iterator, stop):
+                print(', '.join(f'{k}={v}' for k, v in zip(by, idx)))
+                yield (idx, group)
+            if is_last_chunk:
                 if debug:
-                    assert by_value not in by_seen
-                    by_seen.add(by_value)
-                where = ' & '.join(f'{k}={v}'
-                                   for k, v in zip(by, by_value))
-                print(where.replace(' & ', ', '))
-                if where_base is not None:
-                    where = where_base + ' & ' + where
-                group = self.select(*args, key=key, where=where, **kwargs)
-                yield (by_value, group)
-            if is_last_by_chunk:
-                if debug:
-                    # Make sure there's no data after the final chunk.
                     try:
-                        next(by_group_iterator)
+                        next(group_iterator)
                     except StopIteration:
                         pass
                     else:
-                        raise RuntimeError('Data left in final chunk!')
+                        raise RuntimeError('group_iterator is not empty!')
                 break
             else:
                 # Carry the last group over to the next chunk.
-                (_, by_carryover) = next(by_group_iterator)
+                (idx, carryover) = next(group_iterator)
 
     def repack(self):
         self.close()
