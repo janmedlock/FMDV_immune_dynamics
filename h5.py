@@ -106,7 +106,7 @@ class HDFStore(pandas.HDFStore):
         df = self.select(*args, key=key, iterator=iterator, stop=0, **kwargs)
         return df.columns
 
-    def groupby(self, by, *args, key=None, debug=False, **kwargs):
+    def groupby(self, by, *args, key=None, debug=True, **kwargs):
         # Iterate through `by` values,
         # then select() each chunk of data.
         kwargs_ = kwargs.copy()
@@ -127,7 +127,7 @@ class HDFStore(pandas.HDFStore):
             try:
                 by_chunk = next(by_iterator)
             except StopIteration:
-                # No new data, but we need to handle `carryover`.
+                # No new data, but we need to handle `by_carryover`.
                 by_chunk = None
                 is_last_by_chunk = True
             # Handle carryover.
@@ -144,23 +144,30 @@ class HDFStore(pandas.HDFStore):
             # carry the last group over to the next chunk.
             n_groups = len(by_grouper)
             stop = n_groups if is_last_by_chunk else (n_groups - 1)
-            for (by_value, _) in itertools.islice(by_grouper, stop):
+            for (by_value, _) in itertools.islice(by_group_iterator, stop):
                 if debug:
                     assert by_value not in by_seen
                     by_seen.add(by_value)
-                where = ' & '.join(f'{k}={v}' for k, v in zip(by, by_value))
+                where = ' & '.join(f'{k}={v}'
+                                   for k, v in zip(by, by_value))
                 print(where.replace(' & ', ', '))
                 if where_base is not None:
                     where = where_base + ' & ' + where
                 group = self.select(*args, key=key, where=where, **kwargs)
                 yield (by_value, group)
-            if not is_last_by_chunk:
+            if is_last_by_chunk:
+                if debug:
+                    # Make sure there's no data after the final chunk.
+                    try:
+                        next(by_group_iterator)
+                    except StopIteration:
+                        pass
+                    else:
+                        raise RuntimeError('Data left in final chunk!')
+                break
+            else:
                 # Carry the last group over to the next chunk.
                 (_, by_carryover) = next(by_group_iterator)
-            elif debug:
-                try: next(by_group_iterator)
-                except StopIteration: pass
-                else: assert False
 
     def repack(self):
         self.close()
