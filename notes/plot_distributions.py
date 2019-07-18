@@ -6,14 +6,14 @@ import seaborn
 import sys
 sys.path.append('..')
 from herd import Parameters, RandomVariables
-import plot_figure
+import plot_common
 sys.path.pop()
 
 
 # The of these determines the order of the legend.
 SATs = ('all', 1, 2, 3)
 
-colors = {SAT: 'black' if (SAT == 'all') else plot_figure.SAT_colors[SAT]
+colors = {SAT: 'black' if (SAT == 'all') else plot_common.SAT_colors[SAT]
           for SAT in SATs}
 labels = {SAT: 'All' if (SAT == 'all') else f'SAT{SAT}'
           for SAT in SATs}

@@ -1,6 +1,7 @@
 import os.path
 
 import matplotlib.collections
+import matplotlib.ticker
 import numpy
 import pandas
 
@@ -42,3 +43,16 @@ def set_violins_linewidth(ax, lw):
     for col in ax.collections:
         if isinstance(col, matplotlib.collections.PolyCollection):
             col.set_linewidth(0)
+
+
+class PercentFormatter(matplotlib.ticker.Formatter):
+    def __call__(self, x, pos=None):
+        return '{:g}%'.format(100 * x)
+
+
+# Erin's colors.
+SAT_colors = {
+    1: '#2271b5',
+    2: '#ef3b2c',
+    3: '#807dba'
+}

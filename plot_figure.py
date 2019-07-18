@@ -12,16 +12,10 @@ import seaborn
 import statsmodels
 import pandas
 
+import plot_common
 import plot_start_times_SATs
 import run_common
 
-
-# Erin's colors.
-SAT_colors = {
-    1: '#2271b5',
-    2: '#ef3b2c',
-    3: '#807dba'
-}
 
 # From `pdfinfo notes/diagram_standalone.pdf'.
 diagram_width = 184.763 / 72  # inches
@@ -71,7 +65,7 @@ def plot_infected(ax, infected, model, SAT):
     i = infected.loc[ix].unstack('run').reset_index(to_drop, drop=True)
     # Start time at 0.
     t = i.index - i.index.min()
-    ax.plot(365 * t, i, color=SAT_colors[SAT],
+    ax.plot(365 * t, i, color=plot_common.SAT_colors[SAT],
             alpha=0.15, linewidth=0.5, drawstyle='steps-pre')
     # `i.fillna(0)` gives mean including those that
     # have gone extinct.
@@ -99,7 +93,7 @@ def plot_infected(ax, infected, model, SAT):
 
 def plot_extinction_time(ax, extinction_time, model, SAT):
     e = extinction_time.loc[(model, SAT)]
-    color = SAT_colors[SAT]
+    color = plot_common.SAT_colors[SAT]
     if len(e.dropna()) > 0:
         seaborn.kdeplot(e.dropna(), ax=ax, color=color,
                         shade=True, legend=False, cut=0)
