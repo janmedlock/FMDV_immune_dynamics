@@ -2,54 +2,29 @@
 
 from matplotlib import colors, pyplot, ticker
 import numpy
-import pandas
 import seaborn
 import statsmodels.nonparametric.api
 
+import extinction_times
 import h5
+import plot_common
 import stats
 
 
-def _get_extinction(infected):
-    t = infected.index.get_level_values('time (y)')
-    time = t.max() - t.min()
-    observed = (infected.iloc[-1] == 0)
-    assert observed or (time == 10)
-    return dict(time=time, observed=observed)
-
-
-def _load_extinction_times():
-    with h5.HDFStore('run_population_sizes.h5', mode='r') as store:
-        by = ['model', 'SAT', 'population_size', 'run']
-        columns = ['exposed', 'infectious', 'chronic']
-        extinction = {}
-        for (ix, group) in store.groupby(by, columns=columns):
-            infected = group.sum(axis='columns')
-            extinction[ix] = _get_extinction(infected)
-        extinction = pandas.DataFrame.from_dict(extinction,
-                                                orient='index')
-        extinction.index.names = by
-        extinction.sort_index(inplace=True)
-        return extinction
-
-
 def load_extinction_times():
+    filename = 'plot_population_sizes.h5'
     try:
-        df = h5.load('plot_population_sizes.h5')
+        df = h5.load(filename)
     except OSError:
-        df = _load_extinction_times()
-        h5.dump(df, 'plot_population_sizes.h5')
+        by = ['model', 'SAT', 'population_size', 'run']
+        df = extinction_times.load_extinction_times(filename, by)
+        h5.dump(df, filename)
     return df
-
-
-class PercentFormatter(ticker.Formatter):
-    def __call__(self, x, pos=None):
-        return '{:g}%'.format(100 * x)
 
 
 def plot_survival(df):
     row = dict(enumerate(range(3), 1))
-    column = {'acute': 0, 'chronic': 1}
+    column = dict(acute=0, chronic=1)
     fig, axes = pyplot.subplots(3, 2, sharex='col', sharey='row')
     for ((model, SAT), group) in df.groupby(['model', 'SAT']):
         i, j = row[SAT], column[model]
@@ -104,8 +79,6 @@ def _get_cmap(color):
 
 
 def plot_kde_2d(df):
-    column = dict(acute=0, chronic=1)
-    SAT_colors = {1: '#2271b5', 2: '#ef3b2c', 3: '#807dba'}
     population_sizes = (df.index
                           .get_level_values('population_size')
                           .unique()
@@ -130,7 +103,7 @@ def plot_kde_2d(df):
                     density[k] = kde.evaluate(persistence_time)
                 else:
                     density[k] = 0
-            cmap = _get_cmap(SAT_colors[SAT])
+            cmap = _get_cmap(plot_common.SAT_colors[SAT])
             # Use raw `density` for color,
             # but plot `density * proportion_observed`.
             norm = colors.Normalize(vmin=0, vmax=numpy.max(density))
@@ -143,11 +116,13 @@ def plot_kde_2d(df):
             if model == 'chronic':
                 ax_po = axes[i, -1]
                 ax_po.plot(1 - proportion_observed, population_sizes,
-                           color=SAT_colors[SAT], clip_on=False, zorder=3)
+                           color=plot_common.SAT_colors[SAT],
+                           clip_on=False, zorder=3)
                 ax_po.autoscale(tight=True)
                 if ax.is_last_row():
                     ax_po.set_xlabel('persisting 10 y')
-                    ax_po.xaxis.set_major_formatter(PercentFormatter())
+                    ax_po.xaxis.set_major_formatter(
+                        plot_common.PercentFormatter())
                     ax_po.xaxis.set_minor_locator(
                         ticker.AutoMinorLocator(2))
             if ax.is_last_row():
