@@ -1,8 +1,45 @@
 #!/usr/bin/python3
 
 import numpy
+import pandas
 
+import h5
 import run_common
+
+
+def _get_index_levels_unique(store, levels, *args, key=None, **kwargs):
+    to_drop = None  # Build this on the first iteration.
+    unique = pandas.MultiIndex.from_tuples([], names=levels)
+    for chunk in store.get_index(*args, key=key, iterator=True, **kwargs):
+        if to_drop is None:
+            to_drop = [n for n in chunk.names if n not in levels]
+        unique = unique.union(chunk.droplevel(to_drop).drop_duplicates())
+    return unique
+
+
+def _get_extinction(infected, tmax=10):
+    t = infected.index.get_level_values('time (y)')
+    time = t.max() - t.min()
+    observed = (infected.iloc[-1] == 0)
+    assert observed or (time == tmax)
+    return dict(time=time, observed=observed)
+
+
+def load_extinction_times(filename, by):
+    columns = ['exposed', 'infectious', 'chronic']
+    extinction = {}
+    with h5.HDFStore(filename, mode='r') as store:
+        index = _get_index_levels_unique(store, by)
+        for ix in index:
+            where = ' & '.join(f'{b}={i}' for (b, i) in zip(by, ix))
+            df = store.select(where=where, columns=columns)
+            infected = df.sum(axis='columns')
+            extinction[ix] = _get_extinction(infected)
+    extinction = pandas.DataFrame.from_dict(extinction,
+                                            orient='index')
+    extinction.index.names = by
+    extinction.sort_index(inplace=True)
+    return extinction
 
 
 def number_infected(x):
