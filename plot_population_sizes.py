@@ -79,6 +79,7 @@ def _get_cmap(color):
 
 
 def plot_kde_2d(df):
+    persistence_time_max = dict(acute=0.5, chronic=5)
     population_sizes = (df.index
                           .get_level_values('population_size')
                           .unique()
