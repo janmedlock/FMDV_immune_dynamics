@@ -32,6 +32,7 @@ def load_extinction_times(filename, by):
         index = _get_index_levels_unique(store, by)
         for ix in index:
             where = ' & '.join(f'{b}={i}' for (b, i) in zip(by, ix))
+            print(where.replace(' & ', ', '))
             df = store.select(where=where, columns=columns)
             infected = df.sum(axis='columns')
             extinction[ix] = _get_extinction(infected)
