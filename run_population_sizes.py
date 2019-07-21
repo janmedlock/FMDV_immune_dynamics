@@ -43,7 +43,7 @@ def arange(start, stop, step):
 
 if __name__ == '__main__':
     population_sizes = numpy.hstack((arange(100, 900, 100),
-                                     arange(1000, 3000, 1000)))
+                                     arange(1000, 5000, 1000)))
     nruns = 1000
     tmax = 10
 
