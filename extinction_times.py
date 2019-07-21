@@ -13,7 +13,9 @@ def _get_index_levels_unique(store, levels, *args, key=None, **kwargs):
     for chunk in store.get_index(*args, key=key, iterator=True, **kwargs):
         if to_drop is None:
             to_drop = [n for n in chunk.names if n not in levels]
-        unique = unique.union(chunk.droplevel(to_drop).drop_duplicates())
+        unique = unique.union(chunk.droplevel(to_drop)
+                                   .drop_duplicates()
+                                   .reorder_levels(levels))
     return unique
 
 
