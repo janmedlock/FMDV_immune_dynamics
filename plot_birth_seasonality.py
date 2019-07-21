@@ -16,8 +16,9 @@ def load_extinction_times():
     try:
         df = h5.load(filename)
     except OSError:
-        by = ['model', 'SAT', 'birth_seasonal_coefficient_of_variation', 'run']
-        df = _load_extinction_times(filename, by)
+        df = extinction_times.load_extinction_times(
+            'run_birth_seasonality.h5',
+            ['model', 'SAT', 'birth_seasonal_coefficient_of_variation', 'run'])
         h5.dump(df, filename)
     return df
 

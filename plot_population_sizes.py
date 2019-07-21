@@ -16,8 +16,9 @@ def load_extinction_times():
     try:
         df = h5.load(filename)
     except OSError:
-        by = ['model', 'SAT', 'population_size', 'run']
-        df = extinction_times.load_extinction_times(filename, by)
+        df = extinction_times.load_extinction_times(
+            'run_population_sizes.h5',
+             ['model', 'SAT', 'population_size', 'run'])
         h5.dump(df, filename)
     return df
 
