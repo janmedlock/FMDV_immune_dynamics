@@ -23,6 +23,44 @@ def load_extinction_times():
     return df
 
 
+def plot_median(df, CI=0.5):
+    row = dict(enumerate(range(3), 1))
+    column = dict(acute=0, chronic=1)
+    levels = [CI / 2, 1 - CI / 2]
+    with seaborn.axes_style('darkgrid'):
+        fig, axes = pyplot.subplots(3, 2, sharex='col', sharey='row')
+        for ((model, SAT), group) in df.groupby(['model', 'SAT']):
+            i, j = row[SAT], column[model]
+            ax = axes[i, j]
+            by = 'birth_seasonal_coefficient_of_variation'
+            times = group.groupby(by).time
+            median = times.median()
+            ax.plot(median, median.index,
+                    color=plot_common.SAT_colors[SAT])
+            CI_ = times.quantile(levels).unstack()
+            ax.fill_betweenx(CI_.index, CI_[levels[0]], CI_[levels[1]],
+                             color=plot_common.SAT_colors[SAT],
+                             alpha=0.5)
+            if ax.is_first_row():
+                ax.set_title(f'{model.capitalize()} model',
+                             fontdict=dict(fontsize='medium'))
+            else:
+                ax.set_title('')
+            if ax.is_last_row():
+                ax.set_xlim(left=0)
+                ax.set_xlabel('extinction time (y)')
+            else:
+                ax.set_xlabel('')
+            if ax.is_first_col():
+                if i == 1:
+                    ylabel = 'Birth seasonal\ncoefficient of\nvariation'
+                else:
+                    ylabel = '\n\n'
+                ax.set_ylabel(f'SAT {SAT}\n{ylabel}')
+        fig.suptitle('')
+        fig.tight_layout()
+
+
 def plot_survival(df):
     row = dict(enumerate(range(3), 1))
     column = dict(acute=0, chronic=1)
@@ -97,7 +135,8 @@ def plot_kde_2d(df):
             for (k, (b, g)) in enumerate(group_SAT.groupby(
                     'birth_seasonal_coefficient_of_variation')):
                 ser = g.time[g.observed]
-                proportion_observed[k] = len(ser) / len(g)
+                nruns = len(g)
+                proportion_observed[k] = len(ser) / nruns
                 if proportion_observed[k] > 0:
                     kde = statsmodels.nonparametric.api.KDEUnivariate(ser)
                     kde.fit(cut=0)
@@ -152,6 +191,7 @@ def plot_kde_2d(df):
 
 if __name__ == '__main__':
     df = load_extinction_times()
+    # plot_median(df)
     # plot_survival(df)
     # plot_kde(df)
     plot_kde_2d(df)

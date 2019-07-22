@@ -98,7 +98,8 @@ def plot_kde_2d(df):
                                                    dtype=float)
             for (k, (p, g)) in enumerate(group_SAT.groupby('population_size')):
                 ser = g.time[g.observed]
-                proportion_observed[k] = len(ser) / len(g)
+                nruns = len(g)
+                proportion_observed[k] = len(ser) / nruns
                 if proportion_observed[k] > 0:
                     kde = statsmodels.nonparametric.api.KDEUnivariate(ser)
                     kde.fit(cut=0)
