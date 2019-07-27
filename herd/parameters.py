@@ -2,7 +2,7 @@ from numpy import inf
 
 
 class Parameters:
-    def __init__(self, model='acute', SAT=1, _set_defaults=True):
+    def __init__(self, model='chronic', SAT=1, _set_defaults=True):
         'Initialize with default values.'
         self.SAT = SAT
         self.model = model
@@ -33,6 +33,8 @@ class Parameters:
                 self.chronic_recovery_mean = 243 / 365
                 self.chronic_recovery_shape = 3.2
                 self.chronic_transmission_rate = 0.028 * 365
+                # FIXME
+                # Antibody gain and loss parameters.
             elif self.SAT == 2:
                 self.progression_shape = 1.6
                 self.progression_mean = 1.3 / 365
@@ -45,6 +47,8 @@ class Parameters:
                 self.chronic_recovery_mean = 180 / 365
                 self.chronic_recovery_shape = 3.2
                 self.chronic_transmission_rate = 0.003 * 365
+                # FIXME
+                # Antibody gain and loss parameters.
             elif self.SAT == 3:
                 self.progression_shape = 1.6
                 self.progression_mean = 2.8 / 365
@@ -57,6 +61,8 @@ class Parameters:
                 self.chronic_recovery_mean = 174 / 365
                 self.chronic_recovery_shape = 3.2
                 self.chronic_transmission_rate = 0.012 * 365
+                # FIXME
+                # Antibody gain and loss parameters.
             else:
                 raise ValueError("Unknown SAT '{}'!".format(self.SAT))
 
