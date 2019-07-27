@@ -10,7 +10,7 @@ from herd.random_variables import RandomVariables
 
 
 statuses = ('maternal immunity', 'susceptible', 'exposed',
-            'infectious', 'chronic', 'recovered')
+            'infectious', 'chronic', 'recovered', 'partial immunity')
 
 
 class Herd(set):
