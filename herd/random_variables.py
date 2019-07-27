@@ -1,5 +1,6 @@
 from herd.parameters import Parameters
-from herd import (birth, chronic_recovery, chronic_transmission_rate, female,
+from herd import (antibody_gain, antibody_loss, birth,
+                  chronic_recovery, chronic_transmission_rate, female,
                   immunity_waning, initial_conditions,
                   maternal_immunity_waning, mortality, probability_chronic,
                   progression, recovery, transmission_rate)
@@ -25,6 +26,10 @@ class RandomVariables:
         self.chronic_recovery = chronic_recovery.gen(params)
         # waiting time leaving R to S
         self.immunity_waning = immunity_waning.gen(params)
+        # waiting time leaving R to P
+        self.antibody_loss = antibody_loss.gen(params)
+        # waiting time leaving P to R
+        self.antibody_gain = antibody_gain.gen(params)
         self.initial_conditions = initial_conditions.gen(params)
 
     def __repr__(self):
