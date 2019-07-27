@@ -7,7 +7,7 @@ class Buffalo:
 
     # The immune statuses that give mom antibodies
     # that she passes on to her calves.
-    has_antibodies = frozenset({'chronic', 'recovered', 'partial immunity'})
+    has_antibodies = frozenset({'chronic', 'recovered'})
 
     def __init__(self, herd, immune_status='maternal immunity', age=0):
         self.herd = herd
