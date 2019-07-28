@@ -33,8 +33,11 @@ class Parameters:
                 self.chronic_recovery_mean = 243 / 365
                 self.chronic_recovery_shape = 3.2
                 self.chronic_transmission_rate = 0.028 * 365
-                # FIXME
-                # Antibody gain and loss parameters.
+                # Rate, not duration, leaving R to P.
+                self.antibody_loss_hazard_alpha = 2
+                self.antibody_loss_hazard_beta = 1
+                # Rate, not duration, leaving P to R.
+                self.antibody_gain_hazard = 1
             elif self.SAT == 2:
                 self.progression_shape = 1.6
                 self.progression_mean = 1.3 / 365
@@ -47,8 +50,11 @@ class Parameters:
                 self.chronic_recovery_mean = 180 / 365
                 self.chronic_recovery_shape = 3.2
                 self.chronic_transmission_rate = 0.003 * 365
-                # FIXME
-                # Antibody gain and loss parameters.
+                # Rate, not duration, leaving R to P.
+                self.antibody_loss_hazard_alpha = 2
+                self.antibody_loss_hazard_beta = 1
+                # Rate, not duration, leaving P to R.
+                self.antibody_gain_hazard = 1
             elif self.SAT == 3:
                 self.progression_shape = 1.6
                 self.progression_mean = 2.8 / 365
@@ -61,8 +67,11 @@ class Parameters:
                 self.chronic_recovery_mean = 174 / 365
                 self.chronic_recovery_shape = 3.2
                 self.chronic_transmission_rate = 0.012 * 365
-                # FIXME
-                # Antibody gain and loss parameters.
+                # Rate, not duration, leaving R to P.
+                self.antibody_loss_hazard_alpha = 2
+                self.antibody_loss_hazard_beta = 1
+                # Rate, not duration, leaving P to R.
+                self.antibody_gain_hazard = 1
             else:
                 raise ValueError("Unknown SAT '{}'!".format(self.SAT))
 
