@@ -1,4 +1,4 @@
-* Fix AntibodyLoss.isf() RVs.
 * Add "paritial immunity" to initial conditions.
 * Fix antibody gain and loss parameters in parameters.py,
   in units per year.
+* start_time = antibody_loss_time_min?

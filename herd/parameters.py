@@ -1,4 +1,5 @@
 from numpy import inf
+from pandas import Timestamp
 
 
 class Parameters:
@@ -10,7 +11,6 @@ class Parameters:
         if _set_defaults:
             self.population_size = 1000
             self.initial_infectious = 2
-            self.start_time = 0.5  # 01 June, 6 months after birth peak.
             self.female_probability_at_birth = 0.5
             self.birth_peak_time_of_year = 0  # 01 January.
             # self.birth_seasonal_coefficient_of_variation = 0.505  # 1st year.
@@ -19,8 +19,19 @@ class Parameters:
             # During in M before moving to S.
             self.maternal_immunity_duration_mean = 0.37
             self.maternal_immunity_duration_shape = 1.19
+            # For the rate, not duration, leaving R to P.
+            # The first day is 2014 March 5.
+            date_min = Timestamp(year=2014, month=3, day=5)
+            # Convert to years, with January 1 at 0,
+            # like `start_time` below.
+            time_min = (date_min.dayofyear - 1) / 365
+            # 1247 days after `time_min`, converted to years.
+            time_max = time_min + 1247 / 365
+            self.antibody_loss_hazard_time_min = time_min
+            self.antibody_loss_hazard_time_max = time_max
             # Duration in R before returning to S.
             self.immunity_waning_duration = inf
+            self.start_time = self.antibody_loss_hazard_time_min
             if self.SAT == 1:
                 self.progression_shape = 1.2
                 self.progression_mean = 0.5 / 365
@@ -68,9 +79,11 @@ class Parameters:
                 self.chronic_recovery_shape = 3.2
                 self.chronic_transmission_rate = 0.012 * 365
                 # Rate, not duration, leaving R to P.
+                # FIXME
                 self.antibody_loss_hazard_alpha = 2
                 self.antibody_loss_hazard_beta = 1
                 # Rate, not duration, leaving P to R.
+                # FIXME
                 self.antibody_gain_hazard = 1
             else:
                 raise ValueError("Unknown SAT '{}'!".format(self.SAT))
