@@ -1,11 +1,4 @@
-* Run over population size and over birth variance.
-
-* Touch up parameter names in plot_samples.plot_sensitivity().
-
-* Edit manuscript and methods.
-
-* Generate good initial condtions by solving PDEs.
-
-* Figure out what to do with all the untracked files in /orphans/.
-
-* Figure out how to do population stats.
+* Fix AntibodyLoss.isf() RVs.
+* Add "paritial immunity" to initial conditions.
+* Fix antibody gain and loss parameters in parameters.py,
+  in units per year.
