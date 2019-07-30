@@ -56,7 +56,7 @@ class gen(RV):
     def isf(self, q, time0):
         '''Inverse survival function.'''
         # log q = - \int_{time_0}^{time} slope * (u - time_min + alpha) du
-        # Let t = time - time_min,
+        # Let t   = time   - time_min,
         #     t_0 = time_0 - time_min.
         # Then
         # 0 = slope / 2 * t ** 2

@@ -34,6 +34,12 @@ class gen:
                                           self.hazard_infection,
                                           self.parameters)
 
+    def _P_prob(self, age):
+        '''Probability of being in P, i.e. having reduced antibodies.'''
+        return _initial_conditions.P_prob(age,
+                                          self.hazard_infection,
+                                          self.parameters)
+
     def _proportion(self, age):
         if numpy.ndim(age) == 0:
             age = numpy.array([age])
@@ -44,6 +50,7 @@ class gen:
         status['exposed'] = 0
         status['infectious'] = 0
         status['chronic'] = self._C_prob(age)
+        status['partial immunity'] = self._P_prob(age)
         # The remaining proportion are recovered.
         # Sum over the statuses.
         not_R = status.sum(axis=(status.ndim - 1))

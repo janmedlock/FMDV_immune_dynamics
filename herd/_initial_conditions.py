@@ -151,6 +151,11 @@ def C_prob(age, hazard_infection, params):
     return numpy.exp(C_logprob(age, hazard_infection, params))
 
 
+def P_prob(age, hazard_infection, params):
+    '''The probability of having reduced antibodies at age `a`.'''
+    raise NotImplementedError
+
+
 def minus_loglikelihood(hazard_infection, params, data):
     '''This gets optimized over `hazard_infection`.'''
     # Convert the length-1 `hazard_infection` to a scalar Python float,
