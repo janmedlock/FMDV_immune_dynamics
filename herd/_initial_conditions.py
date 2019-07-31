@@ -109,14 +109,15 @@ def _C_logprob_integrand(b, a, hazard_infection, params, chronic_recoveryRV):
     return numpy.exp(S_logprob(b, hazard_infection, params)
                      + chronic_recoveryRV.logsf(a - b))
 
+
 # Make the function able to handle vector-valued `age`.
 @_vectorize(otypes=[float])
 def _C_logprob_integral(age, hazard_infection, params):
     chronic_recoveryRV = chronic_recovery.gen(params)
-    val, _ = quadrature(_C_logprob_integrand, 0, age,
-                        args=(age, hazard_infection, params,
-                              chronic_recoveryRV),
-                        **_quadrature_options)
+    val, _ = quadrature(
+        _C_logprob_integrand, 0, age,
+        args=(age, hazard_infection, params, chronic_recoveryRV),
+        **_quadrature_options)
     return val
 
 
@@ -149,6 +150,32 @@ def C_logprob(age, hazard_infection, params):
 def C_prob(age, hazard_infection, params):
     '''The probability of being chronically infected at age `a`.'''
     return numpy.exp(C_logprob(age, hazard_infection, params))
+
+
+def P_logprob(age, hazard_infection, params):
+    '''The logarithm of the probability of having reduced antibodies
+    at age `a`.  This is
+    \log \int_0^a Prob{Infection at age b}
+                  * probabilty_chronic
+                  * Prob{survival in chronically infected for (a - b)} db
+    = \log \int_0^a Prob{In S at age b}
+                    * hazard_infection
+                    * probabilty_chronic
+                    * Prob{survival in chronically infected for (a - b)} db
+    = \log \int_0^a Prob{In S at age b}
+                    * Prob{survival in chronically infected for (a - b)} db
+      + \log hazard_infection
+      + \log probabilty_chronic.'''
+    assert hazard_infection >= 0, hazard_infection
+    if params.model != 'chronic':
+        # Shortcut to probability = 0.
+        return - numpy.inf * numpy.ones_like(age)
+    # Handle log(0).
+    return numpy.ma.filled(
+        numpy.ma.log(_C_logprob_integral(age, hazard_infection, params))
+        + numpy.ma.log(hazard_infection)
+        + numpy.ma.log(params.probability_chronic),
+        - numpy.inf)
 
 
 def P_prob(age, hazard_infection, params):
