@@ -14,7 +14,7 @@ class gen(RV):
         self.beta = parameters.antibody_loss_hazard_beta
         self.time_max = parameters.antibody_loss_hazard_time_max
         self.time_min = parameters.antibody_loss_hazard_time_min
-        self._slope = ((self.alpha - self.beta)
+        self._slope = ((self.beta - self.alpha)
                        / (self.time_max - self.time_min))
 
     def __repr__(self):
