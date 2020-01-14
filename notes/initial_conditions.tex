@@ -129,7 +129,8 @@ method on characteristics and the composite trapezoid rule for the
 integrals \citep{milner_1992}.  Given the age step $\Delta a$, let
 $a^i = i \Delta a$ and $r^j = j \Delta a$ for $i, j \in \{0, 1, 2,
 \ldots, I - 1\}$, $P_X^i \approx P_X(a^i)$, and $p_X^{i, j} \approx
-p_X(a^i, r^j)$.  For each $i \geq 1$ and each $1 \leq j \leq i$, the
+p_X(a^i, r^j)$.
+For each $1 \leq i \leq I - 1$ and each $1 \leq j \leq i$, the
 Crank--Nicolson method on characteristics is
 \begin{equation}
   \begin{split}
@@ -228,7 +229,8 @@ Then
   \end{split}
 \end{equation}
 
-Define vectors
+For the variables $P_X$ that only depend on age $a$,
+define the vectors
 \begin{equation}
   \vec{P}_X =
   \begin{pmatrix}
@@ -238,23 +240,25 @@ Define vectors
     P_X^{I - 1}
   \end{pmatrix},
 \end{equation}
-for $X \in \{\mathrm{M}, \mathrm{S}, \mathrm{R}, \mathrm{L}\}$ and
+for $X \in \{\mathrm{M}, \mathrm{S}, \mathrm{R}, \mathrm{L}\}$.
+For the variables that depend on age $a$ and residence time $r$,
+define the vectors
 \begin{equation}
-  \vec{p}_Y =
+  \vec{p}_X =
   \begin{pmatrix}
-    p_Y^{0, 0}\\
-    p_Y^{1, 0}\\
-    p_Y^{1, 1}\\
-    p_Y^{2, 0}\\
-    p_Y^{2, 1}\\
-    p_Y^{2, 2}\\
+    p_X^{0, 0}\\
+    p_X^{1, 0}\\
+    p_X^{1, 1}\\
+    p_X^{2, 0}\\
+    p_X^{2, 1}\\
+    p_X^{2, 2}\\
     \vdots\\
-    p_Y^{I - 1, 0}\\
+    p_X^{I - 1, 0}\\
     \vdots\\
-    p_Y^{I - 1, I - 1}
+    p_X^{I - 1, I - 1}
   \end{pmatrix},
 \end{equation}
-for $Y \in \{\mathrm{E}, \mathrm{I}, \mathrm{C}\}$,
+for $X \in \{\mathrm{E}, \mathrm{I}, \mathrm{C}\}$,
 where the $i, j$th entry is in position
 \begin{equation}
   k = \frac{i (i + 1)}{2} + j,
@@ -267,7 +271,7 @@ or
     j &= k - \frac{i (i + 1)}{2}.
   \end{split}
 \end{equation}
-Then for $i \geq 1$ and $1 \leq j \leq i$,
+Then for $1 \leq i \leq I - 1$ and $1 \leq j \leq i$,
 \begin{equation}
   \begin{split}
     P_{\mathrm{M}}^0 &= 1,
