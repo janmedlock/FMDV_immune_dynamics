@@ -136,7 +136,7 @@ Crank--Nicolson method on characteristics is
     P_{\mathrm{M}}^0 &= 1,
     \\
     \frac{P_{\mathrm{M}}^i - P_{\mathrm{M}}^{i - 1}}{\Delta a}
-    &= - h_{\text{waning}}(a_{i - 1 / 2})
+    &= - h_{\text{waning}}(a^{i - 1 / 2})
     \frac{P_{\mathrm{M}}^i + P_{\mathrm{M}}^{i - 1}}{2},
     \\
     P_{\mathrm{S}}^0 &= 0,
@@ -154,7 +154,7 @@ Crank--Nicolson method on characteristics is
     + \frac{P_{\mathrm{L}}^i + P_{\mathrm{L}}^{i - 1}}{2}\right),
     \\
     \frac{p_{\mathrm{E}}^{i, j} - p_{\mathrm{E}}^{i - 1, j - 1}}{\Delta a}
-    &= - h_{\text{progression}}(r_{j - 1 / 2})
+    &= - h_{\text{progression}}(r^{j - 1 / 2})
     \frac{p_{\mathrm{E}}^{i, j} + p_{\mathrm{E}}^{i - 1, j - 1}}{2},
     \\
     p_{\mathrm{I}}^{0, 0} &= 0,
@@ -272,9 +272,9 @@ Then for $i \geq 1$ and $1 \leq j \leq i$,
   \begin{split}
     P_{\mathrm{M}}^0 &= 1,
     \\
-    \left[2 - h_{\text{waning}}(a_{i - 1 / 2}) \Delta a\right]
+    \left[2 - h_{\text{waning}}(a^{i - 1 / 2}) \Delta a\right]
     P_{\mathrm{M}}^{i - 1}
-    - \left[2 + h_{\text{waning}}(a_{i - 1 / 2}) \Delta a\right]
+    - \left[2 + h_{\text{waning}}(a^{i - 1 / 2}) \Delta a\right]
     P_{\mathrm{M}}^i
     &= 0,
   \end{split}
@@ -350,10 +350,10 @@ Then for $i \geq 1$ and $1 \leq j \leq i$,
     - 2 p_{\mathrm{E}}^{i, 0}
     &= 0,
     \\
-    \left[2 - h_{\text{progression}}(r_{j - 1 / 2}) \Delta a\right]
+    \left[2 - h_{\text{progression}}(r^{j - 1 / 2}) \Delta a\right]
     p_{\mathrm{E}}^{i - 1, j - 1}
     \\ {}
-    - \left[2 + h_{\text{progression}}(r_{j - 1 / 2}) \Delta a\right]
+    - \left[2 + h_{\text{progression}}(r^{j - 1 / 2}) \Delta a\right]
     p_{\mathrm{E}}^{i, j}
     &= 0,
   \end{split}
@@ -362,11 +362,11 @@ Then for $i \geq 1$ and $1 \leq j \leq i$,
   \begin{split}
     p_{\mathrm{I}}^{0, 0} &= 0,
     \\
-    2 p_{\mathrm{I}}^{i, 0}
-    - \sum_{j = 0}^{i - 1}
+    \sum_{j = 0}^{i - 1}
     T^{i - 1, j} h_{\text{progression}}(r^j) p_{\mathrm{E}}^{i - 1, j}
-    - \sum_{j = 0}^i
+    + \sum_{j = 0}^i
     T^{i, j} h_{\text{progression}}(r^j) p_{\mathrm{E}}^{i, j}
+    - 2 p_{\mathrm{I}}^{i, 0}
     &= 0,
     \\
     \left[2 - h_{\text{recovery}}(r^{j - 1 / 2}) \Delta a\right]
@@ -380,15 +380,15 @@ Then for $i \geq 1$ and $1 \leq j \leq i$,
   \begin{split}
     p_{\mathrm{C}}^{0, 0} &= 0,
     \\
-    2 p_{\mathrm{C}}^{i, 0}
-    \\ {}
-    - \sum_{j = 0}^{i - 1}
+    \sum_{j = 0}^{i - 1}
     T^{i - 1, j} p_{\text{chronicity}} h_{\text{recovery}}(r^j)
     p_{\mathrm{I}}^{i - 1, j}
     \\ {}
-    - \sum_{j = 0}^i
+    + \sum_{j = 0}^i
     T^{i, j} p_{\text{chronicity}} h_{\text{recovery}}(r^j)
     p_{\mathrm{I}}^{i, j}
+    \\ {}
+    - 2 p_{\mathrm{C}}^{i, 0}
     &= 0,
     \\
     \left[2 - h_{\text{chronic recovery}}(r^{j - 1 / 2}) \Delta a\right]
@@ -399,16 +399,6 @@ Then for $i \geq 1$ and $1 \leq j \leq i$,
     &= 0.
   \end{split}
 \end{equation}
-
-Let
-\begin{equation}
-  \vec{T}^i =
-  \frac{\Delta a}{2}
-  \begin{pmatrix}
-    1, 2, \cdots, 2, 1
-  \end{pmatrix},
-\end{equation}
-a length-$i$ row vector.
 
 \bibliography{journal_abbreviations,math_epi}
 \bibliographystyle{jpmbib}
