@@ -295,6 +295,7 @@ def plot_prob_cond(ax, status_prob_cond):
         z = status_prob_cond.shape[1] - i
         ax.fill_between(ages, total, label=k, zorder=z)
     ax.set_ylabel('probability\ngiven age')
+    ax.set_ylim(-0.05, 1.05)
 
 
 def plot_prob(ax, status_prob):
@@ -307,6 +308,7 @@ def plot_prob(ax, status_prob):
         z = len(status_prob) - i
         ax.fill_between(ages, total, label=None, zorder=z)
     ax.set_ylabel('joint\ndensity')
+    ax.set_ylim(-0.05, 1.05)
 
 
 def plot_sample(ax, status_ages, width=0.1):
@@ -339,7 +341,7 @@ def plot(status_prob_cond):
     # numpy.random.seed(1) # Make `ICs.rvs()` cache friendly.
     # status_ages = ICs.rvs(parameters.population_size)
     # plot_sample(axes[2], status_ages)
-    axes[-1].set_xlabel('age')
+    axes[-1].set_xlabel('age', labelpad=-9)
     fig.tight_layout(rect=(0, 0.1, 1, 1))
     (_, labels) = axes[0].get_legend_handles_labels()
     nrow = 2
@@ -351,6 +353,24 @@ def plot(status_prob_cond):
 if __name__ == '__main__':
     hazard_infection = 1
     parameters = Parameters()
+    # Incremental tests.
+    # No L -> R.
+    parameters.antibody_gain_hazard = 0
+    # No R -> L.
+    parameters.antibody_loss_hazard_alpha = \
+        parameters.antibody_loss_hazard_beta = 0
+    # No C -> R.
+    parameters.chronic_recovery_mean = numpy.inf
+    # No I -> R (or C).
+    parameters.recovery_mean = numpy.inf
+    # No I -> C.
+    parameters.probability_chronic = 0
+    # No E -> I.  Turning on progression gives nonsense.
+    parameters.progression_mean = numpy.inf
+    # No S -> E.  There is an incorrect blip around a = 0.5.
+    hazard_infection = 0
+    # No M -> S.
+    # parameters.maternal_immunity_duration_mean = numpy.inf
     RVs = RandomVariables(parameters)
     age_max = 10
     age_step = 0.1
