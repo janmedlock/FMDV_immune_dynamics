@@ -354,23 +354,25 @@ if __name__ == '__main__':
     hazard_infection = 1
     parameters = Parameters()
     # Incremental tests.
-    # No L -> R.
-    parameters.antibody_gain_hazard = 0
-    # No R -> L.
-    parameters.antibody_loss_hazard_alpha = \
-        parameters.antibody_loss_hazard_beta = 0
-    # No C -> R.
-    parameters.chronic_recovery_mean = numpy.inf
-    # No I -> R (or C).
-    parameters.recovery_mean = numpy.inf
-    # No I -> C.
-    parameters.probability_chronic = 0
-    # No E -> I.  Turning on progression gives nonsense.
-    parameters.progression_mean = numpy.inf
-    # No S -> E.  There is an incorrect blip around a = 0.5.
-    hazard_infection = 0
     # No M -> S.
     # parameters.maternal_immunity_duration_mean = numpy.inf
+    # No S -> E.
+    # Turning on infection gives an incorrect blip around a = 0.5.
+    hazard_infection = 0
+    # No E -> I.
+    # Turning on progression gives nonsense.
+    # parameters.progression_mean = numpy.inf
+    # No I -> C.
+    # parameters.probability_chronic = 0
+    # No I -> R (and C).
+    # parameters.recovery_mean = numpy.inf
+    # No C -> R.
+    # parameters.chronic_recovery_mean = numpy.inf
+    # No R -> L.
+    # parameters.antibody_loss_hazard_alpha = \
+    #     parameters.antibody_loss_hazard_beta = 0
+    # No L -> R.
+    # parameters.antibody_gain_hazard = 0
     RVs = RandomVariables(parameters)
     age_max = 10
     age_step = 0.1
