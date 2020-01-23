@@ -3,10 +3,6 @@
 Check why P_M + P_S + P_E < 1.
 Could it be the trapezoid rule piece?
 Can we show analytically that P_M + P_S + P_E should be 1?
-
-Should we just try to solve the p_E equation with p_E(a, 0) = p_E^0(a),
-which integrates to 1, e.g. the pdf of some gamma?
-(This one, right, not p_E(0, r) = p_E^0(r)?)
 '''
 
 import sys
@@ -150,36 +146,6 @@ class Solver:
         A_E = [None, A_ES, A_EE]
         b_E = self.get_b_Z(self.K)
         return (A_E, b_E)
-
-    def get_row_I(self):
-        A_IE = sparse.lil_matrix((self.K, self.K))
-        # This hazard is at `ages`, not `ages_mid`.
-        with numpy.errstate(divide='ignore'):
-            hazard_progression = self.RVs.progression.hazard(self.ages)
-        rate = hazard_progression * self.age_step ** 2
-        # i = 0.
-        # A_IE[self.get_k(0, 0), 0] = 0  # No op.
-        for i in range(1, self.I):
-            k = self.get_k(i, 0)
-            # Trapezoid rule for boundary condition.
-            j = [0, i]
-            l = self.get_k(i, j)
-            A_IE[k, l] = rate[j] / 2
-            j = range(1, i)
-            l = self.get_k(i, j)
-            A_IE[k, l] = rate[j]
-            j = [0, i - 1]
-            l = self.get_k(i - 1, j)
-            A_IE[k, l] = rate[j] / 2
-            j = range(1, i - 1)
-            l = self.get_k(i - 1, j)
-            A_IE[k, l] = rate[j]
-        with numpy.errstate(divide='ignore'):
-            hazard_recovery = self.RVs.recovery.hazard(self.ages_mid)
-        A_II = self.get_A_YY(hazard_recovery * self.age_step)
-        A_I = [None, None, None, None, A_IE, A_II, None]
-        b_I = self.get_b_Z(self.K)
-        return (A_I, b_I)
 
     def get_A_b(self, format='csr'):
         (A_M, b_M) = self.get_row_M()
