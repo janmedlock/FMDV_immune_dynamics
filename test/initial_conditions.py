@@ -1,4 +1,10 @@
 #!/usr/bin/python3
+'''
+Check why P_M + P_S + P_E < 1.
+Could it be the trapezoid rule piece?
+Can we show analytically that P_M + P_S + P_E should be 1?
+'''
+
 import sys
 
 import numpy
@@ -120,7 +126,7 @@ class Solver:
     def get_row_M(self):
         hazard_waning = self.RVs.maternal_immunity_waning.hazard(self.ages_mid)
         A_MM = self.get_A_XX(hazard_waning * self.age_step)
-        A_M = [A_MM, None, None, None, None, None, None]
+        A_M = [A_MM, None, None]
         b_M = self.get_b_Z(self.I, [1], [0])
         return (A_M, b_M)
 
@@ -130,152 +136,33 @@ class Solver:
         hazard_infection = (self.hazard_infection
                             * numpy.ones_like(self.ages_mid))
         A_SS = self.get_A_XX(hazard_infection * self.age_step)
-        A_S = [A_SM, A_SS, None, None, None, None, None]
+        A_S = [A_SM, A_SS, None]
         b_S = self.get_b_Z(self.I)
         return (A_S, b_S)
-
-    def get_row_R(self):
-        # All evaluated at the the initial time.
-        hazard_antibody_loss = self.RVs.antibody_loss.hazard(
-            self.RVs.antibody_loss.time_min * numpy.ones_like(self.ages_mid))
-        A_RR = self.get_A_XX(hazard_antibody_loss * self.age_step)
-        hazard_antibody_gain = self.RVs.antibody_gain.hazard(self.ages_mid)
-        A_RL = self.get_A_XZ(hazard_antibody_gain * self.age_step)
-        A_RI = sparse.lil_matrix((self.I, self.K))
-        A_RC = sparse.lil_matrix((self.I, self.K))
-        # These hazards are at `ages`, not `ages_mid`.
-        hazard_recovery = call_and_clip(self.RVs.recovery.hazard,
-                                        self.ages)
-        hazard_chronic_recovery = self.RVs.chronic_recovery.hazard(self.ages)
-        probability_chronic = self.RVs.probability_chronic.probability_chronic
-        rate_I = ((1 - probability_chronic) * hazard_recovery
-                  * self.age_step ** 2)
-        rate_C = hazard_chronic_recovery * self.age_step ** 2
-        for i in range(1, self.I):
-            # Trapezoid rule.
-            j = [0, i]
-            k = self.get_k(i, j)
-            A_RI[i, k] = rate_I[j] / 2
-            A_RC[i, k] = rate_C[j] / 2
-            j = range(1, i)
-            k = self.get_k(i, j)
-            A_RI[i, k] = rate_I[j]
-            A_RC[i, k] = rate_C[j]
-            j = [0, i - 1]
-            k = self.get_k(i - 1, j)
-            A_RI[i, k] = rate_I[j] / 2
-            A_RC[i, k] = rate_C[j] / 2
-            j = range(1, i - 1)
-            k = self.get_k(i - 1, j)
-            A_RI[i, k] = rate_I[j]
-            A_RC[i, k] = rate_C[j]
-        A_R = [None, None, A_RR, A_RL, None, A_RI, A_RC]
-        b_R = self.get_b_Z(self.I)
-        return (A_R, b_R)
-
-    def get_row_L(self):
-        # All evaluated at the the initial time.
-        hazard_antibody_loss = self.RVs.antibody_loss.hazard(
-            self.RVs.antibody_loss.time_min * numpy.ones_like(self.ages_mid))
-        A_LR = self.get_A_XZ(hazard_antibody_loss * self.age_step)
-        hazard_antibody_gain = self.RVs.antibody_gain.hazard(self.ages_mid)
-        A_LL = self.get_A_XX(hazard_antibody_gain * self.age_step)
-        A_L = [None, None, A_LR, A_LL, None, None, None]
-        b_L = self.get_b_Z(self.I)
-        return (A_L, b_L)
 
     def get_row_E(self):
         hazard_infection = (self.hazard_infection
                             * numpy.ones_like(self.ages_mid))
         A_ES = sparse.lil_matrix((self.K, self.I))
-        A_EL = sparse.lil_matrix((self.K, self.I))
         # i = 0.
         # A_ES[k, self.get_k(0, 0)] = 0  # No op.
-        # A_EL[k, self.get_k(0, 0)] = 0  # No op.
         for i in range(1, self.I):
             k = self.get_k(i, 0)
             h = hazard_infection[i - 1]
             A_ES[k, [i, i - 1]] = h
-            A_EL[k, [i, i - 1]] = h
-        hazard_progression = call_and_clip(self.RVs.progression.hazard,
-                                           self.ages_mid)
+        hazard_progression = numpy.zeros_like(self.ages_mid)
         A_EE = self.get_A_YY(hazard_progression * self.age_step)
-        A_E = [None, A_ES, None, A_EL, A_EE, None, None]
+        A_E = [None, A_ES, A_EE]
         b_E = self.get_b_Z(self.K)
         return (A_E, b_E)
-
-    def get_row_I(self):
-        A_IE = sparse.lil_matrix((self.K, self.K))
-        # This hazard is at `ages`, not `ages_mid`.
-        hazard_progression = call_and_clip(self.RVs.progression.hazard,
-                                           self.ages)
-        rate = hazard_progression * self.age_step ** 2
-        # i = 0.
-        # A_IE[self.get_k(0, 0), 0] = 0  # No op.
-        for i in range(1, self.I):
-            k = self.get_k(i, 0)
-            # Trapezoid rule for boundary condition.
-            j = [0, i]
-            l = self.get_k(i, j)
-            A_IE[k, l] = rate[j] / 2
-            j = range(1, i)
-            l = self.get_k(i, j)
-            A_IE[k, l] = rate[j]
-            j = [0, i - 1]
-            l = self.get_k(i - 1, j)
-            A_IE[k, l] = rate[j] / 2
-            j = range(1, i - 1)
-            l = self.get_k(i - 1, j)
-            A_IE[k, l] = rate[j]
-        hazard_recovery = call_and_clip(self.RVs.recovery.hazard,
-                                        self.ages_mid)
-        A_II = self.get_A_YY(hazard_recovery * self.age_step)
-        A_I = [None, None, None, None, A_IE, A_II, None]
-        b_I = self.get_b_Z(self.K)
-        return (A_I, b_I)
-
-    def get_row_C(self):
-        A_CI = sparse.lil_matrix((self.K, self.K))
-        # This hazard is at `ages`, not `ages_mid`.
-        hazard_recovery = call_and_clip(self.RVs.recovery.hazard,
-                                        self.ages)
-        probability_chronic = self.RVs.probability_chronic.probability_chronic
-        rate = probability_chronic * hazard_recovery * self.age_step ** 2
-        # i = 0.
-        # A_CI[self.get_k(0, 0), 0] = 0  # No op.
-        for i in range(1, self.I):
-            k = self.get_k(i, 0)
-            # Trapezoid rule for boundary condition.
-            j = [0, i]
-            l = self.get_k(i, j)
-            A_CI[k, l] = rate[j] / 2
-            j = range(1, i)
-            l = self.get_k(i, j)
-            A_CI[k, l] = rate[j]
-            j = [0, i - 1]
-            l = self.get_k(i - 1, j)
-            A_CI[k, l] = rate[j] / 2
-            j = range(1, i - 1)
-            l = self.get_k(i - 1, j)
-            A_CI[k, l] = rate[j]
-        hazard_chronic_recovery = self.RVs.chronic_recovery.hazard(
-            self.ages_mid)
-        A_CC = self.get_A_YY(hazard_chronic_recovery * self.age_step)
-        A_C = [None, None, None, None, None, A_CI, A_CC]
-        b_C = self.get_b_Z(self.K)
-        return (A_C, b_C)
 
     def get_A_b(self, format='csr'):
         (A_M, b_M) = self.get_row_M()
         (A_S, b_S) = self.get_row_S()
-        (A_R, b_R) = self.get_row_R()
-        (A_L, b_L) = self.get_row_L()
         (A_E, b_E) = self.get_row_E()
-        (A_I, b_I) = self.get_row_I()
-        (A_C, b_C) = self.get_row_C()
-        A = sparse.bmat([A_M, A_S, A_R, A_L, A_E, A_I, A_C],
+        A = sparse.bmat([A_M, A_S, A_E],
                         format=format)
-        b = sparse.vstack([b_M, b_S, b_R, b_L, b_E, b_I, b_C],
+        b = sparse.vstack([b_M, b_S, b_E],
                           format=format)
         return (A, b)
 
@@ -283,20 +170,16 @@ class Solver:
         (A, b) = self.get_A_b()
         assert numpy.isfinite(A.data).all()
         Pp = sparse.linalg.spsolve(A, b)
-        i_split = 4 * self.I
+        i_split = 2 * self.I
         [P, p] = [Pp[:i_split], Pp[i_split:]]
-        [P_M, P_S, P_R, P_L] = numpy.hsplit(P, 4)
-        [p_E, p_I, p_C] = numpy.hsplit(p, 3)
+        [P_M, P_S] = numpy.hsplit(P, 2)
+        [p_E] = numpy.hsplit(p, 1)
         T = self.get_T()
-        [P_E, P_I, P_C] = map(T.dot, [p_E, p_I, p_C])
+        [P_E] = map(T.dot, [p_E])
         rows = pandas.Index(self.ages, name='age')
         P = pandas.DataFrame({'maternal immunity': P_M,
                               'susceptible': P_S,
-                              'exposed': P_E,
-                              'infectious': P_I,
-                              'chronic': P_C,
-                              'recovered': P_R,
-                              'lost immunity': P_L},
+                              'exposed': P_E},
                              index=rows)
         return P
 
@@ -375,20 +258,6 @@ if __name__ == '__main__':
     # No S -> E.
     # Turning on infection gives an incorrect blip around a = 0.5.
     # hazard_infection = 0
-    # No E -> I.
-    # Turning on progression gives nonsense.
-    # parameters.progression_mean = numpy.inf
-    # No I -> C.
-    # parameters.probability_chronic = 0
-    # No I -> R (and C).
-    # parameters.recovery_mean = numpy.inf
-    # No C -> R.
-    # parameters.chronic_recovery_mean = numpy.inf
-    # No R -> L.
-    # parameters.antibody_loss_hazard_alpha = \
-    #     parameters.antibody_loss_hazard_beta = 0
-    # No L -> R.
-    # parameters.antibody_gain_hazard = 0
     RVs = RandomVariables(parameters, _initial_conditions=False)
     age_max = 10
     age_step = 0.1
