@@ -137,7 +137,8 @@ class Solver:
         # A_ES[k, self.get_k(0, 0)] = 0  # No op.
         for i in range(1, self.I):
             k = self.get_k(i, 0)
-            A_ES[k, [i, i - 1]] = hazard_infection[i - 1]
+            h = hazard_infection[i - 1]
+            A_ES[k, [i, i - 1]] = h
         hazard_progression = numpy.zeros_like(self.ages_mid)
         A_EE = self.get_A_YY(hazard_progression * self.age_step)
         A_E = [None, A_ES, A_EE]
