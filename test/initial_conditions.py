@@ -3,6 +3,9 @@
 Check why P_M + P_S + P_E < 1.
 Could it be the trapezoid rule piece?
 Can we show analytically that P_M + P_S + P_E should be 1?
+
+Should we just try to solve the p_E equation with p_E(0, r) = p_E^0(r),
+which integrates to 1, e.g. the pdf of some gamma?
 '''
 
 import sys
