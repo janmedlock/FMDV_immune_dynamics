@@ -1,9 +1,4 @@
 #!/usr/bin/python3
-'''
-Check why P_M + P_S + P_E < 1.
-Could it be the trapezoid rule piece?
-Can we show analytically that P_M + P_S + P_E should be 1?
-'''
 
 import sys
 
