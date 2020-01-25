@@ -18,6 +18,15 @@ def arange(start, stop, step, dtype=None):
     return retval
 
 
+def call_and_clip(fcn, *args, absmax=1e9, **kwds):
+    # Ignore division by zero warnings.
+    with numpy.errstate(divide='ignore'):
+        val = fcn(*args, **kwds)
+    # Clip in place.
+    numpy.clip(val, -absmax, absmax, val)
+    return val
+
+
 class Solver:
     # TODO
     # Summarize this class.
@@ -135,8 +144,8 @@ class Solver:
         A_RI = sparse.lil_matrix((self.I, self.K))
         A_RC = sparse.lil_matrix((self.I, self.K))
         # These hazards are at `ages`, not `ages_mid`.
-        with numpy.errstate(divide='ignore'):
-            hazard_recovery = self.RVs.recovery.hazard(self.ages)
+        hazard_recovery = call_and_clip(self.RVs.recovery.hazard,
+                                        self.ages)
         hazard_chronic_recovery = self.RVs.chronic_recovery.hazard(self.ages)
         probability_chronic = self.RVs.probability_chronic.probability_chronic
         rate_I = ((1 - probability_chronic) * hazard_recovery
@@ -188,8 +197,8 @@ class Solver:
             h = hazard_infection[i - 1]
             A_ES[k, [i, i - 1]] = h
             A_EL[k, [i, i - 1]] = h
-        with numpy.errstate(divide='ignore'):
-            hazard_progression = self.RVs.progression.hazard(self.ages_mid)
+        hazard_progression = call_and_clip(self.RVs.progression.hazard,
+                                           self.ages_mid)
         A_EE = self.get_A_YY(hazard_progression * self.age_step)
         A_E = [None, A_ES, None, A_EL, A_EE, None, None]
         b_E = self.get_b_Z(self.K)
@@ -198,8 +207,8 @@ class Solver:
     def get_row_I(self):
         A_IE = sparse.lil_matrix((self.K, self.K))
         # This hazard is at `ages`, not `ages_mid`.
-        with numpy.errstate(divide='ignore'):
-            hazard_progression = self.RVs.progression.hazard(self.ages)
+        hazard_progression = call_and_clip(self.RVs.progression.hazard,
+                                           self.ages)
         rate = hazard_progression * self.age_step ** 2
         # i = 0.
         # A_IE[self.get_k(0, 0), 0] = 0  # No op.
@@ -218,8 +227,8 @@ class Solver:
             j = range(1, i - 1)
             l = self.get_k(i - 1, j)
             A_IE[k, l] = rate[j]
-        with numpy.errstate(divide='ignore'):
-            hazard_recovery = self.RVs.recovery.hazard(self.ages_mid)
+        hazard_recovery = call_and_clip(self.RVs.recovery.hazard,
+                                        self.ages_mid)
         A_II = self.get_A_YY(hazard_recovery * self.age_step)
         A_I = [None, None, None, None, A_IE, A_II, None]
         b_I = self.get_b_Z(self.K)
@@ -228,8 +237,8 @@ class Solver:
     def get_row_C(self):
         A_CI = sparse.lil_matrix((self.K, self.K))
         # This hazard is at `ages`, not `ages_mid`.
-        with numpy.errstate(divide='ignore'):
-            hazard_recovery = self.RVs.recovery.hazard(self.ages)
+        hazard_recovery = call_and_clip(self.RVs.recovery.hazard,
+                                        self.ages)
         probability_chronic = self.RVs.probability_chronic.probability_chronic
         rate = probability_chronic * hazard_recovery * self.age_step ** 2
         # i = 0.
@@ -270,11 +279,9 @@ class Solver:
                           format=format)
         return (A, b)
 
-    def solve(self, absmax=1e9):
+    def solve(self):
         (A, b) = self.get_A_b()
-        # TODO
-        # What is this `numpy.clip()`?!?
-        numpy.clip(A.data, -absmax, absmax, A.data)
+        assert numpy.isfinite(A.data).all()
         Pp = sparse.linalg.spsolve(A, b)
         i_split = 4 * self.I
         [P, p] = [Pp[:i_split], Pp[i_split:]]
