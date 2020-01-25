@@ -163,7 +163,7 @@ class Solver:
         # A_IE[self.get_k(0, 0), 0] = 0  # No op.
         for i in range(1, self.I):
             k = self.get_k(i, 0)
-            # Trapezoid rule for boundary conditions.
+            # Trapezoid rule for boundary condition.
             j = [0, i]
             l = self.get_k(i, j)
             A_IE[k, l] = rate[j] / 2
