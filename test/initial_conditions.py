@@ -187,7 +187,7 @@ class Solver:
                           format=format)
         return (A, b)
 
-    def solve(self, absmax=1e9):
+    def solve(self):
         (A, b) = self.get_A_b()
         assert numpy.isfinite(A.data).all()
         Pp = sparse.linalg.spsolve(A, b)
