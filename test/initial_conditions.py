@@ -143,6 +143,7 @@ class Solver:
                   * self.age_step ** 2)
         rate_C = hazard_chronic_recovery * self.age_step ** 2
         for i in range(1, self.I):
+            # Trapezoid rule.
             j = [0, i]
             k = self.get_k(i, j)
             A_RI[i, k] = rate_I[j] / 2
@@ -200,9 +201,11 @@ class Solver:
         with numpy.errstate(divide='ignore'):
             hazard_progression = self.RVs.progression.hazard(self.ages)
         rate = hazard_progression * self.age_step ** 2
+        # i = 0.
         # A_IE[self.get_k(0, 0), 0] = 0  # No op.
         for i in range(1, self.I):
             k = self.get_k(i, 0)
+            # Trapezoid rule for boundary condition.
             j = [0, i]
             l = self.get_k(i, j)
             A_IE[k, l] = rate[j] / 2
@@ -229,9 +232,11 @@ class Solver:
             hazard_recovery = self.RVs.recovery.hazard(self.ages)
         probability_chronic = self.RVs.probability_chronic.probability_chronic
         rate = probability_chronic * hazard_recovery * self.age_step ** 2
+        # i = 0.
         # A_CI[self.get_k(0, 0), 0] = 0  # No op.
         for i in range(1, self.I):
             k = self.get_k(i, 0)
+            # Trapezoid rule for boundary condition.
             j = [0, i]
             l = self.get_k(i, j)
             A_CI[k, l] = rate[j] / 2
