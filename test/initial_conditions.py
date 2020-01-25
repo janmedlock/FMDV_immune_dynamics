@@ -370,7 +370,7 @@ if __name__ == '__main__':
     # hazard_infection = 0
     # No E -> I.
     # Turning on progression gives nonsense.
-    parameters.progression_mean = numpy.inf
+    # parameters.progression_mean = numpy.inf
     # No I -> C.
     # parameters.probability_chronic = 0
     # No I -> R (and C).
