@@ -122,7 +122,7 @@ class Solver:
     def get_row_M(self):
         hazard_waning = self.RVs.maternal_immunity_waning.hazard(self.ages_mid)
         A_MM = self.get_A_XX(hazard_waning * self.age_step)
-        A_M = [A_MM, None, None]
+        A_M = [A_MM, None, None, None]
         b_M = self.get_b_Z(self.I, [1], [0])
         return (A_M, b_M)
 
@@ -132,7 +132,7 @@ class Solver:
         hazard_infection = (self.hazard_infection
                             * numpy.ones_like(self.ages_mid))
         A_SS = self.get_A_XX(hazard_infection * self.age_step)
-        A_S = [A_SM, A_SS, None]
+        A_S = [A_SM, A_SS, None, None]
         b_S = self.get_b_Z(self.I)
         return (A_S, b_S)
 
@@ -146,19 +146,50 @@ class Solver:
             k = self.get_k(i, 0)
             h = hazard_infection[i - 1]
             A_ES[k, [i, i - 1]] = h
-        hazard_progression = numpy.zeros_like(self.ages_mid)
+        with numpy.errstate(divide='ignore'):
+            hazard_progression = self.RVs.progression.hazard(self.ages_mid)
         A_EE = self.get_A_YY(hazard_progression * self.age_step)
-        A_E = [None, A_ES, A_EE]
+        A_E = [None, A_ES, A_EE, None]
         b_E = self.get_b_Z(self.K)
         return (A_E, b_E)
+
+    def get_row_I(self):
+        A_IE = sparse.lil_matrix((self.K, self.K))
+        # This hazard is at `ages`, not `ages_mid`.
+        with numpy.errstate(divide='ignore'):
+            hazard_progression = self.RVs.progression.hazard(self.ages)
+        rate = hazard_progression * self.age_step ** 2
+        # i = 0.
+        # A_IE[self.get_k(0, 0), 0] = 0  # No op.
+        for i in range(1, self.I):
+            k = self.get_k(i, 0)
+            # Trapezoid rule for boundary conditions.
+            j = [0, i]
+            l = self.get_k(i, j)
+            A_IE[k, l] = rate[j] / 2
+            j = range(1, i)
+            l = self.get_k(i, j)
+            A_IE[k, l] = rate[j]
+            j = [0, i - 1]
+            l = self.get_k(i - 1, j)
+            A_IE[k, l] = rate[j] / 2
+            j = range(1, i - 1)
+            l = self.get_k(i - 1, j)
+            A_IE[k, l] = rate[j]
+        hazard_recovery = numpy.zeros_like(self.ages_mid)
+        A_II = self.get_A_YY(hazard_recovery * self.age_step)
+        A_I = [None, None, A_IE, A_II]
+        b_I = self.get_b_Z(self.K)
+        return (A_I, b_I)
 
     def get_A_b(self, format='csr'):
         (A_M, b_M) = self.get_row_M()
         (A_S, b_S) = self.get_row_S()
         (A_E, b_E) = self.get_row_E()
-        A = sparse.bmat([A_M, A_S, A_E],
+        (A_I, b_I) = self.get_row_I()
+        A = sparse.bmat([A_M, A_S, A_E, A_I],
                         format=format)
-        b = sparse.vstack([b_M, b_S, b_E],
+        b = sparse.vstack([b_M, b_S, b_E, b_I],
                           format=format)
         return (A, b)
 
@@ -169,13 +200,14 @@ class Solver:
         i_split = 2 * self.I
         [P, p] = [Pp[:i_split], Pp[i_split:]]
         [P_M, P_S] = numpy.hsplit(P, 2)
-        [p_E] = numpy.hsplit(p, 1)
+        [p_E, p_I] = numpy.hsplit(p, 2)
         T = self.get_T()
-        [P_E] = map(T.dot, [p_E])
+        [P_E, P_I] = map(T.dot, [p_E, p_I])
         rows = pandas.Index(self.ages, name='age')
         P = pandas.DataFrame({'maternal immunity': P_M,
                               'susceptible': P_S,
-                              'exposed': P_E},
+                              'exposed': P_E,
+                              'infectious': P_I},
                              index=rows)
         return P
 
@@ -254,6 +286,9 @@ if __name__ == '__main__':
     # No S -> E.
     # Turning on infection gives an incorrect blip around a = 0.5.
     # hazard_infection = 0
+    # No E -> I.
+    # Turning on progression gives nonsense.
+    # parameters.progression_mean = numpy.inf
     RVs = RandomVariables(parameters, _initial_conditions=False)
     age_max = 10
     age_step = 0.1
