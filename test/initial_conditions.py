@@ -140,8 +140,8 @@ class Solver:
             k = self.get_k(i, 0)
             h = hazard_infection[i - 1]
             A_ES[k, [i, i - 1]] = h
-        with numpy.errstate(divide='ignore'):
-            hazard_progression = self.RVs.progression.hazard(self.ages_mid)
+        hazard_progression = call_and_clip(self.RVs.progression.hazard,
+                                           self.ages_mid)
         A_EE = self.get_A_YY(hazard_progression * self.age_step)
         A_E = [None, A_ES, A_EE, None]
         b_E = self.get_b_Z(self.K)
@@ -150,8 +150,8 @@ class Solver:
     def get_row_I(self):
         A_IE = sparse.lil_matrix((self.K, self.K))
         # This hazard is at `ages`, not `ages_mid`.
-        with numpy.errstate(divide='ignore'):
-            hazard_progression = self.RVs.progression.hazard(self.ages)
+        hazard_progression = call_and_clip(self.RVs.progression.hazard,
+                                           self.ages)
         rate = hazard_progression * self.age_step ** 2
         # i = 0.
         # A_IE[self.get_k(0, 0), 0] = 0  # No op.
@@ -187,7 +187,7 @@ class Solver:
                           format=format)
         return (A, b)
 
-    def solve(self):
+    def solve(self, absmax=1e9):
         (A, b) = self.get_A_b()
         assert numpy.isfinite(A.data).all()
         Pp = sparse.linalg.spsolve(A, b)
