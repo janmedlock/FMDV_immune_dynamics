@@ -1,4 +1,10 @@
 #!/usr/bin/python3
+'''
+Understand Solver.get_row_I(), especially A_IE.
+There's a trapezoid rule step there,
+but changing it to just the sum doesn't fix things.
+'''
+
 import sys
 
 import numpy
