@@ -47,7 +47,7 @@ class Solver:
     @property
     def K(self):
         '''The number of entries in
-        the stacked vector representation p_X^k \approx p_X(a^k, r^j),
+        the stacked vector representation p_X^k \approx p_X(a^i, r^j),
         k = 0, 1, ..., K - 1.'''
         # The last entry is
         # K - 1 = self.get_k(self.I - 1, self.I - 1),
