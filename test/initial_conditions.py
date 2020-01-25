@@ -274,10 +274,8 @@ if __name__ == '__main__':
     # No M -> S.
     # parameters.maternal_immunity_duration_mean = numpy.inf
     # No S -> E.
-    # Turning on infection gives an incorrect blip around a = 0.5.
     # hazard_infection = 0
     # No E -> I.
-    # Turning on progression gives nonsense.
     # parameters.progression_mean = numpy.inf
     RVs = RandomVariables(parameters, _initial_conditions=False)
     age_max = 10
