@@ -75,7 +75,7 @@ class Solver:
         approximates the integral
         \int_0^a f(a, r) dr
         using the sum
-        \sum_{j = 0}^i f(a^i, r^j) \delta r.
+        \sum_{j = 0}^i f(a^i, r^j) \Delta r.
         The result is a vector over ages a.
         '''
         T = sparse.lil_matrix((self.I, self.K))
