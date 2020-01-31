@@ -1,9 +1,7 @@
 #!/usr/bin/python3
-'''
-Understand Solver.get_row_I(), especially A_IE.
+'''Understand Solver.get_row_I(), especially A_IE.
 There's a trapezoid rule step there,
-but changing it to just the sum doesn't fix things.
-'''
+but changing it to just the sum doesn't fix things.'''
 
 import sys
 
@@ -76,8 +74,7 @@ class Solver:
         \int_0^a f(a, r) dr
         using the sum
         \sum_{j = 0}^i f(a^i, r^j) \Delta r.
-        The result is a vector over ages a.
-        '''
+        The result is a vector over ages a.'''
         T = sparse.lil_matrix((self.I, self.K))
         for i in range(self.I):
             T[i, self.get_k(i, range(i + 1))] = self.age_step
