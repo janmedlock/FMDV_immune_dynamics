@@ -35,6 +35,7 @@ class Solver:
         self.age_max = age_max
         self.age_step = age_step
         self.ages = arange(0, self.age_max, self.age_step)
+        assert len(self.ages) > 1
         self.ages_mid = (self.ages[:-1] + self.ages[1:]) / 2
 
     @staticmethod
@@ -67,7 +68,9 @@ class Solver:
         approximates the integral
         \int_0^a f(a, r) dr
         using the composite trapezoid rule.
-        The result is a vector over ages a.'''
+        The result is a I × K matrix that
+        when left-multiplied with a K vector
+        produces a vector over ages a.'''
         T = sparse.lil_matrix((self.I, self.K))
         for i in range(self.I):
             T[i, self.get_k(i, 0)] = self.age_step / 2
@@ -75,103 +78,115 @@ class Solver:
             T[i, self.get_k(i, i)] = self.age_step / 2
         return T.tocsr()
 
-    def get_A_XX(self, rate_out):
+    def get_A_XX(self, n, rate_out):
+        '''Get the n × n diagonal block `A_XX` that maps state X to itself.'''
         # The values on the diagonal.
-        d_0 = numpy.ones(len(rate_out) + 1)
+        d_0 = numpy.ones(self.I)
         # The values on the subdiagonal.
         d_1 = ((rate_out * self.age_step - 2)
                / (rate_out * self.age_step + 2))
-        return sparse.diags([d_0, d_1], [0, -1])
+        # Ensure that d_1 ≤ 0 so that P_X ≥ 0.
+        assert numpy.all(d_1 <= 0)
+        if numpy.isscalar(d_1):
+            d_1 *= numpy.ones(self.I - 1)
+        if n == self.I:
+            A_XX = sparse.diags([d_0, d_1], [0, -1])
+        elif n == self.K:
+            A_XX = sparse.lil_matrix((self.K, self.K))
+            for i in range(self.I):
+                for j in range(i + 1):
+                    k = self.get_k(i, j)
+                    A_XX[k, k] = d_0[j]
+                    if j > 0:
+                        k_1 = self.get_k(i - 1, j - 1)
+                        A_XX[k, k_1] = d_1[j - 1]
+        else:
+            raise NotImplementedError(f'\'n\'={n}!')
+        return A_XX
 
-    def get_A_YY(self, rate_out):
-        A = sparse.lil_matrix((self.K, self.K))
-        # Use get_A_XX() to generate d_0 and d_1.
-        D = self.get_A_XX(rate_out)
-        d_0 = D.diagonal(0)
-        d_1 = D.diagonal(-1)
-        for i in range(self.I):
-            for j in range(i + 1):
-                k = self.get_k(i, j)
-                A[k, k] = d_0[j]
-                if j > 0:
-                    k_1 = self.get_k(i - 1, j - 1)
-                    A[k, k_1] = d_1[j - 1]
-        return A
-
-    def get_A_XZ(self, rate_in, rate_out):
+    def get_A_XY(self, n, rate_in, rate_out):
+        '''Get the n × n off-diagonal block `A_XY` that maps state Y to X.'''
         v = - ((rate_in * self.age_step)
                / (rate_out * self.age_step + 2))
+        if numpy.isscalar(v):
+            v *= numpy.ones(self.I - 1)
         # The values on the diagonal.
         d_0 = numpy.hstack([0, v])
         # The values on the subdiagonal.
         d_1 = v
-        return sparse.diags([d_0, d_1], [0, -1])
+        if n == self.I:
+            A_XY = sparse.diags([d_0, d_1], [0, -1])
+        else:
+            raise NotImplementedError(f'\'n\'={n}!')
+        return A_XY
 
     @staticmethod
-    def get_b_Z(n, data=[], row_ind=[]):
-        # Make a sparse (n, 1) matrix of the right-hand sides.
+    def get_b_X(n, data=[], row_ind=[]):
+        '''Make a sparse n × 1 matrix of the right-hand sides.'''
         # There is only 1 column, so any data must be in that column.
         col_ind = [0] * len(row_ind)
-        return sparse.csr_matrix((data, (row_ind, col_ind)), shape=(n, 1))
+        b_X = sparse.csr_matrix((data, (row_ind, col_ind)), shape=(n, 1))
+        return b_X
 
     def get_row_M(self):
+        n = self.I
         rate_out = self.RVs.maternal_immunity_waning.hazard(self.ages_mid)
-        A_MM = self.get_A_XX(rate_out)
+        A_MM = self.get_A_XX(n, rate_out)
         A_M = [A_MM, None, None, None]
         # b_M = [1, 0, 0, ..., 0].
-        b_M = self.get_b_Z(self.I, [1], [0])
+        b_M = self.get_b_X(n, [1], [0])
         return (A_M, b_M)
 
     def get_row_S(self):
+        n = self.I
         rate_in = self.RVs.maternal_immunity_waning.hazard(self.ages_mid)
-        rate_out = self.hazard_infection * numpy.ones_like(self.ages_mid)
-        A_SM = self.get_A_XZ(rate_in, rate_out)
-        A_SS = self.get_A_XX(rate_out)
+        rate_out = self.hazard_infection
+        A_SM = self.get_A_XY(n, rate_in, rate_out)
+        A_SS = self.get_A_XX(n, rate_out)
         A_S = [A_SM, A_SS, None, None]
         # b_S = [0, 0, ..., 0].
-        b_S = self.get_b_Z(self.I)
+        b_S = self.get_b_X(n)
         return (A_S, b_S)
 
     def get_row_E(self):
-        rate_in = self.hazard_infection * numpy.ones_like(self.ages_mid)
+        n = self.K
+        rate_in = self.hazard_infection
         rate_out = self.RVs.progression.hazard(self.ages_mid)
-        # TODO
-        # numpy.clip(rate_out, None, 2 / self.age_step, rate_out)
-        # ensures p_E ≥ 0.
         A_ES = sparse.lil_matrix((self.K, self.I))
+        if numpy.isscalar(rate_in):
+            rate_in *= numpy.ones(self.I - 1)
         # The values on the diagonal.
         d_0 = numpy.hstack([0, - rate_in])
         i = range(self.I)
         A_ES[self.get_k(i, 0), i] = d_0
-        A_EE = self.get_A_YY(rate_out)
+        A_EE = self.get_A_XX(n, rate_out)
         A_E = [None, A_ES, A_EE, None]
         # b_E = [0, 0, ..., 0].
-        b_E = self.get_b_Z(self.K)
+        b_E = self.get_b_X(n)
         return (A_E, b_E)
 
     def get_row_I(self):
+        n = self.K
         # This hazard is at `ages`, not `ages_mid`.
         # TODO
         # Should it be at `ages_mid`?
         rate_in = self.RVs.progression.hazard(self.ages)
-        rate_out = numpy.zeros_like(self.ages_mid)
+        rate_out = 0
         A_IE = sparse.lil_matrix((self.K, self.K))
-        # TODO
-        # Use get_T to do trapezoid rule.
+        # Trapezoid rule for boundary condition.
+        T = self.get_T()
+        # The values on the diagonal.
+        d_0 = - rate_in
         # A_IE[self.get_k(0, 0), 0] = 0  # No op.
         for i in range(1, self.I):
-            k = self.get_k(i, 0)
-            # Trapezoid rule for boundary condition.
-            j = 0
-            A_IE[k, self.get_k(i, j)] = - rate_in[j] * self.age_step / 2
-            j = range(1, i)
-            A_IE[k, self.get_k(i, j)] = - rate_in[j] * self.age_step
-            j = i
-            A_IE[k, self.get_k(i, j)] = - rate_in[j] * self.age_step / 2
-        A_II = self.get_A_YY(rate_out)
+            j = range(i + 1)
+            k = self.get_k(i, j)
+            # The multiplication doesn't work without `.toarray()`.
+            A_IE[self.get_k(i, 0), k] = d_0[j] * T[i, k].toarray()
+        A_II = self.get_A_XX(n, rate_out)
         A_I = [None, None, A_IE, A_II]
         # b_I = [0, 0, ..., 0].
-        b_I = self.get_b_Z(self.K)
+        b_I = self.get_b_X(n)
         return (A_I, b_I)
 
     def get_A_b(self, format='csr'):
