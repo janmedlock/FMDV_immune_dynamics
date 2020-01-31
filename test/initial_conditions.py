@@ -66,12 +66,13 @@ class Solver:
         '''Get the matrix `T` so that `T.dot(f)`
         approximates the integral
         \int_0^a f(a, r) dr
-        using the sum
-        \sum_{j = 0}^i f(a^i, r^j) \Delta r.
+        using the composite trapezoid rule.
         The result is a vector over ages a.'''
         T = sparse.lil_matrix((self.I, self.K))
         for i in range(self.I):
-            T[i, self.get_k(i, range(i + 1))] = self.age_step
+            T[i, self.get_k(i, 0)] = self.age_step / 2
+            T[i, self.get_k(i, range(1, i))] = self.age_step
+            T[i, self.get_k(i, i)] = self.age_step / 2
         return T.tocsr()
 
     @staticmethod
