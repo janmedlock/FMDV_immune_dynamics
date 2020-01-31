@@ -1,7 +1,10 @@
 #!/usr/bin/python3
 '''Understand Solver.get_row_I(), especially A_IE.
-There's a trapezoid rule step there,
-but changing it to just the sum doesn't fix things.'''
+It seems like there's a mismatch between the PDE for p_E
+using h_progression(r^{j - 1/2}) and the boundary condition
+for p_I(a, 0) using h_progression(r^j).
+What about using h^{j - 1/2} * (p^{i, j} + p^{i, j - 1}) / 2
+for the integral?'''
 
 import sys
 
