@@ -84,14 +84,11 @@ class Solver:
         return sparse.diags([d_0, d_1], [0, -1])
 
     def get_A_YY(self, rate_out):
-        # TODO
-        # Use get_A_XX() to generate d_0 and d_1.
         A = sparse.lil_matrix((self.K, self.K))
-        # The values on the diagonal.
-        d_0 = numpy.ones(len(rate_out) + 1)
-        # The values on the subdiagonal.
-        d_1 = ((rate_out * self.age_step - 2)
-               / (rate_out * self.age_step + 2))
+        # Use get_A_XX() to generate d_0 and d_1.
+        D = self.get_A_XX(rate_out)
+        d_0 = D.diagonal(0)
+        d_1 = D.diagonal(-1)
         for i in range(self.I):
             for j in range(i + 1):
                 k = self.get_k(i, j)
