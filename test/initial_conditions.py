@@ -26,8 +26,8 @@ def arange(start, stop, step, dtype=None):
 
 
 class Solver:
-    # TODO
-    # Summarize this class.
+    '''Crank–Nicolson solver to find the probability of being in each
+    compartment as a function of age.'''
 
     def __init__(self, hazard_infection, RVs, age_max, age_step):
         self.hazard_infection = hazard_infection
