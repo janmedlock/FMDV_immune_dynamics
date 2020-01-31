@@ -73,9 +73,8 @@ class Solver:
         produces a vector over ages a.'''
         T = sparse.lil_matrix((self.I, self.K))
         for i in range(self.I):
-            T[i, self.get_k(i, 0)] = self.age_step / 2
-            T[i, self.get_k(i, range(1, i))] = self.age_step
-            T[i, self.get_k(i, i)] = self.age_step / 2
+            T[i, self.get_k(i, range(i + 1))] = self.age_step
+            T[i, self.get_k(i, [0, i])] /= 2
         return T.tocsr()
 
     def get_A_XX(self, n, rate_out):
@@ -159,6 +158,9 @@ class Solver:
         d_0 = numpy.hstack([0, - rate_in])
         i = range(self.I)
         A_ES[self.get_k(i, 0), i] = d_0
+        # For consistency of the initial condition,
+        # the first row must be all 0.
+        assert (A_ES[0].count_nonzero() == 0)
         A_EE = self.get_A_XX(n, rate_out)
         A_E = [None, A_ES, A_EE, None]
         # b_E = [0, 0, ..., 0].
@@ -177,12 +179,15 @@ class Solver:
         T = self.get_T()
         # The values on the diagonal.
         d_0 = - rate_in
-        # A_IE[self.get_k(0, 0), 0] = 0  # No op.
-        for i in range(1, self.I):
+        # Diagonal matrix to use for multiplication with T.
+        D_0 = sparse.diags(d_0, format='csr')
+        for i in range(self.I):
             j = range(i + 1)
             k = self.get_k(i, j)
-            # The multiplication doesn't work without `.toarray()`.
-            A_IE[self.get_k(i, 0), k] = d_0[j] * T[i, k].toarray()
+            A_IE[self.get_k(i, 0), k] = T[i, k] * D_0[:(i + 1), :(i + 1)]
+        # For consistency of the initial condition,
+        # the first row must be all 0.
+        assert (A_IE[0].count_nonzero() == 0)
         A_II = self.get_A_XX(n, rate_out)
         A_I = [None, None, A_IE, A_II]
         # b_I = [0, 0, ..., 0].
