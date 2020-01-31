@@ -3,8 +3,8 @@
 It seems like there's a mismatch between the PDE for p_E
 using h_progression(r^{j - 1/2}) and the boundary condition
 for p_I(a, 0) using h_progression(r^j).
-What about using h^{j - 1/2} * (p^{i, j} + p^{i, j - 1}) / 2
-for the integral?'''
+What about using h^{j - 1/2} * (p^{i, j} + p^{i - 1, j - 1}) / 2
+for the integral? Doesn't that give conservation of mass?'''
 
 import sys
 
@@ -142,8 +142,7 @@ class Solver:
         # The values on the diagonal.
         d_0 = numpy.hstack([0, - rate_in])
         i = range(self.I)
-        k = self.get_k(i, 0)
-        A_ES[k, i] = d_0
+        A_ES[self.get_k(i, 0), i] = d_0
         A_EE = self.get_A_YY(rate_out)
         A_E = [None, A_ES, A_EE, None]
         # b_E = [0, 0, ..., 0].
@@ -157,7 +156,6 @@ class Solver:
         rate_in = self.RVs.progression.hazard(self.ages)
         rate_out = numpy.zeros_like(self.ages_mid)
         A_IE = sparse.lil_matrix((self.K, self.K))
-        v = - rate_in
         # TODO
         # Use get_T to do trapezoid rule.
         # A_IE[self.get_k(0, 0), 0] = 0  # No op.
@@ -165,11 +163,11 @@ class Solver:
             k = self.get_k(i, 0)
             # Trapezoid rule for boundary condition.
             j = 0
-            A_IE[k, self.get_k(i, j)] = v[j] * self.age_step / 2
+            A_IE[k, self.get_k(i, j)] = - rate_in[j] * self.age_step / 2
             j = range(1, i)
-            A_IE[k, self.get_k(i, j)] = v[j] * self.age_step
+            A_IE[k, self.get_k(i, j)] = - rate_in[j] * self.age_step
             j = i
-            A_IE[k, self.get_k(i, j)] = v[j] * self.age_step / 2
+            A_IE[k, self.get_k(i, j)] = - rate_in[j] * self.age_step / 2
         A_II = self.get_A_YY(rate_out)
         A_I = [None, None, A_IE, A_II]
         # b_I = [0, 0, ..., 0].
