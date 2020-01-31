@@ -75,100 +75,107 @@ class Solver:
             T[i, self.get_k(i, i)] = self.age_step / 2
         return T.tocsr()
 
-    @staticmethod
-    def get_A_XX(rate_out_times_age_step):
-        return sparse.diags(
-            [numpy.hstack([1, - 2 - rate_out_times_age_step]),
-                                2 - rate_out_times_age_step  ],
-            [0, -1])
+    def get_A_XX(self, rate_out):
+        # The values on the diagonal.
+        d_0 = numpy.ones(len(rate_out) + 1)
+        # The values on the subdiagonal.
+        d_1 = ((rate_out * self.age_step - 2)
+               / (rate_out * self.age_step + 2))
+        return sparse.diags([d_0, d_1], [0, -1])
 
-    def get_A_YY(self, rate_out_times_age_step):
+    def get_A_YY(self, rate_out):
+        # TODO
+        # Use get_A_XX() to generate d_0 and d_1.
         A = sparse.lil_matrix((self.K, self.K))
-        # i = 0.
-        k = self.get_k(0, 0)
-        A[k, k] = 1
-        for i in range(1, self.I):
-            k = self.get_k(i, 0)
-            A[k, k] = - 2
-            for j in range(1, i + 1):
-                # k = self.get_k(i, j)
-                # k_1 = self.get_k(i - 1, j - 1)
-                [k, k_1] = self.get_k([i, i - 1], [j, j - 1])
-                r = rate_out_times_age_step[j - 1]
-                A[k, [k, k_1]] = [- 2 - r, 2 - r]
+        # The values on the diagonal.
+        d_0 = numpy.ones(len(rate_out) + 1)
+        # The values on the subdiagonal.
+        d_1 = ((rate_out * self.age_step - 2)
+               / (rate_out * self.age_step + 2))
+        for i in range(self.I):
+            for j in range(i + 1):
+                k = self.get_k(i, j)
+                A[k, k] = d_0[j]
+                if j > 0:
+                    k_1 = self.get_k(i - 1, j - 1)
+                    A[k, k_1] = d_1[j - 1]
         return A
 
-    @staticmethod
-    def get_A_XZ(rate_times_age_step):
-        return sparse.diags(
-            [numpy.hstack([0, rate_times_age_step]),
-                              rate_times_age_step  ],
-            [0, -1])
+    def get_A_XZ(self, rate_in, rate_out):
+        v = - ((rate_in * self.age_step)
+               / (rate_out * self.age_step + 2))
+        # The values on the diagonal.
+        d_0 = numpy.hstack([0, v])
+        # The values on the subdiagonal.
+        d_1 = v
+        return sparse.diags([d_0, d_1], [0, -1])
 
     @staticmethod
     def get_b_Z(n, data=[], row_ind=[]):
+        # Make a sparse (n, 1) matrix of the right-hand sides.
         # There is only 1 column, so any data must be in that column.
         col_ind = [0] * len(row_ind)
         return sparse.csr_matrix((data, (row_ind, col_ind)), shape=(n, 1))
 
     def get_row_M(self):
-        hazard_waning = self.RVs.maternal_immunity_waning.hazard(self.ages_mid)
-        A_MM = self.get_A_XX(hazard_waning * self.age_step)
+        rate_out = self.RVs.maternal_immunity_waning.hazard(self.ages_mid)
+        A_MM = self.get_A_XX(rate_out)
         A_M = [A_MM, None, None, None]
+        # b_M = [1, 0, 0, ..., 0].
         b_M = self.get_b_Z(self.I, [1], [0])
         return (A_M, b_M)
 
     def get_row_S(self):
-        hazard_waning = self.RVs.maternal_immunity_waning.hazard(self.ages_mid)
-        A_SM = self.get_A_XZ(hazard_waning * self.age_step)
-        hazard_infection = (self.hazard_infection
-                            * numpy.ones_like(self.ages_mid))
-        A_SS = self.get_A_XX(hazard_infection * self.age_step)
+        rate_in = self.RVs.maternal_immunity_waning.hazard(self.ages_mid)
+        rate_out = self.hazard_infection * numpy.ones_like(self.ages_mid)
+        A_SM = self.get_A_XZ(rate_in, rate_out)
+        A_SS = self.get_A_XX(rate_out)
         A_S = [A_SM, A_SS, None, None]
+        # b_S = [0, 0, ..., 0].
         b_S = self.get_b_Z(self.I)
         return (A_S, b_S)
 
     def get_row_E(self):
-        hazard_infection = (self.hazard_infection
-                            * numpy.ones_like(self.ages_mid))
+        rate_in = self.hazard_infection * numpy.ones_like(self.ages_mid)
+        rate_out = self.RVs.progression.hazard(self.ages_mid)
+        # TODO
+        # numpy.clip(rate_out, None, 2 / self.age_step, rate_out)
+        # ensures p_E ≥ 0.
         A_ES = sparse.lil_matrix((self.K, self.I))
-        # i = 0.
-        # A_ES[k, self.get_k(0, 0)] = 0  # No op.
-        for i in range(1, self.I):
-            k = self.get_k(i, 0)
-            h = hazard_infection[i - 1]
-            A_ES[k, [i, i - 1]] = h
-        hazard_progression = self.RVs.progression.hazard(self.ages_mid)
-        A_EE = self.get_A_YY(hazard_progression * self.age_step)
+        # The values on the diagonal.
+        d_0 = numpy.hstack([0, - rate_in])
+        i = range(self.I)
+        k = self.get_k(i, 0)
+        A_ES[k, i] = d_0
+        A_EE = self.get_A_YY(rate_out)
         A_E = [None, A_ES, A_EE, None]
+        # b_E = [0, 0, ..., 0].
         b_E = self.get_b_Z(self.K)
         return (A_E, b_E)
 
     def get_row_I(self):
-        A_IE = sparse.lil_matrix((self.K, self.K))
         # This hazard is at `ages`, not `ages_mid`.
-        hazard_progression = self.RVs.progression.hazard(self.ages)
-        rate = hazard_progression * self.age_step ** 2
-        # i = 0.
+        # TODO
+        # Should it be at `ages_mid`?
+        rate_in = self.RVs.progression.hazard(self.ages)
+        rate_out = numpy.zeros_like(self.ages_mid)
+        A_IE = sparse.lil_matrix((self.K, self.K))
+        v = - rate_in
+        # TODO
+        # Use get_T to do trapezoid rule.
         # A_IE[self.get_k(0, 0), 0] = 0  # No op.
         for i in range(1, self.I):
             k = self.get_k(i, 0)
             # Trapezoid rule for boundary condition.
-            j = [0, i]
-            l = self.get_k(i, j)
-            A_IE[k, l] = rate[j] / 2
+            j = 0
+            A_IE[k, self.get_k(i, j)] = v[j] * self.age_step / 2
             j = range(1, i)
-            l = self.get_k(i, j)
-            A_IE[k, l] = rate[j]
-            j = [0, i - 1]
-            l = self.get_k(i - 1, j)
-            A_IE[k, l] = rate[j] / 2
-            j = range(1, i - 1)
-            l = self.get_k(i - 1, j)
-            A_IE[k, l] = rate[j]
-        hazard_recovery = numpy.zeros_like(self.ages_mid)
-        A_II = self.get_A_YY(hazard_recovery * self.age_step)
+            A_IE[k, self.get_k(i, j)] = v[j] * self.age_step
+            j = i
+            A_IE[k, self.get_k(i, j)] = v[j] * self.age_step / 2
+        A_II = self.get_A_YY(rate_out)
         A_I = [None, None, A_IE, A_II]
+        # b_I = [0, 0, ..., 0].
         b_I = self.get_b_Z(self.K)
         return (A_I, b_I)
 
@@ -277,6 +284,7 @@ if __name__ == '__main__':
     # hazard_infection = 0
     # No E -> I.
     # parameters.progression_mean = numpy.inf
+    parameters.progression_mean = 0.1
     RVs = RandomVariables(parameters, _initial_conditions=False)
     age_max = 10
     age_step = 0.1
