@@ -257,8 +257,8 @@ Then for $1 \leq i \leq I - 1$ and $1 \leq j \leq i$,
 \begin{align}
   P_{\mathrm{M}}^0 &= 1,
   \\
-  \frac{h_{\text{waning}}(a^{i - 1 / 2}) \Delta a - 2}
-  {h_{\text{waning}}(a^{i - 1 / 2}) \Delta a + 2}
+  - \frac{2 - h_{\text{waning}}(a^{i - 1 / 2}) \Delta a}
+  {2 + h_{\text{waning}}(a^{i - 1 / 2}) \Delta a}
   P_{\mathrm{M}}^{i - 1}
   + P_{\mathrm{M}}^i
   &= 0,
@@ -267,14 +267,14 @@ Then for $1 \leq i \leq I - 1$ and $1 \leq j \leq i$,
   \\
   \begin{split}
     - \frac{h_{\text{waning}}(a^{i - 1 / 2}) \Delta a}
-    {h_{\text{infection}} \Delta a + 2}
+    {2 + h_{\text{infection}} \Delta a}
     P_{\mathrm{M}}^{i - 1}
     - \frac{h_{\text{waning}}(a^{i - 1 / 2}) \Delta a}
-    {h_{\text{infection}} \Delta a + 2}
+    {2 + h_{\text{infection}} \Delta a}
     P_{\mathrm{M}}^i
     \\ {}
-    + \frac{h_{\text{infection}} \Delta a - 2}
-    {h_{\text{infection}} \Delta a + 2}
+    - \frac{2 - h_{\text{infection}} \Delta a}
+    {2 + h_{\text{infection}} \Delta a}
     P_{\mathrm{S}}^{i - 1}
     + P_{\mathrm{S}}^i
     &= 0,
@@ -283,27 +283,27 @@ Then for $1 \leq i \leq I - 1$ and $1 \leq j \leq i$,
   P_{\mathrm{R}}^0 &= 0,
   \\
   \begin{split}
-    \frac{h_{\text{antibody loss}} \Delta a - 2}
-    {h_{\text{antibody loss}} \Delta a + 2}
+    - \frac{2 - h_{\text{antibody loss}} \Delta a}
+    {2 + h_{\text{antibody loss}} \Delta a}
     P_{\mathrm{R}}^{i - 1}
     + P_{\mathrm{R}}^i
     \\ {}
     - \frac{h_{\text{antibody gain}} \Delta a}
-    {h_{\text{antibody loss}} \Delta a + 2}
+    {2 + h_{\text{antibody loss}} \Delta a}
     P_{\mathrm{L}}^{i - 1}
     - \frac{h_{\text{antibody gain}} \Delta a}
-    {h_{\text{antibody loss}} \Delta a + 2}
+    {2 + h_{\text{antibody loss}} \Delta a}
     P_{\mathrm{L}}^i
     \\ {}
     - \sum_{j = 0}^i T^{i, j}
     \big(1 - p_{\text{chronicity}}\big)
     \frac{2 h_{\text{recovery}}(r^j) \Delta a}
-    {h_{\text{antibody loss}} \Delta a + 2}
+    {2 + h_{\text{antibody loss}} \Delta a}
     p_{\mathrm{I}}^{i, j}
     \\ {}
     - \sum_{j = 0}^i T^{i, j}
     \frac{2 h_{\text{chronic recovery}}(r^j) \Delta a}
-    {h_{\text{antibody loss}} \Delta a + 2}
+    {2 + h_{\text{antibody loss}} \Delta a}
     p_{\mathrm{C}}^{i, j}
     &= 0
   \end{split}
@@ -312,14 +312,14 @@ Then for $1 \leq i \leq I - 1$ and $1 \leq j \leq i$,
   \\
   \begin{split}
     - \frac{h_{\text{antibody loss}} \Delta a}
-    {h_{\text{antibody gain}} \Delta a + 2}
+    {2 + h_{\text{antibody gain}} \Delta a}
     P_{\mathrm{R}}^{i - 1}
     - \frac{h_{\text{antibody loss}} \Delta a}
-    {h_{\text{antibody gain}} \Delta a + 2}
+    {2 + h_{\text{antibody gain}} \Delta a}
     P_{\mathrm{R}}^i
     \\ {}
-    + \frac{h_{\text{antibody gain}} \Delta a - 2}
-    {h_{\text{antibody gain}} \Delta a + 2}
+    - \frac{2 - h_{\text{antibody gain}} \Delta a}
+    {2 + h_{\text{antibody gain}} \Delta a}
     P_{\mathrm{L}}^{i - 1}
     + P_{\mathrm{L}}^i
     &= 0,
@@ -332,8 +332,8 @@ Then for $1 \leq i \leq I - 1$ and $1 \leq j \leq i$,
   + p_{\mathrm{E}}^{i, 0}
   &= 0,
   \\
-  \frac{h_{\text{progression}}(r^{j - 1 / 2}) \Delta a - 2}
-  {h_{\text{progression}}(r^{j - 1 / 2}) \Delta a + 2}
+  - \frac{2 - h_{\text{progression}}(r^{j - 1 / 2}) \Delta a}
+  {2 + h_{\text{progression}}(r^{j - 1 / 2}) \Delta a}
   p_{\mathrm{E}}^{i - 1, j - 1}
   + p_{\mathrm{E}}^{i, j}
   &= 0,
@@ -345,8 +345,8 @@ Then for $1 \leq i \leq I - 1$ and $1 \leq j \leq i$,
   + p_{\mathrm{I}}^{i, 0}
   &= 0,
   \\
-  \frac{h_{\text{recovery}}(r^{j - 1 / 2}) \Delta a - 2}
-  {h_{\text{recovery}}(r^{j - 1 / 2}) \Delta a + 2}
+  - \frac{2 - h_{\text{recovery}}(r^{j - 1 / 2}) \Delta a}
+  {2 + h_{\text{recovery}}(r^{j - 1 / 2}) \Delta a}
   p_{\mathrm{I}}^{i - 1, j - 1}
   + p_{\mathrm{I}}^{i, j}
   &= 0,
@@ -358,12 +358,72 @@ Then for $1 \leq i \leq I - 1$ and $1 \leq j \leq i$,
   + p_{\mathrm{C}}^{i, 0}
   &= 0,
   \\
-  \frac{h_{\text{chronic recovery}}(r^{j - 1 / 2}) \Delta a - 2}
-  {h_{\text{chronic recovery}}(r^{j - 1 / 2}) \Delta a + 2}
+  - \frac{2 - h_{\text{chronic recovery}}(r^{j - 1 / 2}) \Delta a}
+  {2 + h_{\text{chronic recovery}}(r^{j - 1 / 2}) \Delta a}
   p_{\mathrm{C}}^{i - 1, j - 1}
   + p_{\mathrm{C}}^{i, j}
   &= 0.
 \end{align}
+The coefficients must be non-negative to ensure each component of the
+$P_X$'s and $p_X$'s is non-negative. In particular, the hazards must
+satisfy
+\begin{equation}
+  2 - h \Delta a \geq 0,
+\end{equation}
+or
+\begin{equation}
+  h \leq \frac{2}{\Delta a}.
+\end{equation}
+
+
+Try
+\begin{equation}
+  p_{\mathrm{I}}^{i, 0} =
+  \sum_{j = 1}^i T^{i, j} h_{\text{progression}}(r^{j - 1 / 2})
+  \frac{p_{\mathrm{E}}^{i, j} + p_{\mathrm{E}}^{i - 1, j - 1}}{2}
+\end{equation}
+so that
+\begin{equation}
+  \begin{split}
+    - \sum_{j = 1}^i T^{i, j}
+    \frac{h_{\text{progression}}(r^{j - 1 / 2})}{2}
+    p_{\mathrm{E}}^{i - 1, j - 1}
+    \\ {}
+    - \sum_{j = 1}^i T^{i, j}
+    \frac{h_{\text{progression}}(r^{j - 1 / 2})}{2}
+    p_{\mathrm{E}}^{i, j}
+    \\ {}
+    + p_{\mathrm{I}}^{i, 0}
+    & = 0.
+  \end{split}
+\end{equation}
+%
+Try
+\begin{equation}
+  p_{\mathrm{I}}^{i, 0} =
+  \sum_{j = 1}^i T^{i, j} h_{\text{progression}}(r^{j - 1 / 2})
+  \frac{p_{\mathrm{E}}^{i, j} + p_{\mathrm{E}}^{i, j - 1}}{2}.
+\end{equation}
+so that
+\begin{equation}
+  \begin{split}
+    - T^{i, 1} \frac{h_{\text{progression}}(r^{1 / 2})}{2}
+    p_{\mathrm{E}}^{i, 0}
+    \\ {}
+    - \sum_{j = 1}^{i - 1}
+    \frac{
+      T^{i, j} h_{\text{progression}}(r^{j - 1 / 2})
+      + T^{i, j + 1} h_{\text{progression}}(r^{j + 1 / 2})}{2}
+    p_{\mathrm{E}}^{i, j}
+    \\ {}
+    - T^{i, i}
+    \frac{h_{\text{progression}}(r^{i - 1 / 2})}{2}
+    p_{\mathrm{E}}^{i, i}
+    \\ {}
+    + p_{\mathrm{I}}^{i, 0}
+    & = 0.
+  \end{split}
+\end{equation}
 
 
 \bibliography{journal_abbreviations,math_epi}

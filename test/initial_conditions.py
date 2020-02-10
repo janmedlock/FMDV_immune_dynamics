@@ -4,9 +4,18 @@ It seems like there's a mismatch between the PDE for p_E
 using h_progression(r^{j - 1/2}) and the boundary condition
 for p_I(a, 0) using h_progression(r^j).
 What about using h^{j - 1/2} * (p^{i, j} + p^{i - 1, j - 1}) / 2
-for the integral? Doesn't that give conservation of mass?'''
+for the integral? Doesn't that give conservation of mass?
+
+Choose \Delta a so that all the hazards have
+h(r) ≤ 2 / \Delta a for all 0 ≤ a ≤ 5 \Delta a.
+(Remember to check the midpoints, too.)
+For each p_X, choose r_max_X ≤ a_max
+so that h(r_max_X) ≤ 2 / \Delta a.
+\Delta a = 0.002 seems to work for progression.'''
+
 
 import sys
+import time
 
 import numpy
 import pandas
@@ -77,17 +86,20 @@ class Solver:
             T[i, self.get_k(i, [0, i])] /= 2
         return T.tocsr()
 
+    def clip(self, rate):
+        # This ensures that d_1 ≤ 0 in `get_A_XX()` so that P_X ≥ 0.
+        return numpy.clip(rate, 0, 2 / self.age_step)
+
     def get_A_XX(self, n, rate_out):
         '''Get the n × n diagonal block `A_XX` that maps state X to itself.'''
         # The values on the diagonal.
         d_0 = numpy.ones(self.I)
         # The values on the subdiagonal.
-        d_1 = ((rate_out * self.age_step - 2)
-               / (rate_out * self.age_step + 2))
-        # Ensure that d_1 ≤ 0 so that P_X ≥ 0.
-        assert numpy.all(d_1 <= 0)
+        d_1 = - ((2 - rate_out * self.age_step)
+                 / (2 + rate_out * self.age_step))
         if numpy.isscalar(d_1):
             d_1 *= numpy.ones(self.I - 1)
+        assert (d_1 <= 0).all()
         if n == self.I:
             A_XX = sparse.diags([d_0, d_1], [0, -1])
         elif n == self.K:
@@ -106,7 +118,7 @@ class Solver:
     def get_A_XY(self, n, rate_in, rate_out):
         '''Get the n × n off-diagonal block `A_XY` that maps state Y to X.'''
         v = - ((rate_in * self.age_step)
-               / (rate_out * self.age_step + 2))
+               / (2 + rate_out * self.age_step))
         if numpy.isscalar(v):
             v *= numpy.ones(self.I - 1)
         # The values on the diagonal.
@@ -127,19 +139,16 @@ class Solver:
         b_X = sparse.csr_matrix((data, (row_ind, col_ind)), shape=(n, 1))
         return b_X
 
-    def get_row_M(self):
+    def get_row_M(self, rate_out):
         n = self.I
-        rate_out = self.RVs.maternal_immunity_waning.hazard(self.ages_mid)
         A_MM = self.get_A_XX(n, rate_out)
         A_M = [A_MM, None, None, None]
         # b_M = [1, 0, 0, ..., 0].
         b_M = self.get_b_X(n, [1], [0])
         return (A_M, b_M)
 
-    def get_row_S(self):
+    def get_row_S(self, rate_in, rate_out):
         n = self.I
-        rate_in = self.RVs.maternal_immunity_waning.hazard(self.ages_mid)
-        rate_out = self.hazard_infection
         A_SM = self.get_A_XY(n, rate_in, rate_out)
         A_SS = self.get_A_XX(n, rate_out)
         A_S = [A_SM, A_SS, None, None]
@@ -147,10 +156,8 @@ class Solver:
         b_S = self.get_b_X(n)
         return (A_S, b_S)
 
-    def get_row_E(self):
+    def get_row_E(self, rate_in, rate_out):
         n = self.K
-        rate_in = self.hazard_infection
-        rate_out = self.RVs.progression.hazard(self.ages_mid)
         A_ES = sparse.lil_matrix((self.K, self.I))
         if numpy.isscalar(rate_in):
             rate_in *= numpy.ones(self.I - 1)
@@ -167,24 +174,27 @@ class Solver:
         b_E = self.get_b_X(n)
         return (A_E, b_E)
 
-    def get_row_I(self):
+    def get_row_I(self, rate_in, rate_out):
         n = self.K
-        # This hazard is at `ages`, not `ages_mid`.
-        # TODO
-        # Should it be at `ages_mid`?
-        rate_in = self.RVs.progression.hazard(self.ages)
-        rate_out = 0
         A_IE = sparse.lil_matrix((self.K, self.K))
         # Trapezoid rule for boundary condition.
         T = self.get_T()
-        # The values on the diagonal.
-        d_0 = - rate_in
-        # Diagonal matrix to use for multiplication with T.
-        D_0 = sparse.diags(d_0, format='csr')
-        for i in range(self.I):
-            j = range(i + 1)
-            k = self.get_k(i, j)
-            A_IE[self.get_k(i, 0), k] = T[i, k] * D_0[:(i + 1), :(i + 1)]
+        for i in range(1, self.I):
+            k = self.get_k(i, 0)
+            j = 0
+            l0 = self.get_k(i, j)
+            l1 = self.get_k(i, j + 1)
+            A_IE[k, l0] = - T[i, l1] * rate_in[j] / 2
+            for j in range(1, i):
+                l0 = self.get_k(i, j)
+                l1 = self.get_k(i, j + 1)
+                A_IE[k, l0] = - (
+                    T[i, l0] * rate_in[j - 1]
+                    + T[i, l1] * rate_in[j]
+                ) / 2
+            j = i
+            l0 = self.get_k(i, j)
+            A_IE[k, l0] = - T[i, l0] * rate_in[j - 1] / 2
         # For consistency of the initial condition,
         # the first row must be all 0.
         assert (A_IE[0].count_nonzero() == 0)
@@ -195,10 +205,20 @@ class Solver:
         return (A_I, b_I)
 
     def get_A_b(self, format='csr'):
-        (A_M, b_M) = self.get_row_M()
-        (A_S, b_S) = self.get_row_S()
-        (A_E, b_E) = self.get_row_E()
-        (A_I, b_I) = self.get_row_I()
+        rate_maternal_immunity_waning \
+            = self.RVs.maternal_immunity_waning.hazard(self.ages_mid)
+        rate_infection = self.hazard_infection * numpy.ones(self.I - 1)
+        with numpy.errstate(divide='ignore'):
+            rate_progression = self.clip(
+                self.RVs.progression.hazard(self.ages_mid))
+        rate_recovery = numpy.zeros(self.I - 1)
+        (A_M, b_M) = self.get_row_M(rate_maternal_immunity_waning)
+        (A_S, b_S) = self.get_row_S(rate_maternal_immunity_waning,
+                                    rate_infection)
+        (A_E, b_E) = self.get_row_E(rate_infection,
+                                    rate_progression)
+        (A_I, b_I) = self.get_row_I(rate_progression,
+                                    rate_recovery)
         A = sparse.bmat([A_M, A_S, A_E, A_I],
                         format=format)
         b = sparse.vstack([b_M, b_S, b_E, b_I],
@@ -206,9 +226,15 @@ class Solver:
         return (A, b)
 
     def solve(self):
+        t0 = time.time()
         (A, b) = self.get_A_b()
+        t1 = time.time()
+        print(f'Setup took {t1 - t0} seconds.')
         assert numpy.isfinite(A.data).all()
+        t2 = time.time()
         Pp = sparse.linalg.spsolve(A, b)
+        t3 = time.time()
+        print(f'Solve took {t3 - t2} seconds.')
         i_split = 2 * self.I
         [P, p] = [Pp[:i_split], Pp[i_split:]]
         [P_M, P_S] = numpy.hsplit(P, 2)
@@ -247,7 +273,6 @@ def plot_prob(ax, status_prob):
         z = len(status_prob) - i
         ax.fill_between(ages, total, label=None, zorder=z)
     ax.set_ylabel('joint\ndensity')
-    ax.set_ylim(-0.05, 1.05)
 
 
 def plot_sample(ax, status_ages, width=0.1):
@@ -299,7 +324,8 @@ if __name__ == '__main__':
     # hazard_infection = 0
     # No E -> I.
     # parameters.progression_mean = numpy.inf
-    parameters.progression_mean = 0.1
+    # Slower progression.
+    # parameters.progression_mean = 1
     RVs = RandomVariables(parameters, _initial_conditions=False)
     age_max = 10
     age_step = 0.1
