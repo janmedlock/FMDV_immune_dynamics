@@ -31,7 +31,7 @@ in each model compartment (\autoref{model_diagram}), i.e.
   P_X(a) = \Prob\{\text{in compartment $X$ at age $a$}|\text{alive at
     age $a$}\},
 \end{equation}
-for $X \in \{\mathrm{M}, \mathrm{S}, \mathrm{E}, \mathrm{I}\}$
+for $X \in \{\mathrm{M}, \mathrm{S}, \mathrm{E}, \mathrm{I}, \mathrm{R}\}$
 and $a \geq 0$.
 We will assume that
 \begin{itemize}
@@ -79,19 +79,25 @@ the compartment probabilities satisfy
   \\
   \frac{\partial p_{\mathrm{I}}}{\partial a}
   + \frac{\partial p_{\mathrm{I}}}{\partial r}
-  &= 0
+  &= - h_{\text{recovery}}(r) p_{\mathrm{I}}(a, r),
+  \\
+  P_{\mathrm{R}}(0) &= 0,
+  \\
+  \frac{\md P_{\mathrm{R}}}{\md a} &=
+  \int_0^a h_{\text{recovery}}(r) p_{\mathrm{I}}(a, r) \md r,
 \end{align}
 with
 \begin{align}
-  P_{\mathrm{E}}(a) &= \int_0^a p_E(a, r) \md r,
+  P_{\mathrm{E}}(a) &= \int_0^a p_{\mathrm{E}}(a, r) \md r,
   \\
-  P_{\mathrm{I}}(a) &= \int_0^a p_I(a, r) \md r.
+  P_{\mathrm{I}}(a) &= \int_0^a p_{\mathrm{I}}(a, r) \md r.
 \end{align}
 
 Let
 \begin{equation}
   P(a) = P_{\mathrm{M}}(a) + P_{\mathrm{S}}(a)
-  + P_{\mathrm{E}}(a) + P_{\mathrm{I}}(a),
+  + P_{\mathrm{E}}(a) + P_{\mathrm{I}}(a)
+  + P_{\mathrm{R}}(a),
 \end{equation}
 so that
 \begin{equation}
@@ -136,6 +142,7 @@ and then
   + \frac{\md P_{\mathrm{S}}}{\md a}
   + \frac{\md P_{\mathrm{E}}}{\md a}
   + \frac{\md P_{\mathrm{I}}}{\md a}
+  + \frac{\md P_{\mathrm{R}}}{\md a}
   = 0.
 \end{equation}
 
@@ -146,10 +153,10 @@ To compute the compartment probabilities, we used the Crank--Nicolson
 method on characteristics and the composite trapezoid rule for the
 integrals \citep{milner_1992}.  Given the age step $\Delta a$,
 for $i \in \{0, 1, 2, \ldots, I - 1\}$ and $j \in \{0, 1, 2,
-\ldots, I - 2\}$, let $a^i = i \Delta a$, $r^j = j \Delta a$,
+\ldots, i - 1\}$, let $a^i = i \Delta a$, $r^j = j \Delta a$,
 $P_X^i \approx P_X(a^i)$, and $p_X^{i, j} \approx
 p_X(a^i, r^j)$.
-For each $1 \leq i \leq I - 1$ and each $1 \leq j \leq i$, the
+For each $1 \leq i \leq I - 1$ and each $1 \leq j \leq i - 1$, the
 Crank--Nicolson method on characteristics is
 \begin{align}
   P_{\mathrm{M}}^0 &= 1,
@@ -179,7 +186,15 @@ Crank--Nicolson method on characteristics is
   \Delta a,
   \\
   \frac{p_{\mathrm{I}}^{i, j} - p_{\mathrm{I}}^{i - 1, j - 1}}{\Delta a}
-  &= 0.
+  &= - h_{\text{recovery}}(r^{j - 1 / 2})
+  \frac{p_{\mathrm{I}}^{i, j} + p_{\mathrm{I}}^{i - 1, j - 1}}{2},
+  \displaybreak[0]\\
+  P_{\mathrm{R}}^0 &= 0,
+  \\
+  \frac{P_{\mathrm{R}}^i - P_{\mathrm{R}}^{i - 1}}{\Delta a}
+  &= \sum_{j = 1}^{i - 1} h_{\text{recovery}}(r^{j - 1 / 2})
+  \frac{p_{\mathrm{I}}^{i, j} + p_{\mathrm{I}}^{i - 1, j - 1}}{2}
+  \Delta a,
 \end{align}
 Then
 \begin{align}
@@ -203,7 +218,7 @@ define the vectors
     P_X^{I - 1}
   \end{pmatrix},
 \end{equation}
-for $X \in \{\mathrm{M}, \mathrm{S}\}$.
+for $X \in \{\mathrm{M}, \mathrm{S}, \mathrm{R}\}$.
 For the variables that depend on age $a$ and residence time $r$,
 define the vectors
 \begin{equation}
@@ -259,6 +274,21 @@ Then for $1 \leq i \leq I - 1$ and $1 \leq j \leq i - 1$,
     &= 0,
   \end{split}
   \displaybreak[0]\\
+  P_{\mathrm{R}}^0 &= 0,
+  \\
+  \begin{split}
+    - \sum_{j = 1}^{i - 1}
+    \frac{h_{\text{recovery}}(r^{j - 1 / 2}) (\Delta a)^2}{2}
+    p_{\mathrm{I}}^{i - 1, j - 1}
+    \\ {}
+    - \sum_{j = 1}^{i - 1}
+    \frac{h_{\text{recovery}}(r^{j - 1 / 2}) (\Delta a)^2}{2}
+    p_{\mathrm{I}}^{i, j}
+    \\ {}
+    - P_{\mathrm{R}}^{i - 1} + P_{\mathrm{R}}^i
+    &= 0,
+  \end{split}
+  \displaybreak[0]\\
   - \frac{h_{\text{infection}}}{2} P_{\mathrm{S}}^{i - 1}
   - \frac{h_{\text{infection}}}{2} P_{\mathrm{S}}^i
   + p_{\mathrm{E}}^{i, 0}
@@ -282,7 +312,9 @@ Then for $1 \leq i \leq I - 1$ and $1 \leq j \leq i - 1$,
     &= 0,
   \end{split}
   \\
-  - p_{\mathrm{I}}^{i - 1, j - 1}
+  - \frac{2 - h_{\text{recovery}}(r^{j - 1 / 2}) \Delta a}
+  {2 + h_{\text{recovery}}(r^{j - 1 / 2}) \Delta a}
+  p_{\mathrm{I}}^{i - 1, j - 1}
   + p_{\mathrm{I}}^{i, j}
   &= 0.
 \end{align}

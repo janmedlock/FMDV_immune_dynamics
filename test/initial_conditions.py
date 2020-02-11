@@ -1,17 +1,7 @@
 #!/usr/bin/python3
-'''Understand Solver.get_row_I(), especially A_IE.
-It seems like there's a mismatch between the PDE for p_E
-using h_progression(r^{j - 1/2}) and the boundary condition
-for p_I(a, 0) using h_progression(r^j).
-What about using h^{j - 1/2} * (p^{i, j} + p^{i - 1, j - 1}) / 2
-for the integral? Doesn't that give conservation of mass?
-
-Choose \Delta a so that all the hazards have
-h(r) ≤ 2 / \Delta a for all 0 ≤ a ≤ 5 \Delta a.
-(Remember to check the midpoints, too.)
-For each p_X, choose r_max_X ≤ a_max
-so that h(r_max_X) ≤ 2 / \Delta a.
-\Delta a = 0.002 seems to work for progression.'''
+#
+# TODO
+# Vectorize loops.
 
 
 import sys
@@ -134,35 +124,50 @@ class Solver:
         b_X = sparse.csr_matrix((data, (row_ind, col_ind)), shape=(n, 1))
         return b_X
 
-    def get_row_M(self, rate_out):
+    def get_row_M(self, rates):
         n = self.I
-        A_MM = self.get_A_XX(n, rate_out)
-        A_M = [A_MM, None, None, None]
+        A_MM = self.get_A_XX(n, rates.maternal_immunity_waning)
+        A_M = [A_MM, None, None, None, None]
         # b_M = [1, 0, 0, ..., 0].
         b_M = self.get_b_X(n, [1], [0])
         return (A_M, b_M)
 
-    def get_row_S(self, rate_in, rate_out):
+    def get_row_S(self, rates):
         n = self.I
-        A_SM = self.get_A_XY(n, rate_in, rate_out)
-        A_SS = self.get_A_XX(n, rate_out)
-        A_S = [A_SM, A_SS, None, None]
+        A_SM = self.get_A_XY(n, rates.maternal_immunity_waning,
+                             rates.infection)
+        A_SS = self.get_A_XX(n, rates.infection)
+        A_S = [A_SM, A_SS, None, None, None]
         # b_S = [0, 0, ..., 0].
         b_S = self.get_b_X(n)
         return (A_S, b_S)
 
-    def get_row_E(self, rate_in, rate_out):
+    def get_row_R(self, rates):
+        n = self.I
+        A_RI = sparse.lil_matrix((self.I, self.K))
+        for i in range(1, self.I):
+            for j in range(1, i):
+                v = rates.recovery[j - 1] * self.age_step ** 2 / 2
+                A_RI[i, self.get_k(i - 1, j - 1)] = - v
+                A_RI[i, self.get_k(i, j)] = - v
+        A_RR = self.get_A_XX(n, numpy.zeros(self.I - 1))
+        A_R = [None, None, A_RR, None, A_RI]
+        # b_R = [0, 0, ..., 0].
+        b_R = self.get_b_X(n)
+        return (A_R, b_R)
+
+    def get_row_E(self, rates):
         n = self.K
         A_ES = sparse.lil_matrix((self.K, self.I))
         for i in range(1, self.I):
-            A_ES[self.get_k(i, 0), [i - 1, i]] = - rate_in[i - 1] / 2
-        A_EE = self.get_A_XX(n, rate_out)
-        A_E = [None, A_ES, A_EE, None]
+            A_ES[self.get_k(i, 0), [i - 1, i]] = - rates.infection[i - 1] / 2
+        A_EE = self.get_A_XX(n, rates.progression)
+        A_E = [None, A_ES, None, A_EE, None]
         # b_E = [0, 0, ..., 0].
         b_E = self.get_b_X(n)
         return (A_E, b_E)
 
-    def get_row_I(self, rate_in, rate_out):
+    def get_row_I(self, rates):
         n = self.K
         A_IE = sparse.lil_matrix((self.K, self.K))
         for i in range(1, self.I):
@@ -170,12 +175,9 @@ class Solver:
             for j in range(1, i):
                 l = [self.get_k(i - 1, j - 1),
                      self.get_k(i, j)]
-                A_IE[k, l] = - rate_in[j - 1] / 2 * self.age_step
-        # For consistency of the initial condition,
-        # the first row must be all 0.
-        assert (A_IE[0].count_nonzero() == 0)
-        A_II = self.get_A_XX(n, rate_out)
-        A_I = [None, None, A_IE, A_II]
+                A_IE[k, l] = - rates.progression[j - 1] / 2 * self.age_step
+        A_II = self.get_A_XX(n, rates.recovery)
+        A_I = [None, None, None, A_IE, A_II]
         # b_I = [0, 0, ..., 0].
         b_I = self.get_b_X(n)
         return (A_I, b_I)
@@ -187,25 +189,25 @@ class Solver:
                 self.RVs.maternal_immunity_waning.hazard(self.ages_mid),
                 'infection': self.hazard_infection,
                 'progression': self.RVs.progression.hazard(self.ages_mid),
-                'recovery': 0}
+                'recovery': self.RVs.recovery.hazard(self.ages_mid)}
         for (k, v) in rates.items():
             if numpy.isscalar(v):
                 rates[k] = v * numpy.ones(self.I - 1)
+        # TODO
+        # Use self.clip().
         return numpy.rec.fromarrays(rates.values(),
                                     names=list(rates.keys()))
 
     def get_A_b(self, format='csr'):
         rates = self.get_rates()
-        (A_M, b_M) = self.get_row_M(rates.maternal_immunity_waning)
-        (A_S, b_S) = self.get_row_S(rates.maternal_immunity_waning,
-                                    rates.infection)
-        (A_E, b_E) = self.get_row_E(rates.infection,
-                                    rates.progression)
-        (A_I, b_I) = self.get_row_I(rates.progression,
-                                    rates.recovery)
-        A = sparse.bmat([A_M, A_S, A_E, A_I],
+        (A_M, b_M) = self.get_row_M(rates)
+        (A_S, b_S) = self.get_row_S(rates)
+        (A_R, b_R) = self.get_row_R(rates)
+        (A_E, b_E) = self.get_row_E(rates)
+        (A_I, b_I) = self.get_row_I(rates)
+        A = sparse.bmat([A_M, A_S, A_R, A_E, A_I],
                         format=format)
-        b = sparse.vstack([b_M, b_S, b_E, b_I],
+        b = sparse.vstack([b_M, b_S, b_R, b_E, b_I],
                           format=format)
         return (A, b)
 
@@ -219,9 +221,9 @@ class Solver:
         Pp = sparse.linalg.spsolve(A, b)
         t3 = time.time()
         print(f'Solve took {t3 - t2} seconds.')
-        i_split = 2 * self.I
+        i_split = 3 * self.I
         [P, p] = [Pp[:i_split], Pp[i_split:]]
-        [P_M, P_S] = numpy.hsplit(P, 2)
+        [P_M, P_S, P_R] = numpy.hsplit(P, 3)
         [p_E, p_I] = numpy.hsplit(p, 2)
         T = self.get_T()
         [P_E, P_I] = map(T.dot, [p_E, p_I])
@@ -229,7 +231,8 @@ class Solver:
         P = pandas.DataFrame({'maternal immunity': P_M,
                               'susceptible': P_S,
                               'exposed': P_E,
-                              'infectious': P_I},
+                              'infectious': P_I,
+                              'recovered': P_R},
                              index=rows)
         return P
 
@@ -310,6 +313,8 @@ if __name__ == '__main__':
     # parameters.progression_mean = numpy.inf
     # Slower progression.
     parameters.progression_mean = 1
+    # Slower recovery.
+    parameters.recovery_mean = 5
     RVs = RandomVariables(parameters, _initial_conditions=False)
     age_max = 10
     age_step = 0.1
