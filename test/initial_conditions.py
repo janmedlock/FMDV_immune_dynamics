@@ -47,14 +47,17 @@ class Solver:
         assert len(self.ages) > 1
         self.ages_mid = (self.ages[:-1] + self.ages[1:]) / 2
 
-    @staticmethod
-    def get_k(i, j):
+    def get_k(self, i, j):
         '''Get the position `k` in the stacked vector represenation
         p_X^k \approx p_X(a^i, r^j) of the entry for age a^i,
         residence time r^j.'''
         # Convert iterables to arrays so the arithmetic works on them.
         (i, j) = map(numpy.asarray, (i, j))
-        return i * (i + 1) // 2 + j
+        assert (i > 0).all()
+        assert (i < self.I).all()
+        assert (j >= 0).all()
+        assert (j < i).all()
+        return i * (i - 1) // 2 + j
 
     @property
     def I(self):
@@ -67,10 +70,10 @@ class Solver:
         the stacked vector representation p_X^k \approx p_X(a^i, r^j),
         k = 0, 1, ..., K - 1.'''
         # The last entry is
-        # K - 1 = self.get_k(self.I - 1, self.I - 1),
+        # K - 1 = self.get_k(self.I - 1, self.I - 2),
         # so
-        # K = self.get_k(self.I - 1, self.I - 1) + 1.
-        return self.get_k(self.I - 1, self.I - 1) + 1
+        # K = self.get_k(self.I - 1, self.I - 2) + 1.
+        return self.get_k(self.I - 1, self.I - 2) + 1
 
     def get_T(self):
         '''Get the matrix `T` so that `T.dot(f)`
@@ -81,9 +84,8 @@ class Solver:
         when left-multiplied with a K vector
         produces a vector over ages a.'''
         T = sparse.lil_matrix((self.I, self.K))
-        for i in range(self.I):
-            T[i, self.get_k(i, range(i + 1))] = self.age_step
-            T[i, self.get_k(i, [0, i])] /= 2
+        for i in range(1, self.I):
+            T[i, self.get_k(i, range(i))] = self.age_step
         return T.tocsr()
 
     def clip(self, rate):
@@ -92,25 +94,20 @@ class Solver:
 
     def get_A_XX(self, n, rate_out):
         '''Get the n × n diagonal block `A_XX` that maps state X to itself.'''
-        # The values on the diagonal.
-        d_0 = numpy.ones(self.I)
         # The values on the subdiagonal.
         d_1 = - ((2 - rate_out * self.age_step)
                  / (2 + rate_out * self.age_step))
-        if numpy.isscalar(d_1):
-            d_1 *= numpy.ones(self.I - 1)
         assert (d_1 <= 0).all()
         if n == self.I:
-            A_XX = sparse.diags([d_0, d_1], [0, -1])
+            A_XX = sparse.diags([1, d_1], [0, -1], shape=(n, n))
         elif n == self.K:
             A_XX = sparse.lil_matrix((self.K, self.K))
-            for i in range(self.I):
-                for j in range(i + 1):
+            for i in range(1, self.I):
+                for j in range(i):
                     k = self.get_k(i, j)
-                    A_XX[k, k] = d_0[j]
+                    A_XX[k, k] = 1
                     if j > 0:
-                        k_1 = self.get_k(i - 1, j - 1)
-                        A_XX[k, k_1] = d_1[j - 1]
+                        A_XX[k, self.get_k(i - 1, j - 1)] = d_1[j - 1]
         else:
             raise NotImplementedError(f'\'n\'={n}!')
         return A_XX
@@ -119,14 +116,12 @@ class Solver:
         '''Get the n × n off-diagonal block `A_XY` that maps state Y to X.'''
         v = - ((rate_in * self.age_step)
                / (2 + rate_out * self.age_step))
-        if numpy.isscalar(v):
-            v *= numpy.ones(self.I - 1)
         # The values on the diagonal.
         d_0 = numpy.hstack([0, v])
         # The values on the subdiagonal.
         d_1 = v
         if n == self.I:
-            A_XY = sparse.diags([d_0, d_1], [0, -1])
+            A_XY = sparse.diags([d_0, d_1], [0, -1], shape=(n, n))
         else:
             raise NotImplementedError(f'\'n\'={n}!')
         return A_XY
@@ -159,15 +154,8 @@ class Solver:
     def get_row_E(self, rate_in, rate_out):
         n = self.K
         A_ES = sparse.lil_matrix((self.K, self.I))
-        if numpy.isscalar(rate_in):
-            rate_in *= numpy.ones(self.I - 1)
-        # The values on the diagonal.
-        d_0 = numpy.hstack([0, - rate_in])
-        i = range(self.I)
-        A_ES[self.get_k(i, 0), i] = d_0
-        # For consistency of the initial condition,
-        # the first row must be all 0.
-        assert (A_ES[0].count_nonzero() == 0)
+        for i in range(1, self.I):
+            A_ES[self.get_k(i, 0), [i - 1, i]] = - rate_in[i - 1] / 2
         A_EE = self.get_A_XX(n, rate_out)
         A_E = [None, A_ES, A_EE, None]
         # b_E = [0, 0, ..., 0].
@@ -181,20 +169,10 @@ class Solver:
         T = self.get_T()
         for i in range(1, self.I):
             k = self.get_k(i, 0)
-            j = 0
-            l0 = self.get_k(i, j)
-            l1 = self.get_k(i, j + 1)
-            A_IE[k, l0] = - T[i, l1] * rate_in[j] / 2
             for j in range(1, i):
-                l0 = self.get_k(i, j)
-                l1 = self.get_k(i, j + 1)
-                A_IE[k, l0] = - (
-                    T[i, l0] * rate_in[j - 1]
-                    + T[i, l1] * rate_in[j]
-                ) / 2
-            j = i
-            l0 = self.get_k(i, j)
-            A_IE[k, l0] = - T[i, l0] * rate_in[j - 1] / 2
+                l = [self.get_k(i - 1, j - 1),
+                     self.get_k(i, j)]
+                A_IE[k, l] = - rate_in[j - 1] * self.age_step  / 2
         # For consistency of the initial condition,
         # the first row must be all 0.
         assert (A_IE[0].count_nonzero() == 0)
@@ -204,21 +182,29 @@ class Solver:
         b_I = self.get_b_X(n)
         return (A_I, b_I)
 
-    def get_A_b(self, format='csr'):
-        rate_maternal_immunity_waning \
-            = self.RVs.maternal_immunity_waning.hazard(self.ages_mid)
-        rate_infection = self.hazard_infection * numpy.ones(self.I - 1)
+    def get_rates(self):
         with numpy.errstate(divide='ignore'):
-            rate_progression = self.clip(
-                self.RVs.progression.hazard(self.ages_mid))
-        rate_recovery = numpy.zeros(self.I - 1)
-        (A_M, b_M) = self.get_row_M(rate_maternal_immunity_waning)
-        (A_S, b_S) = self.get_row_S(rate_maternal_immunity_waning,
-                                    rate_infection)
-        (A_E, b_E) = self.get_row_E(rate_infection,
-                                    rate_progression)
-        (A_I, b_I) = self.get_row_I(rate_progression,
-                                    rate_recovery)
+            rates = {
+                'maternal_immunity_waning':
+                self.RVs.maternal_immunity_waning.hazard(self.ages_mid),
+                'infection': self.hazard_infection,
+                'progression': self.RVs.progression.hazard(self.ages_mid),
+                'recovery': 0}
+        for (k, v) in rates.items():
+            if numpy.isscalar(v):
+                rates[k] = v * numpy.ones(self.I - 1)
+        return numpy.rec.fromarrays(rates.values(),
+                                    names=list(rates.keys()))
+
+    def get_A_b(self, format='csr'):
+        rates = self.get_rates()
+        (A_M, b_M) = self.get_row_M(rates.maternal_immunity_waning)
+        (A_S, b_S) = self.get_row_S(rates.maternal_immunity_waning,
+                                    rates.infection)
+        (A_E, b_E) = self.get_row_E(rates.infection,
+                                    rates.progression)
+        (A_I, b_I) = self.get_row_I(rates.progression,
+                                    rates.recovery)
         A = sparse.bmat([A_M, A_S, A_E, A_I],
                         format=format)
         b = sparse.vstack([b_M, b_S, b_E, b_I],
@@ -325,7 +311,7 @@ if __name__ == '__main__':
     # No E -> I.
     # parameters.progression_mean = numpy.inf
     # Slower progression.
-    # parameters.progression_mean = 1
+    parameters.progression_mean = 1
     RVs = RandomVariables(parameters, _initial_conditions=False)
     age_max = 10
     age_step = 0.1
