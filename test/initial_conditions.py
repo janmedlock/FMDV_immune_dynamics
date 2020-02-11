@@ -165,14 +165,12 @@ class Solver:
     def get_row_I(self, rate_in, rate_out):
         n = self.K
         A_IE = sparse.lil_matrix((self.K, self.K))
-        # Trapezoid rule for boundary condition.
-        T = self.get_T()
         for i in range(1, self.I):
             k = self.get_k(i, 0)
             for j in range(1, i):
                 l = [self.get_k(i - 1, j - 1),
                      self.get_k(i, j)]
-                A_IE[k, l] = - rate_in[j - 1] * self.age_step  / 2
+                A_IE[k, l] = - rate_in[j - 1] / 2 * self.age_step
         # For consistency of the initial condition,
         # the first row must be all 0.
         assert (A_IE[0].count_nonzero() == 0)
