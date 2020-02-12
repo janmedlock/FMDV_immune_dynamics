@@ -1,13 +1,16 @@
 #!/usr/bin/python3
 #
-# TODO
-# Vectorize loops.
+# TODO: Put i = j back into p_X.
+# TODO: Vectorize loops.
 
 
+import re
 import sys
 import time
+import warnings
 
 import numpy
+import numpy.lib.recfunctions
 import pandas
 from scipy import sparse
 
@@ -24,9 +27,230 @@ def arange(start, stop, step, dtype=None):
     return retval
 
 
+class Block:
+    '''Get a block row A_X of A and block b_X of b.'''
+    def __init__(self, solver):
+        self.solver = solver
+
+    @property
+    def X(self):
+        '''Get the variable name from the last letter of the class name.'''
+        return self.__class__.__name__[-1]
+
+    @property
+    def b(self):
+        '''Make a sparse n × 1 matrix of the right-hand sides.'''
+        # The initial value is in the 0th entry,
+        # then zeros everywhere else.
+        return sparse.csr_matrix(([self.initial_value], ([0], [0])),
+                                 shape=(len(self), 1))
+
+    def get_Y_match(self, block_name):
+        '''`block_name` is 'A_XY' for some Y.'''
+        return re.match(f'A_{self.X}([A-Z])$', block_name)
+
+    def get_Y(self, block_name):
+        '''Get the 'Y' value out of 'A_XY'.'''
+        return self.get_Y_match(block_name).group(1)
+
+    def is_A_XY(self, block_name):
+        '''Check if `block_name` is 'A_XY' for some Y.'''
+        return (self.get_Y_match(block_name) is not None)
+
+    @property
+    def A(self):
+        '''Assemble the block row A_X from its columns A_XY.'''
+        return {self.get_Y(block_name): getattr(self, block_name)
+                for block_name in dir(self)
+                if self.is_A_XY(block_name)}
+
+    def d_1(self, rate_out):
+        '''Get the values on the subdiagonal of A_XX.'''
+        # The values on the subdiagonal.
+        d_1 = - ((2 - rate_out * self.solver.age_step)
+                 / (2 + rate_out * self.solver.age_step))
+        assert (d_1 <= 0).all()
+        return d_1
+
+
+class SizeI:
+    '''An `XBlock()` of size I.'''
+    def __len__(self):
+        return self.solver.I
+
+    def A_XX(self, rate_out):
+        '''Get the diagonal block `A_XX` that maps state X to itself.'''
+        # The values on the diagonal.
+        d_0 = numpy.hstack([1, 1 + rate_out * self.solver.age_step / 2])
+        # The values on the subdiagonal.
+        d_1 = - (1 - rate_out * self.solver.age_step / 2)
+        assert (d_1 <= 0).all()
+        return sparse.diags([d_0, d_1], [0, -1],
+                            shape=(len(self), len(self)))
+
+    def A_XY(self, rate_in):
+        '''Get the off-diagonal block `A_XY` that maps state Y to X.'''
+        v = - rate_in * self.solver.age_step / 2
+        # The values on the diagonal.
+        d_0 = numpy.hstack([0, v])
+        # The values on the subdiagonal.
+        d_1 = v
+        return sparse.diags([d_0, d_1], [0, -1],
+                            shape=(len(self), len(self)))
+
+
+class SizeK:
+    '''An `XBlock()` of size K.'''
+    def __len__(self):
+        return self.solver.K
+
+    def A_XX(self, rate_out):
+        '''Get the diagonal block `A_XX` that maps state X to itself.'''
+        A_XX = sparse.lil_matrix((len(self), len(self)))
+        d_0 = numpy.hstack([1, 1 + rate_out * self.solver.age_step / 2])
+        d_1 = - (1 - rate_out * self.solver.age_step / 2)
+        assert (d_1 <= 0).all()
+        for i in range(1, self.solver.I):
+            for j in range(i):
+                k = self.solver.get_k(i, j)
+                A_XX[k, k] = d_0[j]
+                if j > 0:
+                    A_XX[k, self.solver.get_k(i - 1, j - 1)] = d_1[j - 1]
+        return A_XX
+
+
+class BlockM(Block, SizeI):
+    initial_value = 1
+
+    @property
+    def A_MM(self):
+        return self.A_XX(self.solver.rates.maternal_immunity_waning)
+
+
+class BlockS(Block, SizeI):
+    initial_value = 0
+
+    @property
+    def A_SM(self):
+        return self.A_XY(self.solver.rates.maternal_immunity_waning)
+
+    @property
+    def A_SS(self):
+        return self.A_XX(self.solver.rates.infection)
+
+
+class BlockE(Block, SizeK):
+    initial_value = 0
+
+    @property
+    def A_ES(self):
+        A_ES = sparse.lil_matrix((len(self), self.solver.I))
+        for i in range(1, self.solver.I):
+            k = self.solver.get_k(i, 0)
+            A_ES[k, [i - 1, i]] = - self.solver.rates.infection[i - 1] / 2
+        return A_ES
+
+    @property
+    def A_EL(self):
+        A_EL = sparse.lil_matrix((len(self), self.solver.I))
+        for i in range(1, self.solver.I):
+            k = self.solver.get_k(i, 0)
+            A_EL[k, [i - 1, i]] = - self.solver.rates.infection[i - 1] / 2
+        return A_EL
+
+    @property
+    def A_EE(self):
+        return self.A_XX(self.solver.rates.progression)
+
+
+class BlockI(Block, SizeK):
+    initial_value = 0
+
+    @property
+    def A_IE(self):
+        A_IE = sparse.lil_matrix((len(self), len(self)))
+        for i in range(1, self.solver.I):
+            k = self.solver.get_k(i, 0)
+            for j in range(1, i):
+                l = self.solver.get_k([i - 1, i], [j - 1, j])
+                A_IE[k, l] = - (self.solver.rates.progression[j - 1]
+                                * self.solver.age_step / 2)
+        return A_IE
+
+    @property
+    def A_II(self):
+        return self.A_XX(self.solver.rates.recovery)
+
+
+class BlockR(Block, SizeI):
+    initial_value = 0
+
+    @property
+    def A_RI(self):
+        A_RI = sparse.lil_matrix((len(self), self.solver.K))
+        for i in range(1, self.solver.I):
+            for j in range(1, i):
+                k = self.solver.get_k([i - 1, i], [j - 1, j])
+                A_RI[i, k] = - (self.solver.rates.recovery[j - 1]
+                                * self.solver.age_step ** 2 / 2)
+        return A_RI
+
+    @property
+    def A_RR(self):
+        return self.A_XX(self.solver.rates.antibody_loss)
+
+    @property
+    def A_RL(self):
+        return self.A_XY(self.solver.rates.antibody_gain)
+
+
+class BlockL(Block, SizeI):
+    initial_value = 0
+
+    @property
+    def A_LR(self):
+        return self.A_XY(self.solver.rates.antibody_loss)
+
+    @property
+    def A_LL(self):
+        return self.A_XX(self.solver.rates.antibody_gain
+                         + self.solver.rates.infection)
+
+
+class Blocks:
+    def __init__(self, solver):
+        self.blocks = {}
+        for cls in Block.__subclasses__():
+            block = cls(solver)
+            self.blocks[block.X] = block
+
+    @property
+    def A(self):
+        return {var: block.A for (var, block) in self.blocks.items()}
+
+    @property
+    def b(self):
+        return {var: block.b for (var, block) in self.blocks.items()}
+
+
 class Solver:
     '''Crank–Nicolson solver to find the probability of being in each
     compartment as a function of age.'''
+
+    # The P_X vectors, the ones of length I.
+    P_vars = ('M', 'S', 'R', 'L')
+
+    # The p_X vectors, the ones of length K.
+    p_vars = ('E', 'I')
+
+    # The long names of the above.
+    # The order of the output is determined by the order of these, too.
+    col_names = {'M': 'maternal immunity',
+                 'S': 'susceptible',
+                 'E': 'exposed',
+                 'I': 'infectious',
+                 'R': 'recovered',
+                 'L': 'lost immunity'}
 
     def __init__(self, hazard_infection, RVs, age_max, age_step):
         self.hazard_infection = hazard_infection
@@ -36,17 +260,41 @@ class Solver:
         self.ages = arange(0, self.age_max, self.age_step)
         assert len(self.ages) > 1
         self.ages_mid = (self.ages[:-1] + self.ages[1:]) / 2
+        self.rates = self.get_rates()
+
+    def clip(self, rate):
+        # This ensures that d_1 ≤ 0 in `SizeI.A_XX()` and `SizeK.A_XX()`
+        # so that P_X ≥ 0.
+        if numpy.any(rate > 2 / self.age_step):
+            warnings.warn('Clipping!')
+        return numpy.clip(rate, 0, 2 / self.age_step)
+
+    def get_rates(self):
+        with numpy.errstate(divide='ignore'):
+            rates = {
+                'maternal_immunity_waning':
+                self.RVs.maternal_immunity_waning.hazard(self.ages_mid),
+                'infection': self.hazard_infection,
+                'progression': self.RVs.progression.hazard(self.ages_mid),
+                'recovery': self.RVs.recovery.hazard(self.ages_mid),
+                'antibody_loss': self.RVs.antibody_loss.hazard(
+                    self.RVs.antibody_loss.time_min),
+                'antibody_gain': self.RVs.antibody_gain.antibody_gain_hazard}
+        for (k, v) in rates.items():
+            if numpy.isscalar(v):
+                rates[k] = v * numpy.ones(self.I - 1)
+            rates[k] = self.clip(rates[k])
+        return numpy.rec.fromarrays(rates.values(),
+                                    names=list(rates.keys()))
 
     def get_k(self, i, j):
-        '''Get the position `k` in the stacked vector represenation
+        '''Get the position `k` in the stacked vector representation
         p_X^k \approx p_X(a^i, r^j) of the entry for age a^i,
         residence time r^j.'''
         # Convert iterables to arrays so the arithmetic works on them.
         (i, j) = map(numpy.asarray, (i, j))
-        assert (i > 0).all()
-        assert (i < self.I).all()
-        assert (j >= 0).all()
-        assert (j < i).all()
+        assert ((0 < i) & (i < self.I)).all()
+        assert ((0 <= j) & (j < i)).all()
         return i * (i - 1) // 2 + j
 
     @property
@@ -78,136 +326,34 @@ class Solver:
             T[i, self.get_k(i, range(i))] = self.age_step
         return T.tocsr()
 
-    def clip(self, rate):
-        # This ensures that d_1 ≤ 0 in `get_A_XX()` so that P_X ≥ 0.
-        return numpy.clip(rate, 0, 2 / self.age_step)
-
-    def get_A_XX(self, n, rate_out):
-        '''Get the n × n diagonal block `A_XX` that maps state X to itself.'''
-        # The values on the subdiagonal.
-        d_1 = - ((2 - rate_out * self.age_step)
-                 / (2 + rate_out * self.age_step))
-        assert (d_1 <= 0).all()
-        if n == self.I:
-            A_XX = sparse.diags([1, d_1], [0, -1], shape=(n, n))
-        elif n == self.K:
-            A_XX = sparse.lil_matrix((self.K, self.K))
-            for i in range(1, self.I):
-                for j in range(i):
-                    k = self.get_k(i, j)
-                    A_XX[k, k] = 1
-                    if j > 0:
-                        A_XX[k, self.get_k(i - 1, j - 1)] = d_1[j - 1]
+    def stack(self, rows):
+        '''Stack the P_X and p_X vectors into one big vector.'''
+        # Recurse for 2-d arrays.
+        if not isinstance(rows, dict):
+            return rows
         else:
-            raise NotImplementedError(f'\'n\'={n}!')
-        return A_XX
+            # `P_vars` first, then `p_vars`.
+            return [self.stack(rows.get(k))
+                    for k in (self.P_vars + self.p_vars)]
 
-    def get_A_XY(self, n, rate_in, rate_out):
-        '''Get the n × n off-diagonal block `A_XY` that maps state Y to X.'''
-        v = - ((rate_in * self.age_step)
-               / (2 + rate_out * self.age_step))
-        # The values on the diagonal.
-        d_0 = numpy.hstack([0, v])
-        # The values on the subdiagonal.
-        d_1 = v
-        if n == self.I:
-            A_XY = sparse.diags([d_0, d_1], [0, -1], shape=(n, n))
-        else:
-            raise NotImplementedError(f'\'n\'={n}!')
-        return A_XY
-
-    @staticmethod
-    def get_b_X(n, data=[], row_ind=[]):
-        '''Make a sparse n × 1 matrix of the right-hand sides.'''
-        # There is only 1 column, so any data must be in that column.
-        col_ind = [0] * len(row_ind)
-        b_X = sparse.csr_matrix((data, (row_ind, col_ind)), shape=(n, 1))
-        return b_X
-
-    def get_row_M(self, rates):
-        n = self.I
-        A_MM = self.get_A_XX(n, rates.maternal_immunity_waning)
-        A_M = [A_MM, None, None, None, None]
-        # b_M = [1, 0, 0, ..., 0].
-        b_M = self.get_b_X(n, [1], [0])
-        return (A_M, b_M)
-
-    def get_row_S(self, rates):
-        n = self.I
-        A_SM = self.get_A_XY(n, rates.maternal_immunity_waning,
-                             rates.infection)
-        A_SS = self.get_A_XX(n, rates.infection)
-        A_S = [A_SM, A_SS, None, None, None]
-        # b_S = [0, 0, ..., 0].
-        b_S = self.get_b_X(n)
-        return (A_S, b_S)
-
-    def get_row_R(self, rates):
-        n = self.I
-        A_RI = sparse.lil_matrix((self.I, self.K))
-        for i in range(1, self.I):
-            for j in range(1, i):
-                v = rates.recovery[j - 1] * self.age_step ** 2 / 2
-                A_RI[i, self.get_k(i - 1, j - 1)] = - v
-                A_RI[i, self.get_k(i, j)] = - v
-        A_RR = self.get_A_XX(n, numpy.zeros(self.I - 1))
-        A_R = [None, None, A_RR, None, A_RI]
-        # b_R = [0, 0, ..., 0].
-        b_R = self.get_b_X(n)
-        return (A_R, b_R)
-
-    def get_row_E(self, rates):
-        n = self.K
-        A_ES = sparse.lil_matrix((self.K, self.I))
-        for i in range(1, self.I):
-            A_ES[self.get_k(i, 0), [i - 1, i]] = - rates.infection[i - 1] / 2
-        A_EE = self.get_A_XX(n, rates.progression)
-        A_E = [None, A_ES, None, A_EE, None]
-        # b_E = [0, 0, ..., 0].
-        b_E = self.get_b_X(n)
-        return (A_E, b_E)
-
-    def get_row_I(self, rates):
-        n = self.K
-        A_IE = sparse.lil_matrix((self.K, self.K))
-        for i in range(1, self.I):
-            k = self.get_k(i, 0)
-            for j in range(1, i):
-                l = [self.get_k(i - 1, j - 1),
-                     self.get_k(i, j)]
-                A_IE[k, l] = - rates.progression[j - 1] / 2 * self.age_step
-        A_II = self.get_A_XX(n, rates.recovery)
-        A_I = [None, None, None, A_IE, A_II]
-        # b_I = [0, 0, ..., 0].
-        b_I = self.get_b_X(n)
-        return (A_I, b_I)
-
-    def get_rates(self):
-        with numpy.errstate(divide='ignore'):
-            rates = {
-                'maternal_immunity_waning':
-                self.RVs.maternal_immunity_waning.hazard(self.ages_mid),
-                'infection': self.hazard_infection,
-                'progression': self.RVs.progression.hazard(self.ages_mid),
-                'recovery': self.RVs.recovery.hazard(self.ages_mid)}
-        for (k, v) in rates.items():
-            if numpy.isscalar(v):
-                rates[k] = v * numpy.ones(self.I - 1)
-        # TODO
-        # Use self.clip().
-        return numpy.rec.fromarrays(rates.values(),
-                                    names=list(rates.keys()))
+    def unstack(self, Pp):
+        '''Unstack the P_X and p_X vectors.'''
+        i_split = len(self.P_vars) * self.I
+        # `P_vars` are first, then `p_vars`.
+        (P, p) = (Pp[:i_split], Pp[i_split:])
+        # Split into columns and add labels.
+        P = numpy.rec.fromarrays(numpy.hsplit(P, len(self.P_vars)),
+                                 names=self.P_vars)
+        p = numpy.rec.fromarrays(numpy.hsplit(p, len(self.p_vars)),
+                                 names=self.p_vars)
+        return (P, p)
 
     def get_A_b(self, format='csr'):
-        rates = self.get_rates()
-        (A_M, b_M) = self.get_row_M(rates)
-        (A_S, b_S) = self.get_row_S(rates)
-        (A_R, b_R) = self.get_row_R(rates)
-        (A_E, b_E) = self.get_row_E(rates)
-        (A_I, b_I) = self.get_row_I(rates)
-        A = sparse.bmat([A_M, A_S, A_R, A_E, A_I],
+        blocks = Blocks(self)
+        # Stack the columns.
+        A = sparse.bmat(self.stack(blocks.A),
                         format=format)
-        b = sparse.vstack([b_M, b_S, b_R, b_E, b_I],
+        b = sparse.vstack(self.stack(blocks.b),
                           format=format)
         return (A, b)
 
@@ -221,19 +367,25 @@ class Solver:
         Pp = sparse.linalg.spsolve(A, b)
         t3 = time.time()
         print(f'Solve took {t3 - t2} seconds.')
-        i_split = 3 * self.I
-        [P, p] = [Pp[:i_split], Pp[i_split:]]
-        [P_M, P_S, P_R] = numpy.hsplit(P, 3)
-        [p_E, p_I] = numpy.hsplit(p, 2)
+        (P, p) = self.unstack(Pp)
+        # Integrate the p_X's over r.
         T = self.get_T()
-        [P_E, P_I] = map(T.dot, [p_E, p_I])
-        rows = pandas.Index(self.ages, name='age')
-        P = pandas.DataFrame({'maternal immunity': P_M,
-                              'susceptible': P_S,
-                              'exposed': P_E,
-                              'infectious': P_I,
-                              'recovered': P_R},
-                             index=rows)
+        p_names = p.dtype.names
+        P_integrated = numpy.rec.fromarrays(
+            [T.dot(p[n]) for n in p_names],
+            names=p_names)
+        P = numpy.lib.recfunctions.merge_arrays(
+            (P, P_integrated),
+            asrecarray=True, flatten=True)
+        P = pandas.DataFrame(P,
+                             index=pandas.Index(self.ages, name='age'))
+        P.rename(columns=self.col_names, inplace=True)
+        # Order columns.
+        P.set_axis(pandas.CategoricalIndex(P.columns,
+                                           self.col_names.values(),
+                                           ordered=True),
+                   axis='columns', inplace=True)
+        P.sort_index(axis='columns', inplace=True)
         return P
 
 

@@ -31,7 +31,8 @@ in each model compartment (\autoref{model_diagram}), i.e.
   P_X(a) = \Prob\{\text{in compartment $X$ at age $a$}|\text{alive at
     age $a$}\},
 \end{equation}
-for $X \in \{\mathrm{M}, \mathrm{S}, \mathrm{E}, \mathrm{I}, \mathrm{R}\}$
+for $X \in \{\mathrm{M}, \mathrm{S}, \mathrm{E}, \mathrm{I},
+\mathrm{R}, \mathrm{L}\}$
 and $a \geq 0$.
 We will assume that
 \begin{itemize}
@@ -65,7 +66,8 @@ the compartment probabilities satisfy
   \displaybreak[0]\\
   p_{\mathrm{E}}(0, 0) &= 0,
   \\
-  p_{\mathrm{E}}(a, 0) &= h_{\text{infection}} P_{\mathrm{S}}(a),
+  p_{\mathrm{E}}(a, 0) &= h_{\text{infection}}
+  \left[P_{\mathrm{S}}(a) + P_{\mathrm{L}}(a)\right],
   \\
   \frac{\partial p_{\mathrm{E}}}{\partial a}
   + \frac{\partial p_{\mathrm{E}}}{\partial r}
@@ -80,27 +82,39 @@ the compartment probabilities satisfy
   \frac{\partial p_{\mathrm{I}}}{\partial a}
   + \frac{\partial p_{\mathrm{I}}}{\partial r}
   &= - h_{\text{recovery}}(r) p_{\mathrm{I}}(a, r),
-  \\
+  \displaybreak[0]\\
   P_{\mathrm{R}}(0) &= 0,
   \\
-  \frac{\md P_{\mathrm{R}}}{\md a} &=
-  \int_0^a h_{\text{recovery}}(r) p_{\mathrm{I}}(a, r) \md r,
-\end{align}
-with
-\begin{align}
-  P_{\mathrm{E}}(a) &= \int_0^a p_{\mathrm{E}}(a, r) \md r,
+  \begin{split}
+    \frac{\md P_{\mathrm{R}}}{\md a} &=
+    \int_0^a h_{\text{recovery}}(r) p_{\mathrm{I}}(a, r) \md r
+    \\ & \quad {}
+    + h_{\text{antibody gain}} P_{\mathrm{L}}(a)
+    - h_{\text{antibody loss}} P_{\mathrm{R}}(a),
+  \end{split}
+  \displaybreak[0]\\
+  P_{\mathrm{L}}(0) &= 0,
   \\
-  P_{\mathrm{I}}(a) &= \int_0^a p_{\mathrm{I}}(a, r) \md r.
+  \frac{\md P_{\mathrm{L}}}{\md a} &=
+  h_{\text{antibody loss}} P_{\mathrm{R}}(a)
+  - \left(h_{\text{antibody gain}} + h_{\text{infection}}\right)
+  P_{\mathrm{L}}(a).
 \end{align}
 
 Let
 \begin{equation}
   P(a) = P_{\mathrm{M}}(a) + P_{\mathrm{S}}(a)
   + P_{\mathrm{E}}(a) + P_{\mathrm{I}}(a)
-  + P_{\mathrm{R}}(a),
+  + P_{\mathrm{R}}(a) + P_{\mathrm{L}}(a),
 \end{equation}
+with
+\begin{align}
+  P_{\mathrm{E}}(a) &= \int_0^a p_{\mathrm{E}}(a, r) \md r,
+  \\
+  P_{\mathrm{I}}(a) &= \int_0^a p_{\mathrm{I}}(a, r) \md r,
+\end{align}
 so that
-\begin{equation}
+\begin{align}
   \begin{split}
     \frac{\md P_{\mathrm{E}}}{\md a}
     &= \frac{\md}{\md a}  \int_0^a p_{\mathrm{E}}(a, r) \md r
@@ -118,8 +132,7 @@ so that
     &= h_{\mathrm{infection}} P_{\mathrm{S}}(a)
     - \int_0^a h_{\mathrm{progression}}(r) p_{\mathrm{E}}(a, r) \md r,
   \end{split}
-\end{equation}
-\begin{equation}
+  \\
   \begin{split}
     \frac{\md P_{\mathrm{I}}}{\md a}
     &= \frac{\md}{\md a}  \int_0^a p_{\mathrm{I}}(a, r) \md r
@@ -134,7 +147,7 @@ so that
     \\
     &= \int_0^a h_{\mathrm{progression}}(r) p_{\mathrm{E}}(a, r) \md r,
   \end{split}
-\end{equation}
+\end{align}
 and then
 \begin{equation}
   \frac{\md P}{\md a} =
@@ -143,6 +156,7 @@ and then
   + \frac{\md P_{\mathrm{E}}}{\md a}
   + \frac{\md P_{\mathrm{I}}}{\md a}
   + \frac{\md P_{\mathrm{R}}}{\md a}
+  + \frac{\md P_{\mathrm{L}}}{\md a}
   = 0.
 \end{equation}
 
@@ -174,7 +188,8 @@ Crank--Nicolson method on characteristics is
   \frac{P_{\mathrm{S}}^i + P_{\mathrm{S}}^{i - 1}}{2},
   \displaybreak[0]\\
   p_{\mathrm{E}}^{i, 0} &= h_{\text{infection}}
-  \frac{P_{\mathrm{S}}^i + P_{\mathrm{S}}^{i - 1}}{2},
+  \left(\frac{P_{\mathrm{S}}^i + P_{\mathrm{S}}^{i - 1}}{2}
+        + \frac{P_{\mathrm{L}}^i + P_{\mathrm{L}}^{i - 1}}{2}\right)
   \\
   \frac{p_{\mathrm{E}}^{i, j} - p_{\mathrm{E}}^{i - 1, j - 1}}{\Delta a}
   &= - h_{\text{progression}}(r^{j - 1 / 2})
@@ -191,10 +206,28 @@ Crank--Nicolson method on characteristics is
   \displaybreak[0]\\
   P_{\mathrm{R}}^0 &= 0,
   \\
-  \frac{P_{\mathrm{R}}^i - P_{\mathrm{R}}^{i - 1}}{\Delta a}
-  &= \sum_{j = 1}^{i - 1} h_{\text{recovery}}(r^{j - 1 / 2})
-  \frac{p_{\mathrm{I}}^{i, j} + p_{\mathrm{I}}^{i - 1, j - 1}}{2}
-  \Delta a,
+  \begin{split}
+    \frac{P_{\mathrm{R}}^i - P_{\mathrm{R}}^{i - 1}}{\Delta a}
+    &= \sum_{j = 1}^{i - 1} h_{\text{recovery}}(r^{j - 1 / 2})
+    \frac{p_{\mathrm{I}}^{i, j} + p_{\mathrm{I}}^{i - 1, j - 1}}{2}
+    \Delta a
+    \\ & \quad {}
+    + h_{\text{antibody gain}}
+    \frac{P_{\mathrm{L}}^i + P_{\mathrm{L}}^{i - 1}}{2}
+    - h_{\text{antibody loss}}
+    \frac{P_{\mathrm{R}}^i - P_{\mathrm{R}}^{i - 1}}{2},
+  \end{split}
+  \displaybreak[0]\\
+  P_{\mathrm{L}}^0 &= 0,
+  \\
+  \begin{split}
+    \frac{P_{\mathrm{L}}^i - P_{\mathrm{L}}^{i - 1}}{\Delta a}
+    &= h_{\text{antibody loss}}
+    \frac{P_{\mathrm{R}}^i + P_{\mathrm{R}}^{i - 1}}{2}
+    \\ & \quad {}
+    - \left(h_{\text{antibody gain}} + h_{\text{infection}}\right)
+    \frac{P_{\mathrm{L}}^i + P_{\mathrm{L}}^{i - 1}}{2}.
+  \end{split}
 \end{align}
 Then
 \begin{align}
@@ -206,6 +239,11 @@ Then
   \\
   P_{\mathrm{I}}^i &= \sum_{j = 0}^{i - 1} p_{\mathrm{I}}^{i, j} \Delta a.
 \end{align}
+The boundary terms make
+\begin{equation}
+  \frac{P^i - P^{i - 1}}{\Delta a} = 0
+\end{equation}
+for all $a$.
 
 For the variables $P_X$ that only depend on age $a$,
 define the vectors
@@ -251,26 +289,65 @@ Then for $1 \leq i \leq I - 1$ and $1 \leq j \leq i - 1$,
 \begin{align}
   P_{\mathrm{M}}^0 &= 1,
   \\
-  - \frac{2 - h_{\text{waning}}(a^{i - 1 / 2}) \Delta a}
-  {2 + h_{\text{waning}}(a^{i - 1 / 2}) \Delta a}
+  - \left[1 - \frac{h_{\text{waning}}(a^{i - 1 / 2}) \Delta a}{2}\right]
   P_{\mathrm{M}}^{i - 1}
-  + P_{\mathrm{M}}^i
+  + \left[1 + \frac{h_{\text{waning}}(a^{i - 1 / 2}) \Delta a}{2}\right]
+  P_{\mathrm{M}}^i
   &= 0,
   \displaybreak[0]\\
   P_{\mathrm{S}}^0 &= 0,
   \\
   \begin{split}
-    - \frac{h_{\text{waning}}(a^{i - 1 / 2}) \Delta a}
-    {2 + h_{\text{infection}} \Delta a}
+    - \frac{h_{\text{waning}}(a^{i - 1 / 2}) \Delta a}{2}
     P_{\mathrm{M}}^{i - 1}
-    - \frac{h_{\text{waning}}(a^{i - 1 / 2}) \Delta a}
-    {2 + h_{\text{infection}} \Delta a}
+    - \frac{h_{\text{waning}}(a^{i - 1 / 2}) \Delta a}{2}
     P_{\mathrm{M}}^i
     \\ {}
-    - \frac{2 - h_{\text{infection}} \Delta a}
-    {2 + h_{\text{infection}} \Delta a}
+    - \left[1 - \frac{h_{\text{infection}} \Delta a}{2}\right]
     P_{\mathrm{S}}^{i - 1}
-    + P_{\mathrm{S}}^i
+    + \left[1 + \frac{h_{\text{infection}} \Delta a}{2}\right]
+    P_{\mathrm{S}}^i
+    &= 0,
+  \end{split}
+  \displaybreak[0]\\
+  p_{\mathrm{E}}^{0, 0} &= 0,
+  \\
+  - \frac{h_{\text{infection}}}{2} P_{\mathrm{S}}^{i - 1}
+  - \frac{h_{\text{infection}}}{2} P_{\mathrm{S}}^i
+  + p_{\mathrm{E}}^{i, 0}
+  - \frac{h_{\text{infection}}}{2} P_{\mathrm{L}}^{i - 1}
+  - \frac{h_{\text{infection}}}{2} P_{\mathrm{L}}^i
+  &= 0,
+  \\
+  \begin{split}
+    - \left[1 - \frac{h_{\text{progression}}(r^{j - 1 / 2}) \Delta a}{2}\right]
+    p_{\mathrm{E}}^{i - 1, j - 1}
+    \\ {}
+    + \left[1 + \frac{h_{\text{progression}}(r^{j - 1 / 2}) \Delta a}{2}\right]
+    p_{\mathrm{E}}^{i, j}
+    &= 0,
+  \end{split}
+  \displaybreak[0]\\
+  p_{\mathrm{I}}^{0, 0} &= 0,
+  \\
+  \begin{split}
+    - \sum_{j = 1}^{i - 1}
+    \frac{h_{\text{progression}}(r^{j - 1 / 2}) \Delta a}{2}
+    p_{\mathrm{E}}^{i - 1, j - 1}
+    - \sum_{j = 1}^{i - 1}
+    \frac{h_{\text{progression}}(r^{j - 1 / 2}) \Delta a}{2}
+    p_{\mathrm{E}}^{i, j}
+    \\ {}
+    + p_{\mathrm{I}}^{i, 0}
+    &= 0,
+  \end{split}
+  \\
+  \begin{split}
+    - \left[1 - \frac{h_{\text{recovery}}(r^{j - 1 / 2}) \Delta a}{2}\right]
+    p_{\mathrm{I}}^{i - 1, j - 1}
+    \\ {}
+    + \left[1 + \frac{h_{\text{recovery}}(r^{j - 1 / 2}) \Delta a}{2}\right]
+    p_{\mathrm{I}}^{i, j}
     &= 0,
   \end{split}
   \displaybreak[0]\\
@@ -285,38 +362,35 @@ Then for $1 \leq i \leq I - 1$ and $1 \leq j \leq i - 1$,
     \frac{h_{\text{recovery}}(r^{j - 1 / 2}) (\Delta a)^2}{2}
     p_{\mathrm{I}}^{i, j}
     \\ {}
-    - P_{\mathrm{R}}^{i - 1} + P_{\mathrm{R}}^i
-    &= 0,
-  \end{split}
-  \displaybreak[0]\\
-  - \frac{h_{\text{infection}}}{2} P_{\mathrm{S}}^{i - 1}
-  - \frac{h_{\text{infection}}}{2} P_{\mathrm{S}}^i
-  + p_{\mathrm{E}}^{i, 0}
-  &= 0,
-  \\
-  - \frac{2 - h_{\text{progression}}(r^{j - 1 / 2}) \Delta a}
-  {2 + h_{\text{progression}}(r^{j - 1 / 2}) \Delta a}
-  p_{\mathrm{E}}^{i - 1, j - 1}
-  + p_{\mathrm{E}}^{i, j}
-  &= 0,
-  \displaybreak[0]\\
-  \begin{split}
-    - \sum_{j = 1}^{i - 1}
-    \frac{h_{\text{progression}}(r^{j - 1 / 2}) \Delta a}{2}
-    p_{\mathrm{E}}^{i - 1, j - 1}
-    - \sum_{j = 1}^{i - 1}
-    \frac{h_{\text{progression}}(r^{j - 1 / 2}) \Delta a}{2}
-    p_{\mathrm{E}}^{i, j}
+    - \left[1 - \frac{h_{\text{antibody loss}} \Delta a}{2}\right]
+    P_{\mathrm{R}}^{i - 1}
+    + \left[1 + \frac{h_{\text{antibody loss}} \Delta a}{2}\right]
+    P_{\mathrm{R}}^i
     \\ {}
-    + p_{\mathrm{I}}^{i, 0}
+    - \frac{h_{\text{antibody gain}} \Delta a}{2}
+    P_{\mathrm{L}}^{i - 1}
+    - \frac{h_{\text{antibody gain}} \Delta a}{2}
+    P_{\mathrm{L}}^i
     &= 0,
   \end{split}
+  \displaybreak[0]\\
+  P_{\mathrm{L}}^0 &= 0,
   \\
-  - \frac{2 - h_{\text{recovery}}(r^{j - 1 / 2}) \Delta a}
-  {2 + h_{\text{recovery}}(r^{j - 1 / 2}) \Delta a}
-  p_{\mathrm{I}}^{i - 1, j - 1}
-  + p_{\mathrm{I}}^{i, j}
-  &= 0.
+  \begin{split}
+    - \frac{h_{\text{antibody loss}} \Delta a}{2}
+    P_{\mathrm{R}}^{i - 1}
+    - \frac{h_{\text{antibody loss}} \Delta a}{2}
+    P_{\mathrm{R}}^i
+    \\ {}
+    - \left[1
+      - \frac{(h_{\text{antibody gain}} + h_{\text{infection}}) \Delta a}{2}\right]
+    P_{\mathrm{L}}^{i - 1}
+    \\ {}
+    + \left[1
+      + \frac{(h_{\text{antibody gain}} + h_{\text{infection}}) \Delta a}{2}\right]
+    P_{\mathrm{L}}^i
+    &= 0.
+  \end{split}
 \end{align}
 The coefficients must be non-negative to ensure each component of the
 $P_X$'s and $p_X$'s is non-negative. In particular, the hazards must

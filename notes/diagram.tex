@@ -5,6 +5,7 @@
   \node at (0, 7) [compartment, name=Exposed] {Exposed};
   \node at (0, 5) [compartment, name=Infectious] {Infectious};
   \node at (0, 2.5) [compartment, name=Recovered] {Recovered};
+  \node at (0, 0) [compartment, align=center, dashed, name=Partial] {Lost\\immunity};
 
   % Location for branch from Infectious to Chronic and Recovered.
   \coordinate (recovery) at (0, 3.75);
@@ -25,6 +26,15 @@
   \draw [->] (recovery)
              to node [] {}
              (Recovered.90);
+  \draw [->, dashed] (Recovered.212)
+             to node [rotate=-90, align=center] {antibody\\loss}
+             (Partial.135);
+  \draw [->, dashed] (Partial.45)
+             to node [rotate=-90, align=center] {antibody\\gain}
+             (Recovered.328);
+  \draw [->, dashed] (Partial.153)
+             to [out=135, in=225, looseness=0.65] node [sloped, below, pos=0.57] {infection}
+             (Exposed.200);
 
   % Births
   \draw [->] (Susceptible.196)
@@ -39,6 +49,9 @@
   \draw [->] (Recovered.180)
              to [out=180, in=180, looseness=0.6] node [sloped, above, pos=0.8] {birth}
              (MaternalImmunity.180);
+  \draw [->, dashed] (Partial.207)
+             to [out=180, in=180, looseness=0.7] node [sloped, above, pos=0.92] {birth}
+             (Susceptible.180);
 
   % Deaths
   \draw [->] (MaternalImmunity.334)
@@ -54,6 +67,9 @@
              to node [sloped, below, yshift=1pt] {death}
              +(315: 1);
   \draw [->] (Recovered.345)
+             to node [sloped, below, yshift=1pt] {death}
+             +(315: 1);
+  \draw [->, dashed] (Partial.333)
              to node [sloped, below, yshift=1pt] {death}
              +(315: 1);
 \end{tikzpicture}
