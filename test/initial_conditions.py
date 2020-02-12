@@ -1,8 +1,6 @@
 #!/usr/bin/python3
 #
-# TODO: Put i = j back into p_X.
 # TODO: Vectorize loops.
-
 
 import re
 import sys
@@ -64,14 +62,6 @@ class Block:
                 for block_name in dir(self)
                 if self.is_A_XY(block_name)}
 
-    def d_1(self, rate_out):
-        '''Get the values on the subdiagonal of A_XX.'''
-        # The values on the subdiagonal.
-        d_1 = - ((2 - rate_out * self.solver.age_step)
-                 / (2 + rate_out * self.solver.age_step))
-        assert (d_1 <= 0).all()
-        return d_1
-
 
 class SizeI:
     '''An `XBlock()` of size I.'''
@@ -110,8 +100,8 @@ class SizeK:
         d_0 = numpy.hstack([1, 1 + rate_out * self.solver.age_step / 2])
         d_1 = - (1 - rate_out * self.solver.age_step / 2)
         assert (d_1 <= 0).all()
-        for i in range(1, self.solver.I):
-            for j in range(i):
+        for i in range(self.solver.I):
+            for j in range(i + 1):
                 k = self.solver.get_k(i, j)
                 A_XX[k, k] = d_0[j]
                 if j > 0:
@@ -171,7 +161,7 @@ class BlockI(Block, SizeK):
         A_IE = sparse.lil_matrix((len(self), len(self)))
         for i in range(1, self.solver.I):
             k = self.solver.get_k(i, 0)
-            for j in range(1, i):
+            for j in range(1, i + 1):
                 l = self.solver.get_k([i - 1, i], [j - 1, j])
                 A_IE[k, l] = - (self.solver.rates.progression[j - 1]
                                 * self.solver.age_step / 2)
@@ -189,7 +179,7 @@ class BlockR(Block, SizeI):
     def A_RI(self):
         A_RI = sparse.lil_matrix((len(self), self.solver.K))
         for i in range(1, self.solver.I):
-            for j in range(1, i):
+            for j in range(1, i + 1):
                 k = self.solver.get_k([i - 1, i], [j - 1, j])
                 A_RI[i, k] = - (self.solver.rates.recovery[j - 1]
                                 * self.solver.age_step ** 2 / 2)
@@ -293,9 +283,9 @@ class Solver:
         residence time r^j.'''
         # Convert iterables to arrays so the arithmetic works on them.
         (i, j) = map(numpy.asarray, (i, j))
-        assert ((0 < i) & (i < self.I)).all()
-        assert ((0 <= j) & (j < i)).all()
-        return i * (i - 1) // 2 + j
+        assert ((0 <= i) & (i < self.I)).all()
+        assert ((0 <= j) & (j <= i)).all()
+        return i * (i + 1) // 2 + j
 
     @property
     def I(self):
@@ -308,10 +298,10 @@ class Solver:
         the stacked vector representation p_X^k \approx p_X(a^i, r^j),
         k = 0, 1, ..., K - 1.'''
         # The last entry is
-        # K - 1 = self.get_k(self.I - 1, self.I - 2),
+        # K - 1 = self.get_k(self.I - 1, self.I - 1),
         # so
-        # K = self.get_k(self.I - 1, self.I - 2) + 1.
-        return self.get_k(self.I - 1, self.I - 2) + 1
+        # K = self.get_k(self.I - 1, self.I - 1) + 1.
+        return self.get_k(self.I - 1, self.I - 1) + 1
 
     def get_T(self):
         '''Get the matrix `T` so that `T.dot(f)`
@@ -322,8 +312,8 @@ class Solver:
         when left-multiplied with a K vector
         produces a vector over ages a.'''
         T = sparse.lil_matrix((self.I, self.K))
-        for i in range(1, self.I):
-            T[i, self.get_k(i, range(i))] = self.age_step
+        for i in range(self.I):
+            T[i, self.get_k(i, range(i + 1))] = self.age_step
         return T.tocsr()
 
     def stack(self, rows):
