@@ -32,12 +32,13 @@ in each model compartment (\autoref{model_diagram}), i.e.
     age $a$}\},
 \end{equation}
 for $X \in \{\mathrm{M}, \mathrm{S}, \mathrm{E}, \mathrm{I},
-\mathrm{R}, \mathrm{L}\}$
+\mathrm{C}, \mathrm{R}, \mathrm{L}\}$
 and $a \geq 0$.
 We will assume that
 \begin{itemize}
-\item the infection hazard is constant, and
-\item all calves are born with maternal immunity.
+\item the infection hazard is constant,
+\item all calves are born with maternal immunity, and
+\item the hazard for antibody gain is constant.
 \end{itemize}
 
 \begin{figure}
@@ -50,7 +51,7 @@ We will assume that
 
 \clearpage
 
-For $a > 0$ and $0 < r < a$,
+For $a > 0$ and $0 < r \leq a$,
 the compartment probabilities satisfy
 \begin{align}
   P_{\mathrm{M}}(0) &= 1,
@@ -69,8 +70,9 @@ the compartment probabilities satisfy
   p_{\mathrm{E}}(a, 0) &= h_{\text{infection}}
   \left[P_{\mathrm{S}}(a) + P_{\mathrm{L}}(a)\right],
   \\
-  \frac{\partial p_{\mathrm{E}}}{\partial a}
-  + \frac{\partial p_{\mathrm{E}}}{\partial r}
+  \left(\frac{\partial}{\partial a}
+    + \frac{\partial}{\partial r}\right)
+  p_{\mathrm{E}}
   &= - h_{\text{progression}}(r) p_{\mathrm{E}}(a, r),
   \displaybreak[0]\\
   p_{\mathrm{I}}(0, 0) &= 0,
@@ -79,15 +81,30 @@ the compartment probabilities satisfy
   \int_0^a h_{\text{progression}}(r)
   p_{\mathrm{E}}(a, r) \md r,
   \\
-  \frac{\partial p_{\mathrm{I}}}{\partial a}
-  + \frac{\partial p_{\mathrm{I}}}{\partial r}
+  \left(\frac{\partial}{\partial a}
+    + \frac{\partial}{\partial r}\right)
+  p_{\mathrm{I}}
   &= - h_{\text{recovery}}(r) p_{\mathrm{I}}(a, r),
+  \displaybreak[0]\\
+  p_{\mathrm{C}}(0, 0) &= 0,
+  \\
+  p_{\mathrm{C}}(a, 0)
+  &= p_{\text{chronicity}}
+  \int_0^a h_{\text{recovery}}(r) p_{\mathrm{I}}(a, r) \md r,
+  \\
+  \left(\frac{\partial}{\partial a}
+    + \frac{\partial}{\partial r}\right)
+  p_{\mathrm{C}}
+  &= - h_{\text{chronic recovery}}(r) p_{\mathrm{C}}(a, r),
   \displaybreak[0]\\
   P_{\mathrm{R}}(0) &= 0,
   \\
   \begin{split}
     \frac{\md P_{\mathrm{R}}}{\md a} &=
+    \left(1 - p_{\text{chronicity}}\right)
     \int_0^a h_{\text{recovery}}(r) p_{\mathrm{I}}(a, r) \md r
+    \\ & \quad {}
+    + \int_0^a h_{\text{chronic recovery}}(r) p_{\mathrm{C}}(a, r) \md r
     \\ & \quad {}
     + h_{\text{antibody gain}} P_{\mathrm{L}}(a)
     - h_{\text{antibody loss}} P_{\mathrm{R}}(a),
@@ -105,13 +122,16 @@ Let
 \begin{equation}
   P(a) = P_{\mathrm{M}}(a) + P_{\mathrm{S}}(a)
   + P_{\mathrm{E}}(a) + P_{\mathrm{I}}(a)
-  + P_{\mathrm{R}}(a) + P_{\mathrm{L}}(a),
+  + P_{\mathrm{C}}(a) + P_{\mathrm{R}}(a)
+  + P_{\mathrm{L}}(a),
 \end{equation}
 with
 \begin{align}
   P_{\mathrm{E}}(a) &= \int_0^a p_{\mathrm{E}}(a, r) \md r,
   \\
   P_{\mathrm{I}}(a) &= \int_0^a p_{\mathrm{I}}(a, r) \md r,
+  \\
+  P_{\mathrm{C}}(a) &= \int_0^a p_{\mathrm{C}}(a, r) \md r,
 \end{align}
 so that
 \begin{align}
@@ -132,7 +152,7 @@ so that
     &= h_{\mathrm{infection}} P_{\mathrm{S}}(a)
     - \int_0^a h_{\mathrm{progression}}(r) p_{\mathrm{E}}(a, r) \md r,
   \end{split}
-  \\
+  \displaybreak[0]\\
   \begin{split}
     \frac{\md P_{\mathrm{I}}}{\md a}
     &= \frac{\md}{\md a}  \int_0^a p_{\mathrm{I}}(a, r) \md r
@@ -141,11 +161,34 @@ so that
     + \int_0^a \frac{\partial p_{\mathrm{I}}}{\partial a} \md r
     \\
     &= p_{\mathrm{I}}(a, a)
-    - \int_0^a \frac{\partial p_{\mathrm{I}}}{\partial r} \md r
+    - \int_0^a \frac{\partial p_{\mathrm{I}}}{\partial r}
+    + h_{\text{recovery}}(r) p_{\mathrm{I}}(a, r) \md r
     \\
     &= p_{\mathrm{I}}(a, 0)
+    - \int_0^a h_{\text{recovery}}(r) p_{\mathrm{I}}(a, r) \md r
     \\
-    &= \int_0^a h_{\mathrm{progression}}(r) p_{\mathrm{E}}(a, r) \md r,
+    &= \int_0^a h_{\mathrm{progression}}(r) p_{\mathrm{E}}(a, r) \md r
+    - \int_0^a h_{\text{recovery}}(r) p_{\mathrm{I}}(a, r) \md r,
+  \end{split}
+  \displaybreak[0]\\
+  \begin{split}
+    \frac{\md P_{\mathrm{C}}}{\md a}
+    &= \frac{\md}{\md a}  \int_0^a p_{\mathrm{C}}(a, r) \md r
+    \\
+    &= p_{\mathrm{C}}(a, a)
+    + \int_0^a \frac{\partial p_{\mathrm{C}}}{\partial a} \md r
+    \\
+    &= p_{\mathrm{C}}(a, a)
+    - \int_0^a \frac{\partial p_{\mathrm{C}}}{\partial r}
+    + h_{\text{chronic recovery}}(r) p_{\mathrm{C}}(a, r) \md r
+    \\
+    &= p_{\mathrm{C}}(a, 0)
+    - \int_0^a h_{\text{chronic recovery}}(r) p_{\mathrm{C}}(a, r) \md r
+    \\
+    &= p_{\text{chronicity}}
+    \int_0^a h_{\text{recovery}}(r) p_{\mathrm{I}}(a, r) \md r
+    \\ & \quad {}
+    - \int_0^a h_{\text{chronic recovery}}(r) p_{\mathrm{C}}(a, r) \md r,
   \end{split}
 \end{align}
 and then
@@ -155,6 +198,7 @@ and then
   + \frac{\md P_{\mathrm{S}}}{\md a}
   + \frac{\md P_{\mathrm{E}}}{\md a}
   + \frac{\md P_{\mathrm{I}}}{\md a}
+  + \frac{\md P_{\mathrm{C}}}{\md a}
   + \frac{\md P_{\mathrm{R}}}{\md a}
   + \frac{\md P_{\mathrm{L}}}{\md a}
   = 0.
@@ -209,12 +253,29 @@ Crank--Nicolson method on characteristics is
   &= - h_{\text{recovery}}(r^{j - 1 / 2})
   \frac{p_{\mathrm{I}}^{i, j} + p_{\mathrm{I}}^{i - 1, j - 1}}{2},
   \displaybreak[0]\\
+  p_{\mathrm{C}}^{0, 0} &= 0,
+  \\
+  p_{\mathrm{C}}^{i, 0}
+  &= p_{\text{chronicity}}
+  \sum_{j=1}^i h_{\text{recovery}}(r^{j - 1 / 2})
+  \frac{p_{\mathrm{I}}^{i, j} + p_{\mathrm{I}}^{i - 1, j - 1}}{2}
+  \Delta a,
+  \\
+  \frac{p_{\mathrm{C}}^{i, j} - p_{\mathrm{C}}^{i - 1, j - 1}}{\Delta a}
+  &= - h_{\text{chronic recovery}}(r^{j - 1 / 2})
+  \frac{p_{\mathrm{C}}^{i, j} + p_{\mathrm{C}}^{i - 1, j - 1}}{2},
+  \displaybreak[0]\\
   P_{\mathrm{R}}^0 &= 0,
   \\
   \begin{split}
     \frac{P_{\mathrm{R}}^i - P_{\mathrm{R}}^{i - 1}}{\Delta a}
-    &= \sum_{j = 1}^i h_{\text{recovery}}(r^{j - 1 / 2})
+    &= \left(1 - p_{\text{chronicity}}\right)
+    \sum_{j = 1}^i h_{\text{recovery}}(r^{j - 1 / 2})
     \frac{p_{\mathrm{I}}^{i, j} + p_{\mathrm{I}}^{i - 1, j - 1}}{2}
+    \Delta a
+    \\ & \quad {}
+    + \sum_{j=1}^i h_{\text{chronic recovery}}(r^{j - 1 / 2})
+    \frac{p_{\mathrm{C}}^{i, j} + p_{\mathrm{C}}^{i - 1, j - 1}}{2}
     \Delta a
     \\ & \quad {}
     + h_{\text{antibody gain}}
@@ -239,10 +300,14 @@ Then
   P_{\mathrm{E}}^0 &= 0,
   \\
   P_{\mathrm{E}}^i &= \sum_{j = 0}^i p_{\mathrm{E}}^{i, j} \Delta a,
-  \\
+  \displaybreak[0]\\
   P_{\mathrm{I}}^0 &= 0,
   \\
   P_{\mathrm{I}}^i &= \sum_{j = 0}^i p_{\mathrm{I}}^{i, j} \Delta a,
+  \displaybreak[0]\\
+  P_{\mathrm{C}}^0 &= 0,
+  \\
+  P_{\mathrm{C}}^i &= \sum_{j = 0}^i p_{\mathrm{C}}^{i, j} \Delta a,
 \end{align}
 so that
 \begin{align}
@@ -263,7 +328,7 @@ so that
     - \sum_{j = 1}^i h_{\text{progression}}(r^{j - 1 / 2})
     \frac{p_{\mathrm{E}}^{i, j} + p_{\mathrm{E}}^{i - 1, j - 1}}{2} \Delta a
   \end{split}
-  \\
+  \displaybreak[0]\\
   \begin{split}
     \frac{P_{\mathrm{I}}^i - P_{\mathrm{I}}^{i - 1}}{\Delta a}
     &= \sum_{j = 0}^i p_{\mathrm{I}}^{i, j}
@@ -283,12 +348,33 @@ so that
     \frac{p_{\mathrm{I}}^{i, j} + p_{\mathrm{I}}^{i - 1, j - 1}}{2}
     \Delta a
   \end{split}
+  \displaybreak[0]\\
+  \begin{split}
+    \frac{P_{\mathrm{C}}^i - P_{\mathrm{C}}^{i - 1}}{\Delta a}
+    &= \sum_{j = 0}^i p_{\mathrm{C}}^{i, j}
+    - \sum_{j = 0}^{i - 1} p_{\mathrm{C}}^{i - 1, j}
+    \\
+    &= p_{\mathrm{C}}^{i, 0}
+    + \sum_{j = 1}^i
+    \frac{p_{\mathrm{C}}^{i, j} - p_{\mathrm{C}}^{i - 1, j - 1}}
+    {\Delta a} \Delta a
+    \\
+    &= p_{\text{chronicity}}
+    \sum_{j=1}^i h_{\text{recovery}}(r^{j - 1 / 2})
+    \frac{p_{\mathrm{I}}^{i, j} + p_{\mathrm{I}}^{i - 1, j - 1}}{2}
+    \Delta a
+    \\ & \quad {}
+    - \sum_{j=1}^i h_{\text{chronic recovery}}(r^{j - 1 / 2})
+    \frac{p_{\mathrm{C}}^{i, j} + p_{\mathrm{C}}^{i - 1, j - 1}}{2}
+    \Delta a,
+  \end{split}
 \end{align}
 
 For
 \begin{equation}
   P^i = P_{\mathrm{M}}^i + P_{\mathrm{S}}^i + P_{\mathrm{E}}^i
-  + P_{\mathrm{I}}^i + P_{\mathrm{R}}^i + P_{\mathrm{L}}^i,
+  + P_{\mathrm{I}}^i + P_{\mathrm{C}}^i + P_{\mathrm{R}}^i
+  + P_{\mathrm{L}}^i,
 \end{equation}
 the boundary terms ensure that
 \begin{align}
@@ -313,7 +399,7 @@ define the vectors
     P_X^{I - 1}
   \end{pmatrix},
 \end{equation}
-for $X \in \{\mathrm{M}, \mathrm{S}, \mathrm{R}\}$.
+for $X \in \{\mathrm{M}, \mathrm{S}, \mathrm{R}, \mathrm{L}\}$.
 For the variables that depend on age $a$ and residence time $r$,
 define the vectors
 \begin{equation}
@@ -331,7 +417,7 @@ define the vectors
     p_X^{I - 1, I - 1}
   \end{pmatrix},
 \end{equation}
-for $X \in \{\mathrm{E}, \mathrm{I}\}$,
+for $X \in \{\mathrm{E}, \mathrm{I}, \mathrm{C}\}$,
 where the $i, j$th entry is in position
 \begin{equation}
   k = \frac{i (i + 1)}{2} + j,
@@ -412,16 +498,52 @@ Then for $1 \leq i \leq I - 1$ and $1 \leq j \leq i$,
     &= 0,
   \end{split}
   \displaybreak[0]\\
+  p_{\mathrm{C}}^{0, 0} &= 0,
+  \\
+  \begin{split}
+    - \sum_{j = 1}^i
+    \frac{p_{\text{chronicity}} h_{\text{recovery}}(r^{j - 1 / 2}) \Delta a}{2}
+    p_{\mathrm{I}}^{i - 1, j - 1}
+    \\ {}
+    - \sum_{j = 1}^i
+    \frac{p_{\text{chronicity}} h_{\text{recovery}}(r^{j - 1 / 2}) \Delta a}{2}
+    p_{\mathrm{I}}^{i, j}
+    \\ {}
+    + p_{\mathrm{C}}^{i, 0}
+    &= 0,
+  \end{split}
+  \\
+  \begin{split}
+    - \left[1
+      - \frac{h_{\text{chronic recovery}}(r^{j - 1 / 2}) \Delta a}{2}\right]
+    p_{\mathrm{C}}^{i - 1, j - 1}
+    \\ {}
+    + \left[1
+      + \frac{h_{\text{chronic recovery}}(r^{j - 1 / 2}) \Delta a}{2}\right]
+    p_{\mathrm{C}}^{i, j}
+    &= 0,
+  \end{split}
+  \displaybreak[0]\\
   P_{\mathrm{R}}^0 &= 0,
   \\
   \begin{split}
     - \sum_{j = 1}^i
-    \frac{h_{\text{recovery}}(r^{j - 1 / 2}) (\Delta a)^2}{2}
+    \frac{\left(1 - p_{\text{chronicity}}\right)
+      h_{\text{recovery}}(r^{j - 1 / 2}) (\Delta a)^2}{2}
     p_{\mathrm{I}}^{i - 1, j - 1}
     \\ {}
     - \sum_{j = 1}^i
-    \frac{h_{\text{recovery}}(r^{j - 1 / 2}) (\Delta a)^2}{2}
+    \frac{\left(1 - p_{\text{chronicity}}\right)
+      h_{\text{recovery}}(r^{j - 1 / 2}) (\Delta a)^2}{2}
     p_{\mathrm{I}}^{i, j}
+    \\ {}
+    - \sum_{j = 1}^i
+    \frac{h_{\text{chronic recovery}}(r^{j - 1 / 2}) (\Delta a)^2}{2}
+    p_{\mathrm{C}}^{i - 1, j - 1}
+    \\ {}
+    - \sum_{j = 1}^i
+    \frac{h_{\text{chronic recovery}}(r^{j - 1 / 2}) (\Delta a)^2}{2}
+    p_{\mathrm{C}}^{i, j}
     \\ {}
     - \left[1 - \frac{h_{\text{antibody loss}} \Delta a}{2}\right]
     P_{\mathrm{R}}^{i - 1}

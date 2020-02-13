@@ -4,6 +4,7 @@
   \node at (0, 9) [compartment, name=Susceptible] {Susceptible};
   \node at (0, 7) [compartment, name=Exposed] {Exposed};
   \node at (0, 5) [compartment, name=Infectious] {Infectious};
+  \node at (2.5, 3.125) [compartment, name=Chronic] {Chronic};
   \node at (0, 2.5) [compartment, name=Recovered] {Recovered};
   \node at (0, 0) [compartment, align=center, dashed, name=Partial] {Lost\\immunity};
 
@@ -24,8 +25,14 @@
              to node [rotate=-90, below, yshift=-1pt] {recovery}
              (recovery);
   \draw [->] (recovery)
+             to node [sloped, above, yshift=-2pt] {chronicity}
+             (Chronic.161);
+  \draw [->] (recovery)
              to node [] {}
              (Recovered.90);
+  \draw [->] (Chronic.199)
+             to node [sloped, align=center] {chronic\\recovery}
+             (Recovered.15);
   \draw [->, dashed] (Recovered.212)
              to node [rotate=-90, align=center] {antibody\\loss}
              (Partial.135);
@@ -46,6 +53,9 @@
   \draw [->] (Infectious.180)
              to [out=180, in=180, looseness=0.9] node [sloped, above, pos=0.85] {}
              (Susceptible.180);
+  \draw [->] (Chronic.90)
+             to [out=90, in=0, looseness=0.65] node [sloped, above, pos=0.75] {birth}
+             (MaternalImmunity.0);
   \draw [->] (Recovered.180)
              to [out=180, in=180, looseness=0.6] node [sloped, above, pos=0.8] {birth}
              (MaternalImmunity.180);
@@ -64,6 +74,9 @@
              to node [sloped, below, yshift=1pt] {death}
              +(315: 1);
   \draw [->] (Infectious.345)
+             to node [sloped, below, yshift=1pt] {death}
+             +(315: 1);
+  \draw [->] (Chronic.342)
              to node [sloped, below, yshift=1pt] {death}
              +(315: 1);
   \draw [->] (Recovered.345)
