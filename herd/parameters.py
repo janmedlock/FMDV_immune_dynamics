@@ -45,10 +45,11 @@ class Parameters:
                 self.chronic_recovery_shape = 3.2
                 self.chronic_transmission_rate = 0.028 * 365
                 # Rate, not duration, leaving R to P.
-                self.antibody_loss_hazard_alpha = 2
-                self.antibody_loss_hazard_beta = 1
+                # TODO
+                self.antibody_loss_hazard_alpha = 0.515446182995618 * 365
+                self.antibody_loss_hazard_beta = 0.235354485299808 * 365
                 # Rate, not duration, leaving P to R.
-                self.antibody_gain_hazard = 1
+                self.antibody_gain_hazard = 0.087133872276749 * 365
             elif self.SAT == 2:
                 self.progression_shape = 1.6
                 self.progression_mean = 1.3 / 365
@@ -62,10 +63,10 @@ class Parameters:
                 self.chronic_recovery_shape = 3.2
                 self.chronic_transmission_rate = 0.003 * 365
                 # Rate, not duration, leaving R to P.
-                self.antibody_loss_hazard_alpha = 2
-                self.antibody_loss_hazard_beta = 1
+                self.antibody_loss_hazard_alpha = 0.507468634352281 * 365
+                self.antibody_loss_hazard_beta = 0.155818113209265 * 365
                 # Rate, not duration, leaving P to R.
-                self.antibody_gain_hazard = 1
+                self.antibody_gain_hazard = 0.167454853375342 * 365
             elif self.SAT == 3:
                 self.progression_shape = 1.6
                 self.progression_mean = 2.8 / 365
@@ -79,12 +80,10 @@ class Parameters:
                 self.chronic_recovery_shape = 3.2
                 self.chronic_transmission_rate = 0.012 * 365
                 # Rate, not duration, leaving R to P.
-                # FIXME
-                self.antibody_loss_hazard_alpha = 2
-                self.antibody_loss_hazard_beta = 1
+                self.antibody_loss_hazard_alpha = 0.247206900224466 * 365
+                self.antibody_loss_hazard_beta = 0.110692365770063 * 365
                 # Rate, not duration, leaving P to R.
-                # FIXME
-                self.antibody_gain_hazard = 1
+                self.antibody_gain_hazard = 0.173163972303258 * 365
             else:
                 raise ValueError("Unknown SAT '{}'!".format(self.SAT))
 
