@@ -1,4 +1,11 @@
 #!/usr/bin/python3
+'''TODO
+Some of the hazards are very large for bigger r.
+We need to handle this by:
+1. Limiting r_max < a_max.
+2. Finding a_step so that all the hazards satisfy
+   h < 2 / a_step.'''
+
 
 import re
 import sys
@@ -396,7 +403,7 @@ class Solver:
             msg = f'Problem with the {self.P_vars[j]} block column!'
             assert numpy.isclose(colsum_Ij, colsum_I).all(), msg
         # The blocks for the K variables should have column sums
-        # [0, 0, ..., 0, da, da, ..., da].
+        # [0, 0, ..., 0, age_step, age_step, ..., age_step].
         colsum_K = numpy.hstack((numpy.zeros(self.K - self.I),
                                  self.age_step * numpy.ones(self.I)))
         for j in range(len(self.p_vars)):
@@ -543,6 +550,11 @@ if __name__ == '__main__':
     parameters.progression_mean = 1
     # Slower recovery.
     parameters.recovery_mean = 2
+    # Slower antibody loss.
+    parameters.antibody_loss_hazard_alpha = 10
+    parameters.antibody_loss_hazard_beta = 5
+    # Slower antibody gain.
+    parameters.antibody_gain_hazard = 10
     RVs = RandomVariables(parameters, _initial_conditions=False)
     age_max = 10
     age_step = 0.1
