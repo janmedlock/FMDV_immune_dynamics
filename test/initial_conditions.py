@@ -69,9 +69,9 @@ class Block:
 
     def get_A_XX_diags(self, rate_out):
         # The values on the diagonal.
-        d_0 = numpy.hstack([1, 1 + rate_out * self.solver.age_step / 2])
+        d_0 = 1 + rate_out * self.solver.age_step / 2
         # The values on the subdiagonal.
-        d_1 = - (1 - rate_out * self.solver.age_step / 2)
+        d_1 = - 1 + rate_out * self.solver.age_step / 2
         assert (d_1 <= 0).all()
         return (d_0, d_1)
 
@@ -84,6 +84,7 @@ class SizeI:
     def A_XX(self, rate_out):
         '''Get the diagonal block `A_XX` that maps state X to itself.'''
         (d_0, d_1) = self.get_A_XX_diags(rate_out)
+        d_0 = numpy.hstack([1, d_0])
         return sparse.diags([d_0, d_1], [0, -1],
                             shape=(len(self), len(self)))
 
@@ -104,7 +105,7 @@ class SizeI:
             j = numpy.arange(1, i + 1)
             k = self.solver.get_k(i - 1, j - 1)
             l = self.solver.get_k(i, j)
-            A_XY[i, k] = A_XY[i, l] = v[ : i]
+            A_XY[i, k] = A_XY[i, l] = v[j - 1]
         return A_XY
 
 
@@ -118,13 +119,14 @@ class SizeK:
         A_XX = sparse.lil_matrix((len(self), len(self)))
         (d_0, d_1) = self.get_A_XX_diags(rate_out)
         for i in range(self.solver.I):
-            j = numpy.arange(i + 1)
-            k = self.solver.get_k(i, j)
-            A_XX[k, k] = d_0[ : i + 1]
+            k = self.solver.get_k(i, 0)
+            A_XX[k ,k] = 1
             if i > 0:
-                k = self.solver.get_k(i, j[1 : ])
-                l = self.solver.get_k(i - 1, j[1 : ] - 1)
-                A_XX[k, l] = d_1[ : i]
+                j = numpy.arange(1, i + 1)
+                k = self.solver.get_k(i, j)
+                A_XX[k, k] = d_0[j - 1]
+                l = self.solver.get_k(i - 1, j - 1)
+                A_XX[k, l] = d_1[j - 1]
         return A_XX
 
     def A_XY_I(self, rate_in):
@@ -143,7 +145,7 @@ class SizeK:
             k = self.solver.get_k(i, 0)
             l = self.solver.get_k(i - 1, j - 1)
             m = self.solver.get_k(i, j)
-            A_XY[k, l] = A_XY[k, m] = v[ : i]
+            A_XY[k, l] = A_XY[k, m] = v[j - 1]
         return A_XY
 
 
