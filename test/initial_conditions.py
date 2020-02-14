@@ -67,13 +67,10 @@ class Block:
                 for block_name in dir(self)
                 if self.is_A_XY(block_name)}
 
-    def get_A_XX_diags(self, rate_out):
-        # The values on the diagonal.
-        d_0 = 1 + rate_out * self.solver.age_step / 2
-        # The values on the subdiagonal.
-        d_1 = - 1 + rate_out * self.solver.age_step / 2
-        assert (d_1 <= 0).all()
-        return (d_0, d_1)
+    def clip(self, rate, rate_max=1e15):
+        # TODO: This isn't working.
+        # return rate.clip(0, rate_max)
+        return rate
 
 
 class SizeI:
@@ -83,22 +80,25 @@ class SizeI:
 
     def A_XX(self, rate_out):
         '''Get the diagonal block `A_XX` that maps state X to itself.'''
-        (d_0, d_1) = self.get_A_XX_diags(rate_out)
-        d_0 = numpy.hstack([1, d_0])
-        return sparse.diags([d_0, d_1], [0, -1],
+        # The values on the diagonal.
+        d_0 = 1 + rate_out * self.solver.age_step / 2
+        # The values on the subdiagonal.
+        d_1 = - 1 + rate_out * self.solver.age_step / 2
+        assert (d_1 <= 0).all()
+        return sparse.diags([numpy.hstack([1, d_0]), d_1], [0, -1],
                             shape=(len(self), len(self)))
 
     def A_XY_I(self, rate_in):
         '''Get the off-diagonal block `A_XY` that maps state Y to X.'''
-        v = - rate_in * self.solver.age_step / 2
-        # The values on the diagonal.
-        d_0 = numpy.hstack([0, v])
-        # The values on the subdiagonal.
-        d_1 = v
-        return sparse.diags([d_0, d_1], [0, -1],
+        rate_in = self.clip(rate_in)
+        # The values on the diagonal and subdiagonal.
+        d = - rate_in * self.solver.age_step / 2
+        return sparse.diags([numpy.hstack([0, d]), d], [0, -1],
                             shape=(len(self), len(self)))
 
-    def A_XY_K(self, rate_in):
+    def A_XY_K(self, rate_in, rate_in_max=1e15):
+        '''Get the off-diagonal block `A_XY` that maps state Y to X.'''
+        rate_in = self.clip(rate_in)
         A_XY = sparse.lil_matrix((len(self), self.solver.K))
         v = - rate_in * self.solver.age_step ** 2 / 2
         for i in range(1, self.solver.I):
@@ -114,23 +114,23 @@ class SizeK:
     def __len__(self):
         return self.solver.K
 
-    def A_XX(self, rate_out):
+    def A_XX(self, survival):
         '''Get the diagonal block `A_XX` that maps state X to itself.'''
         A_XX = sparse.lil_matrix((len(self), len(self)))
-        (d_0, d_1) = self.get_A_XX_diags(rate_out)
         for i in range(self.solver.I):
-            k = self.solver.get_k(i, 0)
-            A_XX[k ,k] = 1
+            j = numpy.arange(i + 1)
+            k = self.solver.get_k(i, j)
+            A_XX[k, k] = 1
             if i > 0:
                 j = numpy.arange(1, i + 1)
                 k = self.solver.get_k(i, j)
-                A_XX[k, k] = d_0[j - 1]
-                l = self.solver.get_k(i - 1, j - 1)
-                A_XX[k, l] = d_1[j - 1]
+                l = self.solver.get_k(i - j, 0)
+                A_XX[k, l] = - survival[j]
         return A_XX
 
     def A_XY_I(self, rate_in):
         '''Get the off-diagonal block `A_XY` that maps state Y to X.'''
+        rate_in = self.clip(rate_in)
         A_XY = sparse.lil_matrix((len(self), self.solver.I))
         i = numpy.arange(1, self.solver.I)
         k = self.solver.get_k(i, 0)
@@ -138,6 +138,8 @@ class SizeK:
         return A_XY
 
     def A_XY_K(self, rate_in):
+        '''Get the off-diagonal block `A_XY` that maps state Y to X.'''
+        rate_in = self.clip(rate_in)
         A_XY = sparse.lil_matrix((len(self), len(self)))
         v = - rate_in * self.solver.age_step / 2
         for i in range(1, self.solver.I):
@@ -182,7 +184,7 @@ class BlockE(Block, SizeK):
 
     @property
     def A_EE(self):
-        return self.A_XX(self.solver.rates.progression)
+        return self.A_XX(self.solver.survivals.progression)
 
 
 class BlockI(Block, SizeK):
@@ -194,7 +196,7 @@ class BlockI(Block, SizeK):
 
     @property
     def A_II(self):
-        return self.A_XX(self.solver.rates.recovery)
+        return self.A_XX(self.solver.survivals.recovery)
 
 
 class BlockC(Block, SizeK):
@@ -207,7 +209,7 @@ class BlockC(Block, SizeK):
 
     @property
     def A_CC(self):
-        return self.A_XX(self.solver.rates.chronic_recovery)
+        return self.A_XX(self.solver.survivals.chronic_recovery)
 
 
 class BlockR(Block, SizeI):
@@ -289,13 +291,7 @@ class Solver:
         assert len(self.ages) > 1
         self.ages_mid = (self.ages[ : -1] + self.ages[1 : ]) / 2
         self.rates = self.get_rates()
-
-    def clip(self, rate):
-        # This ensures that d_1 ≤ 0 in `SizeI.A_XX()` and `SizeK.A_XX()`
-        # so that P_X ≥ 0.
-        if numpy.any(rate > 2 / self.age_step):
-            warnings.warn('Clipping!')
-        return numpy.clip(rate, 0, 2 / self.age_step)
+        self.survivals = self.get_survivals()
 
     def get_rates(self):
         with numpy.errstate(divide='ignore'):
@@ -320,9 +316,20 @@ class Solver:
         for (k, v) in rates.items():
             if numpy.isscalar(v):
                 rates[k] = v * numpy.ones(self.I - 1)
-            rates[k] = self.clip(rates[k])
         return numpy.rec.fromarrays(rates.values(),
                                     names=list(rates.keys()))
+
+    def get_survivals(self):
+        survivals = {
+            'progression':
+            self.RVs.progression.sf(self.ages),
+            'recovery':
+            self.RVs.recovery.sf(self.ages),
+            'chronic_recovery':
+            self.RVs.chronic_recovery.sf(self.ages)
+        }
+        return numpy.rec.fromarrays(survivals.values(),
+                                    names=list(survivals.keys()))
 
     def get_k(self, i, j):
         '''Get the position `k` in the stacked vector representation
@@ -404,15 +411,16 @@ class Solver:
             colsum_Ij = T @ A_Ij
             msg = f'Problem with the {self.P_vars[j]} block column!'
             assert numpy.isclose(colsum_Ij, colsum_I).all(), msg
-        # The blocks for the K variables should have column sums
-        # [0, 0, ..., 0, age_step, age_step, ..., age_step].
-        colsum_K = numpy.hstack((numpy.zeros(self.K - self.I),
-                                 self.age_step * numpy.ones(self.I)))
-        for j in range(len(self.p_vars)):
-            A_Kj = A_K[..., j * self.K : (j + 1) * self.K]
-            colsum_Kj = T @ A_Kj
-            msg = f'Problem with the {self.p_vars[j]} block column!'
-            assert numpy.isclose(colsum_Kj, colsum_K).all(), msg
+        # TODO: This doesn't work with the new survival-based scheme.
+        # # The blocks for the K variables should have column sums
+        # # [0, 0, ..., 0, age_step, age_step, ..., age_step].
+        # colsum_K = numpy.hstack((numpy.zeros(self.K - self.I),
+        #                          self.age_step * numpy.ones(self.I)))
+        # for j in range(len(self.p_vars)):
+        #     A_Kj = A_K[..., j * self.K : (j + 1) * self.K]
+        #     colsum_Kj = T @ A_Kj
+        #     msg = f'Problem with the {self.p_vars[j]} block column!'
+        #     assert numpy.isclose(colsum_Kj, colsum_K).all(), msg
 
     def check_b(self, b):
         # Check that b is an n×1 matrix.

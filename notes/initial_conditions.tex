@@ -118,6 +118,35 @@ the compartment probabilities satisfy
   P_{\mathrm{L}}(a).
 \end{align}
 
+Integrating the PDEs gives
+\begin{align}
+  p_{\mathrm{E}}(0, 0) &= 0,
+  \\
+  p_{\mathrm{E}}(a, 0) &= h_{\text{infection}}
+  \left[P_{\mathrm{S}}(a) + P_{\mathrm{L}}(a)\right],
+  \\
+  p_{\mathrm{E}}(a, r)
+  &= S_{\text{progression}}(r) p_{\mathrm{E}}(a - r, 0),
+  \displaybreak[0]\\
+  p_{\mathrm{I}}(0, 0) &= 0,
+  \\
+  p_{\mathrm{I}}(a, 0)
+  &= \int_0^a h_{\text{progression}}(r)
+  p_{\mathrm{E}}(a, r) \md r,
+  \\
+  p_{\mathrm{I}}(a, r)
+  &= S_{\text{recovery}}(r) p_{\mathrm{I}}(a - r, 0),
+  \displaybreak[0]\\
+  p_{\mathrm{C}}(0, 0) &= 0,
+  \\
+  p_{\mathrm{C}}(a, 0)
+  &= p_{\text{chronicity}}
+  \int_0^a h_{\text{recovery}}(r) p_{\mathrm{I}}(a, r) \md r,
+  \\
+  p_{\mathrm{C}}(a, r)
+  &= S_{\text{chronic recovery}}(r) p_{\mathrm{C}}(a - r, 0).
+\end{align}
+
 Let
 \begin{equation}
   P(a) = P_{\mathrm{M}}(a) + P_{\mathrm{S}}(a)
@@ -238,20 +267,18 @@ Crank--Nicolson method on characteristics is
   \left(\frac{P_{\mathrm{S}}^i + P_{\mathrm{S}}^{i - 1}}{2}
         + \frac{P_{\mathrm{L}}^i + P_{\mathrm{L}}^{i - 1}}{2}\right)
   \\
-  \frac{p_{\mathrm{E}}^{i, j} - p_{\mathrm{E}}^{i - 1, j - 1}}{\Delta a}
-  &= - h_{\text{progression}}(r^{j - 1 / 2})
-  \frac{p_{\mathrm{E}}^{i, j} + p_{\mathrm{E}}^{i - 1, j - 1}}{2},
+  p_{\mathrm{E}}^{i, j}
+  &= S_{\text{progression}}(r^j) p_{\mathrm{E}}^{i - j, 0},
   \displaybreak[0]\\
   p_{\mathrm{I}}^{0, 0} &= 0,
   \\
-  p_{\mathrm{I}}^{i, 0} &=
-  \sum_{j = 1}^i h_{\text{progression}}(r^{j - 1 / 2})
+  p_{\mathrm{I}}^{i, 0}
+  &= \sum_{j = 1}^i h_{\text{progression}}(r^{j - 1 / 2})
   \frac{p_{\mathrm{E}}^{i, j} + p_{\mathrm{E}}^{i - 1, j - 1}}{2}
   \Delta a,
   \\
-  \frac{p_{\mathrm{I}}^{i, j} - p_{\mathrm{I}}^{i - 1, j - 1}}{\Delta a}
-  &= - h_{\text{recovery}}(r^{j - 1 / 2})
-  \frac{p_{\mathrm{I}}^{i, j} + p_{\mathrm{I}}^{i - 1, j - 1}}{2},
+  p_{\mathrm{I}}^{i, j}
+  &= S_{\text{recovery}}(r^j) p_{\mathrm{I}}^{i - j, 0},
   \displaybreak[0]\\
   p_{\mathrm{C}}^{0, 0} &= 0,
   \\
@@ -261,9 +288,9 @@ Crank--Nicolson method on characteristics is
   \frac{p_{\mathrm{I}}^{i, j} + p_{\mathrm{I}}^{i - 1, j - 1}}{2}
   \Delta a,
   \\
-  \frac{p_{\mathrm{C}}^{i, j} - p_{\mathrm{C}}^{i - 1, j - 1}}{\Delta a}
-  &= - h_{\text{chronic recovery}}(r^{j - 1 / 2})
-  \frac{p_{\mathrm{C}}^{i, j} + p_{\mathrm{C}}^{i - 1, j - 1}}{2},
+  p_{\mathrm{C}}^{i, j}
+  &= S_{\text{chronic recovery}}(r^j)
+  p_{\mathrm{C}}^{i - j, 0},
   \displaybreak[0]\\
   P_{\mathrm{R}}^0 &= 0,
   \\
@@ -466,14 +493,9 @@ Then for $1 \leq i \leq I - 1$ and $1 \leq j \leq i$,
     &= 0,
   \end{split}
   \\
-  \begin{split}
-    - \left[1 - \frac{h_{\text{progression}}(r^{j - 1 / 2}) \Delta a}{2}\right]
-    p_{\mathrm{E}}^{i - 1, j - 1}
-    \\ {}
-    + \left[1 + \frac{h_{\text{progression}}(r^{j - 1 / 2}) \Delta a}{2}\right]
-    p_{\mathrm{E}}^{i, j}
-    &= 0,
-  \end{split}
+  - S_{\text{progression}}(r^j) p_{\mathrm{E}}^{i - j, 0}
+  + p_{\mathrm{E}}^{i, j}
+  &= 0,
   \displaybreak[0]\\
   p_{\mathrm{I}}^{0, 0} &= 0,
   \\
@@ -489,14 +511,9 @@ Then for $1 \leq i \leq I - 1$ and $1 \leq j \leq i$,
     &= 0,
   \end{split}
   \\
-  \begin{split}
-    - \left[1 - \frac{h_{\text{recovery}}(r^{j - 1 / 2}) \Delta a}{2}\right]
-    p_{\mathrm{I}}^{i - 1, j - 1}
-    \\ {}
-    + \left[1 + \frac{h_{\text{recovery}}(r^{j - 1 / 2}) \Delta a}{2}\right]
-    p_{\mathrm{I}}^{i, j}
-    &= 0,
-  \end{split}
+  - S_{\text{recovery}}(r^j) p_{\mathrm{I}}^{i - j, 0}
+  + p_{\mathrm{I}}^{i, j}
+  &= 0,
   \displaybreak[0]\\
   p_{\mathrm{C}}^{0, 0} &= 0,
   \\
@@ -513,16 +530,9 @@ Then for $1 \leq i \leq I - 1$ and $1 \leq j \leq i$,
     &= 0,
   \end{split}
   \\
-  \begin{split}
-    - \left[1
-      - \frac{h_{\text{chronic recovery}}(r^{j - 1 / 2}) \Delta a}{2}\right]
-    p_{\mathrm{C}}^{i - 1, j - 1}
-    \\ {}
-    + \left[1
-      + \frac{h_{\text{chronic recovery}}(r^{j - 1 / 2}) \Delta a}{2}\right]
-    p_{\mathrm{C}}^{i, j}
-    &= 0,
-  \end{split}
+  - S_{\text{chronic recovery}}(r^j) p_{\mathrm{C}}^{i - j, 0}
+  + p_{\mathrm{C}}^{i, j}
+  &= 0,
   \displaybreak[0]\\
   P_{\mathrm{R}}^0 &= 0,
   \\
