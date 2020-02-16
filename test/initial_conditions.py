@@ -96,16 +96,13 @@ class SizeI:
         return sparse.diags([numpy.hstack([0, d]), d], [0, -1],
                             shape=(len(self), len(self)))
 
-    def A_XY_K(self, rate_in, rate_in_max=1e15):
+    def A_XY_K(self, density_in):
         '''Get the off-diagonal block `A_XY` that maps state Y to X.'''
-        rate_in = self.clip(rate_in)
         A_XY = sparse.lil_matrix((len(self), self.solver.K))
-        v = - rate_in * self.solver.age_step ** 2 / 2
         for i in range(1, self.solver.I):
-            j = numpy.arange(1, i + 1)
-            k = self.solver.get_k(i - 1, j - 1)
-            l = self.solver.get_k(i, j)
-            A_XY[i, k] = A_XY[i, l] = v[j - 1]
+            j = numpy.arange(i + 1)
+            k = self.solver.get_k(i - j, 0)
+            A_XY[i, k] = - density_in[j] * self.solver.age_step ** 2
         return A_XY
 
 
@@ -137,17 +134,14 @@ class SizeK:
         A_XY[k, i - 1] = A_XY[k, i] = - rate_in / 2
         return A_XY
 
-    def A_XY_K(self, rate_in):
+    def A_XY_K(self, density_in):
         '''Get the off-diagonal block `A_XY` that maps state Y to X.'''
-        rate_in = self.clip(rate_in)
         A_XY = sparse.lil_matrix((len(self), len(self)))
-        v = - rate_in * self.solver.age_step / 2
         for i in range(1, self.solver.I):
-            j = numpy.arange(1, i + 1)
+            j = numpy.arange(i + 1)
             k = self.solver.get_k(i, 0)
-            l = self.solver.get_k(i - 1, j - 1)
-            m = self.solver.get_k(i, j)
-            A_XY[k, l] = A_XY[k, m] = v[j - 1]
+            l = self.solver.get_k(i - j, 0)
+            A_XY[k, l] = - density_in[j] * self.solver.age_step
         return A_XY
 
 
@@ -156,7 +150,7 @@ class BlockM(Block, SizeI):
 
     @property
     def A_MM(self):
-        return self.A_XX(self.solver.rates.maternal_immunity_waning)
+        return self.A_XX(self.solver.hazard.maternal_immunity_waning)
 
 
 class BlockS(Block, SizeI):
@@ -164,11 +158,11 @@ class BlockS(Block, SizeI):
 
     @property
     def A_SM(self):
-        return self.A_XY_I(self.solver.rates.maternal_immunity_waning)
+        return self.A_XY_I(self.solver.hazard.maternal_immunity_waning)
 
     @property
     def A_SS(self):
-        return self.A_XX(self.solver.rates.infection)
+        return self.A_XX(self.solver.hazard.infection)
 
 
 class BlockE(Block, SizeK):
@@ -176,15 +170,15 @@ class BlockE(Block, SizeK):
 
     @property
     def A_ES(self):
-        return self.A_XY_I(self.solver.rates.infection)
+        return self.A_XY_I(self.solver.hazard.infection)
 
     @property
     def A_EL(self):
-        return self.A_XY_I(self.solver.rates.infection)
+        return self.A_XY_I(self.solver.hazard.infection)
 
     @property
     def A_EE(self):
-        return self.A_XX(self.solver.survivals.progression)
+        return self.A_XX(self.solver.survival.progression)
 
 
 class BlockI(Block, SizeK):
@@ -192,11 +186,11 @@ class BlockI(Block, SizeK):
 
     @property
     def A_IE(self):
-        return self.A_XY_K(self.solver.rates.progression)
+        return self.A_XY_K(self.solver.density.progression)
 
     @property
     def A_II(self):
-        return self.A_XX(self.solver.survivals.recovery)
+        return self.A_XX(self.solver.survival.recovery)
 
 
 class BlockC(Block, SizeK):
@@ -204,12 +198,12 @@ class BlockC(Block, SizeK):
 
     @property
     def A_CI(self):
-        return self.A_XY_K(self.solver.rates.probability_chronic
-                           * self.solver.rates.recovery)
+        return self.A_XY_K(self.solver.probability_chronic
+                           * self.solver.density.recovery)
 
     @property
     def A_CC(self):
-        return self.A_XX(self.solver.survivals.chronic_recovery)
+        return self.A_XX(self.solver.survival.chronic_recovery)
 
 
 class BlockR(Block, SizeI):
@@ -217,20 +211,20 @@ class BlockR(Block, SizeI):
 
     @property
     def A_RI(self):
-        return self.A_XY_K((1 - self.solver.rates.probability_chronic)
-                           * self.solver.rates.recovery)
+        return self.A_XY_K((1 - self.solver.probability_chronic)
+                           * self.solver.density.recovery)
 
     @property
     def A_RC(self):
-        return self.A_XY_K(self.solver.rates.chronic_recovery)
+        return self.A_XY_K(self.solver.density.chronic_recovery)
 
     @property
     def A_RR(self):
-        return self.A_XX(self.solver.rates.antibody_loss)
+        return self.A_XX(self.solver.hazard.antibody_loss)
 
     @property
     def A_RL(self):
-        return self.A_XY_I(self.solver.rates.antibody_gain)
+        return self.A_XY_I(self.solver.hazard.antibody_gain)
 
 
 class BlockL(Block, SizeI):
@@ -238,12 +232,12 @@ class BlockL(Block, SizeI):
 
     @property
     def A_LR(self):
-        return self.A_XY_I(self.solver.rates.antibody_loss)
+        return self.A_XY_I(self.solver.hazard.antibody_loss)
 
     @property
     def A_LL(self):
-        return self.A_XX(self.solver.rates.antibody_gain
-                         + self.solver.rates.infection)
+        return self.A_XX(self.solver.hazard.antibody_gain
+                         + self.solver.hazard.infection)
 
 
 class Blocks:
@@ -283,53 +277,41 @@ class Solver:
                  'L': 'lost immunity'}
 
     def __init__(self, hazard_infection, RVs, age_max, age_step):
-        self.hazard_infection = hazard_infection
-        self.RVs = RVs
         self.age_max = age_max
         self.age_step = age_step
         self.ages = arange(0, self.age_max, self.age_step)
         assert len(self.ages) > 1
         self.ages_mid = (self.ages[ : -1] + self.ages[1 : ]) / 2
-        self.rates = self.get_rates()
-        self.survivals = self.get_survivals()
+        self.set_params(RVs, hazard_infection)
 
-    def get_rates(self):
-        with numpy.errstate(divide='ignore'):
-            rates = {
-                'maternal_immunity_waning':
-                self.RVs.maternal_immunity_waning.hazard(self.ages_mid),
-                'infection':
-                self.hazard_infection,
-                'progression':
-                self.RVs.progression.hazard(self.ages_mid),
-                'recovery':
-                self.RVs.recovery.hazard(self.ages_mid),
-                'probability_chronic':
-                self.RVs.probability_chronic.probability_chronic,
-                'chronic_recovery':
-                self.RVs.chronic_recovery.hazard(self.ages_mid),
-                'antibody_loss':
-                self.RVs.antibody_loss.hazard(self.RVs.antibody_loss.time_min),
-                'antibody_gain':
-                self.RVs.antibody_gain.antibody_gain_hazard
-            }
-        for (k, v) in rates.items():
-            if numpy.isscalar(v):
-                rates[k] = v * numpy.ones(self.I - 1)
-        return numpy.rec.fromarrays(rates.values(),
-                                    names=list(rates.keys()))
+    @staticmethod
+    def rec_fromkwds(**kwds):
+        return numpy.rec.fromarrays(
+            numpy.broadcast_arrays(*kwds.values()),
+            names=list(kwds.keys()))
 
-    def get_survivals(self):
-        survivals = {
-            'progression':
-            self.RVs.progression.sf(self.ages),
-            'recovery':
-            self.RVs.recovery.sf(self.ages),
-            'chronic_recovery':
-            self.RVs.chronic_recovery.sf(self.ages)
-        }
-        return numpy.rec.fromarrays(survivals.values(),
-                                    names=list(survivals.keys()))
+    def set_params(self, RVs, hazard_infection):
+        waiting_times = {'maternal_immunity_waning',
+                         'progression',
+                         'recovery',
+                         'chronic_recovery',
+                         'antibody_gain'}
+        hazard = {}
+        survival = {}
+        density = {}
+        for k in waiting_times:
+            RV = getattr(RVs, k)
+            with numpy.errstate(divide='ignore'):
+                hazard[k] = RV.hazard(self.ages_mid)
+            survival[k] = RV.sf(self.ages)
+            density[k] = RV.pdf(self.ages)
+        hazard['infection'] = hazard_infection
+        hazard['antibody_loss'] = RVs.antibody_loss.hazard(
+            RVs.antibody_loss.time_min)
+        self.hazard = self.rec_fromkwds(**hazard)
+        self.survival = self.rec_fromkwds(**survival)
+        self.density = self.rec_fromkwds(**density)
+        self.probability_chronic = RVs.probability_chronic.probability_chronic
 
     def get_k(self, i, j):
         '''Get the position `k` in the stacked vector representation
@@ -380,16 +362,19 @@ class Solver:
             return [self.stack(rows.get(k))
                     for k in (self.P_vars + self.p_vars)]
 
+    @classmethod
+    def unstack_and_label(cls, x, x_vars):
+        # Split into columns.
+        X = numpy.hsplit(x, len(x_vars))
+        # Add labels.
+        return cls.rec_fromkwds(**dict(zip(x_vars, X)))
+
     def unstack(self, Pp):
         '''Unstack the P_X and p_X vectors.'''
-        i_split = len(self.P_vars) * self.I
+        split = len(self.P_vars) * self.I
         # `P_vars` are first, then `p_vars`.
-        (P, p) = (Pp[ : i_split], Pp[i_split : ])
-        # Split into columns and add labels.
-        P = numpy.rec.fromarrays(numpy.hsplit(P, len(self.P_vars)),
-                                 names=self.P_vars)
-        p = numpy.rec.fromarrays(numpy.hsplit(p, len(self.p_vars)),
-                                 names=self.p_vars)
+        P = self.unstack_and_label(Pp[ : split], self.P_vars)
+        p = self.unstack_and_label(Pp[split : ], self.p_vars)
         return (P, p)
 
     def check_A(self, A):
@@ -471,9 +456,8 @@ class Solver:
         # Integrate the p_X's over r.
         T = self.get_T()
         p_names = p.dtype.names
-        P_integrated = numpy.rec.fromarrays(
-            [T @ p[n] for n in p_names],
-            names=p_names)
+        P_integrated = self.rec_fromkwds(
+            **{n: T @ p[n] for n in p_names})
         P = numpy.lib.recfunctions.merge_arrays(
             (P, P_integrated),
             asrecarray=True, flatten=True)
