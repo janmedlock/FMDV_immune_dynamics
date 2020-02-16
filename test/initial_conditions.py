@@ -67,11 +67,11 @@ class Block:
                 for block_name in dir(self)
                 if self.is_A_XY(block_name)}
 
-    def get_A_XX_diags(self, rate_out):
+    def get_A_XX_diags(self, hazard_out):
         # The values on the diagonal.
-        d_0 = 1 + rate_out * self.solver.age_step / 2
+        d_0 = 1 + hazard_out * self.solver.age_step / 2
         # The values on the subdiagonal.
-        d_1 = - 1 + rate_out * self.solver.age_step / 2
+        d_1 = - 1 + hazard_out * self.solver.age_step / 2
         assert (d_1 <= 0).all()
         return (d_0, d_1)
 
@@ -81,31 +81,29 @@ class SizeI:
     def __len__(self):
         return self.solver.I
 
-    def A_XX(self, rate_out):
+    def A_XX(self, hazard_out):
         '''Get the diagonal block `A_XX` that maps state X to itself.'''
-        (d_0, d_1) = self.get_A_XX_diags(rate_out)
-        d_0 = numpy.hstack([1, d_0])
-        return sparse.diags([d_0, d_1], [0, -1],
+        (d_0, d_1) = self.get_A_XX_diags(hazard_out)
+        return sparse.diags([numpy.hstack([1, d_0]), d_1], [0, -1],
                             shape=(len(self), len(self)))
 
-    def A_XY_I(self, rate_in):
+    def A_XY_I(self, hazard_in):
         '''Get the off-diagonal block `A_XY` that maps state Y to X.'''
-        v = - rate_in * self.solver.age_step / 2
-        # The values on the diagonal.
-        d_0 = numpy.hstack([0, v])
-        # The values on the subdiagonal.
-        d_1 = v
-        return sparse.diags([d_0, d_1], [0, -1],
+        # The values on the diagonal and subdiagonal.
+        d = - hazard_in * self.solver.age_step / 2
+        return sparse.diags([numpy.hstack([0, d]), d], [0, -1],
                             shape=(len(self), len(self)))
 
-    def A_XY_K(self, rate_in):
+    def A_XY_K(self, hazard_in):
+        '''Get the off-diagonal block `A_XY` that maps state Y to X.'''
         A_XY = sparse.lil_matrix((len(self), self.solver.K))
-        v = - rate_in * self.solver.age_step ** 2 / 2
         for i in range(1, self.solver.I):
             j = numpy.arange(1, i + 1)
             k = self.solver.get_k(i - 1, j - 1)
             l = self.solver.get_k(i, j)
-            A_XY[i, k] = A_XY[i, l] = v[j - 1]
+            A_XY[i, k] = A_XY[i, l] = (- hazard_in[j - 1]
+                                       * self.solver.age_step ** 2
+                                       / 2)
         return A_XY
 
 
@@ -114,10 +112,10 @@ class SizeK:
     def __len__(self):
         return self.solver.K
 
-    def A_XX(self, rate_out):
+    def A_XX(self, hazard_out):
         '''Get the diagonal block `A_XX` that maps state X to itself.'''
         A_XX = sparse.lil_matrix((len(self), len(self)))
-        (d_0, d_1) = self.get_A_XX_diags(rate_out)
+        (d_0, d_1) = self.get_A_XX_diags(hazard_out)
         for i in range(self.solver.I):
             k = self.solver.get_k(i, 0)
             A_XX[k ,k] = 1
@@ -129,23 +127,25 @@ class SizeK:
                 A_XX[k, l] = d_1[j - 1]
         return A_XX
 
-    def A_XY_I(self, rate_in):
+    def A_XY_I(self, hazard_in):
         '''Get the off-diagonal block `A_XY` that maps state Y to X.'''
         A_XY = sparse.lil_matrix((len(self), self.solver.I))
         i = numpy.arange(1, self.solver.I)
         k = self.solver.get_k(i, 0)
-        A_XY[k, i - 1] = A_XY[k, i] = - rate_in / 2
+        A_XY[k, i - 1] = A_XY[k, i] = - hazard_in / 2
         return A_XY
 
-    def A_XY_K(self, rate_in):
+    def A_XY_K(self, hazard_in):
+        '''Get the off-diagonal block `A_XY` that maps state Y to X.'''
         A_XY = sparse.lil_matrix((len(self), len(self)))
-        v = - rate_in * self.solver.age_step / 2
         for i in range(1, self.solver.I):
             j = numpy.arange(1, i + 1)
             k = self.solver.get_k(i, 0)
             l = self.solver.get_k(i - 1, j - 1)
             m = self.solver.get_k(i, j)
-            A_XY[k, l] = A_XY[k, m] = v[j - 1]
+            A_XY[k, l] = A_XY[k, m] = (- hazard_in[j - 1]
+                                       * self.solver.age_step
+                                       / 2)
         return A_XY
 
 
@@ -154,7 +154,7 @@ class BlockM(Block, SizeI):
 
     @property
     def A_MM(self):
-        return self.A_XX(self.solver.rates.maternal_immunity_waning)
+        return self.A_XX(self.solver.hazard.maternal_immunity_waning)
 
 
 class BlockS(Block, SizeI):
@@ -162,11 +162,11 @@ class BlockS(Block, SizeI):
 
     @property
     def A_SM(self):
-        return self.A_XY_I(self.solver.rates.maternal_immunity_waning)
+        return self.A_XY_I(self.solver.hazard.maternal_immunity_waning)
 
     @property
     def A_SS(self):
-        return self.A_XX(self.solver.rates.infection)
+        return self.A_XX(self.solver.hazard.infection)
 
 
 class BlockE(Block, SizeK):
@@ -174,15 +174,15 @@ class BlockE(Block, SizeK):
 
     @property
     def A_ES(self):
-        return self.A_XY_I(self.solver.rates.infection)
+        return self.A_XY_I(self.solver.hazard.infection)
 
     @property
     def A_EL(self):
-        return self.A_XY_I(self.solver.rates.infection)
+        return self.A_XY_I(self.solver.hazard.infection)
 
     @property
     def A_EE(self):
-        return self.A_XX(self.solver.rates.progression)
+        return self.A_XX(self.solver.hazard.progression)
 
 
 class BlockI(Block, SizeK):
@@ -190,11 +190,11 @@ class BlockI(Block, SizeK):
 
     @property
     def A_IE(self):
-        return self.A_XY_K(self.solver.rates.progression)
+        return self.A_XY_K(self.solver.hazard.progression)
 
     @property
     def A_II(self):
-        return self.A_XX(self.solver.rates.recovery)
+        return self.A_XX(self.solver.hazard.recovery)
 
 
 class BlockC(Block, SizeK):
@@ -202,12 +202,12 @@ class BlockC(Block, SizeK):
 
     @property
     def A_CI(self):
-        return self.A_XY_K(self.solver.rates.probability_chronic
-                           * self.solver.rates.recovery)
+        return self.A_XY_K(self.solver.probability_chronic
+                           * self.solver.hazard.recovery)
 
     @property
     def A_CC(self):
-        return self.A_XX(self.solver.rates.chronic_recovery)
+        return self.A_XX(self.solver.hazard.chronic_recovery)
 
 
 class BlockR(Block, SizeI):
@@ -215,20 +215,20 @@ class BlockR(Block, SizeI):
 
     @property
     def A_RI(self):
-        return self.A_XY_K((1 - self.solver.rates.probability_chronic)
-                           * self.solver.rates.recovery)
+        return self.A_XY_K((1 - self.solver.probability_chronic)
+                           * self.solver.hazard.recovery)
 
     @property
     def A_RC(self):
-        return self.A_XY_K(self.solver.rates.chronic_recovery)
+        return self.A_XY_K(self.solver.hazard.chronic_recovery)
 
     @property
     def A_RR(self):
-        return self.A_XX(self.solver.rates.antibody_loss)
+        return self.A_XX(self.solver.hazard.antibody_loss)
 
     @property
     def A_RL(self):
-        return self.A_XY_I(self.solver.rates.antibody_gain)
+        return self.A_XY_I(self.solver.hazard.antibody_gain)
 
 
 class BlockL(Block, SizeI):
@@ -236,12 +236,12 @@ class BlockL(Block, SizeI):
 
     @property
     def A_LR(self):
-        return self.A_XY_I(self.solver.rates.antibody_loss)
+        return self.A_XY_I(self.solver.hazard.antibody_loss)
 
     @property
     def A_LL(self):
-        return self.A_XX(self.solver.rates.antibody_gain
-                         + self.solver.rates.infection)
+        return self.A_XX(self.solver.hazard.antibody_gain
+                         + self.solver.hazard.infection)
 
 
 class Blocks:
@@ -281,48 +281,44 @@ class Solver:
                  'L': 'lost immunity'}
 
     def __init__(self, hazard_infection, RVs, age_max, age_step):
-        self.hazard_infection = hazard_infection
-        self.RVs = RVs
         self.age_max = age_max
         self.age_step = age_step
         self.ages = arange(0, self.age_max, self.age_step)
         assert len(self.ages) > 1
         self.ages_mid = (self.ages[ : -1] + self.ages[1 : ]) / 2
-        self.rates = self.get_rates()
+        self.set_params(hazard_infection, RVs)
 
-    def clip(self, rate):
+    @staticmethod
+    def rec_fromkwds(**kwds):
+        return numpy.rec.fromarrays(
+            numpy.broadcast_arrays(*kwds.values()),
+            names=list(kwds.keys()))
+
+    def clip(self, hazard):
         # This ensures that d_1 ≤ 0 in `SizeI.A_XX()` and `SizeK.A_XX()`
         # so that P_X ≥ 0.
-        if numpy.any(rate > 2 / self.age_step):
+        if numpy.any(hazard > 2 / self.age_step):
             warnings.warn('Clipping!')
-        return numpy.clip(rate, 0, 2 / self.age_step)
+        return numpy.clip(hazard, 0, 2 / self.age_step)
 
-    def get_rates(self):
-        with numpy.errstate(divide='ignore'):
-            rates = {
-                'maternal_immunity_waning':
-                self.RVs.maternal_immunity_waning.hazard(self.ages_mid),
-                'infection':
-                self.hazard_infection,
-                'progression':
-                self.RVs.progression.hazard(self.ages_mid),
-                'recovery':
-                self.RVs.recovery.hazard(self.ages_mid),
-                'probability_chronic':
-                self.RVs.probability_chronic.probability_chronic,
-                'chronic_recovery':
-                self.RVs.chronic_recovery.hazard(self.ages_mid),
-                'antibody_loss':
-                self.RVs.antibody_loss.hazard(self.RVs.antibody_loss.time_min),
-                'antibody_gain':
-                self.RVs.antibody_gain.antibody_gain_hazard
-            }
-        for (k, v) in rates.items():
-            if numpy.isscalar(v):
-                rates[k] = v * numpy.ones(self.I - 1)
-            rates[k] = self.clip(rates[k])
-        return numpy.rec.fromarrays(rates.values(),
-                                    names=list(rates.keys()))
+    def set_params(self, hazard_infection, RVs):
+        waiting_times = {'maternal_immunity_waning',
+                         'progression',
+                         'recovery',
+                         'chronic_recovery',
+                         'antibody_gain'}
+        hazard = {}
+        survival = {}
+        density = {}
+        for k in waiting_times:
+            RV = getattr(RVs, k)
+            with numpy.errstate(divide='ignore'):
+                hazard[k] = self.clip(RV.hazard(self.ages_mid))
+        hazard['infection'] = self.clip(hazard_infection)
+        hazard['antibody_loss'] = self.clip(
+            RVs.antibody_loss.hazard(RVs.antibody_loss.time_min))
+        self.hazard = self.rec_fromkwds(**hazard)
+        self.probability_chronic = RVs.probability_chronic.probability_chronic
 
     def get_k(self, i, j):
         '''Get the position `k` in the stacked vector representation
@@ -373,16 +369,19 @@ class Solver:
             return [self.stack(rows.get(k))
                     for k in (self.P_vars + self.p_vars)]
 
+    @classmethod
+    def unstack_and_label(cls, x, x_vars):
+        # Split into columns.
+        X = numpy.hsplit(x, len(x_vars))
+        # Add labels.
+        return cls.rec_fromkwds(**dict(zip(x_vars, X)))
+
     def unstack(self, Pp):
         '''Unstack the P_X and p_X vectors.'''
-        i_split = len(self.P_vars) * self.I
+        split = len(self.P_vars) * self.I
         # `P_vars` are first, then `p_vars`.
-        (P, p) = (Pp[ : i_split], Pp[i_split : ])
-        # Split into columns and add labels.
-        P = numpy.rec.fromarrays(numpy.hsplit(P, len(self.P_vars)),
-                                 names=self.P_vars)
-        p = numpy.rec.fromarrays(numpy.hsplit(p, len(self.p_vars)),
-                                 names=self.p_vars)
+        P = self.unstack_and_label(Pp[ : split], self.P_vars)
+        p = self.unstack_and_label(Pp[split : ], self.p_vars)
         return (P, p)
 
     def check_A(self, A):
@@ -463,9 +462,8 @@ class Solver:
         # Integrate the p_X's over r.
         T = self.get_T()
         p_names = p.dtype.names
-        P_integrated = numpy.rec.fromarrays(
-            [T @ p[n] for n in p_names],
-            names=p_names)
+        P_integrated = self.rec_fromkwds(
+            **{n: T @ p[n] for n in p_names})
         P = numpy.lib.recfunctions.merge_arrays(
             (P, P_integrated),
             asrecarray=True, flatten=True)
