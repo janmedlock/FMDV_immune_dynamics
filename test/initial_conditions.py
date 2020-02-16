@@ -86,19 +86,21 @@ class SizeI:
         d_1 = - 1 + hazard_out * self.solver.age_step / 2
         assert (d_1 <= 0).all()
         return sparse.diags([numpy.hstack([1, d_0]), d_1], [0, -1],
-                            shape=(self.solver.I, self.solver.I))
+                            shape=(len(self), len(self)))
 
     def A_XY_I(self, hazard_in):
-        '''Get the off-diagonal block `A_XY` that maps state Y to X.'''
+        '''Get the off-diagonal block `A_XY` that maps state Y to X,
+        where Y is length I.'''
         hazard_in = self.clip(hazard_in)
         # The values on the diagonal and subdiagonal.
         d = - hazard_in * self.solver.age_step / 2
         return sparse.diags([numpy.hstack([0, d]), d], [0, -1],
-                            shape=(self.solver.I, self.solver.I))
+                            shape=(len(self), self.solver.I))
 
     def A_XY_K(self, density_in):
-        '''Get the off-diagonal block `A_XY` that maps state Y to X.'''
-        A_XY = sparse.lil_matrix((self.solver.I, self.solver.K))
+        '''Get the off-diagonal block `A_XY` that maps state Y to X,
+        where Y is length K.'''
+        A_XY = sparse.lil_matrix((len(self), self.solver.K))
         for i in range(1, self.solver.I):
             j = numpy.arange(i + 1)
             k = self.solver.get_k(i - j, 0)
@@ -113,7 +115,7 @@ class SizeK:
 
     def A_XX(self, survival_out):
         '''Get the diagonal block `A_XX` that maps state X to itself.'''
-        A_XX = sparse.lil_matrix((self.solver.K, self.solver.K))
+        A_XX = sparse.lil_matrix((len(self), len(self)))
         for i in range(self.solver.I):
             j = numpy.arange(i + 1)
             k = self.solver.get_k(i, j)
@@ -126,17 +128,19 @@ class SizeK:
         return A_XX
 
     def A_XY_I(self, hazard_in):
-        '''Get the off-diagonal block `A_XY` that maps state Y to X.'''
+        '''Get the off-diagonal block `A_XY` that maps state Y to X,
+        where Y is length I.'''
         hazard_in = self.clip(hazard_in)
-        A_XY = sparse.lil_matrix((self.solver.K, self.solver.I))
+        A_XY = sparse.lil_matrix((len(self), self.solver.I))
         i = numpy.arange(1, self.solver.I)
         k = self.solver.get_k(i, 0)
         A_XY[k, i - 1] = A_XY[k, i] = - hazard_in / 2
         return A_XY
 
     def A_XY_K(self, density_in):
-        '''Get the off-diagonal block `A_XY` that maps state Y to X.'''
-        A_XY = sparse.lil_matrix((self.solver.K, self.solver.K))
+        '''Get the off-diagonal block `A_XY` that maps state Y to X,
+        where Y is length K.'''
+        A_XY = sparse.lil_matrix((len(self), self.solver.K))
         for i in range(1, self.solver.I):
             j = numpy.arange(i + 1)
             k = self.solver.get_k(i, 0)
