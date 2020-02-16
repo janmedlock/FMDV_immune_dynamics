@@ -78,21 +78,21 @@ class SizeI:
     def __len__(self):
         return self.solver.I
 
-    def A_XX(self, rate_out):
+    def A_XX(self, hazard_out):
         '''Get the diagonal block `A_XX` that maps state X to itself.'''
         # The values on the diagonal.
-        d_0 = 1 + rate_out * self.solver.age_step / 2
+        d_0 = 1 + hazard_out * self.solver.age_step / 2
         # The values on the subdiagonal.
-        d_1 = - 1 + rate_out * self.solver.age_step / 2
+        d_1 = - 1 + hazard_out * self.solver.age_step / 2
         assert (d_1 <= 0).all()
         return sparse.diags([numpy.hstack([1, d_0]), d_1], [0, -1],
                             shape=(len(self), len(self)))
 
-    def A_XY_I(self, rate_in):
+    def A_XY_I(self, hazard_in):
         '''Get the off-diagonal block `A_XY` that maps state Y to X.'''
-        rate_in = self.clip(rate_in)
+        hazard_in = self.clip(hazard_in)
         # The values on the diagonal and subdiagonal.
-        d = - rate_in * self.solver.age_step / 2
+        d = - hazard_in * self.solver.age_step / 2
         return sparse.diags([numpy.hstack([0, d]), d], [0, -1],
                             shape=(len(self), len(self)))
 
@@ -111,7 +111,7 @@ class SizeK:
     def __len__(self):
         return self.solver.K
 
-    def A_XX(self, survival):
+    def A_XX(self, survival_out):
         '''Get the diagonal block `A_XX` that maps state X to itself.'''
         A_XX = sparse.lil_matrix((len(self), len(self)))
         for i in range(self.solver.I):
@@ -122,16 +122,16 @@ class SizeK:
                 j = numpy.arange(1, i + 1)
                 k = self.solver.get_k(i, j)
                 l = self.solver.get_k(i - j, 0)
-                A_XX[k, l] = - survival[j]
+                A_XX[k, l] = - survival_out[j]
         return A_XX
 
-    def A_XY_I(self, rate_in):
+    def A_XY_I(self, hazard_in):
         '''Get the off-diagonal block `A_XY` that maps state Y to X.'''
-        rate_in = self.clip(rate_in)
+        hazard_in = self.clip(hazard_in)
         A_XY = sparse.lil_matrix((len(self), self.solver.I))
         i = numpy.arange(1, self.solver.I)
         k = self.solver.get_k(i, 0)
-        A_XY[k, i - 1] = A_XY[k, i] = - rate_in / 2
+        A_XY[k, i - 1] = A_XY[k, i] = - hazard_in / 2
         return A_XY
 
     def A_XY_K(self, density_in):
@@ -282,7 +282,7 @@ class Solver:
         self.ages = arange(0, self.age_max, self.age_step)
         assert len(self.ages) > 1
         self.ages_mid = (self.ages[ : -1] + self.ages[1 : ]) / 2
-        self.set_params(RVs, hazard_infection)
+        self.set_params(hazard_infection, RVs)
 
     @staticmethod
     def rec_fromkwds(**kwds):
@@ -290,7 +290,7 @@ class Solver:
             numpy.broadcast_arrays(*kwds.values()),
             names=list(kwds.keys()))
 
-    def set_params(self, RVs, hazard_infection):
+    def set_params(self, hazard_infection, RVs):
         waiting_times = {'maternal_immunity_waning',
                          'progression',
                          'recovery',
