@@ -1,10 +1,4 @@
 #!/usr/bin/python3
-'''TODO
-Some of the hazards are very large for bigger r.
-We need to handle this by:
-1. Limiting r_max < a_max.
-2. Finding a_step so that all the hazards satisfy
-   h < 2 / a_step.'''
 
 
 import re
@@ -40,8 +34,7 @@ class Block:
         '''Get the variable name from the last letter of the class name.'''
         return self.__class__.__name__[-1]
 
-    @property
-    def b(self):
+    def get_b(self):
         '''Make a sparse n × 1 matrix of the right-hand sides.'''
         # The initial value is in the 0th entry,
         # then zeros everywhere else.
@@ -60,25 +53,19 @@ class Block:
         '''Check if `block_name` is 'A_XY' for some Y.'''
         return (self.get_Y_match(block_name) is not None)
 
-    @property
-    def A(self):
+    def get_A(self):
         '''Assemble the block row A_X from its columns A_XY.'''
         return {self.get_Y(block_name): getattr(self, block_name)
                 for block_name in dir(self)
                 if self.is_A_XY(block_name)}
 
-    def clip(self, rate, rate_max=1e15):
-        # TODO: This isn't working.
-        # return rate.clip(0, rate_max)
-        return rate
 
-
-class SizeI:
-    '''An `XBlock()` of size I.'''
+class BlockODE(Block):
+    '''A `Block()` for an ODE variable.'''
     def __len__(self):
-        return self.solver.I
+        return self.solver.length_ODE
 
-    def A_XX(self, hazard_out):
+    def get_A_XX(self, hazard_out):
         '''Get the diagonal block `A_XX` that maps state X to itself.'''
         # The values on the diagonal.
         d_0 = 1 + hazard_out * self.solver.age_step / 2
@@ -88,187 +75,171 @@ class SizeI:
         return sparse.diags([numpy.hstack([1, d_0]), d_1], [0, -1],
                             shape=(len(self), len(self)))
 
-    def A_XY_I(self, hazard_in):
+    def get_A_XY_ODE(self, hazard_in):
         '''Get the off-diagonal block `A_XY` that maps state Y to X,
-        where Y is length I.'''
-        hazard_in = self.clip(hazard_in)
+        where Y is an ODE variable.'''
         # The values on the diagonal and subdiagonal.
         d = - hazard_in * self.solver.age_step / 2
         return sparse.diags([numpy.hstack([0, d]), d], [0, -1],
-                            shape=(len(self), self.solver.I))
+                            shape=(len(self), self.solver.length_ODE))
 
-    def A_XY_K(self, density_in):
+    def get_A_XY_PDE(self, density_in):
         '''Get the off-diagonal block `A_XY` that maps state Y to X,
-        where Y is length K.'''
-        A_XY = sparse.lil_matrix((len(self), self.solver.K))
-        for i in range(1, self.solver.I):
+        where Y is a PDE variable.'''
+        A_XY = sparse.lil_matrix((len(self), self.solver.length_PDE))
+        for i in range(1, self.solver.length_ODE):
             j = numpy.arange(i + 1)
-            k = self.solver.get_k(i - j, 0)
-            A_XY[i, k] = - density_in[j] * self.solver.age_step ** 2
+            A_XY[i, i - j] = - density_in[j] * self.solver.age_step ** 2
         return A_XY
 
 
-class SizeK:
-    '''An `XBlock()` of size K.'''
+class BlockPDE(Block):
+    '''A `Block()` for a PDE variable.'''
     def __len__(self):
-        return self.solver.K
+        return self.solver.length_PDE
 
-    def A_XX(self, survival_out):
+    def get_A_XX(self):
         '''Get the diagonal block `A_XX` that maps state X to itself.'''
-        A_XX = sparse.lil_matrix((len(self), len(self)))
-        for i in range(self.solver.I):
-            j = numpy.arange(i + 1)
-            k = self.solver.get_k(i, j)
-            A_XX[k, k] = 1
-            if i > 0:
-                j = numpy.arange(1, i + 1)
-                k = self.solver.get_k(i, j)
-                l = self.solver.get_k(i - j, 0)
-                A_XX[k, l] = - survival_out[j]
-        return A_XX
+        return sparse.eye(len(self))
 
-    def A_XY_I(self, hazard_in):
+    def get_A_XY_ODE(self, hazard_in):
         '''Get the off-diagonal block `A_XY` that maps state Y to X,
-        where Y is length I.'''
-        hazard_in = self.clip(hazard_in)
-        A_XY = sparse.lil_matrix((len(self), self.solver.I))
-        i = numpy.arange(1, self.solver.I)
-        k = self.solver.get_k(i, 0)
-        A_XY[k, i - 1] = A_XY[k, i] = - hazard_in / 2
+        where Y is an ODE variable.'''
+        A_XY = sparse.lil_matrix((len(self), self.solver.length_ODE))
+        i = numpy.arange(1, self.solver.length_ODE)
+        A_XY[i, i - 1] = A_XY[i, i] = - hazard_in / 2
         return A_XY
 
-    def A_XY_K(self, density_in):
+    def get_A_XY_PDE(self, density_in):
         '''Get the off-diagonal block `A_XY` that maps state Y to X,
-        where Y is length K.'''
-        A_XY = sparse.lil_matrix((len(self), self.solver.K))
-        for i in range(1, self.solver.I):
+        where Y is a PDE variable.'''
+        A_XY = sparse.lil_matrix((len(self), self.solver.length_PDE))
+        for i in range(1, self.solver.length_ODE):
             j = numpy.arange(i + 1)
-            k = self.solver.get_k(i, 0)
-            l = self.solver.get_k(i - j, 0)
-            A_XY[k, l] = - density_in[j] * self.solver.age_step
+            A_XY[i, i - j] = - density_in[j] * self.solver.age_step
         return A_XY
 
+    def integrate(self, p_X, survival_out):
+        P_X = numpy.empty(self.solver.length_ODE)
+        for i in range(self.solver.length_ODE):
+            j = numpy.arange(i + 1)
+            P_X[i] = (survival_out[j] * p_X[i - j] * self.solver.age_step).sum()
+        return P_X
 
-class BlockM(Block, SizeI):
+
+class BlockM(BlockODE):
     initial_value = 1
 
     @property
     def A_MM(self):
-        return self.A_XX(self.solver.hazard.maternal_immunity_waning)
+        return self.get_A_XX(self.solver.hazard.maternal_immunity_waning)
 
 
-class BlockS(Block, SizeI):
+class BlockS(BlockODE):
     initial_value = 0
 
     @property
     def A_SM(self):
-        return self.A_XY_I(self.solver.hazard.maternal_immunity_waning)
+        return self.get_A_XY_ODE(self.solver.hazard.maternal_immunity_waning)
 
     @property
     def A_SS(self):
-        return self.A_XX(self.solver.hazard.infection)
+        return self.get_A_XX(self.solver.hazard.infection)
 
 
-class BlockE(Block, SizeK):
+class BlockE(BlockPDE):
     initial_value = 0
 
     @property
     def A_ES(self):
-        return self.A_XY_I(self.solver.hazard.infection)
+        return self.get_A_XY_ODE(self.solver.hazard.infection)
 
     @property
     def A_EL(self):
-        return self.A_XY_I(self.solver.hazard.infection)
+        return self.get_A_XY_ODE(self.solver.hazard.infection)
 
     @property
     def A_EE(self):
-        return self.A_XX(self.solver.survival.progression)
+        return self.get_A_XX()
+
+    def integrate(self, p_E):
+        return super().integrate(p_E, self.solver.survival.progression)
 
 
-class BlockI(Block, SizeK):
+class BlockI(BlockPDE):
     initial_value = 0
 
     @property
     def A_IE(self):
-        return self.A_XY_K(self.solver.density.progression)
+        return self.get_A_XY_PDE(self.solver.density.progression)
 
     @property
     def A_II(self):
-        return self.A_XX(self.solver.survival.recovery)
+        return self.get_A_XX()
+
+    def integrate(self, p_I):
+        return super().integrate(p_I, self.solver.survival.recovery)
 
 
-class BlockC(Block, SizeK):
+class BlockC(BlockPDE):
     initial_value = 0
 
     @property
     def A_CI(self):
-        return self.A_XY_K(self.solver.probability_chronic
-                           * self.solver.density.recovery)
+        return self.get_A_XY_PDE(self.solver.probability_chronic
+                                 * self.solver.density.recovery)
 
     @property
     def A_CC(self):
-        return self.A_XX(self.solver.survival.chronic_recovery)
+        return self.get_A_XX()
+
+    def integrate(self, p_C):
+        return super().integrate(p_C, self.solver.survival.chronic_recovery)
 
 
-class BlockR(Block, SizeI):
+class BlockR(BlockODE):
     initial_value = 0
 
     @property
     def A_RI(self):
-        return self.A_XY_K((1 - self.solver.probability_chronic)
-                           * self.solver.density.recovery)
+        return self.get_A_XY_PDE((1 - self.solver.probability_chronic)
+                                 * self.solver.density.recovery)
 
     @property
     def A_RC(self):
-        return self.A_XY_K(self.solver.density.chronic_recovery)
+        return self.get_A_XY_PDE(self.solver.density.chronic_recovery)
 
     @property
     def A_RR(self):
-        return self.A_XX(self.solver.hazard.antibody_loss)
+        return self.get_A_XX(self.solver.hazard.antibody_loss)
 
     @property
     def A_RL(self):
-        return self.A_XY_I(self.solver.hazard.antibody_gain)
+        return self.get_A_XY_ODE(self.solver.hazard.antibody_gain)
 
 
-class BlockL(Block, SizeI):
+class BlockL(BlockODE):
     initial_value = 0
 
     @property
     def A_LR(self):
-        return self.A_XY_I(self.solver.hazard.antibody_loss)
+        return self.get_A_XY_ODE(self.solver.hazard.antibody_loss)
 
     @property
     def A_LL(self):
-        return self.A_XX(self.solver.hazard.antibody_gain
-                         + self.solver.hazard.infection)
-
-
-class Blocks:
-    def __init__(self, solver):
-        self.blocks = {}
-        for cls in Block.__subclasses__():
-            block = cls(solver)
-            self.blocks[block.X] = block
-
-    @property
-    def A(self):
-        return {var: block.A for (var, block) in self.blocks.items()}
-
-    @property
-    def b(self):
-        return {var: block.b for (var, block) in self.blocks.items()}
+        return self.get_A_XX(self.solver.hazard.antibody_gain
+                             + self.solver.hazard.infection)
 
 
 class Solver:
     '''Crank–Nicolson solver to find the probability of being in each
     compartment as a function of age.'''
 
-    # The P_X vectors, the ones of length I.
-    P_vars = ('M', 'S', 'R', 'L')
+    # The vectors P_X that are governed by ODEs.
+    vars_ODE = ('M', 'S', 'R', 'L')
 
-    # The p_X vectors, the ones of length K.
-    p_vars = ('E', 'I', 'C')
+    # The vectors p_X that are governed by PDEs.
+    vars_PDE = ('E', 'I', 'C')
 
     # The long names of the above.
     # The order of the output is determined by the order of these, too.
@@ -286,7 +257,9 @@ class Solver:
         self.ages = arange(0, self.age_max, self.age_step)
         assert len(self.ages) > 1
         self.ages_mid = (self.ages[ : -1] + self.ages[1 : ]) / 2
+        self.length_ODE = self.length_PDE = len(self.ages)
         self.set_params(hazard_infection, RVs)
+        self.set_blocks()
 
     @staticmethod
     def rec_fromkwds(**kwds):
@@ -308,7 +281,10 @@ class Solver:
             with numpy.errstate(divide='ignore'):
                 hazard[k] = RV.hazard(self.ages_mid)
             survival[k] = RV.sf(self.ages)
-            density[k] = RV.pdf(self.ages)
+            # Approximate the density using the finite difference of the
+            # survival to ensure conservation of mass.
+            density[k] = numpy.hstack(
+                [0, - numpy.diff(survival[k]) / self.age_step])
         hazard['infection'] = hazard_infection
         hazard['antibody_loss'] = RVs.antibody_loss.hazard(
             RVs.antibody_loss.time_min)
@@ -317,44 +293,13 @@ class Solver:
         self.density = self.rec_fromkwds(**density)
         self.probability_chronic = RVs.probability_chronic.probability_chronic
 
-    def get_k(self, i, j):
-        '''Get the position `k` in the stacked vector representation
-        p_X^k \approx p_X(a^i, r^j) of the entry for age a^i,
-        residence time r^j.'''
-        # Convert iterables to arrays so the arithmetic works on them.
-        (i, j) = map(numpy.asarray, (i, j))
-        assert ((0 <= i) & (i < self.I)).all()
-        assert ((0 <= j) & (j <= i)).all()
-        return i * (i + 1) // 2 + j
-
-    @property
-    def I(self):
-        '''The number of age values, i = 0, 1, ..., I - 1.'''
-        return len(self.ages)
-
-    @property
-    def K(self):
-        '''The number of entries in
-        the stacked vector representation p_X^k \approx p_X(a^i, r^j),
-        k = 0, 1, ..., K - 1.'''
-        # The last entry is
-        # K - 1 = self.get_k(self.I - 1, self.I - 1),
-        # so
-        # K = self.get_k(self.I - 1, self.I - 1) + 1.
-        return self.get_k(self.I - 1, self.I - 1) + 1
-
-    def get_T(self):
-        '''Get the matrix `T` so that `T @ f`
-        approximates the integral
-        \int_0^a f(a, r) dr
-        using the composite trapezoid rule.
-        The result is a I × K matrix that
-        when left-multiplied with a K vector
-        produces a vector over ages a.'''
-        T = sparse.lil_matrix((self.I, self.K))
-        for i in range(self.I):
-            T[i, self.get_k(i, range(i + 1))] = self.age_step
-        return T.tocsr()
+    def set_blocks(self):
+        self.blocks = {}
+        # Loop over all the subclasses of `BlockODE` and `BlockPDE`.
+        for typ in Block.__subclasses__():
+            for BlockX in typ.__subclasses__():
+                blockX = BlockX(self)
+                self.blocks[blockX.X] = blockX
 
     def stack(self, rows):
         '''Stack the P_X and p_X vectors into one big vector.'''
@@ -362,9 +307,9 @@ class Solver:
         if not isinstance(rows, dict):
             return rows
         else:
-            # `P_vars` first, then `p_vars`.
+            # `vars_ODE` first, then `vars_PDE`.
             return [self.stack(rows.get(k))
-                    for k in (self.P_vars + self.p_vars)]
+                    for k in (self.vars_ODE + self.vars_PDE)]
 
     @classmethod
     def unstack_and_label(cls, x, x_vars):
@@ -375,80 +320,33 @@ class Solver:
 
     def unstack(self, Pp):
         '''Unstack the P_X and p_X vectors.'''
-        split = len(self.P_vars) * self.I
-        # `P_vars` are first, then `p_vars`.
-        P = self.unstack_and_label(Pp[ : split], self.P_vars)
-        p = self.unstack_and_label(Pp[split : ], self.p_vars)
+        # `vars_ODE` are first, then `vars_PDE`.
+        split = len(self.vars_ODE) * self.length_ODE
+        P = self.unstack_and_label(Pp[ : split], self.vars_ODE)
+        p = self.unstack_and_label(Pp[split : ], self.vars_PDE)
         return (P, p)
 
-    def check_A(self, A):
-        # Split into block columns.
-        i_split = len(self.P_vars) * self.I
-        # `P_vars` are first, then `p_vars`.
-        (A_I, A_K) = (A[..., : i_split], A[..., i_split : ])
-        # The blocks for the I variables should have column sums
-        # [0, 0, ..., 0, 1].
-        colsum_I = numpy.hstack((numpy.zeros(self.I - 1), 1))
-        T_I = sparse.eye(self.I)
-        # We need to integrate over r in the I×K-sized blocks
-        # to get I×I-sized blocks.
-        T_K = self.get_T()
-        T = sparse.hstack((T_I, ) * len(self.P_vars)
-                         + (T_K, ) * len(self.p_vars)).sum(0)
-        for j in range(len(self.P_vars)):
-            A_Ij = A_I[..., j * self.I : (j + 1) * self.I]
-            colsum_Ij = T @ A_Ij
-            msg = f'Problem with the {self.P_vars[j]} block column!'
-            assert numpy.isclose(colsum_Ij, colsum_I).all(), msg
-        # TODO: This doesn't work with the new survival-based scheme.
-        # # The blocks for the K variables should have column sums
-        # # [0, 0, ..., 0, age_step, age_step, ..., age_step].
-        # colsum_K = numpy.hstack((numpy.zeros(self.K - self.I),
-        #                          self.age_step * numpy.ones(self.I)))
-        # for j in range(len(self.p_vars)):
-        #     A_Kj = A_K[..., j * self.K : (j + 1) * self.K]
-        #     colsum_Kj = T @ A_Kj
-        #     msg = f'Problem with the {self.p_vars[j]} block column!'
-        #     assert numpy.isclose(colsum_Kj, colsum_K).all(), msg
+    def stack_sparse(self, rows, format='csr'):
+        return sparse.bmat(self.stack(rows), format=format)
 
-    def check_b(self, b):
-        # Check that b is an n×1 matrix.
-        assert b.ndim == 2
-        assert b.shape[-1] == 1
-        i_split = len(self.P_vars) * self.I
-        # `P_vars` are first, then `p_vars`.
-        (b_I, b_K) = (b[ : i_split], b[i_split : ])
-        # Split into columns.
-        b_I = b_I.reshape((-1, len(self.P_vars)))
-        b_K = b_K.reshape((-1, len(self.p_vars)))
-        assert b_I.shape[0] == self.I
-        assert b_K.shape[0] == self.K
-        # Integrate the p_X's over r.
-        T = self.get_T()
-        b_I_integrated = T @ b_K
-        assert b_I_integrated.shape[0] == self.I
-        # Sum by age.
-        b_I = sparse.hstack((b_I, b_I_integrated)).sum(1)
-        assert b_I.shape == (self.I, 1)
-        # Initial conditions (age = 0) sum to 1.
-        assert (b_I[0] == 1).all()
-        # Other equations (age > 0) have no constant terms.
-        assert (b_I[1 : ] == 0).all()
+    def get_A(self, format='csr'):
+        A = {var: block.get_A() for (var, block) in self.blocks.items()}
+        return self.stack_sparse(A)
 
-    def get_A_b(self, format='csr'):
-        blocks = Blocks(self)
-        # Stack the columns.
-        A = sparse.bmat(self.stack(blocks.A),
-                        format=format)
-        self.check_A(A)
-        b = sparse.vstack(self.stack(blocks.b),
-                          format=format)
-        self.check_b(b)
-        return (A, b)
+    def get_b(self, format='csr'):
+        b = {var: [block.get_b()] for (var, block) in self.blocks.items()}
+        return self.stack_sparse(b)
+
+    def integrate_PDE_vars(self, p):
+        # Integrate the p_X variables over r.
+        p_integrated = {n: self.blocks[n].integrate(p[n])
+                        for n in p.dtype.names}
+        return self.rec_fromkwds(**p_integrated)
 
     def solve(self):
         t0 = time.time()
-        (A, b) = self.get_A_b()
+        A = self.get_A()
+        b = self.get_b()
         t1 = time.time()
         print(f'Setup took {t1 - t0} seconds.')
         assert numpy.isfinite(A.data).all()
@@ -457,13 +355,9 @@ class Solver:
         t3 = time.time()
         print(f'Solve took {t3 - t2} seconds.')
         (P, p) = self.unstack(Pp)
-        # Integrate the p_X's over r.
-        T = self.get_T()
-        p_names = p.dtype.names
-        P_integrated = self.rec_fromkwds(
-            **{n: T @ p[n] for n in p_names})
+        p_integrated = self.integrate_PDE_vars(p)
         P = numpy.lib.recfunctions.merge_arrays(
-            (P, P_integrated),
+            (P, p_integrated),
             asrecarray=True, flatten=True)
         P = pandas.DataFrame(P,
                              index=pandas.Index(self.ages, name='age'))
@@ -544,18 +438,9 @@ def plot(status_prob_cond):
 if __name__ == '__main__':
     hazard_infection = 1
     parameters = Parameters()
-    # Slower progression.
-    parameters.progression_mean = 1
-    # Slower recovery.
-    parameters.recovery_mean = 2
-    # Slower antibody loss.
-    parameters.antibody_loss_hazard_alpha = 10
-    parameters.antibody_loss_hazard_beta = 5
-    # Slower antibody gain.
-    parameters.antibody_gain_hazard = 10
     RVs = RandomVariables(parameters, _initial_conditions=False)
     age_max = 10
-    age_step = 0.1
+    age_step = 0.01
     solver = Solver(hazard_infection, RVs, age_max, age_step)
     P = solver.solve()
     plot(P)

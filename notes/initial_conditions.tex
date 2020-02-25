@@ -348,15 +348,18 @@ Then
 \begin{align}
   P_{\mathrm{E}}^0 &= 0,
   \\
-  P_{\mathrm{E}}^i &= \sum_{j = 0}^i p_{\mathrm{E}}^{i, j} \Delta a,
+  P_{\mathrm{E}}^i &= \sum_{j = 0}^i p_{\mathrm{E}}^{i, j} \Delta a
+  = \sum_{j = 0}^i S_{\text{progression}}(r^j) p_{\mathrm{E}}^{i - j, 0} \Delta a,
   \displaybreak[0]\\
   P_{\mathrm{I}}^0 &= 0,
   \\
-  P_{\mathrm{I}}^i &= \sum_{j = 0}^i p_{\mathrm{I}}^{i, j} \Delta a,
+  P_{\mathrm{I}}^i &= \sum_{j = 0}^i p_{\mathrm{I}}^{i, j} \Delta a
+  = \sum_{j = 0}^i S_{\text{recovery}}(r^j) p_{\mathrm{I}}^{i - j, 0} \Delta a,
   \displaybreak[0]\\
   P_{\mathrm{C}}^0 &= 0,
   \\
-  P_{\mathrm{C}}^i &= \sum_{j = 0}^i p_{\mathrm{C}}^{i, j} \Delta a,
+  P_{\mathrm{C}}^i &= \sum_{j = 0}^i p_{\mathrm{C}}^{i, j} \Delta a
+  = \sum_{j = 0}^i S_{\text{chronic recovery}}(r^j) p_{\mathrm{C}}^{i - j, 0} \Delta a,
 \end{align}
 so that
 \begin{align}
@@ -430,7 +433,7 @@ so that
 \end{equation}
 for all $i \in \{1, 2, \ldots, I - 1\}$.
 
-For the variables $P_X$ that only depend on age $a$,
+For the variables $P_X$ that are governed by ODEs,
 define the vectors
 \begin{equation}
   \vec{P}_X =
@@ -442,35 +445,19 @@ define the vectors
   \end{pmatrix},
 \end{equation}
 for $X \in \{\mathrm{M}, \mathrm{S}, \mathrm{R}, \mathrm{L}\}$.
-For the variables that depend on age $a$ and residence time $r$,
+For the variables $p_X$ that are governed by PDEs,
 define the vectors
 \begin{equation}
   \vec{p}_X =
   \begin{pmatrix}
     p_X^{0, 0}\\
     p_X^{1, 0}\\
-    p_X^{1, 1}\\
-    p_X^{2, 0}\\
-    p_X^{2, 1}\\
-    p_X^{2, 2}\\
     \vdots\\
-    p_X^{I - 1, 0}\\
-    \vdots\\
-    p_X^{I - 1, I - 1}
+    p_X^{I - 1, 0}
   \end{pmatrix},
 \end{equation}
-for $X \in \{\mathrm{E}, \mathrm{I}, \mathrm{C}\}$,
-where the $i, j$th entry is in position
-\begin{equation}
-  k = \frac{i (i + 1)}{2} + j,
-\end{equation}
-or
-\begin{align}
-  i &= \left\lfloor\frac{- 1 + \sqrt{8 k + 1}}{2}\right\rfloor,
-  \\
-  j &= k - \frac{i (i + 1)}{2}.
-\end{align}
-Then for $1 \leq i \leq I - 1$ and $1 \leq j \leq i$,
+for $X \in \{\mathrm{E}, \mathrm{I}, \mathrm{C}\}$.
+Then for $1 \leq i \leq I - 1$,
 \begin{align}
   P_{\mathrm{M}}^0 &= 1,
   \\
@@ -507,10 +494,6 @@ Then for $1 \leq i \leq I - 1$ and $1 \leq j \leq i$,
     - \frac{h_{\text{infection}}}{2} P_{\mathrm{L}}^i
     &= 0,
   \end{split}
-  \\
-  - S_{\text{progression}}(r^j) p_{\mathrm{E}}^{i - j, 0}
-  + p_{\mathrm{E}}^{i, j}
-  &= 0,
   \displaybreak[0]\\
   p_{\mathrm{I}}^{0, 0} &= 0,
   \\
@@ -519,10 +502,6 @@ Then for $1 \leq i \leq I - 1$ and $1 \leq j \leq i$,
   p_{\mathrm{E}}^{i - j, 0}
   + p_{\mathrm{I}}^{i, 0}
   &= 0,
-  \\
-  - S_{\text{recovery}}(r^j) p_{\mathrm{I}}^{i - j, 0}
-  + p_{\mathrm{I}}^{i, j}
-  &= 0,
   \displaybreak[0]\\
   p_{\mathrm{C}}^{0, 0} &= 0,
   \\
@@ -530,10 +509,6 @@ Then for $1 \leq i \leq I - 1$ and $1 \leq j \leq i$,
   p_{\text{chronicity}} p_{\text{recovery}}(r^j) \Delta a
   p_{\mathrm{I}}^{i - j, 0}
   + p_{\mathrm{C}}^{i, 0}
-  &= 0,
-  \\
-  - S_{\text{chronic recovery}}(r^j) p_{\mathrm{C}}^{i - j, 0}
-  + p_{\mathrm{C}}^{i, j}
   &= 0,
   \displaybreak[0]\\
   P_{\mathrm{R}}^0 &= 0,
