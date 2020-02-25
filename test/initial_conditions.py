@@ -61,7 +61,7 @@ class Block:
 
 
 class BlockODE(Block):
-    '''A `Block()` for an ODE variable.'''
+    '''A `Block()` for a variable governed by an ODE.'''
     def __len__(self):
         return self.solver.length_ODE
 
@@ -77,7 +77,7 @@ class BlockODE(Block):
 
     def get_A_XY_ODE(self, hazard_in):
         '''Get the off-diagonal block `A_XY` that maps state Y to X,
-        where Y is an ODE variable.'''
+        where Y is a variable governed by an ODE.'''
         # The values on the diagonal and subdiagonal.
         d = - hazard_in * self.solver.age_step / 2
         return sparse.diags([numpy.hstack([0, d]), d], [0, -1],
@@ -85,7 +85,7 @@ class BlockODE(Block):
 
     def get_A_XY_PDE(self, density_in):
         '''Get the off-diagonal block `A_XY` that maps state Y to X,
-        where Y is a PDE variable.'''
+        where Y is a variable governed by a PDE.'''
         A_XY = sparse.lil_matrix((len(self), self.solver.length_PDE))
         for i in range(1, self.solver.length_ODE):
             j = numpy.arange(i + 1)
@@ -94,7 +94,7 @@ class BlockODE(Block):
 
 
 class BlockPDE(Block):
-    '''A `Block()` for a PDE variable.'''
+    '''A `Block()` for a variable governed by a PDE.'''
     def __len__(self):
         return self.solver.length_PDE
 
@@ -104,7 +104,7 @@ class BlockPDE(Block):
 
     def get_A_XY_ODE(self, hazard_in):
         '''Get the off-diagonal block `A_XY` that maps state Y to X,
-        where Y is an ODE variable.'''
+        where Y is a variable governed by an ODE.'''
         A_XY = sparse.lil_matrix((len(self), self.solver.length_ODE))
         i = numpy.arange(1, self.solver.length_ODE)
         A_XY[i, i - 1] = A_XY[i, i] = - hazard_in / 2
@@ -112,7 +112,7 @@ class BlockPDE(Block):
 
     def get_A_XY_PDE(self, density_in):
         '''Get the off-diagonal block `A_XY` that maps state Y to X,
-        where Y is a PDE variable.'''
+        where Y is a variable governed by a PDE.'''
         A_XY = sparse.lil_matrix((len(self), self.solver.length_PDE))
         for i in range(1, self.solver.length_ODE):
             j = numpy.arange(i + 1)
@@ -235,10 +235,10 @@ class Solver:
     '''Crank–Nicolson solver to find the probability of being in each
     compartment as a function of age.'''
 
-    # The vectors P_X that are governed by ODEs.
+    # The variables P_X that are governed by ODEs.
     vars_ODE = ('M', 'S', 'R', 'L')
 
-    # The vectors p_X that are governed by PDEs.
+    # The variables p_X that are governed by PDEs.
     vars_PDE = ('E', 'I', 'C')
 
     # The long names of the above.
@@ -329,11 +329,11 @@ class Solver:
     def stack_sparse(self, rows, format='csr'):
         return sparse.bmat(self.stack(rows), format=format)
 
-    def get_A(self, format='csr'):
+    def get_A(self):
         A = {var: block.get_A() for (var, block) in self.blocks.items()}
         return self.stack_sparse(A)
 
-    def get_b(self, format='csr'):
+    def get_b(self):
         b = {var: [block.get_b()] for (var, block) in self.blocks.items()}
         return self.stack_sparse(b)
 
