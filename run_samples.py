@@ -27,12 +27,12 @@ def _run_sample(parameters, sample, tmax, path, sample_number, logging_prefix):
             setattr(p, k, v)
         try:
             # Catch AssertionError from failed optimization in
-            # `herd._initial_conditions._find_hazard_infection()`.
+            # `herd.initial_conditions.estimate._find_hazard_infection()`.
             h = herd.Herd(p, run_number=sample_number,
                           logging_prefix=logging_prefix)
         except AssertionError:
             # Failed runs will get run with tighter integration tolerances
-            # in `herd._initial_conditions`.
+            # in `herd.initial_conditions.estimate`.
             pass
         else:
             df = h.run(tmax)

@@ -3,7 +3,7 @@ import pandas
 from scipy.stats import multinomial
 
 from herd import age_structure, maternal_immunity_waning
-from herd import _initial_conditions
+from herd.initial_conditions import estimate
 
 
 class gen:
@@ -16,7 +16,7 @@ class gen:
         self.age_structureRV = age_structure.gen(self.parameters)
         self.maternal_immunity_waningRV = maternal_immunity_waning.gen(
             self.parameters)
-        self.hazard_infection = _initial_conditions.find_hazard_infection(
+        self.hazard_infection = estimate.find_hazard_infection(
             self.parameters)
 
     def _M_prob(self, age):
@@ -25,21 +25,21 @@ class gen:
 
     def _S_prob(self, age):
         '''Probability of being in S, i.e. susceptible.'''
-        return _initial_conditions.S_prob(age,
-                                          self.hazard_infection,
-                                          self.parameters)
+        return estimate.S_prob(age,
+                               self.hazard_infection,
+                               self.parameters)
 
     def _C_prob(self, age):
         '''Probability of being in C, i.e. chronically infected.'''
-        return _initial_conditions.C_prob(age,
-                                          self.hazard_infection,
-                                          self.parameters)
+        return estimate.C_prob(age,
+                               self.hazard_infection,
+                               self.parameters)
 
     def _P_prob(self, age):
         '''Probability of being in P, i.e. having reduced antibodies.'''
-        return _initial_conditions.P_prob(age,
-                                          self.hazard_infection,
-                                          self.parameters)
+        return estimate.P_prob(age,
+                               self.hazard_infection,
+                               self.parameters)
 
     def _proportion(self, age):
         if numpy.ndim(age) == 0:

@@ -5,7 +5,7 @@ from matplotlib import pyplot
 
 sys.path.append('..')
 import herd
-from herd._initial_conditions import find_hazard_infection, plot
+from herd.initial_conditions.estimate import find_hazard_infection, plot
 sys.path.pop()
 
 
