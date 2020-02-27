@@ -352,32 +352,7 @@ gives
     \frac{P_{\mathrm{L}}^i + P_{\mathrm{L}}^{i - 1}}{2}.
   \end{split}
 \end{align}
-
-For the variables $P_X$ that are governed by ODEs,
-define the vectors
-\begin{equation}
-  \vec{P}_X =
-  \begin{pmatrix}
-    P_X^0\\
-    P_X^1\\
-    \vdots\\
-    P_X^{I - 1}
-  \end{pmatrix},
-\end{equation}
-for $X \in \{\mathrm{M}, \mathrm{S}, \mathrm{R}, \mathrm{L}\}$.
-For the variables $p_X$ that are governed by PDEs,
-define the vectors
-\begin{equation}
-  \vec{p}_X =
-  \begin{pmatrix}
-    p_X^0\\
-    p_X^1\\
-    \vdots\\
-    p_X^{I - 1}
-  \end{pmatrix},
-\end{equation}
-for $X \in \{\mathrm{E}, \mathrm{I}, \mathrm{C}\}$.
-Then for $1 \leq i \leq I - 1$,
+That is,
 \begin{align}
   P_{\mathrm{M}}^0 &= 1,
   \\
@@ -493,18 +468,12 @@ or
 
 The integrals of the PDE variables over $r$ satisfy
 \begin{align}
-  P_{\mathrm{E}}^0 &= 0,
-  \\
   P_{\mathrm{E}}^i
   &= \sum_{j = 0}^i S_{\text{progression}}(r^j) p_{\mathrm{E}}^{i - j} \Delta a,
   \displaybreak[0]\\
-  P_{\mathrm{I}}^0 &= 0,
-  \\
   P_{\mathrm{I}}^i
   &= \sum_{j = 0}^i S_{\text{recovery}}(r^j) p_{\mathrm{I}}^{i - j} \Delta a,
   \displaybreak[0]\\
-  P_{\mathrm{C}}^0 &= 0,
-  \\
   P_{\mathrm{C}}^i
   &= \sum_{j = 0}^i S_{\text{chronic recovery}}(r^j) p_{\mathrm{C}}^{i - j} \Delta a,
 \end{align}
