@@ -82,13 +82,14 @@ class BlockODE(Block):
         return sparse.diags([numpy.hstack([0, d]), d], [0, -1],
                             shape=(len(self), self.solver.length_ODE))
 
-    def get_A_XY_PDE(self, density_in):
+    def get_A_XY_PDE(self, survival_in):
         '''Get the off-diagonal block `A_XY` that maps state Y to X,
         where Y is a variable governed by a PDE.'''
         A_XY = sparse.lil_matrix((len(self), self.solver.length_PDE))
+        dS = - numpy.diff(survival_in)
         for i in range(1, self.solver.length_ODE):
-            j = numpy.arange(i + 1)
-            A_XY[i, i - j] = - density_in[j] * self.solver.age_step ** 2
+            j = numpy.arange(1, i + 1)
+            A_XY[i, i - j] = - dS[j - 1] * self.solver.age_step
         return A_XY
 
 
@@ -109,20 +110,23 @@ class BlockPDE(Block):
         A_XY[i, i - 1] = A_XY[i, i] = - hazard_in / 2
         return A_XY
 
-    def get_A_XY_PDE(self, density_in):
+    def get_A_XY_PDE(self, survival_in):
         '''Get the off-diagonal block `A_XY` that maps state Y to X,
         where Y is a variable governed by a PDE.'''
         A_XY = sparse.lil_matrix((len(self), self.solver.length_PDE))
+        dS = - numpy.diff(survival_in)
         for i in range(1, self.solver.length_ODE):
-            j = numpy.arange(i + 1)
-            A_XY[i, i - j] = - density_in[j] * self.solver.age_step
+            j = numpy.arange(1, i + 1)
+            A_XY[i, i - j] = - dS[j - 1]
         return A_XY
 
     def integrate(self, p_X, survival_out):
         P_X = numpy.empty(self.solver.length_ODE)
         for i in range(self.solver.length_ODE):
             j = numpy.arange(i + 1)
-            P_X[i] = (survival_out[j] * p_X[i - j] * self.solver.age_step).sum()
+            P_X[i] = (numpy.dot(survival_out[j],
+                                p_X[i - j])
+                      * self.solver.age_step)
         return P_X
 
 
@@ -170,7 +174,7 @@ class BlockI(BlockPDE):
 
     @property
     def A_IE(self):
-        return self.get_A_XY_PDE(self.solver.density.progression)
+        return self.get_A_XY_PDE(self.solver.survival.progression)
 
     @property
     def A_II(self):
@@ -186,7 +190,7 @@ class BlockC(BlockPDE):
     @property
     def A_CI(self):
         return self.get_A_XY_PDE(self.solver.probability_chronic
-                                 * self.solver.density.recovery)
+                                 * self.solver.survival.recovery)
 
     @property
     def A_CC(self):
@@ -202,11 +206,11 @@ class BlockR(BlockODE):
     @property
     def A_RI(self):
         return self.get_A_XY_PDE((1 - self.solver.probability_chronic)
-                                 * self.solver.density.recovery)
+                                 * self.solver.survival.recovery)
 
     @property
     def A_RC(self):
-        return self.get_A_XY_PDE(self.solver.density.chronic_recovery)
+        return self.get_A_XY_PDE(self.solver.survival.chronic_recovery)
 
     @property
     def A_RR(self):
@@ -274,22 +278,16 @@ class Solver:
                          'antibody_gain'}
         hazard = {}
         survival = {}
-        density = {}
         for k in waiting_times:
             RV = getattr(RVs, k)
             with numpy.errstate(divide='ignore'):
                 hazard[k] = RV.hazard(self.ages_mid)
             survival[k] = RV.sf(self.ages)
-            # Approximate the density using the finite difference of the
-            # survival to ensure conservation of mass.
-            density[k] = numpy.hstack(
-                [0, - numpy.diff(survival[k]) / self.age_step])
         hazard['infection'] = hazard_infection
         hazard['antibody_loss'] = RVs.antibody_loss.hazard(
             RVs.antibody_loss.time_min)
         self.hazard = self.rec_fromkwds(**hazard)
         self.survival = self.rec_fromkwds(**survival)
-        self.density = self.rec_fromkwds(**density)
         self.probability_chronic = RVs.probability_chronic.probability_chronic
 
     def set_blocks(self):

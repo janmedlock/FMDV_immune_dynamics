@@ -25,6 +25,8 @@
 
 \maketitle
 
+\section{Model}
+
 We will find the equilibrium probability as a function of age of being
 in each model compartment (\autoref{model_diagram}), i.e.
 \begin{equation}
@@ -117,6 +119,9 @@ the compartment probabilities satisfy
   - \left(h_{\text{antibody gain}} + h_{\text{infection}}\right)
   P_{\mathrm{L}}(a).
 \end{align}
+
+
+\subsection{Analysis}
 
 Integrating the PDEs along the characteristics $r = a - a_0$ gives
 \begin{align}
@@ -270,11 +275,17 @@ method on characteristics and the composite trapezoid rule for the
 integrals \citep{milner_1992}.  Given the age step $\Delta a$,
 for $i \in \{0, 1, 2, \ldots, I - 1\}$ and
 $j \in \{0, 1, 2, \ldots, i\}$, let $a^i = i \Delta a$,
-$r^j = j \Delta a$, $P_X^i \approx P_X(a^i)$, and
-$p_X^{i, j} \approx p_X(a^i, r^j)$.
-For each $i \in \{1, 2, \ldots, I - 1\}$
-and each $j \in \{1, 2, \ldots, i\}$, the
-Crank--Nicolson method on characteristics is
+$P_X^i \approx P_X(a^i)$, and
+$p_X^i \approx p_X(a^i, 0)$.
+For each $i \in \{1, 2, \ldots, I - 1\}$, using the
+Crank--Nicolson method on characteristics and,
+for $Y \in \{\text{progression}, \text{recovery},
+\text{chronic recovery}\}$,
+\begin{equation}
+  p_Y(r^j) = - \frac{\md S_Y}{\md r} (r^j)
+  \approx \frac{S_Y(r^{j - 1}) - S_Y(r^j)}{\Delta a},
+\end{equation}
+gives
 \begin{align}
   P_{\mathrm{M}}^0 &= 1,
   \\
@@ -290,42 +301,39 @@ Crank--Nicolson method on characteristics is
   - h_{\text{infection}}
   \frac{P_{\mathrm{S}}^i + P_{\mathrm{S}}^{i - 1}}{2},
   \displaybreak[0]\\
-  p_{\mathrm{E}}^{0, 0} &= 0,
+  p_{\mathrm{E}}^0 &= 0,
   \\
-  p_{\mathrm{E}}^{i, 0} &= h_{\text{infection}}
+  p_{\mathrm{E}}^i &= h_{\text{infection}}
   \left(\frac{P_{\mathrm{S}}^i + P_{\mathrm{S}}^{i - 1}}{2}
         + \frac{P_{\mathrm{L}}^i + P_{\mathrm{L}}^{i - 1}}{2}\right)
-  \\
-  p_{\mathrm{E}}^{i, j}
-  &= S_{\text{progression}}(r^j) p_{\mathrm{E}}^{i - j, 0},
   \displaybreak[0]\\
-  p_{\mathrm{I}}^{0, 0} &= 0,
+  p_{\mathrm{I}}^0 &= 0,
   \\
-  p_{\mathrm{I}}^{i, 0}
-  &= \sum_{j = 0}^i p_{\text{progression}}(r^j) p_{\mathrm{E}}^{i - j, 0} \Delta a,
-  \\
-  p_{\mathrm{I}}^{i, j}
-  &= S_{\text{recovery}}(r^j) p_{\mathrm{I}}^{i - j, 0},
+  p_{\mathrm{I}}^i
+  &= \sum_{j = 1}^i \left[S_{\text{progression}}(r^{j - 1})
+    - S_{\text{progression}}(r^j)\right]
+  p_{\mathrm{E}}^{i - j},
   \displaybreak[0]\\
-  p_{\mathrm{C}}^{0, 0} &= 0,
+  p_{\mathrm{C}}^0 &= 0,
   \\
-  p_{\mathrm{C}}^{i, 0}
+  p_{\mathrm{C}}^i
   &= p_{\text{chronicity}}
-  \sum_{j = 0}^i p_{\text{recovery}}(r^j) p_{\mathrm{I}}^{i - j, 0} \Delta a,
-  \\
-  p_{\mathrm{C}}^{i, j}
-  &= S_{\text{chronic recovery}}(r^j)
-  p_{\mathrm{C}}^{i - j, 0},
+  \sum_{j = 1}^i \left[S_{\text{recovery}}(r^{j - 1})
+    - S_{\text{recovery}}(r^j)\right]
+  p_{\mathrm{I}}^{i - j},
   \displaybreak[0]\\
   P_{\mathrm{R}}^0 &= 0,
   \\
   \begin{split}
     \frac{P_{\mathrm{R}}^i - P_{\mathrm{R}}^{i - 1}}{\Delta a}
     &= \left(1 - p_{\text{chronicity}}\right)
-    \sum_{j = 0}^i p_{\text{recovery}}(r^j) p_{\mathrm{I}}^{i - j, 0} \Delta a
+    \sum_{j = 1}^i \left[S_{\text{recovery}}(r^{j - 1})
+      - S_{\text{recovery}}(r^j)\right]
+    p_{\mathrm{I}}^{i - j}
     \\ & \quad {}
-    + \sum_{j = 0}^i p_{\text{chronic recovery}}(r^j) p_{\mathrm{C}}^{i - j, 0}
-    \Delta a
+    + \sum_{j = 1}^i \left[S_{\text{chronic recovery}}(r^{j - 1})
+      - S_{\text{chronic recovery}}(r^j)\right]
+    p_{\mathrm{C}}^{i - j}
     \\ & \quad {}
     + h_{\text{antibody gain}}
     \frac{P_{\mathrm{L}}^i + P_{\mathrm{L}}^{i - 1}}{2}
@@ -344,94 +352,6 @@ Crank--Nicolson method on characteristics is
     \frac{P_{\mathrm{L}}^i + P_{\mathrm{L}}^{i - 1}}{2}.
   \end{split}
 \end{align}
-Then
-\begin{align}
-  P_{\mathrm{E}}^0 &= 0,
-  \\
-  P_{\mathrm{E}}^i &= \sum_{j = 0}^i p_{\mathrm{E}}^{i, j} \Delta a
-  = \sum_{j = 0}^i S_{\text{progression}}(r^j) p_{\mathrm{E}}^{i - j, 0} \Delta a,
-  \displaybreak[0]\\
-  P_{\mathrm{I}}^0 &= 0,
-  \\
-  P_{\mathrm{I}}^i &= \sum_{j = 0}^i p_{\mathrm{I}}^{i, j} \Delta a
-  = \sum_{j = 0}^i S_{\text{recovery}}(r^j) p_{\mathrm{I}}^{i - j, 0} \Delta a,
-  \displaybreak[0]\\
-  P_{\mathrm{C}}^0 &= 0,
-  \\
-  P_{\mathrm{C}}^i &= \sum_{j = 0}^i p_{\mathrm{C}}^{i, j} \Delta a
-  = \sum_{j = 0}^i S_{\text{chronic recovery}}(r^j) p_{\mathrm{C}}^{i - j, 0} \Delta a,
-\end{align}
-so that
-\begin{align}
-  \begin{split}
-    \frac{P_{\mathrm{E}}^i - P_{\mathrm{E}}^{i - 1}}{\Delta a}
-    &= \sum_{j = 0}^i p_{\mathrm{E}}^{i, j}
-    - \sum_{j = 0}^{i - 1} p_{\mathrm{E}}^{i - 1, j}
-    \\
-    &= p_{\mathrm{E}}^{i, 0}
-    + \sum_{j = 1}^i p_{\mathrm{E}}^{i, j} - p_{\mathrm{E}}^{i - 1, j - 1}
-    \\
-    &= h_{\text{infection}}
-    \left(\frac{P_{\mathrm{S}}^i + P_{\mathrm{S}}^{i - 1}}{2}
-        + \frac{P_{\mathrm{L}}^i + P_{\mathrm{L}}^{i - 1}}{2}\right)
-    \\ & \quad {}
-    - \sum_{j = 1}^i \left[S_{\text{progression}}(r^{j - 1})
-      - S_{\text{progression}}(r^j)\right]
-    p_{\mathrm{E}}^{i - j, 0},
-  \end{split}
-  \displaybreak[0]\\
-  \begin{split}
-    \frac{P_{\mathrm{I}}^i - P_{\mathrm{I}}^{i - 1}}{\Delta a}
-    &= \sum_{j = 0}^i p_{\mathrm{I}}^{i, j}
-    - \sum_{j = 0}^{i - 1} p_{\mathrm{I}}^{i - 1, j}
-    \\
-    &= p_{\mathrm{I}}^{i, 0}
-    + \sum_{j = 1}^i p_{\mathrm{I}}^{i, j} - p_{\mathrm{I}}^{i - 1, j - 1}
-    \\
-    &= \sum_{j = 0}^i p_{\text{progression}}(r^j) p_{\mathrm{E}}^{i - j, 0}
-    \Delta a
-    \\ & \quad {}
-    - \sum_{j = 1}^i \left[S_{\text{recovery}}(r^{j - 1})
-      - S_{\text{recovery}}(r^j)\right]
-    p_{\mathrm{I}}^{i - j, 0},
-  \end{split}
-  \displaybreak[0]\\
-  \begin{split}
-    \frac{P_{\mathrm{C}}^i - P_{\mathrm{C}}^{i - 1}}{\Delta a}
-    &= \sum_{j = 0}^i p_{\mathrm{C}}^{i, j}
-    - \sum_{j = 0}^{i - 1} p_{\mathrm{C}}^{i - 1, j}
-    \\
-    &= p_{\mathrm{C}}^{i, 0}
-    + \sum_{j = 1}^i p_{\mathrm{C}}^{i, j} - p_{\mathrm{C}}^{i - 1, j - 1}
-    \\
-    &= p_{\text{chronicity}}
-    \sum_{j = 0}^i p_{\text{recovery}}(r^j) p_{\mathrm{I}}^{i - j, 0} \Delta a
-    \\ & \quad {}
-    - \sum_{j = 1}^i \left[S_{\text{chronic recovery}}(r^{j - 1})
-      - S_{\text{chronic recovery}}(r^j)\right]
-    p_{\mathrm{C}}^{i - j, 0}.
-  \end{split}
-\end{align}
-
-TODO: $$p_x(r^j) \Delta a \approx S_x(r^{j - 1}) - S_x(r^j).$$
-
-For
-\begin{equation}
-  P^i = P_{\mathrm{M}}^i + P_{\mathrm{S}}^i + P_{\mathrm{E}}^i
-  + P_{\mathrm{I}}^i + P_{\mathrm{C}}^i + P_{\mathrm{R}}^i
-  + P_{\mathrm{L}}^i,
-\end{equation}
-the boundary terms ensure that
-\begin{align}
-  P^0 &= 1,
-  \\
-  \frac{P^i - P^{i - 1}}{\Delta a} &= 0,
-\end{align}
-so that
-\begin{equation}
-  P^i = 1,
-\end{equation}
-for all $i \in \{1, 2, \ldots, I - 1\}$.
 
 For the variables $P_X$ that are governed by ODEs,
 define the vectors
@@ -450,10 +370,10 @@ define the vectors
 \begin{equation}
   \vec{p}_X =
   \begin{pmatrix}
-    p_X^{0, 0}\\
-    p_X^{1, 0}\\
+    p_X^0\\
+    p_X^1\\
     \vdots\\
-    p_X^{I - 1, 0}
+    p_X^{I - 1}
   \end{pmatrix},
 \end{equation}
 for $X \in \{\mathrm{E}, \mathrm{I}, \mathrm{C}\}$.
@@ -482,45 +402,50 @@ Then for $1 \leq i \leq I - 1$,
     &= 0,
   \end{split}
   \displaybreak[0]\\
-  p_{\mathrm{E}}^{0, 0} &= 0,
+  p_{\mathrm{E}}^0 &= 0,
   \\
   \begin{split}
     - \frac{h_{\text{infection}}}{2} P_{\mathrm{S}}^{i - 1}
     - \frac{h_{\text{infection}}}{2} P_{\mathrm{S}}^i
     \\ {}
-    + p_{\mathrm{E}}^{i, 0}
+    + p_{\mathrm{E}}^i
     \\ {}
     - \frac{h_{\text{infection}}}{2} P_{\mathrm{L}}^{i - 1}
     - \frac{h_{\text{infection}}}{2} P_{\mathrm{L}}^i
     &= 0,
   \end{split}
   \displaybreak[0]\\
-  p_{\mathrm{I}}^{0, 0} &= 0,
+  p_{\mathrm{I}}^0 &= 0,
   \\
-  - \sum_{j = 0}^i
-  p_{\text{progression}}(r^j) \Delta a
-  p_{\mathrm{E}}^{i - j, 0}
-  + p_{\mathrm{I}}^{i, 0}
+  - \sum_{j = 1}^i
+  \left[S_{\text{progression}}(r^{j - 1})
+  - S_{\text{progression}}(r^j)\right]
+  p_{\mathrm{E}}^{i - j}
+  + p_{\mathrm{I}}^i
   &= 0,
   \displaybreak[0]\\
-  p_{\mathrm{C}}^{0, 0} &= 0,
+  p_{\mathrm{C}}^0 &= 0,
   \\
-  - \sum_{j = 0}^i
-  p_{\text{chronicity}} p_{\text{recovery}}(r^j) \Delta a
-  p_{\mathrm{I}}^{i - j, 0}
-  + p_{\mathrm{C}}^{i, 0}
+  - \sum_{j = 1}^i
+  p_{\text{chronicity}} \left[S_{\text{recovery}}(r^{j - 1})
+  - S_{\text{recovery}}(r^j)\right]
+  p_{\mathrm{I}}^{i - j}
+  + p_{\mathrm{C}}^i
   &= 0,
   \displaybreak[0]\\
   P_{\mathrm{R}}^0 &= 0,
   \\
   \begin{split}
-    - \sum_{j = 0}^i
-    \left(1 - p_{\text{chronicity}}\right) p_{\text{recovery}}(r^j) (\Delta a)^2
-    p_{\mathrm{I}}^{i - j, 0}
+    - \sum_{j = 1}^i
+    \left(1 - p_{\text{chronicity}}\right)
+    \left[S_{\text{recovery}}(r^{j - 1})
+      - S_{\text{recovery}}(r^j)\right] \Delta a
+    p_{\mathrm{I}}^{i - j}
     \\ {}
-    - \sum_{j = 0}^i
-    p_{\text{chronic recovery}}(r^j) (\Delta a)^2
-    p_{\mathrm{C}}^{i - j, 0}
+    - \sum_{j = 1}^i
+    \left[S_{\text{chronic recovery}}(r^{j - 1})
+      - S_{\text{chronic recovery}}(r^j)\right] \Delta a
+    p_{\mathrm{C}}^{i - j}
     \\ {}
     - \left[1 - \frac{h_{\text{antibody loss}} \Delta a}{2}\right]
     P_{\mathrm{R}}^{i - 1}
@@ -562,6 +487,103 @@ or
 \begin{equation}
   h \leq \frac{2}{\Delta a}.
 \end{equation}
+
+
+\subsection{Analysis}
+
+The integrals of the PDE variables over $r$ satisfy
+\begin{align}
+  P_{\mathrm{E}}^0 &= 0,
+  \\
+  P_{\mathrm{E}}^i
+  &= \sum_{j = 0}^i S_{\text{progression}}(r^j) p_{\mathrm{E}}^{i - j} \Delta a,
+  \displaybreak[0]\\
+  P_{\mathrm{I}}^0 &= 0,
+  \\
+  P_{\mathrm{I}}^i
+  &= \sum_{j = 0}^i S_{\text{recovery}}(r^j) p_{\mathrm{I}}^{i - j} \Delta a,
+  \displaybreak[0]\\
+  P_{\mathrm{C}}^0 &= 0,
+  \\
+  P_{\mathrm{C}}^i
+  &= \sum_{j = 0}^i S_{\text{chronic recovery}}(r^j) p_{\mathrm{C}}^{i - j} \Delta a,
+\end{align}
+so that
+\begin{align}
+  \begin{split}
+    \frac{P_{\mathrm{E}}^i - P_{\mathrm{E}}^{i - 1}}{\Delta a}
+    &= \sum_{j = 0}^i S_{\text{progression}}(r^j) p_{\mathrm{E}}^{i - j}
+    - \sum_{j = 0}^{i - 1} S_{\text{progression}}(r^j) p_{\mathrm{E}}^{i - 1 - j}
+    \\
+    &= p_{\mathrm{E}}^i
+    - \sum_{j = 1}^i \left[S_{\text{progression}}(r^{j - 1})
+      - S_{\text{progression}}(r^j)\right]
+    p_{\mathrm{E}}^{i - j}
+    \\
+    &= h_{\text{infection}}
+    \left(\frac{P_{\mathrm{S}}^i + P_{\mathrm{S}}^{i - 1}}{2}
+        + \frac{P_{\mathrm{L}}^i + P_{\mathrm{L}}^{i - 1}}{2}\right)
+    \\ & \quad {}
+    - \sum_{j = 1}^i \left[S_{\text{progression}}(r^{j - 1})
+      - S_{\text{progression}}(r^j)\right]
+    p_{\mathrm{E}}^{i - j},
+  \end{split}
+  \displaybreak[0]\\
+  \begin{split}
+    \frac{P_{\mathrm{I}}^i - P_{\mathrm{I}}^{i - 1}}{\Delta a}
+    &= \sum_{j = 0}^i S_{\text{recovery}}(r^j) p_{\mathrm{I}}^{i - j}
+    - \sum_{j = 0}^{i - 1} S_{\text{recovery}}(r^j) p_{\mathrm{I}}^{i - 1 - j}
+    \\
+    &= p_{\mathrm{I}}^i
+    - \sum_{j = 1}^i \left[S_{\text{recovery}}(r^{j - 1})
+      - S_{\text{recovery}}(r^j)\right]
+    p_{\mathrm{I}}^{i - j}
+    \\
+    &= \sum_{j = 1}^i \left[S_{\text{progression}}(r^{j - 1})
+      - S_{\text{progression}}(r^j)\right]
+    p_{\mathrm{E}}^{i - j}
+    \\ & \quad {}
+    - \sum_{j = 1}^i \left[S_{\text{recovery}}(r^{j - 1})
+      - S_{\text{recovery}}(r^j)\right]
+    p_{\mathrm{I}}^{i - j},
+  \end{split}
+  \displaybreak[0]\\
+  \begin{split}
+    \frac{P_{\mathrm{C}}^i - P_{\mathrm{C}}^{i - 1}}{\Delta a}
+    &= \sum_{j = 0}^i S_{\text{chronic recovery}}(r^j) p_{\mathrm{C}}^{i - j}
+    - \sum_{j = 0}^{i - 1} S_{\text{chronic recovery}}(r^j) p_{\mathrm{C}}^{i - 1 - j}
+    \\
+    &= p_{\mathrm{C}}^i
+    - \sum_{j = 1}^i \left[S_{\text{chronic recovery}}(r^{j - 1})
+      - S_{\text{chronic recovery}}(r^j)\right]
+    p_{\mathrm{C}}^{i - j}
+    \\
+    &= p_{\text{chronicity}}
+    \sum_{j = 1}^i \left[S_{\text{recovery}}(r^{j - 1})
+      - S_{\text{recovery}}(r^j)\right] p_{\mathrm{I}}^{i - j}
+    \\ & \quad {}
+    - \sum_{j = 1}^i \left[S_{\text{chronic recovery}}(r^{j - 1})
+      - S_{\text{chronic recovery}}(r^j)\right]
+    p_{\mathrm{C}}^{i - j}.
+  \end{split}
+\end{align}
+Then, for
+\begin{equation}
+  P^i = P_{\mathrm{M}}^i + P_{\mathrm{S}}^i + P_{\mathrm{E}}^i
+  + P_{\mathrm{I}}^i + P_{\mathrm{C}}^i + P_{\mathrm{R}}^i
+  + P_{\mathrm{L}}^i,
+\end{equation}
+we have
+\begin{align}
+  P^0 &= 1,
+  \\
+  \frac{P^i - P^{i - 1}}{\Delta a} &= 0,
+\end{align}
+so that
+\begin{equation}
+  P^i = 1,
+\end{equation}
+for all $i \in \{1, 2, \ldots, I - 1\}$.
 
 
 \bibliography{journal_abbreviations,math_epi}
