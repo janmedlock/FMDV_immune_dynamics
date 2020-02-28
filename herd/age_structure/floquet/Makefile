@@ -15,7 +15,7 @@ LDFLAGS += -lblas
 default: $(MODULE)
 
 %.c:	%.pyx
-	cython $< -o $@
+	cython3 $< -o $@
 
 %$(EXT):	%.o
 	$(CC) $(LDFLAGS) -shared $^ $(LDLIBS) -o $@

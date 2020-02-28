@@ -1,23 +1,20 @@
 '''Estimate the infection hazard from the Hedger 1972 data.'''
 
-from functools import partial
 import os.path
 import re
 
 from joblib import Memory
 import numpy
 import pandas
-from scipy.integrate import quadrature
 from scipy.optimize import minimize
 
-from herd import chronic_recovery, maternal_immunity_waning, parameters
+from herd import parameters
+from herd.initial_conditions import state_probabilities
 
 
 _filename = '../data/Hedger_1972_survey_data.xlsx'
 # It is relative to directory as this source file.
 _filename = os.path.join(os.path.dirname(__file__), _filename)
-
-_quadrature_options = dict(tol=1e-6, rtol=1e-6, maxiter=2000)
 
 
 def _load_data(params):
@@ -58,155 +55,33 @@ def _load_data(params):
     return data
 
 
-def _S_logprob_integrand(b, hazard_infection, maternal_immunity_waningRV):
-    '''The integrand is
-    Prob{Transitioning from M to S at age b}
-      * exp(hazard_infection * b)
-    = exp(\log Prob{Transitioning from M to S at age b}
-          + hazard_infection * b).'''
-    return numpy.exp(maternal_immunity_waningRV.logpdf(b)
-                     + hazard_infection * b)
-
-
-def _vectorize(**kwds):
-    '''Decorator to vectorize a scalar function.'''
-    # Just make `numpy.vectorize()` easier to use as a decorator.
-    return partial(numpy.vectorize, **kwds)
-
-
-# Make the function able to handle vector-valued `age`.
-@_vectorize(otypes=[float])
-def _S_logprob_integral(age, hazard_infection, params):
-    maternal_immunity_waningRV = maternal_immunity_waning.gen(params)
-    val, _ = quadrature(_S_logprob_integrand, 0, age,
-                        args=(hazard_infection, maternal_immunity_waningRV),
-                        **_quadrature_options)
-    return val
-
-
-def S_logprob(age, hazard_infection, params):
-    '''The logarithm of the probability of being susceptible at age `a`.
-    This is
-    \log \int_0^a Prob{Transitioning from M to S at age b}
-                  * exp(- hazard_infection * (a - b)) db
-    = \log \int_0^a Prob{Transitioning from M to S at age b}
-                    * exp(hazard_infection * b) db
-      - hazard_infection * a.'''
-    assert hazard_infection >= 0, hazard_infection
-    # Handle log(0).
-    return numpy.ma.filled(
-        numpy.ma.log(_S_logprob_integral(age, hazard_infection, params))
-        - hazard_infection * age,
-        - numpy.inf)
-
-
-def S_prob(age, hazard_infection, params):
-    '''The probability of being susceptible at age `a`.'''
-    return numpy.exp(S_logprob(age, hazard_infection, params))
-
-
-def _C_logprob_integrand(b, a, hazard_infection, params, chronic_recoveryRV):
-    return numpy.exp(S_logprob(b, hazard_infection, params)
-                     + chronic_recoveryRV.logsf(a - b))
-
-
-# Make the function able to handle vector-valued `age`.
-@_vectorize(otypes=[float])
-def _C_logprob_integral(age, hazard_infection, params):
-    chronic_recoveryRV = chronic_recovery.gen(params)
-    val, _ = quadrature(
-        _C_logprob_integrand, 0, age,
-        args=(age, hazard_infection, params, chronic_recoveryRV),
-        **_quadrature_options)
-    return val
-
-
-def C_logprob(age, hazard_infection, params):
-    '''The logarithm of the probability of being chronically infected
-    at age `a`.  This is
-    \log \int_0^a Prob{Infection at age b}
-                  * probabilty_chronic
-                  * Prob{survival in chronically infected for (a - b)} db
-    = \log \int_0^a Prob{In S at age b}
-                    * hazard_infection
-                    * probabilty_chronic
-                    * Prob{survival in chronically infected for (a - b)} db
-    = \log \int_0^a Prob{In S at age b}
-                    * Prob{survival in chronically infected for (a - b)} db
-      + \log hazard_infection
-      + \log probabilty_chronic.'''
-    assert hazard_infection >= 0, hazard_infection
-    if params.model != 'chronic':
-        # Shortcut to probability = 0.
-        return - numpy.inf * numpy.ones_like(age)
-    # Handle log(0).
-    return numpy.ma.filled(
-        numpy.ma.log(_C_logprob_integral(age, hazard_infection, params))
-        + numpy.ma.log(hazard_infection)
-        + numpy.ma.log(params.probability_chronic),
-        - numpy.inf)
-
-
-def C_prob(age, hazard_infection, params):
-    '''The probability of being chronically infected at age `a`.'''
-    return numpy.exp(C_logprob(age, hazard_infection, params))
-
-
-def P_logprob(age, hazard_infection, params):
-    '''The logarithm of the probability of having reduced antibodies
-    at age `a`.  This is
-    \log \int_0^a Prob{Infection at age b}
-                  * probabilty_chronic
-                  * Prob{survival in chronically infected for (a - b)} db
-    = \log \int_0^a Prob{In S at age b}
-                    * hazard_infection
-                    * probabilty_chronic
-                    * Prob{survival in chronically infected for (a - b)} db
-    = \log \int_0^a Prob{In S at age b}
-                    * Prob{survival in chronically infected for (a - b)} db
-      + \log hazard_infection
-      + \log probabilty_chronic.'''
-    assert hazard_infection >= 0, hazard_infection
-    if params.model != 'chronic':
-        # Shortcut to probability = 0.
-        return - numpy.inf * numpy.ones_like(age)
-    # Handle log(0).
-    return numpy.ma.filled(
-        numpy.ma.log(_C_logprob_integral(age, hazard_infection, params))
-        + numpy.ma.log(hazard_infection)
-        + numpy.ma.log(params.probability_chronic),
-        - numpy.inf)
-
-
-def P_prob(age, hazard_infection, params):
-    '''The probability of having reduced antibodies at age `a`.'''
-    raise NotImplementedError
-
-
 def minus_loglikelihood(hazard_infection, params, data):
     '''This gets optimized over `hazard_infection`.'''
     # Convert the length-1 `hazard_infection` to a scalar Python float,
     # (not a size-() `numpy.array()`).
     hazard_infection = numpy.squeeze(hazard_infection)[()]
-    maternal_immunity_waningRV = maternal_immunity_waning.gen(params)
     l = 0
     # Loop over age groups.
     for age_interval, data_age in data.iterrows():
         # Consider doing something better to get the
         # representative age for an age interval.
         age = age_interval.mid
-        M_logprob = maternal_immunity_waningRV.logsf(age)
+        M_logprob = state_probabilities.M_logprob(age,
+                                                  hazard_infection,
+                                                  params)
         # Avoid 0 * -inf.
         l += ((data_age['M'] * M_logprob)
               if (data_age['M'] > 0)
               else 0)
-        S_logprob_ = S_logprob(age, hazard_infection, params)
+        S_logprob = state_probabilities.S_logprob(age,
+                                                  hazard_infection,
+                                                  params)
         # Avoid 0 * -inf.
-        l += ((data_age['S'] * S_logprob_)
+        l += ((data_age['S'] * S_logprob)
               if (data_age['S'] > 0)
               else 0)
         # R_not_prob = 1 - R_prob.
-        R_not_prob = numpy.exp(M_logprob) + numpy.exp(S_logprob_)
+        R_not_prob = numpy.exp(M_logprob) + numpy.exp(S_logprob)
         # R_logprob = numpy.log(1 - R_not_prob)
         # but more accurate for R_not_prob near 0,
         # and handle log(0).
@@ -228,7 +103,7 @@ def minus_loglikelihood(hazard_infection, params, data):
 _cachedir = os.path.join(os.path.dirname(__file__), '_cache')
 _cache = Memory(_cachedir, verbose=0)
 @_cache.cache
-def _find_hazard_infection(params):
+def _find_hazard(params):
     '''Find the MLE for the infection hazard.'''
     data = _load_data(params)
     x0 = 0.4
@@ -243,7 +118,7 @@ def _find_hazard_infection(params):
 
 class CacheParameters(parameters.Parameters):
     '''Build a `herd.parameters.Parameters()`-like object that
-    only has the parameters needed by `_find_hazard_infection()`
+    only has the parameters needed by `_find_hazard()`
     so that it can be efficiently cached.'''
     def __init__(self, params):
         self.model = params.model
@@ -257,9 +132,9 @@ class CacheParameters(parameters.Parameters):
             params.maternal_immunity_duration_shape)
 
 
-def find_hazard_infection(params):
+def find_hazard(params):
     '''Find the MLE for the infection hazard for each SAT.'''
-    return _find_hazard_infection(CacheParameters(params))
+    return _find_hazard(CacheParameters(params))
 
 
 def find_AIC(hazard_infection, params):
@@ -275,7 +150,10 @@ def plot(hazard_infection, params, CI=0.5, show=True, label=None, **kwds):
     from scipy.stats import beta
     data = _load_data(params)
     ages = numpy.linspace(0, data.index[-1].right, 301)
-    lines = pyplot.plot(ages, S_prob(ages, hazard_infection, params))
+    lines = pyplot.plot(ages,
+                        state_probabilities.S_prob(ages,
+                                                   hazard_infection,
+                                                   params))
     color = lines[0].get_color()
     S = data['S']
     N = data.sum(axis=1)

@@ -2,44 +2,42 @@ import numpy
 import pandas
 from scipy.stats import multinomial
 
-from herd import age_structure, maternal_immunity_waning
-from herd.initial_conditions import estimate
+from herd import age_structure, parameters
+from herd.initial_conditions import infection, state_probabilities
 
 
 class gen:
-    '''This all assumes that progression (E -> I) and recovery (I -> C/R)
-    are fast compared to the other processes.
-    It also assumes that all newborns have maternal antibodies (M).'''
+    '''This assumes that all newborns have maternal antibodies (M).'''
     def __init__(self, parameters):
         self.parameters = parameters
         # Reuse these in case we call rvs() repeatedly.
         self.age_structureRV = age_structure.gen(self.parameters)
-        self.maternal_immunity_waningRV = maternal_immunity_waning.gen(
-            self.parameters)
-        self.hazard_infection = estimate.find_hazard_infection(
+        self.hazard_infection = infection.find_hazard(
             self.parameters)
 
     def _M_prob(self, age):
         '''Probability of being in M, i.e. having maternal immunity.'''
-        return self.maternal_immunity_waningRV.sf(age)
+        return state_probabilities.M_prob(age,
+                                          self.hazard_infection,
+                                          self.parameters)
 
     def _S_prob(self, age):
         '''Probability of being in S, i.e. susceptible.'''
-        return estimate.S_prob(age,
-                               self.hazard_infection,
-                               self.parameters)
+        return state_probabilities.S_prob(age,
+                                          self.hazard_infection,
+                                          self.parameters)
 
     def _C_prob(self, age):
         '''Probability of being in C, i.e. chronically infected.'''
-        return estimate.C_prob(age,
-                               self.hazard_infection,
-                               self.parameters)
+        return state_probabilities.C_prob(age,
+                                          self.hazard_infection,
+                                          self.parameters)
 
-    def _P_prob(self, age):
-        '''Probability of being in P, i.e. having reduced antibodies.'''
-        return estimate.P_prob(age,
-                               self.hazard_infection,
-                               self.parameters)
+    def _L_prob(self, age):
+        '''Probability of being in L, i.e. having reduced antibodies.'''
+        return state_probabilities.L_prob(age,
+                                          self.hazard_infection,
+                                          self.parameters)
 
     def _proportion(self, age):
         if numpy.ndim(age) == 0:
@@ -51,7 +49,7 @@ class gen:
         status['exposed'] = 0
         status['infectious'] = 0
         status['chronic'] = self._C_prob(age)
-        status['partial immunity'] = self._P_prob(age)
+        status['lost immunity'] = self._L_prob(age)
         # The remaining proportion are recovered.
         # Sum over the statuses.
         not_R = status.sum(axis=(status.ndim - 1))

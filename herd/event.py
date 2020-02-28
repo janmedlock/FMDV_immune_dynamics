@@ -116,7 +116,7 @@ class MaternalImmunityWaning(Event):
 
 class Infection(Event):
     '''A buffalo becoming infected.'''
-    can_be_infected = {'susceptible', 'partial immunity'}
+    can_be_infected = {'susceptible', 'lost immunity'}
 
     def is_valid(self):
         return self.buffalo.immune_status in self.can_be_infected
@@ -211,7 +211,7 @@ class AntibodyLoss(Event):
         return self.buffalo.immune_status == 'recovered'
 
     def do(self):
-        self.buffalo.change_immune_status_to('partial immunity')
+        self.buffalo.change_immune_status_to('lost immunity')
         self.buffalo.events.add(AntibodyGain(self.buffalo))
         self.buffalo.events.add(Infection(self.buffalo))
 
@@ -222,7 +222,7 @@ class AntibodyLoss(Event):
 
 class AntibodyGain(Event):
     def is_valid(self):
-        return self.buffalo.immune_status == 'partial immunity'
+        return self.buffalo.immune_status == 'lost immunity'
 
     def remove_infection(self):
         for e in self.buffalo.events:

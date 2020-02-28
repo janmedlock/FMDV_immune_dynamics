@@ -29,7 +29,7 @@ import numpy
 from scipy import sparse
 
 from herd import birth, mortality, parameters, utility
-from herd.floquet.period import period
+from herd.age_structure.floquet import period
 
 
 class _CSR_Matrix(sparse.csr_matrix):
@@ -62,7 +62,7 @@ class Parameters(parameters.Parameters):
         # `period` so that it is in [0, period).
         self.birth_normalized_peak_time_of_year = float(
             (params.birth_peak_time_of_year - params.start_time)
-            % period)
+            % period.get())
         self.birth_seasonal_coefficient_of_variation = float(
             params.birth_seasonal_coefficient_of_variation)
         self.female_probability_at_birth = float(
@@ -111,7 +111,7 @@ class Solver:
         self.params = solver_params
         self.ages = utility.arange(0, agemax, agestep, endpoint=True)
         tstep = agestep
-        self._t = utility.arange(0, period, tstep, endpoint=True)
+        self._t = utility.arange(0, period.get(), tstep, endpoint=True)
         mortalityRV = mortality.from_param_values()
         self._init_crank_nicolson(tstep, mortalityRV)
         self._init_births(agestep)

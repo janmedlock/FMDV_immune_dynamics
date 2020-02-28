@@ -10,7 +10,7 @@ import seaborn
 import herd
 import herd.age_structure
 import herd.birth
-import herd.floquet.floquet
+from herd.age_structure.floquet.floquet import _agemax_default
 import herd.maternal_immunity_waning
 import herd.mortality
 import herd.rv
@@ -43,7 +43,7 @@ class SusceptibleRecruitment(herd.rv.RV):
         # b(t) = p_{birth}(t, a0)
         #        \int_{a0}^{\infty} n(a - t)
         #                           S_{mortality}(a) / S_{mortality}(a - t) da.
-        a1 = herd.floquet.floquet._agemax_default
+        a1 = _agemax_default
         # `self._age_structure` is 1-y periodic, so
         # \int_a0^{\infty} n(a - t)
         #                  S_{mortality}(a) / S_{mortality}(a - t)
