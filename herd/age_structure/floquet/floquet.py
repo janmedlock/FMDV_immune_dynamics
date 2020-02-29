@@ -5,8 +5,8 @@ import numpy
 from scipy.integrate import trapz
 from scipy.optimize import brentq
 
+from herd import periods
 from herd.age_structure.floquet import dominant_eigen, monodromy
-from herd.age_structure.floquet import period
 
 
 _agemax_default = 35
@@ -52,7 +52,7 @@ def _find_dominant_eigen(birth_scaling, solver_parameters,
     # rho0 is the dominant (largest magnitude) Floquet multiplier.
     # mu0 is the dominant (largest real part) Floquet exponent.
     # They are related by rho0 = exp(mu0 * T).
-    mu0 = numpy.log(rho0) / period.get()
+    mu0 = numpy.log(rho0) / periods.get_period()
     # v0 is the eigenvector for both rho0 and mu0.
     _normalize_to_density(v0, solver.ages)
     return (mu0, v0, solver.ages)

@@ -2,6 +2,8 @@ NAME := monodromy
 EXT += $(shell python3-config --extension-suffix)
 MODULE := $(NAME)$(EXT)
 
+CC := gcc-8
+
 # Suppress NPY_NO_DEPRECATED_API #warning.
 CPPFLAGS := -Wno-cpp
 

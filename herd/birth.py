@@ -1,13 +1,19 @@
 import numpy
 from scipy import optimize
 
+from herd import periods
+# Import in `gen()` to avoid an import loop.
+# from herd.age_structure import find_birth_scaling
 from herd.rv import RV
-from herd.age_structure.floquet import find_birth_scaling
-from herd.birth import period
+
+
+# The code below is not tested at all for `period != 1`!
+period = 1
+periods.periods.append(period)
 
 
 def fracpart(x, out=None):
-    return numpy.ma.mod(x, period.period, out=out)
+    return numpy.ma.mod(x, period, out=out)
 
 
 def get_seasonal_coefficient_of_variation_from_gap_size(g):
@@ -44,6 +50,8 @@ class gen(RV):
             self._beta = (3 / 4
                           * (1 + self.seasonal_coefficient_of_variation ** 2))
         if _scaling is None:
+            # Import here to avoid an import loop.
+            from herd.age_structure import find_birth_scaling
             _scaling = find_birth_scaling(parameters,
                                           *args,
                                           **kwargs)
