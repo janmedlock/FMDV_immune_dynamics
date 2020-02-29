@@ -16,4 +16,4 @@
 *.h5
 __pycache__/
 _cache/
-/herd/age_structure/floquet/monodromy*.so
+/herd/floquet/monodromy*.so

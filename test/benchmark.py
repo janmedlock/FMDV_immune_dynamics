@@ -10,10 +10,10 @@ import sys
 sys.path.append('..')
 
 # Rebuild the 'monodromy' module, if necessary.
-subprocess.run(['make'], cwd='../herd/age_structure/floquet', check=True)
+subprocess.run(['make'], cwd='../herd/floquet', check=True)
 
 from herd import age_structure, mortality, Parameters
-from herd.age_structure.floquet import floquet
+from herd.floquet import floquet
 from herd.utility import arange
 
 

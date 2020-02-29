@@ -6,7 +6,7 @@ from scipy.integrate import trapz
 from scipy.optimize import brentq
 
 from herd import periods
-from herd.age_structure.floquet import dominant_eigen, monodromy
+from herd.floquet import dominant_eigen, monodromy
 
 
 _agemax_default = 35

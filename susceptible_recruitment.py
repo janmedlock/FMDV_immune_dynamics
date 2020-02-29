@@ -10,7 +10,7 @@ import seaborn
 import herd
 import herd.age_structure
 import herd.birth
-from herd.age_structure.floquet.floquet import _agemax_default
+from herd.floquet.floquet import _agemax_default
 import herd.maternal_immunity_waning
 import herd.mortality
 import herd.rv
