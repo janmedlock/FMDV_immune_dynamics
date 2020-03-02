@@ -137,7 +137,7 @@ def plot(hazard_infection, params, CI=0.5, show=True, label=None, **kwds):
     data = _load_data(params)
     ages = numpy.linspace(0, data.index[-1].right, 301)
     prob = status.probability(agess, hazard_infection, params)
-    pyplot.plot(ages, prob['susceptible'], color='C0')
+    pyplot.plot(ages, prob['susceptible'], color='C0', **kwds)
     S = data['susceptible']
     N = data.sum(axis='columns')
     p_bar = S / N
