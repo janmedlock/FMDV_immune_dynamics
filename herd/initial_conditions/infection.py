@@ -9,7 +9,7 @@ import pandas
 from scipy.optimize import minimize
 
 from herd import parameters
-from herd.initial_conditions import state_probabilities
+from herd.initial_conditions import status
 
 
 _filename = '../data/Hedger_1972_survey_data.xlsx'
@@ -37,62 +37,48 @@ def _load_data(params):
     data = data.mul(N, axis='index').astype(int)
     # Use the multiindex (SAT, status) for the columns.
     column_re = re.compile(r'^%(.*) - SAT(.*)$')
+    status_map = {'M': 'maternal immunity',
+                  'S': 'susceptible',
+                  'I': 'infectious',
+                  'C': 'chronic',
+                  'R': 'recovered'}
     tuples = []
     for c in data.columns:
         m = column_re.match(c)
-        status, SAT = m.groups()
-        tuples.append((int(SAT), status))
+        status_, SAT = m.groups()
+        tuples.append((int(SAT), status_map[status_]))
     data.columns = pandas.MultiIndex.from_tuples(tuples,
                                                  names=['SAT', 'status'])
     # Add SATs together into pooled data.
     data = data.sum(axis='columns', level='status')
-    # The algorithm below only needs to know whether buffalo are
-    # maternal immune (M), susceptible (S), or have been infected (R).
-    # Add I and C to R and drop I and C.
-    ICR = data.reindex(['I', 'C', 'R'], axis='columns', fill_value=0)
-    data['R'] = ICR.sum(axis='columns')
-    data.drop(columns=['I', 'C'], errors='ignore', inplace=True)
     return data
 
 
-def minus_loglikelihood(hazard_infection, params, data):
+def _minus_loglikelihood(hazard_infection, params, data):
     '''This gets optimized over `hazard_infection`.'''
     # Convert the length-1 `hazard_infection` to a scalar Python float,
     # (not a size-() `numpy.array()`).
     hazard_infection = numpy.squeeze(hazard_infection)[()]
-    l = 0
-    # Loop over age groups.
-    for age_interval, data_age in data.iterrows():
-        # Consider doing something better to get the
-        # representative age for an age interval.
-        age = age_interval.mid
-        M_logprob = state_probabilities.M_logprob(age,
-                                                  hazard_infection,
-                                                  params)
-        # Avoid 0 * -inf.
-        l += ((data_age['M'] * M_logprob)
-              if (data_age['M'] > 0)
-              else 0)
-        S_logprob = state_probabilities.S_logprob(age,
-                                                  hazard_infection,
-                                                  params)
-        # Avoid 0 * -inf.
-        l += ((data_age['S'] * S_logprob)
-              if (data_age['S'] > 0)
-              else 0)
-        # R_not_prob = 1 - R_prob.
-        R_not_prob = numpy.exp(M_logprob) + numpy.exp(S_logprob)
-        # R_logprob = numpy.log(1 - R_not_prob)
-        # but more accurate for R_not_prob near 0,
-        # and handle log(0).
-        R_logprob = (numpy.log1p(- R_not_prob)
-                     if (R_not_prob < 1)
-                     else (- numpy.inf))
-        # Avoid 0 * -inf.
-        l += ((data_age['R'] * R_logprob)
-              if (data_age['R'] > 0)
-              else 0)
-    return -l
+    # Consider doing something better to get the
+    # representative age for an age interval.
+    ages_mid = data.index.mid
+    prob = status.probability(ages_mid, hazard_infection, parameters)
+    prob.set_axis(data.index, axis='index', inplace=True)
+    # 'exposed' and 'lost immunity' aren't in the data.
+    # Combine 'exposed' into 'infectious'.
+    prob['infectious'] += prob['exposed']
+    # Combine 'lost immunity' into 'recovered'.
+    prob['recovered'] += prob['lost immunity']
+    prob.drop(columns=['exposed', 'lost immunity'], inplace=True)
+    log_prob = prob.apply(numpy.log)
+    # The likelihood is \prod prob_ij ^ data_ij
+    # so the loglikelihood is \sum log_prob_ij * data_ij.
+    # `pandas.DataFrame.sum()` drops NaNs,
+    # which arise here where
+    # log_prob = -inf and data = 0, or prob = 0 and data = 0,
+    # which gives prob ^ data = 1, or log_prob * data = 0,
+    # which is equivalent to being dropped.
+    return - (log_prob * data).sum().sum()
 
 
 # The function is very slow because of the call to
@@ -107,7 +93,7 @@ def _find_hazard(params):
     '''Find the MLE for the infection hazard.'''
     data = _load_data(params)
     x0 = 0.4
-    res = minimize(minus_loglikelihood, x0,
+    res = minimize(_minus_loglikelihood, x0,
                    args=(params, data),
                    bounds=[(0, numpy.inf)])
     assert res.success, res
@@ -141,7 +127,7 @@ def find_AIC(hazard_infection, params):
     data = _load_data(params)
     # The model has 1 parameter, hazard_infection.
     n_params = 1
-    mll = minus_loglikelihood(hazard_infection, params, data)
+    mll = _minus_loglikelihood(hazard_infection, params, data)
     return 2 * mll + 2 * n_params
 
 
@@ -150,19 +136,16 @@ def plot(hazard_infection, params, CI=0.5, show=True, label=None, **kwds):
     from scipy.stats import beta
     data = _load_data(params)
     ages = numpy.linspace(0, data.index[-1].right, 301)
-    lines = pyplot.plot(ages,
-                        state_probabilities.S_prob(ages,
-                                                   hazard_infection,
-                                                   params))
-    color = lines[0].get_color()
-    S = data['S']
-    N = data.sum(axis=1)
+    prob = status.probability(agess, hazard_infection, params)
+    pyplot.plot(ages, prob['susceptible'], color='C0')
+    S = data['susceptible']
+    N = data.sum(axis='columns')
     p_bar = S / N
     p_err = numpy.stack(
         (p_bar - beta.ppf(CI / 2, S + 1, N - S + 1),
          beta.ppf(1 - CI / 2, S + 1, N - S + 1) - p_bar))
     pyplot.errorbar(data.index.mid, p_bar, yerr=p_err,
-                    label=label, color=color,
+                    label=label, color='C0',
                     marker='_', linestyle='dotted',
                     **kwds)
     pyplot.xlabel(data.index.name)
