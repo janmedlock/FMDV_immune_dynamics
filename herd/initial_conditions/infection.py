@@ -62,7 +62,7 @@ def _minus_loglikelihood(hazard_infection, params, data):
     # Consider doing something better to get the
     # representative age for an age interval.
     ages_mid = data.index.mid
-    prob = status.probability(ages_mid, hazard_infection, parameters)
+    prob = status.probability(ages_mid, hazard_infection, params)
     prob.set_axis(data.index, axis='index', inplace=True)
     # 'exposed' and 'lost immunity' aren't in the data.
     # Combine 'exposed' into 'infectious'.
@@ -112,10 +112,34 @@ class CacheParameters(parameters.Parameters):
         # floats, so explicitly convert them so the cache doesn't
         # get duplicated keys for the float and int representation
         # of the same number, e.g. `float(0)` and `int(0)`.
+        self.antibody_gain_hazard = float(
+            params.antibody_gain_hazard)
+        self.antibody_loss_hazard_alpha = float(
+            params.antibody_loss_hazard_alpha)
+        self.antibody_loss_hazard_beta = float(
+            params.antibody_loss_hazard_beta)
+        self.antibody_loss_hazard_time_max = float(
+            params.antibody_loss_hazard_time_max)
+        self.antibody_loss_hazard_time_min = float(
+            params.antibody_loss_hazard_time_min)
+        self.chronic_recovery_mean = float(
+            params.chronic_recovery_mean)
+        self.chronic_recovery_shape = float(
+            params.chronic_recovery_shape)
         self.maternal_immunity_duration_mean = float(
             params.maternal_immunity_duration_mean)
         self.maternal_immunity_duration_shape = float(
             params.maternal_immunity_duration_shape)
+        self.probability_chronic = float(
+            params.probability_chronic)
+        self.progression_mean = float(
+            params.progression_mean)
+        self.progression_shape = float(
+            params.progression_shape)
+        self.recovery_mean = float(
+            params.recovery_mean)
+        self.recovery_shape = float(
+            params.recovery_shape)
 
 
 def find_hazard(params):
@@ -136,7 +160,7 @@ def plot(hazard_infection, params, CI=0.5, show=True, label=None, **kwds):
     from scipy.stats import beta
     data = _load_data(params)
     ages = numpy.linspace(0, data.index[-1].right, 301)
-    prob = status.probability(agess, hazard_infection, params)
+    prob = status.probability(ages, hazard_infection, params)
     pyplot.plot(ages, prob['susceptible'], color='C0', **kwds)
     S = data['susceptible']
     N = data.sum(axis='columns')

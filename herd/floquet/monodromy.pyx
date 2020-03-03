@@ -23,7 +23,7 @@ So that the cache keys only depend on the relevant parts of
 `herd.parameters.Parameters()` and so that the setup can be reused in
 `_find_birth_scaling()`, the solver is called in 3 steps:
 >>> solver_parameters = monodromy.Parameters(parameters)
->>> solver = monodromy.Solver(solver_parameters, agemax, agestep)
+>>> solver = monodromy.Solver(solver_parameters, step, age_max)
 >>> PhiT = solver.solve(birth_scaling)
 where `parameters` is a `herd.parameters.Parameters()` instance.'''
 
@@ -172,32 +172,30 @@ cdef class Solver:
 
     def __cinit__(Solver self,
                   Parameters solver_params,
-                  const double agemax,
-                  const double agestep):
+                  const double step,
+                  const double age_max):
         cdef:
-            double tstep
             object mortalityRV
         self.params = solver_params
-        self.ages = utility.arange(0, agemax, agestep, endpoint=True)
+        self.ages = utility.arange(0, age_max, step, endpoint=True)
         # The memoryview will be convenient...
         self._ages = self.ages
-        tstep = agestep
-        self._t = utility.arange(0, periods.get_period(), tstep, endpoint=True)
+        self._t = utility.arange(0, periods.get_period(), step, endpoint=True)
         mortalityRV = mortality.from_param_values()
-        self._init_crank_nicolson(tstep, mortalityRV)
-        self._init_births(agestep)
+        self._init_crank_nicolson(step, mortalityRV)
+        self._init_births(step)
 
     @classmethod
     def from_parameters(type cls,
                         object params,
-                        const double agemax,
-                        const double agestep):
+                        const double step,
+                        const double age_max):
         '''Build a `Solver()` instance using `herd.parameters.Parameters()`
         directly.'''
         cdef:
             Parameters solver_params
         solver_params = Parameters(params)
-        return cls(solver_params, agemax, agestep)
+        return cls(solver_params, step, age_max)
 
     cdef inline bint _set_initial_condition(Solver self,
                                             const double t_n,
@@ -219,7 +217,7 @@ cdef class Solver:
 
     @cython.wraparound(True)
     cdef inline bint _init_births(Solver self,
-                                  const double agestep) nogil except False:
+                                  const double step) nogil except False:
         '''The trapezoid rule for the birth integral for i = 0,
         u_0^n = \sum_j (b_j^n u_j^n + b_{j + 1}^n u_{j + 1}^n) * da / 2.
         This can be written as
@@ -231,8 +229,7 @@ cdef class Solver:
         with gil:
             # `numpy.empty()` requires the GIL.
             self._v_trapezoid = numpy.empty(self._ages.shape[0])
-        self._v_trapezoid[:] = (agestep
-                                * self.params.female_probability_at_birth)
+        self._v_trapezoid[:] = self.params.female_probability_at_birth * step
         self._v_trapezoid[0] /= 2
         self._v_trapezoid[-1] /= 2
         return True
@@ -272,7 +269,7 @@ cdef class Solver:
 
     @cython.wraparound(True)
     cdef inline bint _init_crank_nicolson(Solver self,
-                                          const double tstep,
+                                          const double step,
                                           object mortalityRV) except False:
         '''The Crank–Nicolson method is
         (u_i^n - u_{i - 1}^{n - 1}) / dt
@@ -294,11 +291,11 @@ cdef class Solver:
         M = sparse.lil_matrix((self._ages.shape[0], self._ages.shape[0]))
         # Midpoints between adjacent ages.
         ages_mid = (self.ages[1:] + self.ages[:-1]) / 2
-        k = mortalityRV.hazard(ages_mid) * tstep / 2
+        k = mortalityRV.hazard(ages_mid) * step / 2
         # Set the first subdiagonal.
         M.setdiag((1 - k) / (1 + k), -1)
         # Keep the last age group from ageing out.
-        k_last = mortalityRV.hazard(self.ages[-1]) * tstep / 2
+        k_last = mortalityRV.hazard(self.ages[-1]) * step / 2
         M[-1, -1] = (1 - k_last) / (1 + k_last)
         self._M_crank_nicolson = _CSR_Matrix(M)
         return True

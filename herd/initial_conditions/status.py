@@ -5,24 +5,18 @@ import numpy.lib.recfunctions
 import pandas
 from scipy import sparse
 
-from herd import utility
+from herd import (antibody_gain, antibody_loss, chronic_recovery,
+                  maternal_immunity_waning, progression, recovery, utility)
 
 
-def probability(age, hazard_infection, parameters):
-    '''The probability of being in each immune status at age `a`,
-    given being alive at age `a`.'''
-    # TODO: Filler for now.
-    index = pandas.Index(numpy.atleast_1d(age),
-                         name='age')
-    columns = ('maternal immunity', 'susceptible', 'exposed',
-               'infectious', 'chronic', 'recovered', 'lost immunity')
-    status = pandas.DataFrame(1 / len(columns),
-                              index=index,
-                              columns=columns)
-    assert (status >= 0).all()
-    assert numpy.isclose(status.sum(axis='columns'), 1).all()
-    return status
+_step_default = 0.01
+_age_max_default = 20
 
+
+def _interpolate(df, index):
+    return (df.reindex(df.index.union(index))
+              .interpolate()
+              .loc[index])
 
 class Block:
     '''Get a block row A_X of A and block b_X of b.'''
@@ -68,9 +62,9 @@ class BlockODE(Block):
     def get_A_XX(self, hazard_out):
         '''Get the diagonal block `A_XX` that maps state X to itself.'''
         # The values on the diagonal.
-        d_0 = 1 + hazard_out * self.solver.age_step / 2
+        d_0 = 1 + hazard_out * self.solver.step / 2
         # The values on the subdiagonal.
-        d_1 = - 1 + hazard_out * self.solver.age_step / 2
+        d_1 = - 1 + hazard_out * self.solver.step / 2
         assert (d_1 <= 0).all()
         return sparse.diags([numpy.hstack([1, d_0]), d_1], [0, -1],
                             shape=(len(self), len(self)))
@@ -79,7 +73,7 @@ class BlockODE(Block):
         '''Get the off-diagonal block `A_XY` that maps state Y to X,
         where Y is a variable governed by an ODE.'''
         # The values on the diagonal and subdiagonal.
-        d = - hazard_in * self.solver.age_step / 2
+        d = - hazard_in * self.solver.step / 2
         return sparse.diags([numpy.hstack([0, d]), d], [0, -1],
                             shape=(len(self), self.solver.length_ODE))
 
@@ -90,7 +84,7 @@ class BlockODE(Block):
         dS = - numpy.diff(survival_in)
         for i in range(1, self.solver.length_ODE):
             j = numpy.arange(1, i + 1)
-            A_XY[i, i - j] = - dS[j - 1] * self.solver.age_step
+            A_XY[i, i - j] = - dS[j - 1] * self.solver.step
         return A_XY
 
 
@@ -127,7 +121,7 @@ class BlockPDE(Block):
             j = numpy.arange(i + 1)
             P_X[i] = (numpy.dot(survival_out[j],
                                 p_X[i - j])
-                      * self.solver.age_step)
+                      * self.solver.step)
         return P_X
 
 
@@ -255,15 +249,15 @@ class Solver:
                  'R': 'recovered',
                  'L': 'lost immunity'}
 
-    def __init__(self, hazard_infection, RVs, age_max, age_step):
-        self.age_max = age_max
-        self.age_step = age_step
-        self.ages = utility.arange(0, self.age_max, self.age_step,
+    def __init__(self, hazard_infection, parameters,
+                 step=_step_default, age_max=_age_max_default):
+        self.step = step
+        self.ages = utility.arange(0, age_max, self.step,
                                    endpoint=True)
         assert len(self.ages) > 1
         self.ages_mid = (self.ages[ : -1] + self.ages[1 : ]) / 2
         self.length_ODE = self.length_PDE = len(self.ages)
-        self.set_params(hazard_infection, RVs)
+        self.set_params(hazard_infection, parameters)
         self.set_blocks()
 
     @staticmethod
@@ -272,25 +266,29 @@ class Solver:
             numpy.broadcast_arrays(*kwds.values()),
             names=list(kwds.keys()))
 
-    def set_params(self, hazard_infection, RVs):
-        waiting_times = {'maternal_immunity_waning',
-                         'progression',
-                         'recovery',
-                         'chronic_recovery',
-                         'antibody_gain'}
-        hazard = {}
-        survival = {}
-        for k in waiting_times:
-            RV = getattr(RVs, k)
-            with numpy.errstate(divide='ignore'):
-                hazard[k] = RV.hazard(self.ages_mid)
-            survival[k] = RV.sf(self.ages)
+    def set_params(self, hazard_infection, parameters):
+        RVs = {'maternal_immunity_waning':
+               maternal_immunity_waning.gen(parameters),
+               'progression':
+               progression.gen(parameters),
+               'recovery':
+               recovery.gen(parameters),
+               'chronic_recovery':
+               chronic_recovery.gen(parameters),
+               'antibody_gain':
+               antibody_gain.gen(parameters)}
+        with numpy.errstate(divide='ignore'):
+            hazard = {k: RV.hazard(self.ages_mid)
+                      for (k, RV) in RVs.items()}
+        survival = {k: RV.sf(self.ages)
+                    for (k, RV) in RVs.items()}
+        antibody_loss_RV = antibody_loss.gen(parameters)
+        hazard['antibody_loss'] = antibody_loss_RV.hazard(
+            antibody_loss_RV.time_min)
         hazard['infection'] = hazard_infection
-        hazard['antibody_loss'] = RVs.antibody_loss.hazard(
-            RVs.antibody_loss.time_min)
         self.hazard = self.rec_fromkwds(**hazard)
         self.survival = self.rec_fromkwds(**survival)
-        self.probability_chronic = RVs.probability_chronic.probability_chronic
+        self.probability_chronic = parameters.probability_chronic
 
     def set_blocks(self):
         self.blocks = {}
@@ -361,4 +359,20 @@ class Solver:
                                            ordered=True),
                    axis='columns', inplace=True)
         P.sort_index(axis='columns', inplace=True)
+        assert ((P >= 0) | numpy.isclose(P, 0)).all(axis=None)
+        assert numpy.isclose(P.sum(axis='columns'), 1).all()
         return P
+
+    def probability(self, age):
+        P = self.solve()
+        return _interpolate(P, age)
+
+
+def probability(age, hazard_infection, parameters):
+    '''The probability of being in each immune status at age `a`,
+    given being alive at age `a`.'''
+    # TODO: Reuse Solver to speed up multiple calls to this function from
+    # `herd.initial_conditions.infection.find_hazard()` and
+    # `herd.initial_conditions.gen._status_probability()`.
+    solver = Solver(hazard_infection, parameters)
+    return solver.probability(age)

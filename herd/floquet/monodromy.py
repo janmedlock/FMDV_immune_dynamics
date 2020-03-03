@@ -21,7 +21,7 @@ So that the cache keys only depend on the relevant parts of
 `herd.parameters.Parameters()` and so that the setup can be reused in
 `_find_birth_scaling()`, the solver is called in 3 steps:
 >>> solver_parameters = monodromy.Parameters(parameters)
->>> solver = monodromy.Solver(solver_parameters, agemax, agestep)
+>>> solver = monodromy.Solver(solver_parameters, step, age_max)
 >>> PhiT = solver.solve(birth_scaling)
 where `parameters` is a `herd.parameters.Parameters()` instance.'''
 
@@ -106,21 +106,20 @@ class Solver:
     # depends on the solution at t_{n - 1}.
     _order = 1
 
-    def __init__(self, solver_params, agemax, agestep):
+    def __init__(self, solver_params, step, age_max):
         self.params = solver_params
-        self.ages = utility.arange(0, agemax, agestep, endpoint=True)
-        tstep = agestep
-        self._t = utility.arange(0, periods.get_period(), tstep, endpoint=True)
+        self.ages = utility.arange(0, age_max, step, endpoint=True)
+        self._t = utility.arange(0, periods.get_period(), step, endpoint=True)
         mortalityRV = mortality.from_param_values()
-        self._init_crank_nicolson(tstep, mortalityRV)
-        self._init_births(agestep)
+        self._init_crank_nicolson(step, mortalityRV)
+        self._init_births(step)
 
     @classmethod
-    def from_parameters(cls, params, agemax, agestep):
+    def from_parameters(cls, params, step, age_max):
         '''Build a `Solver()` instance using `herd.parameters.Parameters()`
         directly.'''
         solver_params = Parameters(params)
-        return cls(solver_params, agemax, agestep)
+        return cls(solver_params, step, age_max)
 
     def _set_initial_condition(self, t_n, solution, birth_rate, temp):
         '''The initial condition for the fundamental solution is the
@@ -129,7 +128,7 @@ class Solver:
         solution[0][:] = 0
         numpy.fill_diagonal(solution[0], 1)
 
-    def _init_births(self, agestep):
+    def _init_births(self, step):
         '''The trapezoid rule for the birth integral for i = 0,
         u_0^n = \sum_j (b_j^n u_j^n + b_{j + 1}^n u_{j + 1}^n) * da / 2.
         This can be written as
@@ -139,8 +138,7 @@ class Solver:
         Put `female_probability_at_birth` in there, too, for
         simplicity & efficiency.'''
         self._v_trapezoid = numpy.empty(self.ages.shape[0])
-        self._v_trapezoid[:] = (agestep
-                                * self.params.female_probability_at_birth)
+        self._v_trapezoid[:] = self.params.female_probability_at_birth * step
         self._v_trapezoid[[0, -1]] /= 2
 
     def _step_births(self, t_n, solution, birth_rate, temp):
@@ -155,7 +153,7 @@ class Solver:
         temp *= self._v_trapezoid
         temp.dot(solution[0], out=solution[0][0])
 
-    def _init_crank_nicolson(self, tstep, mortalityRV):
+    def _init_crank_nicolson(self, step, mortalityRV):
         '''The Crank–Nicolson method is
         (u_i^n - u_{i - 1}^{n - 1}) / dt
         = - d_{i - 1 / 2} * (u_i^n + u_{i - 1}^{n - 1}) / 2,
@@ -171,11 +169,11 @@ class Solver:
         M = sparse.lil_matrix((self.ages.shape[0], self.ages.shape[0]))
         # Midpoints between adjacent ages.
         ages_mid = (self.ages[1:] + self.ages[:-1]) / 2
-        k = mortalityRV.hazard(ages_mid) * tstep / 2
+        k = mortalityRV.hazard(ages_mid) * step / 2
         # Set the first subdiagonal.
         M.setdiag((1 - k) / (1 + k), -1)
         # Keep the last age group from ageing out.
-        k_last = mortalityRV.hazard(self.ages[-1]) * tstep / 2
+        k_last = mortalityRV.hazard(self.ages[-1]) * step / 2
         M[-1, -1] = (1 - k_last) / (1 + k_last)
         self._M_crank_nicolson = _CSR_Matrix(M)
 

@@ -6,8 +6,7 @@ import sys
 import numpy
 
 sys.path.append('..')
-from herd import Parameters, RandomVariables
-from herd.initial_conditions import status
+from herd import initial_conditions, Parameters
 sys.path.pop()
 
 
@@ -43,29 +42,75 @@ def plot_sample(ax, status_ages, width=0.1):
     left = numpy.arange(0, age_max, width)
     bins = numpy.hstack((left, age_max))
     bottom = numpy.zeros_like(left)
-    for (status, ages) in status_ages.items():
+    for (_, ages) in status_ages.items():
         height, _ = numpy.histogram(ages, bins=bins)
         ax.bar(left, height, width, bottom, label=None, align='edge')
         bottom += height
     ax.set_ylabel('number in\nsample')
 
 
-# Eventually, I want the `plot()` interface to look like this:
-# def plot(parameters, ages):
-def plot(status_prob_cond):
+# TODO: Remove this.
+def get_status_prob_cond(parameters, ages):
+    sys.path.append('..')
+    from herd.initial_conditions import status
+    sys.path.pop()
+    hazard_infection = 1
+    return status.probability(ages, hazard_infection, parameters)
+
+
+# TODO: Remove this.
+def get_status_prob(parameters, ages, status_prob_cond):
+    sys.path.append('..')
+    from herd import age_structure
+    sys.path.pop()
+    age_prob = age_structure.gen(parameters).pdf(ages)
+    return status_prob_cond.mul(age_prob, axis='index')
+
+
+# TODO: Remove this.
+def get_status_ages(parameters):
+    sys.path.append('..')
+    from herd import age_structure
+    from herd.initial_conditions import status
+    sys.path.pop()
+    from scipy.stats import multinomial
+    hazard_infection = 1
+    # Pick `parameters.population_size` random ages.
+    ages = age_structure.gen(parameters).rvs(size=parameters.population_size)
+    # Determine the status for each age.
+    status_probability =  status.probability(ages,
+                                             hazard_infection,
+                                             parameters)
+    statuses = status_probability.columns
+    status_ages = {k: [] for k in statuses}
+    # `scipy.stats.multinomial.rvs()` can't handle multiple `p`s,
+    # so we need to loop.
+    for (age, row) in status_probability.iterrows():
+        # Randomly pick a status.
+        rv = multinomial.rvs(1, row)
+        # `rv` is an array with `1` in the position
+        # picked and `0`s in the remaining positions.
+        # Convert that to the name.
+        s = statuses[rv == 1][0]
+        # Add this `age` to the status list.
+        status_ages[s].append(age)
+    return status_ages
+
+
+def plot(parameters, ages):
     from matplotlib import pyplot
-    # RVs = RandomVariables(parameters)
-    # ICs = RVs.initial_conditions
-    # fig, axes = pyplot.subplots(3, 1, sharex=True)
-    fig, axes = pyplot.subplots(1, 1, sharex=True)
-    axes = [axes]  # make `axes` a 1-d iterable with `pyplot.subplots(1, 1)`.
-    # status_prob_cond = ICs._proportion(ages)
+    # ICs = initial_conditions.gen(parameters)
+    fig, axes = pyplot.subplots(3, 1, sharex=True)
+    # status_prob_cond = ICs._status_probability(ages)
+    status_prob_cond = get_status_prob_cond(parameters, ages)
     plot_prob_cond(axes[0], status_prob_cond)
     # status_prob = ICs.pdf(ages)
-    # plot_prob(axes[1], status_prob)
-    # numpy.random.seed(1) # Make `ICs.rvs()` cache friendly.
+    status_prob = get_status_prob(parameters, ages, status_prob_cond)
+    plot_prob(axes[1], status_prob)
+    numpy.random.seed(1)  # Make `ICs.rvs()` cache friendly.
     # status_ages = ICs.rvs(parameters.population_size)
-    # plot_sample(axes[2], status_ages)
+    status_ages = get_status_ages(parameters)
+    plot_sample(axes[2], status_ages)
     axes[-1].set_xlabel('age', labelpad=-9)
     fig.tight_layout(rect=(0, 0.1, 1, 1))
     (_, labels) = axes[0].get_legend_handles_labels()
@@ -76,11 +121,6 @@ def plot(status_prob_cond):
 
 
 if __name__ == '__main__':
-    hazard_infection = 1
     parameters = Parameters()
-    RVs = RandomVariables(parameters, _initial_conditions=False)
-    age_max = 10
-    age_step = 0.01
-    solver = status.Solver(hazard_infection, RVs, age_max, age_step)
-    P = solver.solve()
-    plot(P)
+    ages = numpy.linspace(0, 20, 101)
+    plot(parameters, ages)

@@ -9,8 +9,8 @@ from herd import periods
 from herd.floquet import dominant_eigen, monodromy
 
 
-_agemax_default = 35
-_agestep_default = 0.01
+_step_default = 0.01
+_age_max_default = 35
 
 
 def _normalize_to_density(v, ages):
@@ -39,11 +39,11 @@ _cache = Memory(_cachedir, verbose=1)
 # there.
 @_cache.cache(ignore=['solver'], verbose=0)
 def _find_dominant_eigen(birth_scaling, solver_parameters,
-                         agemax, agestep, solver=None):
+                         step, age_max, solver=None):
     '''Find the dominant Floquet exponent (the one with the largest real part)
     and its corresponding eigenvector.'''
     if solver is None:
-        solver = monodromy.Solver(solver_parameters, agemax, agestep)
+        solver = monodromy.Solver(solver_parameters, step, age_max)
     PhiT = solver.solve(birth_scaling)
     # Finding the matrix B = log(Phi(T)) / T is very expensive,
     # so we'll find the dominant eigenvalue and eigenvector of Phi(T)
@@ -61,10 +61,10 @@ def _find_dominant_eigen(birth_scaling, solver_parameters,
 # This function is not cached because it just calls
 # `_find_dominant_eigen()`, which is.
 def _find_growth_rate(birth_scaling, solver_parameters,
-                      agemax, agestep, solver):
+                      step, age_max, solver):
     '''Find the population growth rate.'''
     mu0, _, _ = _find_dominant_eigen(birth_scaling, solver_parameters,
-                                     agemax, agestep, solver)
+                                     step, age_max, solver)
     return mu0
 
 
@@ -74,11 +74,11 @@ def _find_growth_rate(birth_scaling, solver_parameters,
 # Even though `_find_dominant_eigen()` is cached, caching this function
 # avoids re-running the optimization step.
 @_cache.cache
-def _find_birth_scaling(solver_parameters, agemax, agestep):
+def _find_birth_scaling(solver_parameters, step, age_max):
     '''Find the birth scaling that gives population growth rate r = 0.'''
     # Reuse the solver to avoid multiple setup/teardown.
-    solver = monodromy.Solver(solver_parameters, agemax, agestep)
-    args = (solver_parameters, agemax, agestep, solver)
+    solver = monodromy.Solver(solver_parameters, step, age_max)
+    args = (solver_parameters, step, age_max, solver)
     a = 0
     # We know that at the lower limit a = 0,
     # `_find_growth_rate(0, ...) < 0`,
@@ -93,11 +93,11 @@ def _find_birth_scaling(solver_parameters, agemax, agestep):
 
 # Wrapper to call cached version, `_find_birth_scaling()`.
 def find_birth_scaling(parameters,
-                       agemax=_agemax_default,
-                       agestep=_agestep_default):
+                       step=_step_default,
+                       age_max=_age_max_default):
     '''Find the birth scaling that gives population growth rate r = 0.'''
     solver_parameters = monodromy.Parameters(parameters)
-    return _find_birth_scaling(solver_parameters, agemax, agestep)
+    return _find_birth_scaling(solver_parameters, step, age_max)
 
 
 # Because `find_birth_scaling()` fills the cache for
@@ -105,15 +105,15 @@ def find_birth_scaling(parameters,
 # already be in the cache, and thus, there is no need to cache this
 # function.
 def find_stable_age_structure(parameters,
-                              agemax=_agemax_default,
-                              agestep=_agestep_default,
+                              step=_step_default,
+                              age_max=_age_max_default,
                               _birth_scaling=None):
     '''Find the stable age structure.'''
     solver_parameters = monodromy.Parameters(parameters)
     if _birth_scaling is None:
         _birth_scaling = _find_birth_scaling(solver_parameters,
-                                             agemax, agestep)
+                                             step, age_max)
     r, v, ages = _find_dominant_eigen(_birth_scaling, solver_parameters,
-                                      agemax, agestep)
+                                      step, age_max)
     assert numpy.isclose(r, 0), 'Nonzero growth rate r={:g}.'.format(r)
     return (v, ages)
