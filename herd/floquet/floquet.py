@@ -88,7 +88,11 @@ def _find_birth_scaling(solver_parameters, step, age_max):
     while _find_growth_rate(b, *args) < 0:
         a = b
         b *= 2
-    return brentq(_find_growth_rate, a, b, args=args)
+    (birth_scaling, res) = brentq(_find_growth_rate, a, b,
+                                  args=args,
+                                  full_output=True)
+    assert res.converged, res
+    return birth_scaling
 
 
 # Wrapper to call cached version, `_find_birth_scaling()`.
