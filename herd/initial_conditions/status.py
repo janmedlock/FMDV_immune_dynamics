@@ -13,11 +13,6 @@ _step_default = 0.01
 _age_max_default = 20
 
 
-def _interpolate(df, index):
-    return (df.reindex(df.index.union(index))
-              .interpolate()
-              .loc[index])
-
 class Block:
     '''Get a block row A_X of A and block b_X of b.'''
     def __init__(self, solver):
@@ -229,7 +224,7 @@ class BlockL(BlockODE):
                              + self.solver.hazard.infection)
 
 
-class Solver:
+class Status:
     '''Crank–Nicolson solver to find the probability of being in each
     compartment as a function of age.'''
 
@@ -259,6 +254,7 @@ class Solver:
         self.length_ODE = self.length_PDE = len(self.ages)
         self.set_params(hazard_infection, parameters)
         self.set_blocks()
+        self.solve()
 
     @staticmethod
     def rec_fromkwds(**kwds):
@@ -361,19 +357,23 @@ class Solver:
         P.sort_index(axis='columns', inplace=True)
         assert ((P >= 0) | numpy.isclose(P, 0)).all(axis=None)
         assert numpy.isclose(P.sum(axis='columns'), 1).all()
-        return P
+        self._probability = P
+
+    @staticmethod
+    def _interpolate(df, index):
+        return (df.reindex(df.index.union(index))
+                  .interpolate()
+                  .loc[index])
 
     def probability(self, age):
-        P = self.solve()
-        return _interpolate(P, age)
+        return self._interpolate(self._probability, age)
 
 
 def probability(age, hazard_infection, parameters):
     '''The probability of being in each immune status at age `a`,
     given being alive at age `a`.'''
-    # TODO: Reuse Solver to speed up multiple calls to this function from
-    # `herd.initial_conditions.infection.find_hazard()` and
-    # `herd.initial_conditions.gen._status_probability()`.
+    # TODO: Reuse Status() to speed up multiple calls to this function from
+    # `herd.initial_conditions.infection.find_hazard()`.
     # Should I cache something here too?
-    solver = Solver(hazard_infection, parameters)
-    return solver.probability(age)
+    status = Status(hazard_infection, parameters)
+    return status.probability(age)
