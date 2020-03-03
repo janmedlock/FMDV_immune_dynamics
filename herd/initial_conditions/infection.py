@@ -51,15 +51,16 @@ def _load_data(params):
     return data
 
 
-def _minus_loglikelihood(hazard_infection, params, data):
+def _minus_loglikelihood(hazard_infection, status_, data):
     '''This gets optimized over `hazard_infection`.'''
     # Convert the length-1 `hazard_infection` to a scalar Python float,
     # (not a size-() `numpy.array()`).
     hazard_infection = numpy.squeeze(hazard_infection)[()]
+    status_.update_hazard_infection(hazard_infection)
     # Consider doing something better to get the
     # representative age for an age interval.
     ages_mid = data.index.mid
-    prob = status.probability(ages_mid, hazard_infection, params)
+    prob = status_.probability(ages_mid)
     prob.set_axis(data.index, axis='index', inplace=True)
     # 'exposed' and 'lost immunity' aren't in the data.
     # Combine 'exposed' into 'infectious'.
@@ -89,9 +90,11 @@ _cache = Memory(_cachedir, verbose=0)
 def _find_hazard(params):
     '''Find the MLE for the infection hazard.'''
     data = _load_data(params)
-    x0 = 0.4
-    res = minimize(_minus_loglikelihood, x0,
-                   args=(params, data),
+    hazard_infection_guess = 0.6
+    # Reuse the solver to avoid multiple setup/teardown.
+    status_ = status.Status(hazard_infection_guess, params)
+    res = minimize(_minus_loglikelihood, hazard_infection_guess,
+                   args=(status_, data),
                    bounds=[(0, numpy.inf)])
     assert res.success, res
     # Convert the length-1 array `res.x` to a scalar Python float,
@@ -135,7 +138,8 @@ def find_AIC(hazard_infection, params):
     data = _load_data(params)
     # The model has 1 parameter, hazard_infection.
     n_params = 1
-    mll = _minus_loglikelihood(hazard_infection, params, data)
+    status_ = status.Status(hazard_infection, params)
+    mll = _minus_loglikelihood(hazard_infection, status_, data)
     return 2 * mll + 2 * n_params
 
 

@@ -9,10 +9,6 @@ from herd import (antibody_gain, antibody_loss, chronic_recovery,
                   maternal_immunity_waning, progression, recovery, utility)
 
 
-_step_default = 0.01
-_age_max_default = 20
-
-
 class Block:
     '''Get a block row A_X of A and block b_X of b.'''
     def __init__(self, solver):
@@ -244,10 +240,13 @@ class Status:
                  'R': 'recovered',
                  'L': 'lost immunity'}
 
-    def __init__(self, hazard_infection, parameters,
-                 step=_step_default, age_max=_age_max_default):
-        self.step = step
-        self.ages = utility.arange(0, age_max, self.step,
+    # Step size in both age (a) and residence time (r).
+    step = 0.01
+
+    age_max = 20
+
+    def __init__(self, hazard_infection, parameters):
+        self.ages = utility.arange(0, self.age_max, self.step,
                                    endpoint=True)
         assert len(self.ages) > 1
         self.ages_mid = (self.ages[ : -1] + self.ages[1 : ]) / 2
@@ -368,12 +367,14 @@ class Status:
     def probability(self, age):
         return self._interpolate(self._probability, age)
 
+    def update_hazard_infection(self, hazard_infection):
+        if (self.hazard.infection != hazard_infection).any():
+            self.hazard.infection = hazard_infection
+            self.solve()
+
 
 def probability(age, hazard_infection, parameters):
     '''The probability of being in each immune status at age `a`,
     given being alive at age `a`.'''
-    # TODO: Reuse Status() to speed up multiple calls to this function from
-    # `herd.initial_conditions.infection.find_hazard()`.
-    # Should I cache something here too?
     status = Status(hazard_infection, parameters)
     return status.probability(age)
