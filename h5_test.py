@@ -4,9 +4,9 @@ import h5
 
 
 filename = 'run_population_sizes.h5'
-by = ['model', 'SAT', 'population_size', 'run']
+by = ['SAT', 'population_size', 'run']
 columns = ['exposed', 'infectious', 'chronic']
-where = dict(model='acute', SAT=1)
+where = dict(SAT=1)
 where = ' & '.join(f'{k}={v}' for (k, v) in where.items())
 
 with h5.HDFStore(filename, mode='r') as store:

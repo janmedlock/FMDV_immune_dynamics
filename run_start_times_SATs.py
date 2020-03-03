@@ -13,6 +13,5 @@ if __name__ == '__main__':
     _filebase, _ = os.path.splitext(__file__)
     _filename = _filebase + '.h5'
     with h5.HDFStore(_filename) as store:
-        for model in ('acute', 'chronic'):
-            run_common.run_start_times_SATs(model, tmax, nruns, store)
+        run_common.run_start_times_SATs(tmax, nruns, store)
         store.repack(_filename)

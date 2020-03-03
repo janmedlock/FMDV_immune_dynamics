@@ -7,9 +7,6 @@ import pandas
 import herd
 
 
-_models = ('acute', 'chronic')
-# Leave enough space in hdf for all model names.
-_min_itemsize = {'model': max(len(m) for m in _models)}
 _SATs = (1, 2, 3)
 
 
@@ -45,9 +42,9 @@ def run_many(parameters, tmax, nruns, *args, **kwargs):
                          copy=False)
 
 
-def run_SATs(model, tmax, nruns, hdfstore, logging_prefix='', *args, **kwargs):
+def run_SATs(tmax, nruns, hdfstore, logging_prefix='', *args, **kwargs):
     for SAT in _SATs:
-        p = herd.Parameters(model=model, SAT=SAT)
+        p = herd.Parameters(SAT=SAT)
         logging_prefix_SAT = logging_prefix + f'SAT {SAT}, '
         t0 = time.time()
         df = run_many(p, tmax, nruns,
@@ -56,16 +53,16 @@ def run_SATs(model, tmax, nruns, hdfstore, logging_prefix='', *args, **kwargs):
         t1 = time.time()
         print(f'Run time: {t1 - t0} seconds.')
         # Save the data for this `SAT`.
-        # Add 'model' and 'SAT' levels to the index.
-        _prepend_index_levels(df, model=model, SAT=SAT)
+        # Add 'SAT' levels to the index.
+        _prepend_index_levels(df, SAT=SAT)
         hdfstore.put(df, min_itemsize=_min_itemsize)
 
 
-def run_start_times(model, SAT, tmax, nruns, hdfstore, logging_prefix='',
+def run_start_times(SAT, tmax, nruns, hdfstore, logging_prefix='',
                     *args, **kwargs):
     # Every month.
     for start_time in numpy.arange(0, 1, 1 / 12):
-        p = herd.Parameters(model=model, SAT=SAT)
+        p = herd.Parameters(SAT=SAT)
         p.start_time = start_time
         logging_prefix_start = (logging_prefix
                                 + f'Start time {start_time * 12:g} / 12, ')
@@ -76,15 +73,15 @@ def run_start_times(model, SAT, tmax, nruns, hdfstore, logging_prefix='',
         t1 = time.time()
         print(f'Run time: {t1 - t0} seconds.')
         # Save the data for this `start_time`.
-        # Add 'model', 'SAT', and 'start_time' levels to the index.
-        _prepend_index_levels(df, model=model, SAT=SAT, start_time=start_time)
+        # Add 'SAT' and 'start_time' levels to the index.
+        _prepend_index_levels(df, SAT=SAT, start_time=start_time)
         hdfstore.put(df, min_itemsize=_min_itemsize)
 
 
-def run_start_times_SATs(model, tmax, nruns, hdfstore, logging_prefix='',
+def run_start_times_SATs(tmax, nruns, hdfstore, logging_prefix='',
                          *args, **kwargs):
     for SAT in _SATs:
         logging_prefix_SAT = logging_prefix + f'SAT {SAT}, '
-        run_start_times(model, SAT, tmax, nruns, hdfstore,
+        run_start_times(SAT, tmax, nruns, hdfstore,
                         logging_prefix=logging_prefix_SAT,
                         *args, **kwargs)

@@ -374,5 +374,6 @@ def probability(age, hazard_infection, parameters):
     # TODO: Reuse Solver to speed up multiple calls to this function from
     # `herd.initial_conditions.infection.find_hazard()` and
     # `herd.initial_conditions.gen._status_probability()`.
+    # Should I cache something here too?
     solver = Solver(hazard_infection, parameters)
     return solver.probability(age)

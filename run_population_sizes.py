@@ -9,9 +9,9 @@ import herd
 import run_common
 
 
-def _copy_run_SATs(model, SAT, population_size, nruns, hdfstore_out):
+def _copy_run_SATs(SAT, population_size, nruns, hdfstore_out):
     '''Copy the data from 'run_SATs.h5'.'''
-    where = f'model={model} & SAT={SAT} & run<{nruns}'
+    where = f'SAT={SAT} & run<{nruns}'
     with h5.HDFStore('run_SATs.h5', mode='r') as hdfstore_in:
         for chunk in hdfstore_in.select(where=where, iterator=True):
             run_common._insert_index_levels(chunk, 2,
@@ -19,19 +19,18 @@ def _copy_run_SATs(model, SAT, population_size, nruns, hdfstore_out):
             hdfstore_out.put(chunk, min_itemsize=run_common._min_itemsize)
 
 
-def run_population_size(model, SAT, population_size, tmax, nruns, hdfstore):
+def run_population_size(SAT, population_size, tmax, nruns, hdfstore):
     if population_size == 1000:
-        _copy_run_SATs(model, SAT, population_size, nruns, hdfstore)
+        _copy_run_SATs(SAT, population_size, nruns, hdfstore)
     else:
-        p = herd.Parameters(model=model, SAT=SAT)
+        p = herd.Parameters(SAT=SAT)
         p.population_size = population_size
-        logging_prefix = (', '.join((f'model {model}',
-                                     f'SAT {SAT}',
+        logging_prefix = (', '.join((f'SAT {SAT}',
                                      f'population_size {population_size}'))
                           + ', ')
         df = run_common.run_many(p, tmax, nruns,
                                  logging_prefix=logging_prefix)
-        run_common._prepend_index_levels(df, model=model, SAT=SAT,
+        run_common._prepend_index_levels(df, SAT=SAT,
                                          population_size=population_size)
         hdfstore.put(df, min_itemsize=run_common._min_itemsize)
 
@@ -51,8 +50,7 @@ if __name__ == '__main__':
     _filename = _filebase + '.h5'
     with h5.HDFStore(_filename) as store:
         for population_size in population_sizes:
-            for model in ('acute', 'chronic'):
-                for SAT in (1, 2, 3):
-                    run_population_size(model, SAT, population_size,
-                                        tmax, nruns, store)
+            for SAT in (1, 2, 3):
+                run_population_size(SAT, population_size,
+                                    tmax, nruns, store)
         store.repack()

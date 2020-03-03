@@ -15,16 +15,13 @@ from herd.initial_conditions import status
 _filename = '../data/Hedger_1972_survey_data.xlsx'
 # It is relative to directory as this source file.
 _filename = os.path.join(os.path.dirname(__file__), _filename)
+_sheet_name = 'all groups'
 
 
 def _load_data(params):
     '''Load and format the data.'''
-    if params.model == 'chronic':
-        sheet_name = 'all groups'
-    else:
-        sheet_name = 'reclassified_no carriers'
     data = pandas.read_excel(_filename,
-                             sheet_name=sheet_name,
+                             sheet_name=_sheet_name,
                              skipfooter=18)
     data.drop(columns=['age', 'age.1', 'age.2'], inplace=True)
     # Each row is for an age interval.
@@ -107,39 +104,26 @@ class CacheParameters(parameters.Parameters):
     only has the parameters needed by `_find_hazard()`
     so that it can be efficiently cached.'''
     def __init__(self, params):
-        self.model = params.model
         # Generally, the values of these parameters should be
         # floats, so explicitly convert them so the cache doesn't
         # get duplicated keys for the float and int representation
         # of the same number, e.g. `float(0)` and `int(0)`.
-        self.antibody_gain_hazard = float(
-            params.antibody_gain_hazard)
-        self.antibody_loss_hazard_alpha = float(
-            params.antibody_loss_hazard_alpha)
-        self.antibody_loss_hazard_beta = float(
-            params.antibody_loss_hazard_beta)
-        self.antibody_loss_hazard_time_max = float(
-            params.antibody_loss_hazard_time_max)
-        self.antibody_loss_hazard_time_min = float(
-            params.antibody_loss_hazard_time_min)
-        self.chronic_recovery_mean = float(
-            params.chronic_recovery_mean)
-        self.chronic_recovery_shape = float(
-            params.chronic_recovery_shape)
-        self.maternal_immunity_duration_mean = float(
-            params.maternal_immunity_duration_mean)
-        self.maternal_immunity_duration_shape = float(
-            params.maternal_immunity_duration_shape)
-        self.probability_chronic = float(
-            params.probability_chronic)
-        self.progression_mean = float(
-            params.progression_mean)
-        self.progression_shape = float(
-            params.progression_shape)
-        self.recovery_mean = float(
-            params.recovery_mean)
-        self.recovery_shape = float(
-            params.recovery_shape)
+        attrs = {'antibody_gain_hazard',
+                 'antibody_loss_hazard_alpha',
+                 'antibody_loss_hazard_beta',
+                 'antibody_loss_hazard_time_max',
+                 'antibody_loss_hazard_time_min',
+                 'chronic_recovery_mean',
+                 'chronic_recovery_shape',
+                 'maternal_immunity_duration_mean',
+                 'maternal_immunity_duration_shape',
+                 'probability_chronic',
+                 'progression_mean',
+                 'progression_shape',
+                 'recovery_mean',
+                 'recovery_shape'}
+        for attr in attrs:
+            setattr(self, attr, float(getattr(params, attr)))
 
 
 def find_hazard(params):

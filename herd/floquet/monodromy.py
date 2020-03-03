@@ -62,10 +62,10 @@ class Parameters(parameters.Parameters):
         self.birth_normalized_peak_time_of_year = float(
             (params.birth_peak_time_of_year - params.start_time)
             % periods.get_period())
-        self.birth_seasonal_coefficient_of_variation = float(
-            params.birth_seasonal_coefficient_of_variation)
-        self.female_probability_at_birth = float(
-            params.female_probability_at_birth)
+        attrs = {'birth_seasonal_coefficient_of_variation',
+                 'female_probability_at_birth'}
+        for attr in attrs:
+            setattr(self, attr, float(getattr(params, attr)))
 
 
 class _Solution:

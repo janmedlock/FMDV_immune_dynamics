@@ -7,7 +7,7 @@ from herd import (antibody_gain, antibody_loss, birth,
 
 
 class RandomVariables:
-    def __init__(self, params=None, _initial_conditions=True):
+    def __init__(self, params=None):
         if params is None:
             params = Parameters()
         self.parameters = params
@@ -30,8 +30,7 @@ class RandomVariables:
         self.antibody_loss = antibody_loss.gen(params)
         # waiting time leaving P to R
         self.antibody_gain = antibody_gain.gen(params)
-        if _initial_conditions:
-            self.initial_conditions = initial_conditions.gen(params)
+        self.initial_conditions = initial_conditions.gen(params)
 
     def __repr__(self):
         'Make instances print nicely.'

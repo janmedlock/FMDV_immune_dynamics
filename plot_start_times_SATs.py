@@ -37,14 +37,14 @@ def _build_infected(filename_out):
             min_itemsize=run_common._min_itemsize)
 
 
-def get_infected(model='acute'):
+def get_infected():
     filename_infected = f'plot_start_times_SATs_infected.h5'
     try:
         infected = h5.load(filename_infected)
     except FileNotFoundError:
         _build_infected(filename_infected)
         infected = h5.load(filename_infected)
-    return infected.loc[model]
+    return infected
 
 
 def plot_infected_facet(infected, color=None, alpha=1, **kwargs):
@@ -61,8 +61,8 @@ def plot_infected_facet(infected, color=None, alpha=1, **kwargs):
                 color='black', alpha=1, **kwargs)
 
 
-def plot_infected(model='acute'):
-    infected = get_infected(model=model)
+def plot_infected():
+    infected = get_infected()
     infected.reset_index(inplace=True)
     pyplot.figure()
     # g = seaborn.FacetGrid(data=infected,
@@ -73,7 +73,7 @@ def plot_infected(model='acute'):
     g.set_axis_labels('time (days)', 'number infected')
     g.set_titles('{col_var} {col_name}')
     pyplot.tight_layout()
-    pyplot.savefig(f'plot_start_times_SATs_infected_{model}.pdf')
+    pyplot.savefig(f'plot_start_times_SATs_infected.pdf')
 
 
 def _build_extinction_time_group(infected):
@@ -102,18 +102,18 @@ def _build_extinction_time(filename_out):
             min_itemsize=run_common._min_itemsize)
 
 
-def get_extinction_time(model='acute'):
+def get_extinction_time():
     filename_et = f'plot_start_times_SATs_extinction_time.h5'
     try:
         extinction_time = h5.load(filename_et)
     except FileNotFoundError:
         _build_extinction_time(filename_et)
         extinction_time = h5.load(filename_et)
-    return extinction_time.loc[model]
+    return extinction_time
 
 
-def plot_extinction_time(model='acute'):
-    extinction_time = get_extinction_time(model=model)
+def plot_extinction_time():
+    extinction_time = get_extinction_time()
     extinction_time.reset_index(inplace=True)
     pyplot.figure()
     # seaborn.factorplot(data=extinction_time,
@@ -129,7 +129,7 @@ def plot_extinction_time(model='acute'):
     pyplot.yticks(locs, ['SAT {}'.format(i.get_text()) for i in labels])
     pyplot.xlim(left=0)
     pyplot.tight_layout()
-    pyplot.savefig(f'plot_start_times_SATs_extinction_time_{model}.pdf')
+    pyplot.savefig(f'plot_start_times_SATs_extinction_time.pdf')
 
 
 def _build_time_to_peak_group(infected):
@@ -156,18 +156,18 @@ def _build_time_to_peak(filename_out):
             min_itemsize=run_common._min_itemsize)
 
 
-def get_time_to_peak(model='acute'):
+def get_time_to_peak():
     filename_ttp = f'plot_start_times_SATs_time_to_peak.h5'
     try:
         extinction_time = h5.load(filename_ttp)
     except FileNotFoundError:
         _build_time_to_peak(filename_ttp)
         time_to_peak = h5.load(filename_ttp)
-    return time_to_peak.loc[model]
+    return time_to_peak
 
 
-def plot_time_to_peak(model='acute'):
-    time_to_peak = get_time_to_peak(model=model)
+def plot_time_to_peak():
+    time_to_peak = get_time_to_peak()
     time_to_peak.reset_index(inplace=True)
     pyplot.figure()
     # seaborn.factorplot(data=time_to_peak,
@@ -184,7 +184,7 @@ def plot_time_to_peak(model='acute'):
     locs, labels = pyplot.yticks()
     pyplot.yticks(locs, ['SAT {}'.format(i.get_text()) for i in labels])
     pyplot.tight_layout()
-    pyplot.savefig(f'plot_start_times_SATs_time_to_peak_{model}.pdf')
+    pyplot.savefig(f'plot_start_times_SATs_time_to_peak.pdf')
 
 
 def _build_total_infected_group(df):
@@ -210,18 +210,18 @@ def _build_total_infected(filename_out):
             min_itemsize=run_common._min_itemsize)
 
 
-def get_total_infected(model='acute'):
+def get_total_infected():
     filename_ti = f'plot_start_times_SATs_total_infected.h5'
     try:
         total_infected = h5.load(filename_ti)
     except FileNotFoundError:
         _build_total_infected(filename_ti)
         total_infected = h5.load(filename_ti)
-    return total_infected.loc[model]
+    return total_infected
 
 
-def plot_total_infected(model='acute'):
-    total_infected = get_total_infected(model=model)
+def plot_total_infected():
+    total_infected = get_total_infected()
     total_infected.reset_index(inplace=True)
     pyplot.figure()
     # seaborn.factorplot(data=total_infected,
@@ -238,14 +238,12 @@ def plot_total_infected(model='acute'):
     locs, labels = pyplot.yticks()
     pyplot.yticks(locs, ['SAT {}'.format(i.get_text()) for i in labels])
     pyplot.tight_layout()
-    pyplot.savefig(f'plot_start_times_SATs_total_infected_{model}.pdf')
+    pyplot.savefig(f'plot_start_times_SATs_total_infected.pdf')
 
 
 if __name__ == '__main__':
-    model = 'chronic'
-
-    plot_infected(model)
-    # plot_extinction_time(model)
-    # plot_time_to_peak(model)
-    # plot_total_infected(model)
+    plot_infected()
+    # plot_extinction_time()
+    # plot_time_to_peak()
+    # plot_total_infected()
     # pyplot.show()

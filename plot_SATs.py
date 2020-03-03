@@ -16,12 +16,11 @@ import h5
 seaborn.set_context('talk')
 
 
-def load_SIR_data(model='acute'):
-    where = f'model={model}'
-    return h5.load('run_SATs.h5', where=where)
+def load_SIR_data():
+    return h5.load('run_SATs.h5')
 
 
-def load_extinction_data(model='acute'):
+def load_extinction_data():
     # FIXME: doesn't work with `model='chronic'`.
     def translate(row):
         def f(x):
@@ -61,12 +60,10 @@ def load_extinction_data(model='acute'):
     return data
 
 
-def make_SIR_plots(model='acute', show=True):
-    data = load_SIR_data(model)
+def make_SIR_plots(show=True):
+    data = load_SIR_data()
 
-    (models, SATs, reps) = data.index.levels[:3]
-    assert len(models) == 1
-    model = models[0]
+    (SATs, reps) = data.index.levels[:2]
 
     # Drop 'Total'
     nrows = len(data.columns)
@@ -76,7 +73,7 @@ def make_SIR_plots(model='acute', show=True):
     for (j, SAT) in enumerate(SATs):
         colors = itertools.cycle(seaborn.color_palette('husl', 8))
         for rep in reps:
-            x = data.loc(axis=0)[model, SAT, rep]
+            x = data.loc(axis=0)[SAT, rep]
             t = x.index
             if rep != 'mean':
                 c = next(colors)
@@ -109,17 +106,16 @@ def make_SIR_plots(model='acute', show=True):
         if yl[0] < 0:
             ax.set_ylim(bottom=0)
 
-    filename = f'plot_SATs_SIR_{model}.pdf'
+    filename = f'plot_SATs_SIR.pdf'
     fig.savefig(filename)
     if show:
         pyplot.show()
 
 
-def make_extinction_hist(model='acute',
-                         population_size=1000,
+def make_extinction_hist(population_size=1000,
                          birth_seasonal_coefficient_of_variation=0.61,
                          show=True):
-    data = load_extinction_data(model)
+    data = load_extinction_data()
     data = data.loc(axis = 0)[:,
                               population_size,
                               birth_seasonal_coefficient_of_variation]
@@ -139,14 +135,14 @@ def make_extinction_hist(model='acute',
     mid = (axes.shape[-1] - 1) // 2
     axes[mid].set_xlabel('time (days)')
 
-    filename = f'plot_SATs_hist_{model}.pdf'
+    filename = f'plot_SATs_hist.pdf'
     fig.savefig(filename)
     if show:
         pyplot.show()
 
 
-def make_full(model='acute', show=True):
-    data = load_extinction_data(model)
+def make_full(show=True):
+    data = load_extinction_data()
 
     palette = 'Set2'
     linewidth = 0.75
@@ -200,14 +196,13 @@ def make_full(model='acute', show=True):
             leg.set_visible(False)
 
     fig.tight_layout()
-    filename = f'plot_SATs_full_{model}.pdf'
+    filename = f'plot_SATs_full.pdf'
     fig.savefig(filename)
     if show:
         pyplot.show()
 
 
 if __name__ == '__main__':
-    model = 'chronic'
-    make_SIR_plots(model)
-    # make_extinction_hist(model)
-    # make_full(model)
+    make_SIR_plots()
+    # make_extinction_hist()
+    # make_full()

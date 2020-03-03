@@ -3,11 +3,9 @@ from pandas import Timestamp
 
 
 class Parameters:
-    def __init__(self, model='chronic', SAT=1, _set_defaults=True):
+    def __init__(self, SAT=1, _set_defaults=True):
         'Initialize with default values.'
         self.SAT = SAT
-        self.model = model
-        chronic_model = (self.model == 'chronic')
         if _set_defaults:
             self.population_size = 1000
             self.initial_infectious = 2
@@ -39,7 +37,7 @@ class Parameters:
                 self.recovery_mean = 5.7 / 365
                 self.transmission_rate = 2.8 * 365
                 # Proportion leaving I that become C.
-                self.probability_chronic = 0.90 if chronic_model else 0
+                self.probability_chronic = 0.90
                 # Duration in C before leaving to R.
                 self.chronic_recovery_mean = 243 / 365
                 self.chronic_recovery_shape = 3.2
@@ -57,7 +55,7 @@ class Parameters:
                 self.recovery_mean = 4.6 / 365
                 self.transmission_rate = 1.6 * 365
                 # Proportion leaving I that become C.
-                self.probability_chronic = 0.44 if chronic_model else 0
+                self.probability_chronic = 0.44
                 # Duration in C before leaving to R.
                 self.chronic_recovery_mean = 180 / 365
                 self.chronic_recovery_shape = 3.2
@@ -74,7 +72,7 @@ class Parameters:
                 self.recovery_mean = 4.2 / 365
                 self.transmission_rate = 1.2 * 365
                 # Proportion leaving I that become C.
-                self.probability_chronic = 0.67 if chronic_model else 0
+                self.probability_chronic = 0.67
                 # Duration in C before leaving to R.
                 self.chronic_recovery_mean = 174 / 365
                 self.chronic_recovery_shape = 3.2
