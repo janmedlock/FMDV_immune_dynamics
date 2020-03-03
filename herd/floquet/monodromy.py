@@ -20,7 +20,7 @@ on characteristics, following the work of Fabio Milner.
 So that the cache keys only depend on the relevant parts of
 `herd.parameters.Parameters()` and so that the setup can be reused in
 `_find_birth_scaling()`, the solver is called in 3 steps:
->>> solver_parameters = monodromy.Parameters(parameters)
+>>> solver_parameters = monodromy.CacheParameters(parameters)
 >>> solver = monodromy.Solver(solver_parameters, step, age_max)
 >>> PhiT = solver.solve(birth_scaling)
 where `parameters` is a `herd.parameters.Parameters()` instance.'''
@@ -47,7 +47,7 @@ class _CSR_Matrix(sparse.csr_matrix):
                                         B.ravel(), C.ravel())
 
 
-class Parameters(parameters.Parameters):
+class CacheParameters(parameters.Parameters):
     '''Build a `herd.parameters.Parameters()`-like object that
     only has the parameters needed by `Solver()`
     so that it can be efficiently cached.'''
@@ -118,7 +118,7 @@ class Solver:
     def from_parameters(cls, params, step, age_max):
         '''Build a `Solver()` instance using `herd.parameters.Parameters()`
         directly.'''
-        solver_params = Parameters(params)
+        solver_params = CacheParameters(params)
         return cls(solver_params, step, age_max)
 
     def _set_initial_condition(self, t_n, solution, birth_rate, temp):

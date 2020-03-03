@@ -18,7 +18,7 @@ from herd.utility import arange
 
 
 def find_stable_age_structure(parameters, fast=False):
-    solver_parameters = floquet.monodromy.Parameters(parameters)
+    solver_parameters = floquet.monodromy.CacheParameters(parameters)
     # Temporarily monkeypatch non-caching version of
     # `_find_dominant_eigen` into place to force recomputation.
     _find_dominant_eigen = floquet._find_dominant_eigen

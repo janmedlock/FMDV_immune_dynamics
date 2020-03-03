@@ -22,7 +22,7 @@ on characteristics, following the work of Fabio Milner.
 So that the cache keys only depend on the relevant parts of
 `herd.parameters.Parameters()` and so that the setup can be reused in
 `_find_birth_scaling()`, the solver is called in 3 steps:
->>> solver_parameters = monodromy.Parameters(parameters)
+>>> solver_parameters = monodromy.CacheParameters(parameters)
 >>> solver = monodromy.Solver(solver_parameters, step, age_max)
 >>> PhiT = solver.solve(birth_scaling)
 where `parameters` is a `herd.parameters.Parameters()` instance.'''
@@ -85,7 +85,7 @@ cdef class _CSR_Matrix:
         return True
 
 
-cdef class Parameters:
+cdef class CacheParameters:
     '''Build a `herd.parameters.Parameters()`-like object that
     only has the parameters needed by `Solver()`
     so that it can be efficiently cached.'''
@@ -95,7 +95,7 @@ cdef class Parameters:
         double female_probability_at_birth
 
     # Don't use `__cinit__()` because these need to be pickled.
-    def __init__(Parameters self,
+    def __init__(CacheParameters self,
                  object params):
         # Normalize `params.birth_peak_time_of_year` by making
         # it relative to `params.start_time` and then modulo
@@ -166,12 +166,12 @@ cdef class Solver:
 
     cdef:
         public numpy.ndarray ages
-        Parameters params
+        CacheParameters params
         double[:] _ages, _t, _v_trapezoid
         _CSR_Matrix _M_crank_nicolson
 
     def __cinit__(Solver self,
-                  Parameters solver_params,
+                  CacheParameters solver_params,
                   const double step,
                   const double age_max):
         cdef:
@@ -193,8 +193,8 @@ cdef class Solver:
         '''Build a `Solver()` instance using `herd.parameters.Parameters()`
         directly.'''
         cdef:
-            Parameters solver_params
-        solver_params = Parameters(params)
+            CacheParameters solver_params
+        solver_params = CacheParameters(params)
         return cls(solver_params, step, age_max)
 
     cdef inline bint _set_initial_condition(Solver self,

@@ -96,7 +96,7 @@ def find_birth_scaling(parameters,
                        step=_step_default,
                        age_max=_age_max_default):
     '''Find the birth scaling that gives population growth rate r = 0.'''
-    solver_parameters = monodromy.Parameters(parameters)
+    solver_parameters = monodromy.CacheParameters(parameters)
     return _find_birth_scaling(solver_parameters, step, age_max)
 
 
@@ -109,7 +109,7 @@ def find_stable_age_structure(parameters,
                               age_max=_age_max_default,
                               _birth_scaling=None):
     '''Find the stable age structure.'''
-    solver_parameters = monodromy.Parameters(parameters)
+    solver_parameters = monodromy.CacheParameters(parameters)
     if _birth_scaling is None:
         _birth_scaling = _find_birth_scaling(solver_parameters,
                                              step, age_max)
