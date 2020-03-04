@@ -11,38 +11,37 @@ from herd import (antibody_gain, antibody_loss, chronic_recovery,
 
 class Block:
     '''Get a block row A_X of A and block b_X of b.'''
+
     def __init__(self, solver):
         self.solver = solver
+        self.set_A_X()
+        self.set_b_X()
 
     @property
     def X(self):
         '''Get the variable name from the last letter of the class name.'''
         return self.__class__.__name__[-1]
 
-    def get_b(self):
+    def set_b_X(self):
         '''Make a sparse n × 1 matrix of the right-hand sides.'''
         # The initial value is in the 0th entry,
         # then zeros everywhere else.
-        return sparse.csr_matrix(([self.initial_value], ([0], [0])),
-                                 shape=(len(self), 1))
+        self.b_X = sparse.csr_matrix(([self.initial_value], ([0], [0])),
+                                     shape=(len(self), 1))
 
-    def get_Y_match(self, block_name):
-        '''`block_name` is 'A_XY' for some Y.'''
-        return re.match(f'A_{self.X}([A-Z])$', block_name)
+    def _is_set_A_XY(self, attr):
+        '''Check if `attr` is 'set_A_XY' for some Y.'''
+        return (re.match(f'set_A_{self.X}([A-Z])$', attr) is not None)
 
-    def get_Y(self, block_name):
-        '''Get the 'Y' value out of 'A_XY'.'''
-        return self.get_Y_match(block_name).group(1)
-
-    def is_A_XY(self, block_name):
-        '''Check if `block_name` is 'A_XY' for some Y.'''
-        return (self.get_Y_match(block_name) is not None)
-
-    def get_A(self):
+    def set_A_X(self):
         '''Assemble the block row A_X from its columns A_XY.'''
-        return {self.get_Y(block_name): getattr(self, block_name)
-                for block_name in dir(self)
-                if self.is_A_XY(block_name)}
+        self.A_X = {}
+        for attr in dir(self):
+            if self._is_set_A_XY(attr):
+                getattr(self, attr)()
+
+    def update_hazard_infection(self):
+        '''Do nothing unless overridden.'''
 
 
 class BlockODE(Block):
@@ -50,7 +49,7 @@ class BlockODE(Block):
     def __len__(self):
         return self.solver.length_ODE
 
-    def get_A_XX(self, hazard_out):
+    def _get_A_XX(self, hazard_out):
         '''Get the diagonal block `A_XX` that maps state X to itself.'''
         # The values on the diagonal.
         d_0 = 1 + hazard_out * self.solver.step / 2
@@ -60,7 +59,7 @@ class BlockODE(Block):
         return sparse.diags([numpy.hstack([1, d_0]), d_1], [0, -1],
                             shape=(len(self), len(self)))
 
-    def get_A_XY_ODE(self, hazard_in):
+    def _get_A_XY_ODE(self, hazard_in):
         '''Get the off-diagonal block `A_XY` that maps state Y to X,
         where Y is a variable governed by an ODE.'''
         # The values on the diagonal and subdiagonal.
@@ -68,7 +67,7 @@ class BlockODE(Block):
         return sparse.diags([numpy.hstack([0, d]), d], [0, -1],
                             shape=(len(self), self.solver.length_ODE))
 
-    def get_A_XY_PDE(self, survival_in):
+    def _get_A_XY_PDE(self, survival_in):
         '''Get the off-diagonal block `A_XY` that maps state Y to X,
         where Y is a variable governed by a PDE.'''
         A_XY = sparse.lil_matrix((len(self), self.solver.length_PDE))
@@ -84,11 +83,11 @@ class BlockPDE(Block):
     def __len__(self):
         return self.solver.length_PDE
 
-    def get_A_XX(self):
+    def _get_A_XX(self):
         '''Get the diagonal block `A_XX` that maps state X to itself.'''
         return sparse.eye(len(self))
 
-    def get_A_XY_ODE(self, hazard_in):
+    def _get_A_XY_ODE(self, hazard_in):
         '''Get the off-diagonal block `A_XY` that maps state Y to X,
         where Y is a variable governed by an ODE.'''
         A_XY = sparse.lil_matrix((len(self), self.solver.length_ODE))
@@ -96,7 +95,7 @@ class BlockPDE(Block):
         A_XY[i, i - 1] = A_XY[i, i] = - hazard_in / 2
         return A_XY
 
-    def get_A_XY_PDE(self, survival_in):
+    def _get_A_XY_PDE(self, survival_in):
         '''Get the off-diagonal block `A_XY` that maps state Y to X,
         where Y is a variable governed by a PDE.'''
         A_XY = sparse.lil_matrix((len(self), self.solver.length_PDE))
@@ -119,52 +118,53 @@ class BlockPDE(Block):
 class BlockM(BlockODE):
     initial_value = 1
 
-    @property
-    def A_MM(self):
-        return self.get_A_XX(self.solver.hazard.maternal_immunity_waning)
+    def set_A_MM(self):
+        self.A_X['M'] = self._get_A_XX(
+            self.solver.hazard.maternal_immunity_waning)
 
 
 class BlockS(BlockODE):
     initial_value = 0
 
-    @property
-    def A_SM(self):
-        return self.get_A_XY_ODE(self.solver.hazard.maternal_immunity_waning)
+    def set_A_SM(self):
+        self.A_X['M'] = self._get_A_XY_ODE(
+            self.solver.hazard.maternal_immunity_waning)
 
-    @property
-    def A_SS(self):
-        return self.get_A_XX(self.solver.hazard.infection)
+    def set_A_SS(self):
+        self.A_X['S'] = self._get_A_XX(self.solver.hazard.infection)
+
+    def update_hazard_infection(self):
+        self.set_A_SS()
 
 
 class BlockE(BlockPDE):
     initial_value = 0
 
-    @property
-    def A_ES(self):
-        return self.get_A_XY_ODE(self.solver.hazard.infection)
+    def set_A_ES(self):
+        self.A_X['S'] = self._get_A_XY_ODE(self.solver.hazard.infection)
 
-    @property
-    def A_EL(self):
-        return self.get_A_XY_ODE(self.solver.hazard.infection)
+    def set_A_EL(self):
+        self.A_X['L'] = self._get_A_XY_ODE(self.solver.hazard.infection)
 
-    @property
-    def A_EE(self):
-        return self.get_A_XX()
+    def set_A_EE(self):
+        self.A_X['E'] = self._get_A_XX()
 
     def integrate(self, p_E):
         return super().integrate(p_E, self.solver.survival.progression)
+
+    def update_hazard_infection(self):
+        self.set_A_ES()
+        self.set_A_EL()
 
 
 class BlockI(BlockPDE):
     initial_value = 0
 
-    @property
-    def A_IE(self):
-        return self.get_A_XY_PDE(self.solver.survival.progression)
+    def set_A_IE(self):
+        self.A_X['E'] = self._get_A_XY_PDE(self.solver.survival.progression)
 
-    @property
-    def A_II(self):
-        return self.get_A_XX()
+    def set_A_II(self):
+        self.A_X['I'] = self._get_A_XX()
 
     def integrate(self, p_I):
         return super().integrate(p_I, self.solver.survival.recovery)
@@ -173,14 +173,12 @@ class BlockI(BlockPDE):
 class BlockC(BlockPDE):
     initial_value = 0
 
-    @property
-    def A_CI(self):
-        return self.get_A_XY_PDE(self.solver.probability_chronic
-                                 * self.solver.survival.recovery)
+    def set_A_CI(self):
+        self.A_X['I'] = self._get_A_XY_PDE(self.solver.probability_chronic
+                                           * self.solver.survival.recovery)
 
-    @property
-    def A_CC(self):
-        return self.get_A_XX()
+    def set_A_CC(self):
+        self.A_X['C'] = self._get_A_XX()
 
     def integrate(self, p_C):
         return super().integrate(p_C, self.solver.survival.chronic_recovery)
@@ -189,35 +187,34 @@ class BlockC(BlockPDE):
 class BlockR(BlockODE):
     initial_value = 0
 
-    @property
-    def A_RI(self):
-        return self.get_A_XY_PDE((1 - self.solver.probability_chronic)
-                                 * self.solver.survival.recovery)
+    def set_A_RI(self):
+        self.A_X['I'] =  self._get_A_XY_PDE(
+            (1 - self.solver.probability_chronic)
+            * self.solver.survival.recovery)
 
-    @property
-    def A_RC(self):
-        return self.get_A_XY_PDE(self.solver.survival.chronic_recovery)
+    def set_A_RC(self):
+        self.A_X['C'] = self._get_A_XY_PDE(
+            self.solver.survival.chronic_recovery)
 
-    @property
-    def A_RR(self):
-        return self.get_A_XX(self.solver.hazard.antibody_loss)
+    def set_A_RR(self):
+        self.A_X['R'] = self._get_A_XX(self.solver.hazard.antibody_loss)
 
-    @property
-    def A_RL(self):
-        return self.get_A_XY_ODE(self.solver.hazard.antibody_gain)
+    def set_A_RL(self):
+        self.A_X['L'] = self._get_A_XY_ODE(self.solver.hazard.antibody_gain)
 
 
 class BlockL(BlockODE):
     initial_value = 0
 
-    @property
-    def A_LR(self):
-        return self.get_A_XY_ODE(self.solver.hazard.antibody_loss)
+    def set_A_LR(self):
+        self.A_X['R'] = self._get_A_XY_ODE(self.solver.hazard.antibody_loss)
 
-    @property
-    def A_LL(self):
-        return self.get_A_XX(self.solver.hazard.antibody_gain
-                             + self.solver.hazard.infection)
+    def set_A_LL(self):
+        self.A_X['L'] = self._get_A_XX(self.solver.hazard.antibody_gain
+                                       + self.solver.hazard.infection)
+
+    def update_hazard_infection(self):
+        self.set_A_LL()
 
 
 class Status:
@@ -253,6 +250,8 @@ class Status:
         self.length_ODE = self.length_PDE = len(self.ages)
         self.set_params(hazard_infection, parameters)
         self.set_blocks()
+        self.set_A()
+        self.set_b()
         self.solve()
 
     @staticmethod
@@ -321,13 +320,11 @@ class Status:
     def stack_sparse(self, rows, format='csr'):
         return sparse.bmat(self.stack(rows), format=format)
 
-    def get_A(self):
-        A = {var: block.get_A() for (var, block) in self.blocks.items()}
-        return self.stack_sparse(A)
+    def set_A(self):
+        self.A = {var: block.A_X for (var, block) in self.blocks.items()}
 
-    def get_b(self):
-        b = {var: [block.get_b()] for (var, block) in self.blocks.items()}
-        return self.stack_sparse(b)
+    def set_b(self):
+        self.b = {var: [block.b_X] for (var, block) in self.blocks.items()}
 
     def integrate_PDE_vars(self, p):
         # Integrate the p_X variables over r.
@@ -336,8 +333,8 @@ class Status:
         return self.rec_fromkwds(**p_integrated)
 
     def solve(self):
-        A = self.get_A()
-        b = self.get_b()
+        A = self.stack_sparse(self.A)
+        b = self.stack_sparse(self.b)
         assert numpy.isfinite(A.data).all()
         Pp = sparse.linalg.spsolve(A, b)
         (P, p) = self.unstack(Pp)
@@ -370,6 +367,8 @@ class Status:
     def update_hazard_infection(self, hazard_infection):
         if (self.hazard.infection != hazard_infection).any():
             self.hazard.infection = hazard_infection
+            for block in self.blocks.values():
+                block.update_hazard_infection()
             self.solve()
 
 
