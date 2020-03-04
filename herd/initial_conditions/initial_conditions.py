@@ -17,7 +17,8 @@ class gen:
         self.age_structureRV = age_structure.gen(self.parameters)
         self.hazard_infection = infection.find_hazard(
             self.parameters)
-        self.status = status.Solver(self.hazard_infection, self.parameters)
+        self.status_probability = status.status_probability(
+            self.hazard_infection, self.parameters)
 
     def rvs(self, size=None):
         if size is None:
@@ -28,7 +29,7 @@ class gen:
             # Pick `size` random ages.
             ages = self.age_structureRV.rvs(size=size)
             # Determine the status for each age.
-            status_probability = self.status.probability(ages)
+            status_probability = self.status_probability(ages)
             statuses = status_probability.columns
             status_ages = {k: [] for k in statuses}
             # `scipy.stats.multinomial.rvs()` can't handle multiple `p`s,
@@ -56,7 +57,7 @@ class gen:
         return status_ages
 
     def pdf(self, age):
-        status_probability = self.status.probability(age)
+        status_probability = self.status_probability(age)
         age_pdf = self.age_structureRV.pdf(age)
         # `status_probability * age_pdf`
         # but broadcast the multiplication across rows (statuses).

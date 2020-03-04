@@ -51,16 +51,16 @@ def _load_data(params):
     return data
 
 
-def _minus_loglikelihood(hazard_infection, status_, data):
+def _minus_loglikelihood(hazard_infection, solver, data):
     '''This gets optimized over `hazard_infection`.'''
     # Convert the length-1 `hazard_infection` to a scalar Python float,
     # (not a size-() `numpy.array()`).
     hazard_infection = numpy.squeeze(hazard_infection)[()]
-    status_.update_hazard_infection(hazard_infection)
+    prob_solution = solver.update_hazard_infection_and_solve(hazard_infection)
     # Consider doing something better to get the
     # representative age for an age interval.
     ages_mid = data.index.mid
-    prob = status_.probability(ages_mid)
+    prob = prob_solution(ages_mid)
     prob.set_axis(data.index, axis='index', inplace=True)
     # 'exposed' and 'lost immunity' aren't in the data.
     # Combine 'exposed' into 'infectious'.
@@ -92,9 +92,9 @@ def _find_hazard(params):
     data = _load_data(params)
     hazard_infection_guess = 0.6
     # Reuse the solver to avoid multiple setup/teardown.
-    status_ = status.Status(hazard_infection_guess, params)
+    solver = status.Solver(hazard_infection_guess, params)
     res = minimize(_minus_loglikelihood, hazard_infection_guess,
-                   args=(status_, data),
+                   args=(solver, data),
                    bounds=[(0, numpy.inf)])
     assert res.success, res
     # Convert the length-1 array `res.x` to a scalar Python float,
@@ -102,45 +102,22 @@ def _find_hazard(params):
     return numpy.squeeze(res.x)[()]
 
 
-class CacheParameters(parameters.Parameters):
-    '''Build a `herd.parameters.Parameters()`-like object that
-    only has the parameters needed by `_find_hazard()`
-    so that it can be efficiently cached.'''
-    def __init__(self, params):
-        # Generally, the values of these parameters should be
-        # floats, so explicitly convert them so the cache doesn't
-        # get duplicated keys for the float and int representation
-        # of the same number, e.g. `float(0)` and `int(0)`.
-        attrs = {'antibody_gain_hazard',
-                 'antibody_loss_hazard_alpha',
-                 'antibody_loss_hazard_beta',
-                 'antibody_loss_hazard_time_max',
-                 'antibody_loss_hazard_time_min',
-                 'chronic_recovery_mean',
-                 'chronic_recovery_shape',
-                 'maternal_immunity_duration_mean',
-                 'maternal_immunity_duration_shape',
-                 'probability_chronic',
-                 'progression_mean',
-                 'progression_shape',
-                 'recovery_mean',
-                 'recovery_shape'}
-        for attr in attrs:
-            setattr(self, attr, float(getattr(params, attr)))
-
-
 def find_hazard(params):
     '''Find the MLE for the infection hazard for each SAT.'''
-    return _find_hazard(CacheParameters(params))
+    return _find_hazard(status.CacheParameters(params))
+
+
+def find_loglikelihood(hazard_infection, params):
+    data = _load_data(params)
+    solver = status.Solver(hazard_infection, params)
+    return (- _minus_loglikelihood(hazard_infection, solver, data))
 
 
 def find_AIC(hazard_infection, params):
-    data = _load_data(params)
     # The model has 1 parameter, hazard_infection.
     n_params = 1
-    status_ = status.Status(hazard_infection, params)
-    mll = _minus_loglikelihood(hazard_infection, status_, data)
-    return 2 * mll + 2 * n_params
+    return (- 2 * find_loglikelihood(hazard_infection, params)
+            + 2 * n_params)
 
 
 def plot(hazard_infection, params, CI=0.5, show=True, label=None, **kwds):
