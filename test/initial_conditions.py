@@ -20,7 +20,6 @@ def plot_prob_cond(ax, status_prob_cond):
         z = status_prob_cond.shape[1] - i
         ax.fill_between(ages, total, label=k, zorder=z)
     ax.set_ylabel('probability\ngiven age')
-    ax.set_ylim(-0.05, 1.05)
 
 
 def plot_prob(ax, status_prob):
@@ -61,6 +60,9 @@ def plot(parameters, ages):
     status_ages = ICs.rvs(parameters.population_size)
     plot_sample(axes[2], status_ages)
     axes[-1].set_xlabel('age', labelpad=-9)
+    axes[0].set_xlim(ages.min(), ages.max())
+    for ax in axes:
+        ax.margins(0)
     fig.tight_layout(rect=(0, 0.1, 1, 1))
     (_, labels) = axes[0].get_legend_handles_labels()
     nrow = 2
