@@ -207,7 +207,7 @@ class ImmunityWaning(Event):
 class SecondaryInfection(Infection):
     '''A buffalo becoming infected from lost immunity.'''
     def is_valid(self):
-        return self.buffalo.immune_status == 'lost_immunity'
+        return self.buffalo.immune_status == 'lost immunity'
 
     def remove_antibody_gain(self):
         for e in self.buffalo.events:
