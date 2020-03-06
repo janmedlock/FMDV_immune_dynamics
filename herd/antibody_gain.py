@@ -69,8 +69,9 @@ class gen(RV):
         c = (numpy.ma.log(q)
              - self._slope / 2 * t0 ** 2
              - self.alpha * t0)
-        t = numpy.ma.filled((- b + numpy.sqrt(b ** 2 - 4 * a * c)) / 2 / a,
-                            numpy.inf)
+        t = numpy.ma.filled(
+            (- b + numpy.ma.sqrt(b ** 2 - 4 * a * c)) / 2 / a,
+            numpy.inf)
         return t + self.time_min
 
     def cdf(self, time, time0):
