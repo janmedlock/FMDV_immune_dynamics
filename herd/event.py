@@ -239,4 +239,5 @@ class AntibodyGain(Event):
 
     def sample_time(self):
         return (self.buffalo.herd.time
-                + self.buffalo.herd.rvs.antibody_gain.rvs())
+                + self.buffalo.herd.rvs.antibody_gain.rvs(
+                    self.buffalo.herd.time))

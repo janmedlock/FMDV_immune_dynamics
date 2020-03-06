@@ -1,3 +1,5 @@
+* Think about not having all calves born with immunity.
+* Think about whether we need Parameters.initial_infectious.
 * Fix antibody gain and loss parameters in parameters.py,
   in units per year.
-* start_time = antibody_loss_time_min?
+* start_time = antibody_gain_time_min?

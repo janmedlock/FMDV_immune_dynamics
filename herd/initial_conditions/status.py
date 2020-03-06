@@ -288,16 +288,16 @@ class Solver:
             'progression': progression.gen(params),
             'recovery': recovery.gen(params),
             'chronic_recovery': chronic_recovery.gen(params),
-            'antibody_gain': antibody_gain.gen(params)
+            'antibody_loss': antibody_loss.gen(params)
         }
         with numpy.errstate(divide='ignore'):
             hazard = {k: RV.hazard(self.ages_mid)
                       for (k, RV) in RVs.items()}
         survival = {k: RV.sf(self.ages)
                     for (k, RV) in RVs.items()}
-        antibody_loss_RV = antibody_loss.gen(params)
-        hazard['antibody_loss'] = antibody_loss_RV.hazard(
-            antibody_loss_RV.time_min)
+        antibody_gain_RV = antibody_gain.gen(params)
+        hazard['antibody_gain'] = antibody_gain_RV.hazard(
+            antibody_gain_RV.time_min)
         hazard['infection'] = hazard_infection
         self.params.hazard = self.rec_fromkwds(**hazard)
         self.params.survival = self.rec_fromkwds(**survival)
@@ -390,11 +390,11 @@ class CacheParameters(parameters.Parameters):
         # floats, so explicitly convert them so the cache doesn't
         # get duplicated keys for the float and int representation
         # of the same number, e.g. `float(0)` and `int(0)`.
-        attrs = {'antibody_gain_hazard',
-                 'antibody_loss_hazard_alpha',
-                 'antibody_loss_hazard_beta',
-                 'antibody_loss_hazard_time_max',
-                 'antibody_loss_hazard_time_min',
+        attrs = {'antibody_gain_hazard_alpha',
+                 'antibody_gain_hazard_beta',
+                 'antibody_gain_hazard_time_max',
+                 'antibody_gain_hazard_time_min',
+                 'antibody_loss_hazard',
                  'chronic_recovery_mean',
                  'chronic_recovery_shape',
                  'maternal_immunity_duration_mean',
