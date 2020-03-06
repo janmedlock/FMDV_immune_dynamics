@@ -8,7 +8,6 @@ class Parameters:
         self.SAT = SAT
         if _set_defaults:
             self.population_size = 1000
-            self.initial_infectious = 2
             self.female_probability_at_birth = 0.5
             self.birth_peak_time_of_year = 0  # 01 January.
             # self.birth_seasonal_coefficient_of_variation = 0.505  # 1st year.
@@ -27,8 +26,6 @@ class Parameters:
             time_max = time_min + 1247 / 365
             self.antibody_gain_hazard_time_min = time_min
             self.antibody_gain_hazard_time_max = time_max
-            # Duration in R before returning to S.
-            self.immunity_waning_duration = inf
             self.start_time = self.antibody_gain_hazard_time_min
             if self.SAT == 1:
                 self.progression_shape = 1.2

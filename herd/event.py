@@ -4,6 +4,14 @@ from abc import ABC, abstractmethod
 import numpy
 from scipy import stats
 
+from herd.immune_statuses import immune_statuses
+
+
+# Events that can happen to each immune status.
+# TODO: Build this with metaclass magic.
+events_by_immune_status = {immune_status: set()
+                           for immune_status in immune_statuses}
+
 
 class Event(ABC):
     '''Parent class for events that happen to a buffalo.'''
@@ -32,34 +40,19 @@ class Event(ABC):
         self.buffalo.events.remove(self)
         self.do()
 
+    def remove_event(self, cls):
+        for e in self.buffalo.events:
+            if isinstance(e, cls):
+                self.buffalo.events.remove(e)
+                break
+        else:
+            raise RuntimeError(f'Missing {cls.__name__}() event!')
+
     def __repr__(self):
         return 't = {}: {} for buffalo #{}'.format(
             self.time,
             self.__class__.__name__,
             self.buffalo.identifier)
-
-
-def get_all_valid_events(buffalo):
-    events = set()
-    # Collect all valid subclasses of `Event()`.
-    # `Event.__init__()` raises an `AssertionError`
-    # if `Event.is_valid()` is False.
-    for cls in Event.__subclasses__():
-        try:
-            events.add(cls(buffalo))
-        except AssertionError:
-            pass
-    return events
-
-
-def Sex(buffalo):
-    '''A buffalo having its sex determined.'''
-    # This is intentionally not an `Event()`,
-    # because it doesn't have a sample time, etc.
-    if buffalo.herd.rvs.female.rvs() == 1:
-        return 'female'
-    else:
-        return 'male'
 
 
 class Mortality(Event):
@@ -103,7 +96,6 @@ class MaternalImmunityWaning(Event):
 
     def do(self):
         self.buffalo.change_immune_status_to('susceptible')
-        self.buffalo.events.add(Infection(self.buffalo))
 
     def sample_time(self):
         # Use resampling to get a waning time >= current time.
@@ -113,6 +105,8 @@ class MaternalImmunityWaning(Event):
             if time >= self.buffalo.herd.time:
                 return time
 
+events_by_immune_status['maternal immunity'].add(MaternalImmunityWaning)
+
 
 class Infection(Event):
     '''A buffalo becoming infected.'''
@@ -121,7 +115,6 @@ class Infection(Event):
 
     def do(self):
         self.buffalo.change_immune_status_to('exposed')
-        self.buffalo.events.add(Progression(self.buffalo))
 
     def sample_time(self):
         force_of_infection = (
@@ -137,6 +130,8 @@ class Infection(Event):
         return (self.buffalo.herd.time
                 + stats.expon.rvs(scale=scale))
 
+events_by_immune_status['susceptible'].add(Infection)
+
 
 class Progression(Event):
     '''A buffalo becoming infectious.'''
@@ -145,11 +140,12 @@ class Progression(Event):
 
     def do(self):
         self.buffalo.change_immune_status_to('infectious')
-        self.buffalo.events.add(Recovery(self.buffalo))
 
     def sample_time(self):
         return (self.buffalo.herd.time
                 + self.buffalo.herd.rvs.progression.rvs())
+
+events_by_immune_status['exposed'].add(Progression)
 
 
 class Recovery(Event):
@@ -159,21 +155,15 @@ class Recovery(Event):
 
     def do(self):
         if self.buffalo.herd.rvs.probability_chronic.rvs() == 1:
-            self.do_chronic_progression()
+            self.buffalo.change_immune_status_to('chronic')
         else:
-            self.do_recovery()
-
-    def do_recovery(self):
-        self.buffalo.change_immune_status_to('recovered')
-        self.buffalo.events.add(ImmunityWaning(self.buffalo))
-
-    def do_chronic_progression(self):
-        self.buffalo.change_immune_status_to('chronic')
-        self.buffalo.events.add(ChronicRecovery(self.buffalo))
+            self.buffalo.change_immune_status_to('recovered')
 
     def sample_time(self):
         return (self.buffalo.herd.time
                 + self.buffalo.herd.rvs.recovery.rvs())
+
+events_by_immune_status['infectious'].add(Recovery)
 
 
 class ChronicRecovery(Event):
@@ -183,43 +173,12 @@ class ChronicRecovery(Event):
 
     def do(self):
         self.buffalo.change_immune_status_to('recovered')
-        self.buffalo.events.add(ImmunityWaning(self.buffalo))
 
     def sample_time(self):
         return (self.buffalo.herd.time
                 + self.buffalo.herd.rvs.chronic_recovery.rvs())
 
-
-class ImmunityWaning(Event):
-    '''A buffalo losing its acquired immunity.'''
-    def is_valid(self):
-        return self.buffalo.immune_status == 'recovered'
-
-    def do(self):
-        self.buffalo.change_immune_status_to('susceptible')
-        self.buffalo.events.add(Infection(self.buffalo))
-
-    def sample_time(self):
-        return (self.buffalo.herd.time
-                + self.buffalo.herd.rvs.immunity_waning.rvs())
-
-
-class SecondaryInfection(Infection):
-    '''A buffalo becoming infected from lost immunity.'''
-    def is_valid(self):
-        return self.buffalo.immune_status == 'lost immunity'
-
-    def remove_antibody_gain(self):
-        for e in self.buffalo.events:
-            if isinstance(e, AntibodyGain):
-                self.buffalo.events.remove(e)
-                break
-        else:
-            raise RuntimeError('Missing AntibodyGain() event!')
-
-    def do(self):
-        self.remove_antibody_gain()
-        super().do()
+events_by_immune_status['chronic'].add(ChronicRecovery)
 
 
 class AntibodyLoss(Event):
@@ -228,32 +187,45 @@ class AntibodyLoss(Event):
 
     def do(self):
         self.buffalo.change_immune_status_to('lost immunity')
-        self.buffalo.events.add(AntibodyGain(self.buffalo))
-        self.buffalo.events.add(SecondaryInfection(self.buffalo))
 
     def sample_time(self):
         return (self.buffalo.herd.time
                 + self.buffalo.herd.rvs.antibody_loss.rvs())
+
+events_by_immune_status['recovered'].add(AntibodyLoss)
+
+
+class SecondaryInfection(Infection):
+    '''A buffalo becoming infected from lost immunity.'''
+    def is_valid(self):
+        return self.buffalo.immune_status == 'lost immunity'
+
+    def do(self):
+        # Immune status 'lost immunity' can change by either
+        # `SecondaryInfection()` or `AntibodyGain()`.
+        # Remove the one that didn't happen so it doesn't stay
+        # in the queue.
+        self.remove_event(AntibodyGain)
+        self.buffalo.change_immune_status_to('exposed')
+
+events_by_immune_status['lost immunity'].add(SecondaryInfection)
 
 
 class AntibodyGain(Event):
     def is_valid(self):
         return self.buffalo.immune_status == 'lost immunity'
 
-    def remove_infection(self):
-        for e in self.buffalo.events:
-            if isinstance(e, Infection):
-                self.buffalo.events.remove(e)
-                break
-        else:
-            raise RuntimeError('Missing Infection() event!')
-
     def do(self):
-        self.remove_infection()
+        # Immune status 'lost immunity' can change by either
+        # `SecondaryInfection()` or `AntibodyGain()`.
+        # Remove the one that didn't happen so it doesn't stay
+        # in the queue.
+        self.remove_event(SecondaryInfection)
         self.buffalo.change_immune_status_to('recovered')
-        self.buffalo.events.add(AntibodyLoss(self.buffalo))
 
     def sample_time(self):
         return (self.buffalo.herd.time
                 + self.buffalo.herd.rvs.antibody_gain.rvs(
                     self.buffalo.herd.time))
+
+events_by_immune_status['lost immunity'].add(AntibodyGain)

@@ -5,12 +5,9 @@ from pandas import DataFrame
 
 from herd.buffalo import Buffalo
 from herd.events import HerdEvents
+from herd.immune_statuses import immune_statuses
 from herd.parameters import Parameters
 from herd.random_variables import RandomVariables
-
-
-statuses = ('maternal immunity', 'susceptible', 'exposed',
-            'infectious', 'chronic', 'recovered', 'lost immunity')
 
 
 class Herd(set):
@@ -31,14 +28,21 @@ class Herd(set):
         self.rvs = RandomVariables(self.params)
         self.time = self.params.start_time
         self.events = HerdEvents()
-        self.by_immune_status = {s: set() for s in statuses}
+        self.by_immune_status = {s: set() for s in immune_statuses}
         self.identifiers = count(0)
         # These need to be defined before initializing
         # susceptible `Buffalo()`.
         self.number_infectious = self.number_chronic = 0
-        status_ages = self.rvs.initial_conditions.rvs(
-            self.params.population_size)
-        for (immune_status, ages) in status_ages.items():
+        # Sample until there are some infected animals.
+        while True:
+            immune_status_ages = self.rvs.initial_conditions.rvs()
+            infected = sum(len(immune_status_ages[s])
+                           for s in {'exposed', 'infectious', 'chronic'})
+            if infected > 0:
+                break
+            else:
+                print('No infected animals! Resampling!')
+        for (immune_status, ages) in immune_status_ages.items():
             for age in ages:
                 self.add(Buffalo(self, immune_status, age))
 
@@ -75,15 +79,14 @@ class Herd(set):
             self.events.update_infection_times()
 
     def get_stats(self):
-        stats = [len(self.by_immune_status[status])
-                 for status in statuses]
+        stats = [len(self.by_immune_status[s])
+                 for s in immune_statuses]
         return (self.time, stats)
 
     @property
     def number_infected(self):
-        return (len(self.by_immune_status['exposed'])
-                + len(self.by_immune_status['infectious'])
-                + len(self.by_immune_status['chronic']))
+        return sum(len(self.by_immune_status[s])
+                   for s in {'exposed', 'infectious', 'chronic'})
 
     def stop(self):
         return (self.number_infected == 0)
@@ -114,7 +117,7 @@ class Herd(set):
                 365 * (t_last - self.params.start_time)))
         result = DataFrame.from_dict(dict(result),
                                      orient='index',
-                                     columns=statuses)
+                                     columns=immune_statuses)
         result.index.name = 'time (y)'
         result.columns.name = 'status'
         return result

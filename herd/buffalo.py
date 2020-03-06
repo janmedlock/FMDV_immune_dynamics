@@ -1,5 +1,4 @@
-from herd import event
-from herd.events import BuffaloEvents
+from herd import events
 
 
 class Buffalo:
@@ -13,9 +12,9 @@ class Buffalo:
         self.herd = herd
         self.immune_status = immune_status
         self.birth_date = self.herd.time - age
-        self.sex = event.Sex(self)
+        self.sex = 'female' if (self.herd.rvs.female.rvs() == 1) else 'male'
         self.identifier = next(self.herd.identifiers)
-        self.events = BuffaloEvents(self)
+        self.events = events.BuffaloEvents(self)
         if self.herd.debug:
             if age == 0:
                 print('t = {}: birth of #{} with status {}'.format(
@@ -49,3 +48,4 @@ class Buffalo:
         self.herd.immune_status_remove(self)
         self.immune_status = new_immune_status
         self.herd.immune_status_add(self)
+        self.events.add_events_for_immune_status(self, new_immune_status)

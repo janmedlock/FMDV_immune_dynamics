@@ -9,7 +9,7 @@ import pandas
 from scipy.optimize import minimize
 
 from herd import parameters
-from herd.initial_conditions import status
+from herd.initial_conditions import immune_status
 
 
 _filename = '../data/Hedger_1972_survey_data.xlsx'
@@ -51,12 +51,13 @@ def _load_data(params):
     return data
 
 
-def _minus_loglikelihood(hazard_infection, solver, data):
+def _minus_loglikelihood(hazard_infection, immune_status_solver, data):
     '''This gets optimized over `hazard_infection`.'''
     # Convert the length-1 `hazard_infection` to a scalar Python float,
     # (not a size-() `numpy.array()`).
     hazard_infection = numpy.squeeze(hazard_infection)[()]
-    prob_solution = solver.update_hazard_infection_and_solve(hazard_infection)
+    prob_solution = immune_status_solver.update_hazard_infection_and_solve(
+        hazard_infection)
     # Consider doing something better to get the
     # representative age for an age interval.
     ages_mid = data.index.mid
@@ -92,9 +93,10 @@ def _find_hazard(params):
     data = _load_data(params)
     hazard_infection_guess = 0.6
     # Reuse the solver to avoid multiple setup/teardown.
-    solver = status.Solver(hazard_infection_guess, params)
+    immune_status_solver = immune_status.Solver(hazard_infection_guess,
+                                                params)
     res = minimize(_minus_loglikelihood, hazard_infection_guess,
-                   args=(solver, data),
+                   args=(immune_status_solver, data),
                    bounds=[(0, numpy.inf)])
     assert res.success, res
     # Convert the length-1 array `res.x` to a scalar Python float,
@@ -104,13 +106,15 @@ def _find_hazard(params):
 
 def find_hazard(params):
     '''Find the MLE for the infection hazard for each SAT.'''
-    return _find_hazard(status.CacheParameters(params))
+    return _find_hazard(immune_status.CacheParameters(params))
 
 
 def find_loglikelihood(hazard_infection, params):
     data = _load_data(params)
-    solver = status.Solver(hazard_infection, params)
-    return (- _minus_loglikelihood(hazard_infection, solver, data))
+    immune_status_solver = immune_status.Solver(hazard_infection, params)
+    return (- _minus_loglikelihood(hazard_infection,
+                                   immune_status_solver,
+                                   data))
 
 
 def find_AIC(hazard_infection, params):
@@ -125,7 +129,7 @@ def plot(hazard_infection, params, CI=0.5, show=True, label=None, **kwds):
     from scipy.stats import beta
     data = _load_data(params)
     ages = numpy.linspace(0, data.index[-1].right, 301)
-    prob = status.probability(ages, hazard_infection, params)
+    prob = immune_status.probability(ages, hazard_infection, params)
     pyplot.plot(ages, prob['susceptible'], color='C0', **kwds)
     S = data['susceptible']
     N = data.sum(axis='columns')

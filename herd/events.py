@@ -15,7 +15,10 @@ class BuffaloEvents(set):
         super().__init__()
         self.herd_events = buffalo.herd.events
         # Add all the events that can happen to this buffalo.
-        self.update(event.get_all_valid_events(buffalo))
+        self.add(event.Mortality(buffalo))
+        if buffalo.sex == 'female':
+            self.add(event.Birth(buffalo))
+        self.add_events_for_immune_status(buffalo, buffalo.immune_status)
 
     def add(self, event_):
         super().add(event_)
@@ -36,6 +39,10 @@ class BuffaloEvents(set):
         for event_ in self:
             self.herd_events.remove(event_)
         super().clear()
+
+    def add_events_for_immune_status(self, buffalo, immune_status):
+        for Event in event.events_by_immune_status[immune_status]:
+            self.add(Event(buffalo))
 
 
 class HerdEvents(SortedKeyList):

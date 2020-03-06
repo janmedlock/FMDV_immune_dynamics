@@ -218,7 +218,7 @@ class BlockL(BlockODE):
         self.set_A_LL()
 
 
-class Probability:
+class ProbabilityInterpolant:
     '''The solution from `Solver()`, that then gets interpolated
     to different ages as needed.'''
 
@@ -372,7 +372,7 @@ class Solver:
         P.sort_index(axis='columns', inplace=True)
         assert ((P >= 0) | numpy.isclose(P, 0)).all(axis=None)
         assert numpy.isclose(P.sum(axis='columns'), 1).all()
-        return Probability(P)
+        return ProbabilityInterpolant(P)
 
     def update_hazard_infection_and_solve(self, hazard_infection):
         self.params.hazard.infection = hazard_infection
@@ -383,8 +383,8 @@ class Solver:
 
 class CacheParameters(parameters.Parameters):
     '''Build a `herd.parameters.Parameters()`-like object that
-    only has the parameters needed by `_status()` and `_find_hazard()`
-    so that it can be efficiently cached.'''
+    only has the parameters needed by `_probability_interpolant()`
+    and `_find_hazard()` so that it can be efficiently cached.'''
     def __init__(self, params):
         # Generally, the values of these parameters should be
         # floats, so explicitly convert them so the cache doesn't
@@ -416,18 +416,18 @@ class CacheParameters(parameters.Parameters):
 _cachedir = os.path.join(os.path.dirname(__file__), '_cache')
 _cache = Memory(_cachedir, verbose=0)
 @_cache.cache
-def _status_probability(hazard_infection, params):
+def _probability_interpolant(hazard_infection, params):
     return Solver(hazard_infection, params).solve()
 
 
-def status_probability(hazard_infection, params):
-    '''Get the `Probability()` that can be interpolated
+def probability_interpolant(hazard_infection, params):
+    '''Get the `ProbabilityInterpolant()` that can be interpolated
     onto ages as needed.'''
-    return _status_probability(hazard_infection,
-                               CacheParameters(params))
+    return _probability_interpolant(hazard_infection,
+                                    CacheParameters(params))
 
 
 def probability(age, hazard_infection, params):
     '''The probability of being in each immune status at age `a`,
     given being alive at age `a`.'''
-    return status_probability(hazard_infection, params)(age)
+    return probability_interpolant(hazard_infection, params)(age)
