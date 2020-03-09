@@ -16,7 +16,7 @@ def make_plot(data, show=True):
         ax.step(365 * x.index, x, where='post', label=k)
     ax.set_xlabel(data.index.name)
     ax.set_ylabel('number')
-    ax.legend()
+    ax.legend(loc='center right')
     if show:
         pyplot.show()
 
