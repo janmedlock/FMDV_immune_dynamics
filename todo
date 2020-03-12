@@ -1,1 +1,5 @@
 * Think about not having all calves born with immunity.
+* Look at infection hazard over time in the simulations.
+  Compare that to the estimate used for the initial conditions.
+  Is there a better way to estimate the hazard for the initial conditions
+  that includes the chronic and lost antibody states?
