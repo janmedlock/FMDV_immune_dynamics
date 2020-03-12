@@ -96,7 +96,7 @@ class gen(RV):
         return out
 
     def logsf(self, time, time0, age0):
-        # age0 is the age at t = time0.
+        # age0 is the age at time = 0, i.e. t = time0.
         c = time0 + numpy.clip(4 - age0, 0, numpy.inf) - self.peak_time_of_year
         d = time0 + time - self.peak_time_of_year
         H0 = numpy.floor(d) - numpy.floor(c) - 1
