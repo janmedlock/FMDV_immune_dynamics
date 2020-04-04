@@ -3,7 +3,7 @@ import pandas
 from scipy.stats import multinomial
 
 from herd import age_structure, parameters
-from herd.initial_conditions import infection, immune_status
+from herd.initial_conditions import immune_status
 
 
 class gen:
@@ -15,11 +15,8 @@ class gen:
         self.parameters = parameters
         # Reuse these in case we call rvs() repeatedly.
         self.age_structureRV = age_structure.gen(self.parameters)
-        self.hazard_infection = infection.find_hazard(
-            self.parameters)
         self.immune_status_probability_interpolant \
-            = immune_status.probability_interpolant(self.hazard_infection,
-                                                    self.parameters)
+            = immune_status.probability_interpolant(self.parameters)
 
     def rvs(self, size=None):
         if size is None:

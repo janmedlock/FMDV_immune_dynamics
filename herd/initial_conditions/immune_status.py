@@ -5,11 +5,11 @@ from joblib import Memory
 import numpy
 import numpy.lib.recfunctions
 import pandas
-from scipy import sparse
+from scipy import integrate, optimize, sparse
 
-from herd import (antibody_gain, antibody_loss, chronic_recovery,
-                  maternal_immunity_waning, parameters, progression,
-                  recovery, utility)
+from herd import (age_structure, antibody_gain, antibody_loss,
+                  chronic_recovery, maternal_immunity_waning,
+                  parameters, progression, recovery, utility)
 
 
 class Block:
@@ -257,17 +257,17 @@ class Solver:
                  'L': 'lost immunity'}
 
     # Step size in both age (a) and residence time (r).
-    step = 0.01
+    step = 0.005
 
     age_max = 20
 
-    def __init__(self, hazard_infection, params):
+    def __init__(self, params):
         self.ages = utility.arange(0, self.age_max, self.step,
                                    endpoint=True)
         assert len(self.ages) > 1
         self.ages_mid = (self.ages[ : -1] + self.ages[1 : ]) / 2
         self.length_ODE = self.length_PDE = len(self.ages)
-        self.set_params(hazard_infection, params)
+        self.set_params(params)
         self.set_blocks()
         self.set_A()
         self.set_b()
@@ -276,9 +276,9 @@ class Solver:
     def rec_fromkwds(**kwds):
         return numpy.rec.fromarrays(
             numpy.broadcast_arrays(*kwds.values()),
-            names=list(kwds.keys()))
+            dtype=[(k, float) for k in kwds.keys()])
 
-    def set_params(self, hazard_infection, params):
+    def set_params(self, params):
         self.params = Params()
         self.params.step = self.step
         self.params.length_ODE = self.length_ODE
@@ -298,10 +298,13 @@ class Solver:
         antibody_gain_RV = antibody_gain.gen(params)
         hazard['antibody_gain'] = antibody_gain_RV.hazard(
             antibody_gain_RV.time_min)
-        hazard['infection'] = hazard_infection
+        hazard['infection'] = 1  # Dummy value. Set on calls to `solve_step()`.
         self.params.hazard = self.rec_fromkwds(**hazard)
         self.params.survival = self.rec_fromkwds(**survival)
         self.params.probability_chronic = params.probability_chronic
+        self.params.transmission_rate = params.transmission_rate
+        self.params.chronic_transmission_rate = params.chronic_transmission_rate
+        self.params.age_pdf = age_structure.gen(params).pdf(self.ages)
 
     def set_blocks(self):
         self.blocks = {}
@@ -351,7 +354,10 @@ class Solver:
                         for n in p.dtype.names}
         return self.rec_fromkwds(**p_integrated)
 
-    def solve(self):
+    def solve_step(self, hazard_infection):
+        self.params.hazard.infection = hazard_infection
+        for block in self.blocks.values():
+            block.update_hazard_infection()
         A = self.stack_sparse(self.A)
         b = self.stack_sparse(self.b)
         assert numpy.isfinite(A.data).all()
@@ -361,8 +367,7 @@ class Solver:
         P = numpy.lib.recfunctions.merge_arrays(
             (P, p_integrated),
             asrecarray=True, flatten=True)
-        P = pandas.DataFrame(P,
-                             index=pandas.Index(self.ages, name='age'))
+        P = pandas.DataFrame(P, index=pandas.Index(self.ages, name='age'))
         P.rename(columns=self.col_names, inplace=True)
         # Order columns.
         P.set_axis(pandas.CategoricalIndex(P.columns,
@@ -372,19 +377,55 @@ class Solver:
         P.sort_index(axis='columns', inplace=True)
         assert ((P >= 0) | numpy.isclose(P, 0)).all(axis=None)
         assert numpy.isclose(P.sum(axis='columns'), 1).all()
-        return ProbabilityInterpolant(P)
+        return P
 
-    def update_hazard_infection_and_solve(self, hazard_infection):
-        self.params.hazard.infection = hazard_infection
-        for block in self.blocks.values():
-            block.update_hazard_infection()
-        return self.solve()
+    def get_hazard_infection(self, P):
+        '''Compute the hazard of infection from the solution 'P'.'''
+        # P is the probability of being in each immune status as a
+        # function of age, conditioned on being alive at that age.
+        # Compute the unconditional probability of being in each
+        # immune status as a function of age.
+        P = P.mul(self.params.age_pdf, axis='index')
+        # Compute probability of being in each immune status
+        # integrated over age.
+        P = P.apply(integrate.trapz, args=(self.ages, ))
+        # Compute the hazard of infection from the solution.
+        hazard_infection = ((self.params.transmission_rate
+                             * P['infectious'])
+                            + (self.params.chronic_transmission_rate
+                               * P['chronic']))
+        return hazard_infection
+
+    def solve_objective(self, hazard_infection):
+        '''This is called by `optimize.root_scalar()` to find
+        the equilibrium `hazard_infection`.'''
+        P = self.solve_step(hazard_infection)
+        retval = self.get_hazard_infection(P) - hazard_infection
+        return retval
+
+    def solve(self):
+        # Find the bracketing interval [a, b]
+        # where `self.solve_objective(a) > 0`
+        # and `self.solve_objective(b) < 0`.
+        multiplier = 2
+        a = 15
+        while self.solve_objective(a) < 0:
+            a /= multiplier
+        b = a * multiplier
+        while self.solve_objective(b) > 0:
+            a = b
+            b *= multiplier
+        sol = optimize.root_scalar(self.solve_objective, bracket=(a, b))
+        assert sol.converged, sol
+        hazard_infection = sol.root
+        P = self.solve_step(hazard_infection)
+        return ProbabilityInterpolant(P)
 
 
 class CacheParameters(parameters.Parameters):
     '''Build a `herd.parameters.Parameters()`-like object that
     only has the parameters needed by `_probability_interpolant()`
-    and `_find_hazard()` so that it can be efficiently cached.'''
+    so that it can be efficiently cached.'''
     def __init__(self, params):
         # Generally, the values of these parameters should be
         # floats, so explicitly convert them so the cache doesn't
@@ -395,15 +436,21 @@ class CacheParameters(parameters.Parameters):
                  'antibody_gain_hazard_time_max',
                  'antibody_gain_hazard_time_min',
                  'antibody_loss_hazard',
+                 'birth_peak_time_of_year',
+                 'birth_seasonal_coefficient_of_variation',
                  'chronic_recovery_mean',
                  'chronic_recovery_shape',
+                 'chronic_transmission_rate',
+                 'female_probability_at_birth',
                  'maternal_immunity_duration_mean',
                  'maternal_immunity_duration_shape',
                  'probability_chronic',
                  'progression_mean',
                  'progression_shape',
                  'recovery_mean',
-                 'recovery_shape'}
+                 'recovery_shape',
+                 'start_time',
+                 'transmission_rate'}
         for attr in attrs:
             setattr(self, attr, float(getattr(params, attr)))
 
@@ -414,20 +461,19 @@ class CacheParameters(parameters.Parameters):
 # Set up the cache in a subdirectory of the directory that this source
 # file is in.
 _cachedir = os.path.join(os.path.dirname(__file__), '_cache')
-_cache = Memory(_cachedir, verbose=0)
+_cache = Memory(_cachedir)
 @_cache.cache
-def _probability_interpolant(hazard_infection, params):
-    return Solver(hazard_infection, params).solve()
+def _probability_interpolant(params):
+    return Solver(params).solve()
 
 
-def probability_interpolant(hazard_infection, params):
+def probability_interpolant(params):
     '''Get the `ProbabilityInterpolant()` that can be interpolated
     onto ages as needed.'''
-    return _probability_interpolant(hazard_infection,
-                                    CacheParameters(params))
+    return _probability_interpolant(CacheParameters(params))
 
 
-def probability(age, hazard_infection, params):
+def probability(age, params):
     '''The probability of being in each immune status at age `a`,
     given being alive at age `a`.'''
-    return probability_interpolant(hazard_infection, params)(age)
+    return probability_interpolant(params)(age)

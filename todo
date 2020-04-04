@@ -1,10 +1,4 @@
-* We have estimated force of infection (0.660 per year) from Hedger
-  1972 to get an endemic equilibrium. Applying the transmission rates
-  estimated from our data to this endemic equilibrium gives a much
-  higher force of infection (5ish per year), which causes a fast
-  increase in infectious and chronic.
-** Can we solve the PDEs iteratively with the force of infection to get
-   an endemic equilibrium without using Hedger's data?
-** What if we approximate the gamma waiting times by exponential with
-   the same mean so that we get a system of ODEs intead of PDEs?
+* For the initial conditions, what if we approximate the gamma waiting
+  times by exponential with the same mean so that we get a system of
+  ODEs intead of PDEs?
 * Think about not having all calves born with immunity.
