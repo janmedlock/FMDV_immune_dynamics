@@ -1,4 +1,4 @@
+* Think about not having all calves born with immunity.
 * For the initial conditions, what if we approximate the gamma waiting
   times by exponential with the same mean so that we get a system of
   ODEs intead of PDEs?
-* Think about not having all calves born with immunity.
