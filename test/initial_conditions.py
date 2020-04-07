@@ -71,6 +71,6 @@ def plot(parameters, ages):
 
 
 if __name__ == '__main__':
-    parameters = Parameters()
+    parameters = Parameters(SAT=1)
     ages = numpy.linspace(0, 20, 101)
     plot(parameters, ages)
