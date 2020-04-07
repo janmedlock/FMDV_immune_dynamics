@@ -6,14 +6,13 @@ import herd
 import run_common
 
 from matplotlib import pyplot
-import seaborn
 
 
 def make_plot(data, show=True):
     (fig, ax) = pyplot.subplots()
-    seaborn.set_palette(seaborn.color_palette('deep', 6))
     for (k, x) in data.items():
-        ax.step(x.index, x, where='post', label=k)
+        ax.step(x.index, x, label=k, where='post',
+                alpha=0.9, linewidth=1)
     ax.set_xlabel(data.index.name)
     ax.set_ylabel('number')
     ax.legend(loc='center right')
