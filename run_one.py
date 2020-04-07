@@ -13,7 +13,7 @@ def make_plot(data, show=True):
     (fig, ax) = pyplot.subplots()
     seaborn.set_palette(seaborn.color_palette('deep', 6))
     for (k, x) in data.items():
-        ax.step(365 * x.index, x, where='post', label=k)
+        ax.step(x.index, x, where='post', label=k)
     ax.set_xlabel(data.index.name)
     ax.set_ylabel('number')
     ax.legend(loc='center right')
