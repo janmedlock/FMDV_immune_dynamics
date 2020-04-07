@@ -59,7 +59,7 @@ birth, waning, infection, progression, recovery, and chronic
 recovery.
 \begin{description}
 \item[Death] On the birth of new buffalo calf, the age at death of
-  that calf is sampled from the mortality distribution.
+  that calf is sampled from its distribution.
 
 \item[Birth] For each female buffalo, the time until she gives birth
   to a calf is sampled from its distribution.  This is done when the
@@ -133,16 +133,16 @@ We took the annual survival to be
     0.66 & \text{if $a \geq 12$}.
   \end{cases}
 \end{equation}
-Assuming that the mortality hazard is constant throughout a year gives
+Assuming that the hazard of death is constant throughout a year gives
 the hazard
 \begin{equation}
-  h_{\text{mortality}}(a)
+  h_{\text{death}}(a)
   = - \log \Prob\{\text{Survival for $\unit[1]{yr}$}\},
 \end{equation}
 and the survival
 \begin{equation}
   \begin{split}
-    S_{\text{mortality}}(a)
+    S_{\text{death}}(a)
     =
     \begin{cases}
       0.66^a
@@ -394,12 +394,12 @@ The mean rate of female births $B(t)$ follows the Lotka equation
     B(t) =&
     p_{\text{female}} \bigg[
       \int_0^t B(t - a)
-      S_{\text{mortality}}(a)
+      S_{\text{death}}(a)
       h_{\text{birth}}(t, a) \md a
     \\
     & \quad\quad\quad\quad\quad {} +
       \int_0^{\infty} n_0(a)
-      \frac{S_{\text{mortality}}(a + t)}{S_{\text{mortality}}(a)}
+      \frac{S_{\text{death}}(a + t)}{S_{\text{death}}(a)}
       h_{\text{birth}}(t, a + t) \md a
     \bigg],
   \end{split}
@@ -419,7 +419,7 @@ where $n_0(a)$ is the density of age $a$ females at time $t = 0$
 % where
 % \begin{equation}
 %   \hat{h}_{\text{birth}}(t, a) =
-%   S_{\text{mortality}}(a)
+%   S_{\text{death}}(a)
 %   h_{\text{birth}}(t, a).
 % \end{equation}
 % Alternately,
@@ -435,11 +435,11 @@ Given $B(t)$, the mean density of females of age $a$ is
 \begin{equation}
   n(t, a) =
   \begin{cases}
-    B(t - a) S_{\text{mortality}}(a)
+    B(t - a) S_{\text{death}}(a)
     & \text{if $a < t$},
     \\
     n_0(a - t)
-    \frac{S_{\text{mortality}}(a)}{S_{\text{mortality}}(a - t)}
+    \frac{S_{\text{death}}(a)}{S_{\text{death}}(a - t)}
     & \text{if $a > t$}.
   \end{cases}
 \end{equation}
@@ -612,7 +612,7 @@ We numerically computed the population growth rate and stable age
 structure by using age and time steps $\Delta t = 0.01$,
 maximum age $a_{\text{max}} = 35$
 (probability of survival
-$S_{\text{mortality}}(35) \approx 10^{-5}$),
+$S_{\text{death}}(35) \approx 10^{-5}$),
 finding the monodromy matrix by numerically solving
 \eqref{fundamental_PDE} from $t = 0$ to $T$, and
 then finding its dominant eigenvalue and corresponding eigenvector.
@@ -634,7 +634,7 @@ The PDEs are
     \left(
       \frac{\partial}{\partial t}
       + \frac{\partial}{\partial a}
-      + h_{\text{mortality}}(a)
+      + h_{\text{death}}(a)
       + h_{\text{waning}}(a)
     \right) M(t, a)
     &= 0,
@@ -642,7 +642,7 @@ The PDEs are
     \left(
       \frac{\partial}{\partial t}
       + \frac{\partial}{\partial a}
-      + h_{\text{mortality}}(a)
+      + h_{\text{death}}(a)
       + h_{\text{infection}}(t)
     \right) S(t, a)
     &= h_{\text{waning}}(a) M(t, a),
@@ -651,7 +651,7 @@ The PDEs are
       \frac{\partial}{\partial t}
       + \frac{\partial}{\partial a}
       + \frac{\partial}{\partial r}
-      + h_{\text{mortality}}(a)
+      + h_{\text{death}}(a)
       + h_{\text{progression}}(r)
     \right) E(t, a, r)
     &= 0,
@@ -660,7 +660,7 @@ The PDEs are
       \frac{\partial}{\partial t}
       + \frac{\partial}{\partial a}
       + \frac{\partial}{\partial r}
-      + h_{\text{mortality}}(a)
+      + h_{\text{death}}(a)
       + h_{\text{recovery}}(r)
     \right) I(t, a, r)
     &= 0,
@@ -668,7 +668,7 @@ The PDEs are
     \left(
       \frac{\partial}{\partial t}
       + \frac{\partial}{\partial a}
-      + h_{\text{mortality}}(a)
+      + h_{\text{death}}(a)
       + h_{\text{chronic recovery}}
     \right) C(t, a)
     &= p_{\text{chronic}} H_{\text{recovery}}(t, a),
@@ -676,7 +676,7 @@ The PDEs are
     \left(
       \frac{\partial}{\partial t}
       + \frac{\partial}{\partial a}
-      + h_{\text{mortality}}(a)
+      + h_{\text{death}}(a)
     \right) R(t, a)
     &= (1 - p_{\text{chronic}}) H_{\text{recovery}}(t, a)
     \\ & \quad {}
@@ -734,7 +734,7 @@ satisfies the McKendrick--von Foerster equation
     \left(
       \frac{\partial}{\partial t}
       + \frac{\partial}{\partial a}
-      + h_{\text{mortality}}(a)
+      + h_{\text{death}}(a)
     \right)
     N(t, a)
     &= 0,
@@ -754,13 +754,13 @@ Then the PDEs for the equilibrium are
 \begin{equation}
   \begin{split}
     \frac{\md M}{\md a}
-    &= - \big(h_{\text{mortality}}(a)
+    &= - \big(h_{\text{death}}(a)
     + h_{\text{waning}}(a)\big) M,
     \\
     \frac{\md S}{\md a}
     &= h_{\text{waning}}(a) M
     \\ & \quad {}
-    - \big(h_{\text{mortality}}(a)
+    - \big(h_{\text{death}}(a)
       + h_{\text{infection}}
     \big) S,
     \\
@@ -768,20 +768,20 @@ Then the PDEs for the equilibrium are
       \frac{\partial}{\partial a}
       + \frac{\partial}{\partial r}
     \right) E
-    &=- \big(h_{\text{mortality}}(a)
+    &=- \big(h_{\text{death}}(a)
     + h_{\text{progression}}(r)\big) E,
     \\
     \left(
       \frac{\partial}{\partial a}
       + \frac{\partial}{\partial r}
     \right) I
-    &= - \big(h_{\text{mortality}}(a)
+    &= - \big(h_{\text{death}}(a)
     + h_{\text{recovery}}(r)\big) I,
     \\
     \frac{\md C}{\md a}
     &= p_{\text{chronic}} H_{\text{recovery}}(a)
     \\ & \quad {}
-    - \big(h_{\text{mortality}}(a)
+    - \big(h_{\text{death}}(a)
     + h_{\text{chronic recovery}}\big) C,
     \\
     \frac{\md R}{\md a}
@@ -789,7 +789,7 @@ Then the PDEs for the equilibrium are
     \\ & \quad {}
     + h_{\text{chronic recovery}} C(a)
     \\ & \quad {}
-    - h_{\text{mortality}}(a) R,
+    - h_{\text{death}}(a) R,
   \end{split}
 \end{equation}
 with boundary conditions
@@ -836,7 +836,7 @@ use double time steps because of the nonlinearity $I S$?
 \begin{equation}
   \begin{split}
     \frac{M_i - M_{i - 1}}{\Delta a}
-    &= - \big(h_{\text{mortality}}(a_{i - 1/2})
+    &= - \big(h_{\text{death}}(a_{i - 1/2})
     + h_{\text{waning}}(a_{i - 1 / 2})\big)
     \frac{M_i + M_{i - 1}}{2},
     \\
@@ -844,24 +844,24 @@ use double time steps because of the nonlinearity $I S$?
     &= h_{\text{waning}}(a_{i - 1 / 2})
     \frac{M_i + M_{i - 1}}{2}
     \\ & \quad {}
-    - \big(h_{\text{mortality}}(a_{i - 1 / 2})
+    - \big(h_{\text{death}}(a_{i - 1 / 2})
     + h_{\text{infection}}\big)
     \frac{S_i + S_{i - 1}}{2},
     \\
     \frac{E_{i, j} - E_{i - 1, j - 1}}{\Delta a}
-    &=- \big(h_{\text{mortality}}(a_{i - 1 / 2})
+    &=- \big(h_{\text{death}}(a_{i - 1 / 2})
     + h_{\text{progression}}(r_{j - 1 / 2})\big)
     \frac{E_{i, j} + E_{i - 1, j - 1}}{2},
     \\
     \frac{I_{i, j} - I_{i - 1, j - 1}}{\Delta a}
-    &= - \big(h_{\text{mortality}}(a_{i - 1 / 2})
+    &= - \big(h_{\text{death}}(a_{i - 1 / 2})
     + h_{\text{recovery}}(r_{j - 1 / 2})\big)
     \frac{I_{i, j} + I_{i - 1, j - 1}}{2},
     \\
     \frac{C_i - C_{i - 1}}{\Delta a}
     &= p_{\text{chronic}} H_{\text{recovery} \, i - 1 / 2}
     \\ & \quad {}
-    - \big(h_{\text{mortality}}(a_{i - 1 / 2})
+    - \big(h_{\text{death}}(a_{i - 1 / 2})
     + h_{\text{chronic recovery}}\big) \frac{C_i + C_{i - 1}}{2},
     \\
     \frac{R_i - R_{i - 1}}{\Delta a}
@@ -869,7 +869,7 @@ use double time steps because of the nonlinearity $I S$?
     \\ & \quad {}
     + h_{\text{chronic recovery}} \frac{C_i + C_{i - 1}}{2}
     \\ & \quad {}
-    - h_{\text{mortality}}(a_{i - 1 / 2}) \frac{R_i + R_{i - 1}}{2},
+    - h_{\text{death}}(a_{i - 1 / 2}) \frac{R_i + R_{i - 1}}{2},
   \end{split}
 \end{equation}
 with boundary conditions
