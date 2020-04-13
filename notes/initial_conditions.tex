@@ -27,20 +27,18 @@
 
 \section{Model}
 
-We will find the equilibrium probability as a function of age of being
-in each model compartment (\autoref{model_diagram}), i.e.
+We will find the equilibrium probability densities as a function of
+model compartment and age (\autoref{model_diagram}), i.e.
 \begin{equation}
-  P_X(a) = \Prob\{\text{in compartment $X$ at age $a$}|\text{alive at
-    age $a$}\},
+  P_X(a) = \Prob\{\text{in compartment $X$ at age $a$}\},
 \end{equation}
 for $X \in \{\mathrm{M}, \mathrm{S}, \mathrm{E}, \mathrm{I},
 \mathrm{C}, \mathrm{R}, \mathrm{L}\}$
 and $a \geq 0$.
 We will assume that
 \begin{itemize}
-\item the infection hazard is constant,
-\item all calves are born with maternal immunity, and
-\item the hazard for antibody gain is constant.
+\item the birth hazard is constant in time, and
+\item the hazard for antibody gain is constant in time.
 \end{itemize}
 
 \begin{figure}
@@ -53,135 +51,212 @@ We will assume that
 
 \clearpage
 
-For $a > 0$ and $0 < r \leq a$,
-the compartment probabilities satisfy
-\begin{align}
-  P_{\mathrm{M}}(0) &= 1,
-  \\
-  \frac{\md P_{\mathrm{M}}}{\md a}
-  &= - h_{\text{waning}}(a) P_{\mathrm{M}}(a),
-  \displaybreak[0]\\
-  P_{\mathrm{S}}(0) &= 0,
-  \\
-  \frac{\md P_{\mathrm{S}}}{\md a}
-  &= h_{\text{waning}}(a) P_{\mathrm{M}}(a)
-  - h_{\text{infection}} P_{\mathrm{S}}(a),
-  \displaybreak[0]\\
-  p_{\mathrm{E}}(0, 0) &= 0,
-  \\
-  p_{\mathrm{E}}(a, 0) &= h_{\text{infection}}
-  \left[P_{\mathrm{S}}(a) + P_{\mathrm{L}}(a)\right],
-  \\
-  \left(\frac{\partial}{\partial a}
+For $a > 0$ and $0 < r \leq a$, the probability densities satisfy
+\begin{subequations}
+  \begin{align}
+    P_{\mathrm{M}}(0)
+    &= \int_0^{+\infty} h_{\text{birth}}(a)
+      \left[
+      P_{\mathrm{M}}(a) + P_{\mathrm{C}}(a) + P_{\mathrm{R}}(a)
+      \right]
+      \md a,
+    \\
+    \frac{\md P_{\mathrm{M}}}{\md a}
+    &= - \left[h_{\text{waning}}(a) + h_{\text{death}}(a)\right]
+      P_{\mathrm{M}}(a),
+    \displaybreak[0]\\
+    P_{\mathrm{S}}(0)
+    &= \int_0^{+\infty} h_{\text{birth}}(a)
+      \left[
+      P_{\mathrm{S}}(a) + P_{\mathrm{E}}(a)
+      + P_{\mathrm{I}}(a) + P_{\mathrm{L}}(a)
+      \right]
+      \md a,
+    \\
+    \frac{\md P_{\mathrm{S}}}{\md a}
+    &= h_{\text{waning}}(a) P_{\mathrm{M}}(a)
+      - \left[h_{\text{infection}} + h_{\text{death}}(a)\right]
+      P_{\mathrm{S}}(a),
+    \displaybreak[0]\\
+    p_{\mathrm{E}}(0, 0) &= 0,
+    \\
+    p_{\mathrm{E}}(a, 0)
+    &= h_{\text{infection}}
+      \left[P_{\mathrm{S}}(a) + P_{\mathrm{L}}(a)\right],
+    \\
+    \left(\frac{\partial}{\partial a}
     + \frac{\partial}{\partial r}\right)
-  p_{\mathrm{E}}
-  &= - h_{\text{progression}}(r) p_{\mathrm{E}}(a, r),
-  \displaybreak[0]\\
-  p_{\mathrm{I}}(0, 0) &= 0,
-  \\
-  p_{\mathrm{I}}(a, 0) &=
-  \int_0^a h_{\text{progression}}(r)
-  p_{\mathrm{E}}(a, r) \md r,
-  \\
-  \left(\frac{\partial}{\partial a}
+    p_{\mathrm{E}}
+    &= - \left[h_{\text{progression}}(r) + h_{\text{death}}(a)\right]
+      p_{\mathrm{E}}(a, r),
+    \displaybreak[0]\\
+    p_{\mathrm{I}}(0, 0) &= 0,
+    \\
+    p_{\mathrm{I}}(a, 0)
+    &= \int_0^a h_{\text{progression}}(r)
+      p_{\mathrm{E}}(a, r) \md r,
+    \\
+    \left(\frac{\partial}{\partial a}
     + \frac{\partial}{\partial r}\right)
-  p_{\mathrm{I}}
-  &= - h_{\text{recovery}}(r) p_{\mathrm{I}}(a, r),
-  \displaybreak[0]\\
-  p_{\mathrm{C}}(0, 0) &= 0,
-  \\
-  p_{\mathrm{C}}(a, 0)
-  &= p_{\text{chronicity}}
-  \int_0^a h_{\text{recovery}}(r) p_{\mathrm{I}}(a, r) \md r,
-  \\
-  \left(\frac{\partial}{\partial a}
+    p_{\mathrm{I}}
+    &= - \left[h_{\text{recovery}}(r) + h_{\text{death}}(a)\right]
+      p_{\mathrm{I}}(a, r),
+    \displaybreak[0]\\
+    p_{\mathrm{C}}(0, 0) &= 0,
+    \\
+    p_{\mathrm{C}}(a, 0)
+    &= p_{\text{chronicity}}
+      \int_0^a h_{\text{recovery}}(r) p_{\mathrm{I}}(a, r) \md r,
+    \\
+    \left(\frac{\partial}{\partial a}
     + \frac{\partial}{\partial r}\right)
-  p_{\mathrm{C}}
-  &= - h_{\text{chronic recovery}}(r) p_{\mathrm{C}}(a, r),
-  \displaybreak[0]\\
-  P_{\mathrm{R}}(0) &= 0,
-  \\
-  \begin{split}
-    \frac{\md P_{\mathrm{R}}}{\md a} &=
-    \left(1 - p_{\text{chronicity}}\right)
-    \int_0^a h_{\text{recovery}}(r) p_{\mathrm{I}}(a, r) \md r
-    \\ & \quad {}
-    + \int_0^a h_{\text{chronic recovery}}(r) p_{\mathrm{C}}(a, r) \md r
-    \\ & \quad {}
-    + h_{\text{antibody gain}} P_{\mathrm{L}}(a)
-    - h_{\text{antibody loss}} P_{\mathrm{R}}(a),
-  \end{split}
-  \displaybreak[0]\\
-  P_{\mathrm{L}}(0) &= 0,
-  \\
-  \frac{\md P_{\mathrm{L}}}{\md a} &=
-  h_{\text{antibody loss}} P_{\mathrm{R}}(a)
-  - \left(h_{\text{antibody gain}} + h_{\text{infection}}\right)
-  P_{\mathrm{L}}(a).
-\end{align}
+    p_{\mathrm{C}}
+    &= - \left[h_{\text{chronic recovery}}(r) + h_{\text{death}}(a)\right]
+      p_{\mathrm{C}}(a, r),
+    \displaybreak[0]\\
+    P_{\mathrm{R}}(0) &= 0,
+    \\
+    \begin{split}
+      \frac{\md P_{\mathrm{R}}}{\md a} &=
+      \left(1 - p_{\text{chronicity}}\right)
+      \int_0^a h_{\text{recovery}}(r) p_{\mathrm{I}}(a, r) \md r
+      \\ & \quad {}
+      + \int_0^a h_{\text{chronic recovery}}(r) p_{\mathrm{C}}(a, r) \md r
+      \\ & \quad {}
+      + h_{\text{antibody gain}} P_{\mathrm{L}}(a)
+      \\ & \quad {}
+      - \left[h_{\text{antibody loss}} + h_{\text{death}}(a)\right]
+      P_{\mathrm{R}}(a),
+    \end{split}
+    \displaybreak[0]\\
+    P_{\mathrm{L}}(0) &= 0,
+    \\
+    \begin{split}
+      \frac{\md P_{\mathrm{L}}}{\md a} &=
+      h_{\text{antibody loss}} P_{\mathrm{R}}(a)
+      \\ & \quad {}
+      - \left[h_{\text{antibody gain}} + h_{\text{infection}}
+        + h_{\text{death}}(a)\right]
+      P_{\mathrm{L}}(a),
+    \end{split}
+  \end{align}
+\end{subequations}
+with
+\begin{subequations}
+  \begin{align}
+    P_{\mathrm{E}}(a) &= \int_0^a p_{\mathrm{E}}(a, r) \md r,
+    \displaybreak[0]\\
+    P_{\mathrm{I}}(a) &= \int_0^a p_{\mathrm{I}}(a, r) \md r,
+    \displaybreak[0]\\
+    P_{\mathrm{C}}(a) &= \int_0^a p_{\mathrm{C}}(a, r) \md r.
+  \end{align}
+\end{subequations}
 
 
 \subsection{Analysis}
 
 Integrating the PDEs along the characteristics $r = a - a_0$ gives
-\begin{align}
-  P_{\mathrm{M}}(0) &= 1,
-  \\
-  \frac{\md P_{\mathrm{M}}}{\md a}
-  &= - h_{\text{waning}}(a) P_{\mathrm{M}}(a),
-  \displaybreak[0]\\
-  P_{\mathrm{S}}(0) &= 0,
-  \\
-  \frac{\md P_{\mathrm{S}}}{\md a}
-  &= h_{\text{waning}}(a) P_{\mathrm{M}}(a)
-  - h_{\text{infection}} P_{\mathrm{S}}(a),
-  \displaybreak[0]\\
-  p_{\mathrm{E}}(0, 0) &= 0,
-  \\
-  p_{\mathrm{E}}(a, 0) &= h_{\text{infection}}
-  \left[P_{\mathrm{S}}(a) + P_{\mathrm{L}}(a)\right],
-  \\
-  p_{\mathrm{E}}(a, r)
-  &= S_{\text{progression}}(r) p_{\mathrm{E}}(a - r, 0),
-  \displaybreak[0]\\
-  p_{\mathrm{I}}(0, 0) &= 0,
-  \\
-  p_{\mathrm{I}}(a, 0)
-  &= \int_0^a p_{\text{progression}}(r)
-  p_{\mathrm{E}}(a - r, 0) \md r,
-  \\
-  p_{\mathrm{I}}(a, r)
-  &= S_{\text{recovery}}(r) p_{\mathrm{I}}(a - r, 0),
-  \displaybreak[0]\\
-  p_{\mathrm{C}}(0, 0) &= 0,
-  \\
-  p_{\mathrm{C}}(a, 0)
-  &= p_{\text{chronicity}}
-  \int_0^a p_{\text{recovery}}(r) p_{\mathrm{I}}(a - r, 0) \md r,
-  \\
-  p_{\mathrm{C}}(a, r)
-  &= S_{\text{chronic recovery}}(r) p_{\mathrm{C}}(a - r, 0),
-  \displaybreak[0]\\
-  P_{\mathrm{R}}(0) &= 0,
-  \\
-  \begin{split}
-    \frac{\md P_{\mathrm{R}}}{\md a} &=
-    \left(1 - p_{\text{chronicity}}\right)
-    \int_0^a p_{\text{recovery}}(r) p_{\mathrm{I}}(a - r, 0) \md r
-    \\ & \quad {}
-    + \int_0^a p_{\text{chronic recovery}}(r) p_{\mathrm{C}}(a - r, 0) \md r
-    \\ & \quad {}
-    + h_{\text{antibody gain}} P_{\mathrm{L}}(a)
-    - h_{\text{antibody loss}} P_{\mathrm{R}}(a),
-  \end{split}
-  \displaybreak[0]\\
-  P_{\mathrm{L}}(0) &= 0,
-  \\
-  \frac{\md P_{\mathrm{L}}}{\md a} &=
-  h_{\text{antibody loss}} P_{\mathrm{R}}(a)
-  - \left(h_{\text{antibody gain}} + h_{\text{infection}}\right)
-  P_{\mathrm{L}}(a).
-\end{align}
+\begin{subequations}
+  \begin{align}
+    P_{\mathrm{M}}(0)
+    &= \int_0^{+\infty} h_{\text{birth}}(a)
+      \left[
+      P_{\mathrm{M}}(a) + P_{\mathrm{C}}(a) + P_{\mathrm{R}}(a)
+      \right]
+      \md a,
+    \\
+    \frac{\md P_{\mathrm{M}}}{\md a}
+    &= - \left[h_{\text{waning}}(a) + h_{\text{death}}(a)\right]
+      P_{\mathrm{M}}(a),
+    \displaybreak[0]\\
+    P_{\mathrm{S}}(0)
+    &= \int_0^{+\infty} h_{\text{birth}}(a)
+      \left[
+      P_{\mathrm{S}}(a) + P_{\mathrm{E}}(a)
+      + P_{\mathrm{I}}(a) + P_{\mathrm{L}}(a)
+      \right]
+      \md a,
+    \\
+    \frac{\md P_{\mathrm{S}}}{\md a}
+    &= h_{\text{waning}}(a) P_{\mathrm{M}}(a)
+      - \left[h_{\text{infection}}  + h_{\text{death}}(a)\right]
+      P_{\mathrm{S}}(a),
+    \displaybreak[0]\\
+    p_{\mathrm{E}}(0, 0) &= 0,
+    \\
+    p_{\mathrm{E}}(a, 0)
+    &= h_{\text{infection}}
+      \left[P_{\mathrm{S}}(a) + P_{\mathrm{L}}(a)\right],
+    \\
+    p_{\mathrm{E}}(a, r)
+    &= S_{\text{progression}}(r)
+      \frac{S_{\text{death}}(a)}{S_{\text{death}}(a - r)}
+      p_{\mathrm{E}}(a - r, 0),
+    \displaybreak[0]\\
+    p_{\mathrm{I}}(0, 0) &= 0,
+    \\
+    p_{\mathrm{I}}(a, 0)
+    &= \int_0^a
+      p_{\text{progression}}(r)
+      \frac{S_{\text{death}}(a)}{S_{\text{death}}(a - r)}
+      p_{\mathrm{E}}(a - r, 0)
+      \md r,
+    \\
+    p_{\mathrm{I}}(a, r)
+    &= S_{\text{recovery}}(r)
+      \frac{S_{\text{death}}(a)}{S_{\text{death}}(a - r)}
+      p_{\mathrm{I}}(a - r, 0),
+    \displaybreak[0]\\
+    p_{\mathrm{C}}(0, 0) &= 0,
+    \\
+    p_{\mathrm{C}}(a, 0)
+    &= p_{\text{chronicity}}
+      \int_0^a
+      p_{\text{recovery}}(r)
+      \frac{S_{\text{death}}(a)}{S_{\text{death}}(a - r)}
+      p_{\mathrm{I}}(a - r, 0)
+      \md r,
+    \\
+    p_{\mathrm{C}}(a, r)
+    &= S_{\text{chronic recovery}}(r)
+      \frac{S_{\text{death}}(a)}{S_{\text{death}}(a - r)}
+      p_{\mathrm{C}}(a - r, 0),
+    \displaybreak[0]\\
+    P_{\mathrm{R}}(0) &= 0,
+    \\
+    \begin{split}
+      \frac{\md P_{\mathrm{R}}}{\md a} &=
+      \left(1 - p_{\text{chronicity}}\right)
+      \int_0^a
+      p_{\text{recovery}}(r)
+      \frac{S_{\text{death}}(a)}{S_{\text{death}}(a - r)}
+      p_{\mathrm{I}}(a - r, 0)
+      \md r
+      \\ & \quad {}
+      + \int_0^a
+      p_{\text{chronic recovery}}(r)
+      \frac{S_{\text{death}}(a)}{S_{\text{death}}(a - r)}
+      p_{\mathrm{C}}(a - r, 0)
+      \md r
+      \\ & \quad {}
+      + h_{\text{antibody gain}} P_{\mathrm{L}}(a)
+      \\ & \quad {}
+      - \left[h_{\text{antibody loss}}  + h_{\text{death}}(a)\right]
+      P_{\mathrm{R}}(a),
+    \end{split}
+    \displaybreak[0]\\
+    P_{\mathrm{L}}(0) &= 0,
+    \\
+    \begin{split}
+      \frac{\md P_{\mathrm{L}}}{\md a}
+      &= h_{\text{antibody loss}} P_{\mathrm{R}}(a)
+      \\ & \quad {}
+      - \left[h_{\text{antibody gain}} + h_{\text{infection}}
+        + h_{\text{death}}(a)\right]
+      P_{\mathrm{L}}(a).
+    \end{split}
+  \end{align}
+\end{subequations}
 
 Let
 \begin{equation}
@@ -191,86 +266,138 @@ Let
   + P_{\mathrm{L}}(a),
 \end{equation}
 with
-\begin{align}
-  \begin{split}
-    P_{\mathrm{E}}(a) &= \int_0^a p_{\mathrm{E}}(a, r) \md r
-    \\
-    &= \int_0^a S_{\text{progression}}(a - a_0) p_{\mathrm{E}}(a_0, 0) \md a_0,
-  \end{split}
-  \displaybreak[0]\\
-  \begin{split}
-    P_{\mathrm{I}}(a) &= \int_0^a p_{\mathrm{I}}(a, r) \md r
-    \\
-    &= \int_0^a S_{\text{recovery}}(a - a_0) p_{\mathrm{I}}(a_0, 0) \md a_0,
-  \end{split}
-  \displaybreak[0]\\
-  \begin{split}
-    P_{\mathrm{C}}(a) &= \int_0^a p_{\mathrm{C}}(a, r) \md r
-    \\
-    &= \int_0^a S_{\text{chronic recovery}}(a - a_0) p_{\mathrm{C}}(a_0, 0) \md a_0,
-  \end{split}
-\end{align}
+\begin{subequations}
+  \begin{align}
+    \begin{split}
+      P_{\mathrm{E}}(a)
+      &= \int_0^a p_{\mathrm{E}}(a, r) \md r
+      \\
+      &= \int_0^a
+      S_{\text{progression}}(a - a_0)
+      \frac{S_{\text{death}}(a)}{S_{\text{death}}(a_0)}
+      p_{\mathrm{E}}(a_0, 0)
+      \md a_0,
+    \end{split}
+    \displaybreak[0]\\
+    \begin{split}
+      P_{\mathrm{I}}(a)
+      &= \int_0^a p_{\mathrm{I}}(a, r) \md r
+      \\
+      &= \int_0^a
+      S_{\text{recovery}}(a - a_0)
+      \frac{S_{\text{death}}(a)}{S_{\text{death}}(a_0)}
+      p_{\mathrm{I}}(a_0, 0)
+      \md a_0,
+    \end{split}
+    \displaybreak[0]\\
+    \begin{split}
+      P_{\mathrm{C}}(a)
+      &= \int_0^a p_{\mathrm{C}}(a, r) \md r
+      \\
+      &= \int_0^a
+      S_{\text{chronic recovery}}(a - a_0)
+      \frac{S_{\text{death}}(a)}{S_{\text{death}}(a_0)}
+      p_{\mathrm{C}}(a_0, 0)
+      \md a_0,
+    \end{split}
+  \end{align}
+\end{subequations}
 so that
-\begin{align}
-  \begin{split}
-    \frac{\md P_{\mathrm{E}}}{\md a}
-    &= \frac{\md}{\md a}
-    \int_0^a S_{\text{progression}}(a - a_0) p_{\mathrm{E}}(a_0, 0) \md a_0
-    \\
-    &= p_{\mathrm{E}}(a, 0)
-    -
-    \int_0^a p_{\text{progression}}(a - a_0) p_{\mathrm{E}}(a_0, 0) \md a_0
-    \\
-    &= h_{\text{infection}}
-    \left[P_{\mathrm{S}}(a) + P_{\mathrm{L}}(a)\right]
-    - \int_0^a p_{\text{progression}}(r) p_{\mathrm{E}}(a - r, 0) \md r,
-  \end{split}
-  \displaybreak[0]\\
-  \begin{split}
-    \frac{\md P_{\mathrm{I}}}{\md a}
-    &= \frac{\md}{\md a}
-    \int_0^a S_{\text{recovery}}(a - a_0) p_{\mathrm{I}}(a_0, 0) \md a_0
-    \\
-    &= p_{\mathrm{I}}(a, 0)
-    -
-    \int_0^a p_{\text{recovery}}(a - a_0) p_{\mathrm{I}}(a_0, 0) \md a_0
-    \\
-    &= \int_0^a p_{\text{progression}}(r) p_{\mathrm{E}}(a - r, 0) \md r
-    - \int_0^a p_{\text{recovery}}(r) p_{\mathrm{I}}(a - r, 0) \md r,
-  \end{split}
-  \displaybreak[0]\\
-  \begin{split}
-    \frac{\md P_{\mathrm{C}}}{\md a}
-    &= \frac{\md}{\md a}
-    \int_0^a S_{\text{chronic recovery}}(a - a_0) p_{\mathrm{C}}(a_0, 0) \md a_0
-    \\
-    &= p_{\mathrm{C}}(a, 0)
-    -
-    \int_0^a p_{\text{chronic recovery}}(a - a_0) p_{\mathrm{C}}(a_0, 0) \md a_0
-    \\
-    &= p_{\text{chronicity}}
-    \int_0^a p_{\text{recovery}}(r) p_{\mathrm{I}}(a - r, 0) \md r
-    \\ & \quad {}
-    - \int_0^a p_{\text{chronic recovery}}(r) p_{\mathrm{C}}(a - r, 0) \md r,
-  \end{split}
-\end{align}
-and then
+\begin{subequations}
+  \begin{align}
+    \begin{split}
+      \frac{\md P_{\mathrm{E}}}{\md a}
+      &= h_{\text{infection}}
+      \left[P_{\mathrm{S}}(a) + P_{\mathrm{L}}(a)\right]
+      \\ & \quad {}
+      - \int_0^a
+      p_{\text{progression}}(r)
+      \frac{S_{\text{death}}(a)}{S_{\text{death}}(a - r)}
+      p_{\mathrm{E}}(a - r, 0)
+      \md r
+      \\ & \quad {}
+      - h_{\text{death}}(a) P_{\mathrm{E}}(a),
+    \end{split}
+    \displaybreak[0]\\
+    \begin{split}
+      \frac{\md P_{\mathrm{I}}}{\md a}
+      &= \int_0^a
+      p_{\text{progression}}(r)
+      \frac{S_{\text{death}}(a)}{S_{\text{death}}(a - r)}
+      p_{\mathrm{E}}(a - r, 0) \md r
+      \\ & \quad {}
+      - \int_0^a
+      p_{\text{recovery}}(r)
+      \frac{S_{\text{death}}(a)}{S_{\text{death}}(a - r)}
+      p_{\mathrm{I}}(a - r, 0)
+      \md r
+      \\ & \quad {}
+      - h_{\text{death}}(a) P_{\mathrm{I}}(a),
+    \end{split}
+    \displaybreak[0]\\
+    \begin{split}
+      \frac{\md P_{\mathrm{C}}}{\md a}
+      &= p_{\text{chronicity}}
+      \int_0^a
+      p_{\text{recovery}}(r)
+      \frac{S_{\text{death}}(a)}{S_{\text{death}}(a - r)}
+      p_{\mathrm{I}}(a - r, 0)
+      \md r
+      \\ & \quad {}
+      - \int_0^a
+      p_{\text{chronic recovery}}(r)
+      \frac{S_{\text{death}}(a)}{S_{\text{death}}(a - r)}
+      p_{\mathrm{C}}(a - r, 0)
+      \md r
+      \\ & \quad {}
+      - h_{\text{death}}(a) P_{\mathrm{C}}(a).
+    \end{split}
+  \end{align}
+\end{subequations}
+Then
 \begin{equation}
-  \frac{\md P}{\md a} =
-  \frac{\md P_{\mathrm{M}}}{\md a}
-  + \frac{\md P_{\mathrm{S}}}{\md a}
-  + \frac{\md P_{\mathrm{E}}}{\md a}
-  + \frac{\md P_{\mathrm{I}}}{\md a}
-  + \frac{\md P_{\mathrm{C}}}{\md a}
-  + \frac{\md P_{\mathrm{R}}}{\md a}
-  + \frac{\md P_{\mathrm{L}}}{\md a}
-  = 0.
+  \frac{\md P}{\md a}
+  = - h_{\text{death}}(a) P(a),
 \end{equation}
+and, assuming for the moment that $P(0) = 1$,
+\begin{equation}
+  P(a) = S_{\text{death}}(a).
+\end{equation}
+Using the initial conditions gives
+\begin{equation}
+  P(0) =
+  \int_0^{+\infty} h_{\text{birth}}(a) S_{\text{death}}(a) \md a.
+\end{equation}
+Using the constant-time birth hazard
+(i.e.~$c_{\mathrm{v}} = 0$)
+\begin{equation}
+  h_{\text{birth}}(a) =
+  \begin{cases}
+    0 & \text{if $a < 4$}, \\
+    \mu & \text{if $a \geq 4$},
+  \end{cases}
+\end{equation}
+with
+\begin{equation}
+  \mu =
+  \left[
+    \int_4^{+\infty} S_{\text{death}}(a) \md a
+  \right]^{-1},
+\end{equation}
+gives
+\begin{equation}
+  P(0) = 1.
+\end{equation}
+This is the $\mu$ value that gives constant population size,
+i.e.~zero growth rate.
 
 
 \section{Numerical method}
 
-To compute the compartment probabilities, we used the Crank--Nicolson
+\textbf{This section needs to be updated for the new model in the
+  previous section.}
+
+To compute the probability densities, we used the Crank--Nicolson
 method on characteristics and the composite trapezoid rule for the
 integrals \citep{milner_1992}.  Given the age step $\Delta a$,
 for $i \in \{0, 1, 2, \ldots, I - 1\}$ and
@@ -286,6 +413,7 @@ for $Y \in \{\text{progression}, \text{recovery},
   \approx \frac{S_Y(r^{j - 1}) - S_Y(r^j)}{\Delta a},
 \end{equation}
 gives
+\begin{subequations}
 \begin{align}
   P_{\mathrm{M}}^0 &= 1,
   \\
@@ -352,7 +480,9 @@ gives
     \frac{P_{\mathrm{L}}^i + P_{\mathrm{L}}^{i - 1}}{2}.
   \end{split}
 \end{align}
+\end{subequations}
 That is,
+\begin{subequations}
 \begin{align}
   P_{\mathrm{M}}^0 &= 1,
   \\
@@ -452,6 +582,7 @@ That is,
     &= 0.
   \end{split}
 \end{align}
+\end{subequations}
 The coefficients must be non-negative to ensure each component of the
 $P_X$'s and $p_X$'s is non-negative. In particular, the hazards must
 satisfy
@@ -467,6 +598,7 @@ or
 \subsection{Analysis}
 
 The integrals of the PDE variables over $r$ satisfy
+\begin{subequations}
 \begin{align}
   P_{\mathrm{E}}^i
   &= \sum_{j = 0}^i S_{\text{progression}}(r^j) p_{\mathrm{E}}^{i - j} \Delta a,
@@ -477,7 +609,9 @@ The integrals of the PDE variables over $r$ satisfy
   P_{\mathrm{C}}^i
   &= \sum_{j = 0}^i S_{\text{chronic recovery}}(r^j) p_{\mathrm{C}}^{i - j} \Delta a,
 \end{align}
+\end{subequations}
 so that
+\begin{subequations}
 \begin{align}
   \begin{split}
     \frac{P_{\mathrm{E}}^i - P_{\mathrm{E}}^{i - 1}}{\Delta a}
@@ -536,6 +670,7 @@ so that
     p_{\mathrm{C}}^{i - j}.
   \end{split}
 \end{align}
+\end{subequations}
 Then, for
 \begin{equation}
   P^i = P_{\mathrm{M}}^i + P_{\mathrm{S}}^i + P_{\mathrm{E}}^i
@@ -543,11 +678,13 @@ Then, for
   + P_{\mathrm{L}}^i,
 \end{equation}
 we have
-\begin{align}
-  P^0 &= 1,
-  \\
-  \frac{P^i - P^{i - 1}}{\Delta a} &= 0,
-\end{align}
+\begin{subequations}
+  \begin{align}
+    P^0 &= 1,
+    \\
+    \frac{P^i - P^{i - 1}}{\Delta a} &= 0,
+  \end{align}
+\end{subequations}
 so that
 \begin{equation}
   P^i = 1,

@@ -1,20 +1,3 @@
-* Think about not having all calves born with immunity.
-** Make another parameter \phi for the fraction born with immunity,
-   P_M(0) = \phi and P_S(0) = 1 - \phi.
-   After solving, we can compute p as
-   \phi = \frac{\sum_{X \in \{M, R, C\}} R_X}{\sum_X R_X},
-   with
-   R_X = \int_4^{+infty} P_X(a) q(a) da,
-   where q(a) is the probability density of age a, from
-   age_structure.  This parameter \phi and its post-solution value is
-   another variable to add to the root finding.
-** Approximate the above with
-   \phi = \frac{\sum_{X \in \{M, R, C\}} R_X}{\sum_X R_X}
-   and
-   R_X = \int_4^{+infty} P_X(a) da.
-   Since the \sum_X P_X(a) = 1 for all a, the denominator is constant,
-   so we have a linear problem. This will require some work to define
-   the matrices for the solver.
 * Should we just solve for the equilibrium of the probability of being
   in state X at age a, *not* conditioned on being alive at age a? It's
   a simpler problem to explain...
@@ -22,8 +5,39 @@
   P_X(a) = Q_X(a) / \sum_X Q_X(a),
   which can then be used with q(a), the probability density of age a,
   from age_structure for the initial conditions.
-** What does that do to the problem in solving for the fraction born
-   with immunity?
+** We'd need to add mortality.
+** The birth rate that gives a constant population is
+   b = 1 / \int_4^{+\infty} S_{\mathrm{mortality}}(a) da.
+   That is
+   1 / b = - 0.66 * 0.79 ** 2 * 0.88 * (
+   (1 - 0.88 ** 8) / log(0.88)
+   + 0.88 ** 8 / log(0.66)
+   ),
+   or b \approx 0.4696.
+** The rate of births with and without immunity become linear in this
+   version.
+
+* Think about not having all calves born with immunity.
+** Make another parameter \phi for the fraction born with immunity,
+   P_M(0) = \phi and P_S(0) = 1 - \phi.
+   After solving for the P_X(a), we can compute p as
+   \phi = \frac{\sum_{X \in \{M, R, C\}} R_X}{\sum_X R_X},
+   with
+   R_X = \int_4^{+infty} P_X(a) q(a) da,
+   where q(a) is the probability density of age a, from age_structure.
+   This parameter \phi and the comparison with its post-solution value
+   is another variable to add to the root finding.
+** Approximate the above with
+   \phi = \frac{\sum_{X \in \{M, R, C\}} R_X}{\sum_X R_X}
+   and
+   R_X = \int_4^{+infty} P_X(a) da,
+   i.e. don't include q(a). Since the \sum_X P_X(a) = 1 for all a, the
+   denominator is constant, so we have a linear problem. This will
+   require some work to define the matrices for the solver.
+
 * For the initial conditions, what if we approximate the gamma waiting
   times by exponential with the same mean so that we get a system of
   ODEs intead of PDEs?
+
+* How do we compare the model results to data?
+** Hedger?
