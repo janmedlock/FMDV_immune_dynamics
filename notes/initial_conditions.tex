@@ -366,9 +366,9 @@ and, assuming for the moment that $P(0) = 1$,
 Using the initial conditions gives
 \begin{equation}
   P(0) =
-  \int_0^{+\infty} h_{\text{birth}}(a) S_{\text{death}}(a) \md a.
+  \int_0^{+\infty} h_{\text{birth}}(a) S_{\text{death}}(a) \md a,
 \end{equation}
-Using the constant-time birth hazard
+and then using the constant-time birth hazard
 (i.e.~$c_{\mathrm{v}} = 0$)
 \begin{equation}
   h_{\text{birth}}(a) =
@@ -394,93 +394,153 @@ i.e.~zero growth rate.
 
 \section{Numerical method}
 
-\textbf{This section needs to be updated for the new model in the
-  previous section.}
-
 To compute the probability densities, we used the Crank--Nicolson
 method on characteristics and the composite trapezoid rule for the
 integrals \citep{milner_1992}.  Given the age step $\Delta a$,
 for $i \in \{0, 1, 2, \ldots, I - 1\}$ and
-$j \in \{0, 1, 2, \ldots, i\}$, let $a^i = i \Delta a$,
-$P_X^i \approx P_X(a^i)$, and
+$j \in \{0, 1, 2, \ldots, i\}$, let $a^i = i \Delta a$, $r^j = j
+\Delta a$, $P_X^i \approx P_X(a^i)$, and
 $p_X^i \approx p_X(a^i, 0)$.
 For each $i \in \{1, 2, \ldots, I - 1\}$, using the
-Crank--Nicolson method on characteristics and,
-for $Y \in \{\text{progression}, \text{recovery},
-\text{chronic recovery}\}$,
+Crank--Nicolson method on characteristics gives
+\begin{subequations}
+  \begin{align}
+    P_{\mathrm{M}}^0
+    &= \sum_{i = 0}^{I - 1}
+      h_{\text{birth}}(a^i) \left(
+      P_{\mathrm{M}}^i + P_{\mathrm{C}}^i + P_{\mathrm{R}}^i
+      \right)
+      \Delta a,
+    \\
+    \frac{P_{\mathrm{M}}^i - P_{\mathrm{M}}^{i - 1}}{\Delta a}
+    &= - \left[
+      h_{\text{waning}}(a^{i - 1 / 2})
+      + h_{\text{death}}(a^{i - 1 / 2})
+      \right]
+      \frac{P_{\mathrm{M}}^i + P_{\mathrm{M}}^{i - 1}}{2},
+    \displaybreak[0]\\
+    P_{\mathrm{S}}^0
+    &= \sum_{i = 0}^{I - 1}
+      h_{\text{birth}}(a^i) \left(
+      P_{\mathrm{S}}^i + P_{\mathrm{E}}^i
+      + P_{\mathrm{I}}^i + P_{\mathrm{L}}^i
+      \right)
+      \Delta a,
+    \\
+    \begin{split}
+      \frac{P_{\mathrm{S}}^i - P_{\mathrm{S}}^{i - 1}}{\Delta a}
+      &= h_{\text{waning}}(a^{i - 1 / 2})
+      \frac{P_{\mathrm{M}}^i + P_{\mathrm{M}}^{i - 1}}{2}
+      \\ & \quad {}
+      - \left[
+        h_{\text{infection}}
+        + h_{\text{death}}(a^{i - 1 / 2})
+      \right]
+      \frac{P_{\mathrm{S}}^i + P_{\mathrm{S}}^{i - 1}}{2},
+    \end{split}
+    \displaybreak[0]\\
+    p_{\mathrm{E}}^0 &= 0,
+    \\
+    p_{\mathrm{E}}^i
+    &= h_{\text{infection}} \left(
+      \frac{P_{\mathrm{S}}^i + P_{\mathrm{S}}^{i - 1}}{2}
+      + \frac{P_{\mathrm{L}}^i + P_{\mathrm{L}}^{i - 1}}{2}
+      \right),
+    \displaybreak[0]\\
+    p_{\mathrm{I}}^0 &= 0,
+    \\
+    p_{\mathrm{I}}^i
+    &= \sum_{j = 1}^i
+      p_{\text{progression}}(r^j)
+      \frac{S_{\text{death}}(a^i)}{S_{\text{death}}(a^{i - j})}
+      p_{\mathrm{E}}^{i - j}
+      \Delta a,
+    \displaybreak[0]\\
+    p_{\mathrm{C}}^0 &= 0,
+    \\
+    p_{\mathrm{C}}^i
+    &= p_{\text{chronicity}}
+      \sum_{j = 1}^i
+      p_{\text{recovery}}(r^j)
+      \frac{S_{\text{death}}(a^i)}{S_{\text{death}}(a^{i - j})}
+      p_{\mathrm{I}}^{i - j}
+      \Delta a,
+    \displaybreak[0]\\
+    P_{\mathrm{R}}^0 &= 0,
+    \\
+    \begin{split}
+      \frac{P_{\mathrm{R}}^i - P_{\mathrm{R}}^{i - 1}}{\Delta a}
+      &= \left(1 - p_{\text{chronicity}}\right)
+      \sum_{j = 1}^i
+      p_{\text{recovery}}(r^j)
+      \frac{S_{\text{death}}(a^i)}{S_{\text{death}}(a^{i - j})}
+      p_{\mathrm{I}}^{i - j}
+      \Delta a
+      \\ & \quad {}
+      + \sum_{j = 1}^i
+      p_{\text{chronic recovery}}(r^j)
+      \frac{S_{\text{death}}(a^i)}{S_{\text{death}}(a^{i - j})}
+      p_{\mathrm{C}}^{i - j}
+      \Delta a
+      \\ & \quad {}
+      + h_{\text{antibody gain}}
+      \frac{P_{\mathrm{L}}^i + P_{\mathrm{L}}^{i - 1}}{2}
+      \\ & \quad {}
+      - \left[
+        h_{\text{antibody loss}} + h_{\text{death}}(a^{i - 1 / 2})
+      \right]
+      \frac{P_{\mathrm{R}}^i + P_{\mathrm{R}}^{i - 1}}{2},
+    \end{split}
+    \displaybreak[0]\\
+    P_{\mathrm{L}}^0 &= 0,
+    \\
+    \begin{split}
+      \frac{P_{\mathrm{L}}^i - P_{\mathrm{L}}^{i - 1}}{\Delta a}
+      &= h_{\text{antibody loss}}
+      \frac{P_{\mathrm{R}}^i + P_{\mathrm{R}}^{i - 1}}{2}
+      \\ & \quad {}
+      - \left[
+        h_{\text{antibody gain}} + h_{\text{infection}}
+        + h_{\text{death}}(a^{i - 1 / 2})
+      \right]
+      \frac{P_{\mathrm{L}}^i + P_{\mathrm{L}}^{i - 1}}{2},
+    \end{split}
+  \end{align}
+\end{subequations}
+with
+\begin{subequations}
+  \begin{align}
+    P_{\mathrm{E}}^i
+    &= \sum_{j = 0}^i
+      S_{\text{progression}}(r^j)
+      \frac{S_{\text{death}}(a^i)}{S_{\text{death}}(a^{i - j})}
+      p_{\mathrm{E}}^{i - j}
+      \Delta a,
+    \displaybreak[0]\\
+    P_{\mathrm{I}}^i
+    &= \sum_{j = 0}^i
+      S_{\text{recovery}}(r^j)
+      \frac{S_{\text{death}}(a^i)}{S_{\text{death}}(a^{i - j})}
+      p_{\mathrm{I}}^{i - j}
+      \Delta a,
+    \displaybreak[0]\\
+    P_{\mathrm{C}}^i
+    &= \sum_{j = 0}^i
+      S_{\text{chronic recovery}}(r^j)
+      \frac{S_{\text{death}}(a^i)}{S_{\text{death}}(a^{i - j})}
+      p_{\mathrm{C}}^{i - j}
+      \Delta a.
+  \end{align}
+\end{subequations}
+
+\textbf{TODO: Everything below needs to be updated.}\\
+For $Y \in \{\text{progression}, \text{recovery},
+\text{chronic recovery}\}$, using
 \begin{equation}
   p_Y(r^j) = - \frac{\md S_Y}{\md r} (r^j)
   \approx \frac{S_Y(r^{j - 1}) - S_Y(r^j)}{\Delta a},
-\end{equation}
-gives
-\begin{subequations}
-\begin{align}
-  P_{\mathrm{M}}^0 &= 1,
-  \\
-  \frac{P_{\mathrm{M}}^i - P_{\mathrm{M}}^{i - 1}}{\Delta a}
-  &= - h_{\text{waning}}(a^{i - 1 / 2})
-  \frac{P_{\mathrm{M}}^i + P_{\mathrm{M}}^{i - 1}}{2},
-  \displaybreak[0]\\
-  P_{\mathrm{S}}^0 &= 0,
-  \\
-  \frac{P_{\mathrm{S}}^i - P_{\mathrm{S}}^{i - 1}}{\Delta a}
-  &= h_{\text{waning}}(a^{i - 1 / 2})
-  \frac{P_{\mathrm{M}}^i + P_{\mathrm{M}}^{i - 1}}{2}
-  - h_{\text{infection}}
-  \frac{P_{\mathrm{S}}^i + P_{\mathrm{S}}^{i - 1}}{2},
-  \displaybreak[0]\\
-  p_{\mathrm{E}}^0 &= 0,
-  \\
-  p_{\mathrm{E}}^i &= h_{\text{infection}}
-  \left(\frac{P_{\mathrm{S}}^i + P_{\mathrm{S}}^{i - 1}}{2}
-        + \frac{P_{\mathrm{L}}^i + P_{\mathrm{L}}^{i - 1}}{2}\right)
-  \displaybreak[0]\\
-  p_{\mathrm{I}}^0 &= 0,
-  \\
-  p_{\mathrm{I}}^i
-  &= \sum_{j = 1}^i \left[S_{\text{progression}}(r^{j - 1})
-    - S_{\text{progression}}(r^j)\right]
-  p_{\mathrm{E}}^{i - j},
-  \displaybreak[0]\\
-  p_{\mathrm{C}}^0 &= 0,
-  \\
-  p_{\mathrm{C}}^i
-  &= p_{\text{chronicity}}
-  \sum_{j = 1}^i \left[S_{\text{recovery}}(r^{j - 1})
-    - S_{\text{recovery}}(r^j)\right]
-  p_{\mathrm{I}}^{i - j},
-  \displaybreak[0]\\
-  P_{\mathrm{R}}^0 &= 0,
-  \\
-  \begin{split}
-    \frac{P_{\mathrm{R}}^i - P_{\mathrm{R}}^{i - 1}}{\Delta a}
-    &= \left(1 - p_{\text{chronicity}}\right)
-    \sum_{j = 1}^i \left[S_{\text{recovery}}(r^{j - 1})
-      - S_{\text{recovery}}(r^j)\right]
-    p_{\mathrm{I}}^{i - j}
-    \\ & \quad {}
-    + \sum_{j = 1}^i \left[S_{\text{chronic recovery}}(r^{j - 1})
-      - S_{\text{chronic recovery}}(r^j)\right]
-    p_{\mathrm{C}}^{i - j}
-    \\ & \quad {}
-    + h_{\text{antibody gain}}
-    \frac{P_{\mathrm{L}}^i + P_{\mathrm{L}}^{i - 1}}{2}
-    - h_{\text{antibody loss}}
-    \frac{P_{\mathrm{R}}^i + P_{\mathrm{R}}^{i - 1}}{2},
-  \end{split}
-  \displaybreak[0]\\
-  P_{\mathrm{L}}^0 &= 0,
-  \\
-  \begin{split}
-    \frac{P_{\mathrm{L}}^i - P_{\mathrm{L}}^{i - 1}}{\Delta a}
-    &= h_{\text{antibody loss}}
-    \frac{P_{\mathrm{R}}^i + P_{\mathrm{R}}^{i - 1}}{2}
-    \\ & \quad {}
-    - \left(h_{\text{antibody gain}} + h_{\text{infection}}\right)
-    \frac{P_{\mathrm{L}}^i + P_{\mathrm{L}}^{i - 1}}{2}.
-  \end{split}
-\end{align}
-\end{subequations}
+\end{equation} gives ...
+
 That is,
 \begin{subequations}
 \begin{align}
@@ -597,6 +657,7 @@ or
 
 \subsection{Analysis}
 
+\textbf{TODO: Do we still need these $P_X^i$ definitions below?}
 The integrals of the PDE variables over $r$ satisfy
 \begin{subequations}
 \begin{align}
