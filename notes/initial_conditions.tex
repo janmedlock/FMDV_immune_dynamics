@@ -268,38 +268,26 @@ Let
 with
 \begin{subequations}
   \begin{align}
-    \begin{split}
-      P_{\mathrm{E}}(a)
-      &= \int_0^a p_{\mathrm{E}}(a, r) \md r
-      \\
-      &= \int_0^a
+    P_{\mathrm{E}}(a)
+    &= \int_0^a
       S_{\text{progression}}(a - a_0)
       \frac{S_{\text{death}}(a)}{S_{\text{death}}(a_0)}
       p_{\mathrm{E}}(a_0, 0)
       \md a_0,
-    \end{split}
     \displaybreak[0]\\
-    \begin{split}
-      P_{\mathrm{I}}(a)
-      &= \int_0^a p_{\mathrm{I}}(a, r) \md r
-      \\
-      &= \int_0^a
+    P_{\mathrm{I}}(a)
+    &= \int_0^a
       S_{\text{recovery}}(a - a_0)
       \frac{S_{\text{death}}(a)}{S_{\text{death}}(a_0)}
       p_{\mathrm{I}}(a_0, 0)
       \md a_0,
-    \end{split}
     \displaybreak[0]\\
-    \begin{split}
-      P_{\mathrm{C}}(a)
-      &= \int_0^a p_{\mathrm{C}}(a, r) \md r
-      \\
-      &= \int_0^a
+    P_{\mathrm{C}}(a)
+    &= \int_0^a
       S_{\text{chronic recovery}}(a - a_0)
       \frac{S_{\text{death}}(a)}{S_{\text{death}}(a_0)}
       p_{\mathrm{C}}(a_0, 0)
       \md a_0,
-    \end{split}
   \end{align}
 \end{subequations}
 so that
@@ -533,7 +521,6 @@ with
   \end{align}
 \end{subequations}
 
-\textbf{TODO: Everything below needs to be updated.}\\
 For $Y \in \{\text{progression}, \text{recovery},
 \text{chronic recovery}\}$, using
 \begin{equation}
@@ -542,13 +529,19 @@ For $Y \in \{\text{progression}, \text{recovery},
 \end{equation} gives ...
 Also, something like
 \begin{equation}
-  h_{\text{death}}(a^{i - 1 / 2})
-  = - \frac{1}{S_{\text{death}} (a^{i - 1 / 2})}
-  \frac{\md S_{\text{death}}}{\md a} (a^{i - 1 / 2})
-  \approx \frac{1}{\Delta a}
-  \left[\frac{S_{\text{death}}(a^{i - 1})}{S_{\text{death}}(a^i)} - 1\right].
+  \begin{split}
+    h_{\text{death}}(a^{i - 1 / 2})
+    &= - \frac{1}{S_{\text{death}} (a^{i - 1 / 2})}
+    \frac{\md S_{\text{death}}}{\md a} (a^{i - 1 / 2})
+    \\
+    &\approx \frac{1}{\Delta a}
+    \left[
+      \frac{S_{\text{death}}(a^{i - 1})}{S_{\text{death}}(a^i)} - 1
+    \right].
+  \end{split}
 \end{equation}
 
+\textbf{TODO: Update below.}
 That is,
 \begin{subequations}
 \begin{align}
@@ -665,8 +658,14 @@ or
 
 \subsection{Analysis}
 
-\textbf{TODO: Do we still need these $P_X^i$ definitions below?}
-The integrals of the PDE variables over $r$ satisfy
+Let
+\begin{equation}
+  P^i = P_{\mathrm{M}}^i + P_{\mathrm{S}}^i
+  + P_{\mathrm{E}}^i + P_{\mathrm{I}}^i
+  + P_{\mathrm{C}}^i + P_{\mathrm{R}}^i
+  + P_{\mathrm{L}}^i,
+\end{equation}
+with
 \begin{subequations}
   \begin{align}
     P_{\mathrm{E}}^i
@@ -762,25 +761,48 @@ so that
     \end{split}
   \end{align}
 \end{subequations}
-Then, for
+Then
 \begin{equation}
-  P^i = P_{\mathrm{M}}^i + P_{\mathrm{S}}^i + P_{\mathrm{E}}^i
-  + P_{\mathrm{I}}^i + P_{\mathrm{C}}^i + P_{\mathrm{R}}^i
-  + P_{\mathrm{L}}^i,
+  \frac{P^i - P^{i - 1}}{\Delta a}
+  = - h_{\text{death}}(a^{i - 1 / 2})
+  \frac{P^i + P^{i - 1}}{2},
 \end{equation}
-we have
-\begin{subequations}
-  \begin{align}
-    P^0 &= 1,
-    \\
-    \frac{P^i - P^{i - 1}}{\Delta a} &= 0,
-  \end{align}
-\end{subequations}
-so that
+\textbf{TODO: Update below.}
+and, assuming for the moment that $P^0 = 1$,
 \begin{equation}
-  P^i = 1,
+  P^i = S_{\text{death}}(a^i).
 \end{equation}
-for all $i \in \{1, 2, \ldots, I - 1\}$.
+Using the initial conditions gives
+\begin{equation}
+  P^0
+  = \sum_{i = 0}^{I - 1}
+  h_{\text{birth}}(a^i) S_{\text{death}}(a^i)
+  \Delta a,
+\end{equation}
+and then using the constant-time birth hazard
+(i.e.~$c_{\mathrm{v}} = 0$)
+\begin{equation}
+  h_{\text{birth}}(a) =
+  \begin{cases}
+    0 & \text{if $a < 4$}, \\
+    \mu & \text{if $a \geq 4$},
+  \end{cases}
+\end{equation}
+with
+\begin{equation}
+  \mu =
+  \left[
+    \sum_{a^i \geq 4}
+    S_{\text{death}}(a^i)
+    \Delta a
+  \right]^{-1},
+\end{equation}
+gives
+\begin{equation}
+  P^0 = 1.
+\end{equation}
+This is the $\mu$ value that gives constant population size,
+i.e.~zero growth rate.
 
 
 \bibliography{journal_abbreviations,math_epi}
