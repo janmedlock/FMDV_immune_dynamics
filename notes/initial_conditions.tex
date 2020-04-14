@@ -660,36 +660,61 @@ or
 \textbf{TODO: Do we still need these $P_X^i$ definitions below?}
 The integrals of the PDE variables over $r$ satisfy
 \begin{subequations}
-\begin{align}
-  P_{\mathrm{E}}^i
-  &= \sum_{j = 0}^i S_{\text{progression}}(r^j) p_{\mathrm{E}}^{i - j} \Delta a,
-  \displaybreak[0]\\
-  P_{\mathrm{I}}^i
-  &= \sum_{j = 0}^i S_{\text{recovery}}(r^j) p_{\mathrm{I}}^{i - j} \Delta a,
-  \displaybreak[0]\\
-  P_{\mathrm{C}}^i
-  &= \sum_{j = 0}^i S_{\text{chronic recovery}}(r^j) p_{\mathrm{C}}^{i - j} \Delta a,
-\end{align}
+  \begin{align}
+    P_{\mathrm{E}}^i
+    &= \sum_{j = 0}^i
+      S_{\text{progression}}(r^j)
+      \frac{S_{\text{death}}(a^i)}{S_{\text{death}}(a^{i - j})}
+      p_{\mathrm{E}}^{i - j}
+      \Delta a,
+    \displaybreak[0]\\
+    P_{\mathrm{I}}^i
+    &= \sum_{j = 0}^i
+      S_{\text{recovery}}(r^j)
+      \frac{S_{\text{death}}(a^i)}{S_{\text{death}}(a^{i - j})}
+      p_{\mathrm{I}}^{i - j}
+      \Delta a,
+    \displaybreak[0]\\
+    P_{\mathrm{C}}^i
+    &= \sum_{j = 0}^i
+      S_{\text{chronic recovery}}(r^j)
+      \frac{S_{\text{death}}(a^i)}{S_{\text{death}}(a^{i - j})}
+      p_{\mathrm{C}}^{i - j}
+      \Delta a.
+  \end{align}
 \end{subequations}
 so that
 \begin{subequations}
 \begin{align}
   \begin{split}
     \frac{P_{\mathrm{E}}^i - P_{\mathrm{E}}^{i - 1}}{\Delta a}
-    &= \sum_{j = 0}^i S_{\text{progression}}(r^j) p_{\mathrm{E}}^{i - j}
-    - \sum_{j = 0}^{i - 1} S_{\text{progression}}(r^j) p_{\mathrm{E}}^{i - 1 - j}
+    &=
+    \sum_{j = 0}^i
+    S_{\text{progression}}(r^j)
+    \frac{S_{\text{death}}(a^i)}{S_{\text{death}}(a^{i - j})}
+    p_{\mathrm{E}}^{i - j}
+    \\ & \quad {}
+    - \sum_{j = 0}^{i - 1}
+    S_{\text{progression}}(r^j)
+    \frac{S_{\text{death}}(a^{i - 1})}{S_{\text{death}}(a^{i - 1 - j})}
+    p_{\mathrm{E}}^{i - 1 - j}
     \\
     &= p_{\mathrm{E}}^i
-    - \sum_{j = 1}^i \left[S_{\text{progression}}(r^{j - 1})
-      - S_{\text{progression}}(r^j)\right]
+    \\ & \quad {}
+    - \sum_{j = 1}^i
+    \frac{S_{\text{progression}}(r^{j - 1}) S_{\text{death}}(a^{i - 1})
+      - S_{\text{progression}}(r^j) S_{\text{death}}(a^i)}
+    {S_{\text{death}}(a^{i - j})}
     p_{\mathrm{E}}^{i - j}
     \\
     &= h_{\text{infection}}
     \left(\frac{P_{\mathrm{S}}^i + P_{\mathrm{S}}^{i - 1}}{2}
         + \frac{P_{\mathrm{L}}^i + P_{\mathrm{L}}^{i - 1}}{2}\right)
     \\ & \quad {}
-    - \sum_{j = 1}^i \left[S_{\text{progression}}(r^{j - 1})
-      - S_{\text{progression}}(r^j)\right]
+    - \sum_{j = 1}^i
+    \frac{S_{\text{progression}}(r^{j - 1}) S_{\text{death}}(a^{i - 1})
+      - S_{\text{progression}}(r^j) S_{\text{death}}(a^i)}
+    {S_{\text{death}}(a^{i - j})}
     p_{\mathrm{E}}^{i - j},
   \end{split}
   \displaybreak[0]\\
