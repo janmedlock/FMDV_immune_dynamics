@@ -394,9 +394,9 @@ Crank--Nicolson method on characteristics gives
 \begin{subequations}
   \begin{align}
     P_{\mathrm{M}}^0
-    &= \sum_{i = 0}^{I - 1}
-      h_{\text{birth}}(a^i) \left(
-      P_{\mathrm{M}}^i + P_{\mathrm{C}}^i + P_{\mathrm{R}}^i
+    &= \sum_{j = 0}^{I - 1}
+      h_{\text{birth}}(a^j) \left(
+      P_{\mathrm{M}}^j + P_{\mathrm{C}}^j + P_{\mathrm{R}}^j
       \right)
       \Delta a,
     \\
@@ -408,10 +408,10 @@ Crank--Nicolson method on characteristics gives
       \frac{P_{\mathrm{M}}^i + P_{\mathrm{M}}^{i - 1}}{2},
     \displaybreak[0]\\
     P_{\mathrm{S}}^0
-    &= \sum_{i = 0}^{I - 1}
-      h_{\text{birth}}(a^i) \left(
-      P_{\mathrm{S}}^i + P_{\mathrm{E}}^i
-      + P_{\mathrm{I}}^i + P_{\mathrm{L}}^i
+    &= \sum_{j = 0}^{I - 1}
+      h_{\text{birth}}(a^j) \left(
+      P_{\mathrm{S}}^j + P_{\mathrm{E}}^j
+      + P_{\mathrm{I}}^j + P_{\mathrm{L}}^j
       \right)
       \Delta a,
     \\
@@ -438,7 +438,7 @@ Crank--Nicolson method on characteristics gives
     p_{\mathrm{I}}^0 &= 0,
     \\
     p_{\mathrm{I}}^i
-    &= \sum_{j = 1}^i
+    &= \sum_{j = 0}^i  % or start at j = 1?
       p_{\text{progression}}(r^j)
       \frac{S_{\text{death}}(a^i)}{S_{\text{death}}(a^{i - j})}
       p_{\mathrm{E}}^{i - j}
@@ -448,7 +448,7 @@ Crank--Nicolson method on characteristics gives
     \\
     p_{\mathrm{C}}^i
     &= p_{\text{chronicity}}
-      \sum_{j = 1}^i
+      \sum_{j = 0}^i % or start at j = 1?
       p_{\text{recovery}}(r^j)
       \frac{S_{\text{death}}(a^i)}{S_{\text{death}}(a^{i - j})}
       p_{\mathrm{I}}^{i - j}
@@ -459,13 +459,13 @@ Crank--Nicolson method on characteristics gives
     \begin{split}
       \frac{P_{\mathrm{R}}^i - P_{\mathrm{R}}^{i - 1}}{\Delta a}
       &= \left(1 - p_{\text{chronicity}}\right)
-      \sum_{j = 1}^i
+      \sum_{j = 0}^i  % or start at j = 1?
       p_{\text{recovery}}(r^j)
       \frac{S_{\text{death}}(a^i)}{S_{\text{death}}(a^{i - j})}
       p_{\mathrm{I}}^{i - j}
       \Delta a
       \\ & \quad {}
-      + \sum_{j = 1}^i
+      + \sum_{j = 0}^i % or start at j = 1?
       p_{\text{chronic recovery}}(r^j)
       \frac{S_{\text{death}}(a^i)}{S_{\text{death}}(a^{i - j})}
       p_{\mathrm{C}}^{i - j}
@@ -521,49 +521,78 @@ with
   \end{align}
 \end{subequations}
 
-For $Y \in \{\text{progression}, \text{recovery},
-\text{chronic recovery}\}$, using
-\begin{equation}
-  p_Y(r^j) = - \frac{\md S_Y}{\md r} (r^j)
-  \approx \frac{S_Y(r^{j - 1}) - S_Y(r^j)}{\Delta a},
-\end{equation} gives ...
-Also, something like
-\begin{equation}
-  \begin{split}
-    h_{\text{death}}(a^{i - 1 / 2})
-    &= - \frac{1}{S_{\text{death}} (a^{i - 1 / 2})}
-    \frac{\md S_{\text{death}}}{\md a} (a^{i - 1 / 2})
-    \\
-    &\approx \frac{1}{\Delta a}
-    \left[
-      \frac{S_{\text{death}}(a^{i - 1})}{S_{\text{death}}(a^i)} - 1
-    \right].
-  \end{split}
-\end{equation}
-
-\textbf{TODO: Update below.}
 That is,
 \begin{subequations}
 \begin{align}
-  P_{\mathrm{M}}^0 &= 1,
-  \\
-  - \left[1 - \frac{h_{\text{waning}}(a^{i - 1 / 2}) \Delta a}{2}\right]
-  P_{\mathrm{M}}^{i - 1}
-  + \left[1 + \frac{h_{\text{waning}}(a^{i - 1 / 2}) \Delta a}{2}\right]
-  P_{\mathrm{M}}^i
-  &= 0,
-  \displaybreak[0]\\
-  P_{\mathrm{S}}^0 &= 0,
+  \begin{split}
+    \left[1 - h_{\text{birth}}(a^0) \Delta a\right] P_{\mathrm{M}}^0
+    - \sum_{j = 1}^{I - 1} h_{\text{birth}}(a^j) \Delta a P_{\mathrm{M}}^j
+    \\ {}
+    - \sum_{j = 0}^{I - 1}
+    \sum_{k = j}^{I - 1}
+    h_{\text{birth}}(a^k)
+    S_{\text{chronic recovery}}(r^{k - j})
+    \frac{S_{\text{death}}(a^k)}{S_{\text{death}}(a^j)}
+    (\Delta a)^2
+    p_{\mathrm{C}}^j
+    \\ {}
+    - \sum_{j = 0}^{I - 1} h_{\text{birth}}(a^j) \Delta a P_{\mathrm{R}}^j
+    &= 0,
+  \end{split}
   \\
   \begin{split}
-    - \frac{h_{\text{waning}}(a^{i - 1 / 2}) \Delta a}{2}
+    - \left\{1
+      - \left[h_{\text{waning}}(a^{i - 1 / 2})
+        + h_{\text{death}}(a^{i - 1 / 2})\right]
+      \frac{\Delta a}{2}\right\}
     P_{\mathrm{M}}^{i - 1}
-    - \frac{h_{\text{waning}}(a^{i - 1 / 2}) \Delta a}{2}
+    \\ {}
+    + \left\{1
+      + \left[h_{\text{waning}}(a^{i - 1 / 2})
+        + h_{\text{death}}(a^{i - 1 / 2})\right]
+      \frac{\Delta a}{2}\right\}
+    P_{\mathrm{M}}^i
+    &= 0,
+  \end{split}
+  \displaybreak[0]\\
+  \begin{split}
+    \left[1 - h_{\text{birth}}(a^0) \Delta a\right] P_{\mathrm{S}}^0
+    - \sum_{j = 1}^{I - 1} h_{\text{birth}}(a^j) \Delta a P_{\mathrm{S}}^j
+    \\ {}
+    - \sum_{j = 0}^{I - 1}
+    \sum_{k = j}^{I - 1}
+    h_{\text{birth}}(a^k) S_{\text{progression}}(r^{k - j})
+    \frac{S_{\text{death}}(a^k)}{S_{\text{death}}(a^j)}
+    (\Delta a)^2
+    p_{\mathrm{E}}^j
+    \\ {}
+    - \sum_{j = 0}^{I - 1}
+    \sum_{k = j}^{I - 1}
+    h_{\text{birth}}(a^k) S_{\text{recovery}}(r^{k - j})
+    \frac{S_{\text{death}}(a^k)}{S_{\text{death}}(a^j)}
+    (\Delta a)^2
+    p_{\mathrm{I}}^j
+    \\ {}
+    - \sum_{j = 0}^{I - 1} h_{\text{birth}}(a^j) \Delta a P_{\mathrm{L}}^j
+    &= 0,
+  \end{split}
+  \\
+  \begin{split}
+    - h_{\text{waning}}(a^{i - 1 / 2}) \frac{\Delta a}{2}
+    P_{\mathrm{M}}^{i - 1}
+    - h_{\text{waning}}(a^{i - 1 / 2}) \frac{\Delta a}{2}
     P_{\mathrm{M}}^i
     \\ {}
-    - \left[1 - \frac{h_{\text{infection}} \Delta a}{2}\right]
+    - \left\{1
+      - \left[h_{\text{infection}}
+        + h_{\text{death}}(a^{i - 1 / 2})\right]
+      \frac{\Delta a}{2}\right\}
     P_{\mathrm{S}}^{i - 1}
-    + \left[1 + \frac{h_{\text{infection}} \Delta a}{2}\right]
+    \\ {}
+    + \left\{1
+      + \left[h_{\text{infection}}
+        + h_{\text{death}}(a^{i - 1 / 2})\right]
+        \frac{\Delta a}{2}\right\}
     P_{\mathrm{S}}^i
     &= 0,
   \end{split}
@@ -583,44 +612,55 @@ That is,
   \displaybreak[0]\\
   p_{\mathrm{I}}^0 &= 0,
   \\
-  - \sum_{j = 1}^i
-  \left[S_{\text{progression}}(r^{j - 1})
-  - S_{\text{progression}}(r^j)\right]
-  p_{\mathrm{E}}^{i - j}
+  - \sum_{j = 0}^i p_{\text{progression}}(r^{i - j})
+  \frac{S_{\text{death}}(a^i)}{S_{\text{death}}(a^j)}
+  \Delta a
+  p_{\mathrm{E}}^j
   + p_{\mathrm{I}}^i
   &= 0,
   \displaybreak[0]\\
   p_{\mathrm{C}}^0 &= 0,
   \\
-  - \sum_{j = 1}^i
-  p_{\text{chronicity}} \left[S_{\text{recovery}}(r^{j - 1})
-  - S_{\text{recovery}}(r^j)\right]
-  p_{\mathrm{I}}^{i - j}
+  - \sum_{j = 0}^i
+  p_{\text{chronicity}} p_{\text{recovery}}(r^{i - j})
+  \frac{S_{\text{death}}(a^i)}{S_{\text{death}}(a^j)}
+  \Delta a
+  p_{\mathrm{I}}^j
   + p_{\mathrm{C}}^i
   &= 0,
   \displaybreak[0]\\
   P_{\mathrm{R}}^0 &= 0,
   \\
   \begin{split}
-    - \sum_{j = 1}^i
+    - \sum_{j = 0}^i
     \left(1 - p_{\text{chronicity}}\right)
-    \left[S_{\text{recovery}}(r^{j - 1})
-      - S_{\text{recovery}}(r^j)\right] \Delta a
-    p_{\mathrm{I}}^{i - j}
+    p_{\text{recovery}}(r^{i - j})
+    \frac{S_{\text{death}}(a^i)}{S_{\text{death}}(a^j)}
+    \Delta a
+    p_{\mathrm{I}}^j
     \\ {}
-    - \sum_{j = 1}^i
-    \left[S_{\text{chronic recovery}}(r^{j - 1})
-      - S_{\text{chronic recovery}}(r^j)\right] \Delta a
-    p_{\mathrm{C}}^{i - j}
+    - \sum_{j = 0}^i
+    p_{\text{chronic recovery}}(r^{i - j})
+    \frac{S_{\text{death}}(a^i)}{S_{\text{death}}(a^j)}
+    \Delta a
+    p_{\mathrm{C}}^j
     \\ {}
-    - \left[1 - \frac{h_{\text{antibody loss}} \Delta a}{2}\right]
+    - \left\{1
+      - \left[h_{\text{antibody loss}}
+        + h_{\text{death}}(a^{i - 1 / 2})
+      \right]
+      \frac{\Delta a}{2}\right\}
     P_{\mathrm{R}}^{i - 1}
-    + \left[1 + \frac{h_{\text{antibody loss}} \Delta a}{2}\right]
+    \\ {}
+    + \left\{1
+      + \left[h_{\text{antibody loss}}
+        + h_{\text{death}}(a^{i - 1 / 2})\right]
+      \frac{\Delta a}{2}\right\}
     P_{\mathrm{R}}^i
     \\ {}
-    - \frac{h_{\text{antibody gain}} \Delta a}{2}
+    - h_{\text{antibody gain}} \frac{\Delta a}{2}
     P_{\mathrm{L}}^{i - 1}
-    - \frac{h_{\text{antibody gain}} \Delta a}{2}
+    - h_{\text{antibody gain}} \frac{\Delta a}{2}
     P_{\mathrm{L}}^i
     &= 0,
   \end{split}
@@ -628,22 +668,472 @@ That is,
   P_{\mathrm{L}}^0 &= 0,
   \\
   \begin{split}
-    - \frac{h_{\text{antibody loss}} \Delta a}{2}
+    - h_{\text{antibody loss}} \frac{\Delta a}{2}
     P_{\mathrm{R}}^{i - 1}
-    - \frac{h_{\text{antibody loss}} \Delta a}{2}
+    - h_{\text{antibody loss}} \frac{\Delta a}{2}
     P_{\mathrm{R}}^i
     \\ {}
-    - \left[1
-      - \frac{(h_{\text{antibody gain}} + h_{\text{infection}}) \Delta a}{2}\right]
+    - \left\{1
+      - \left[h_{\text{antibody gain}}
+        + h_{\text{infection}}
+        + h_{\text{death}}(a^{i - 1 / 2})
+      \right]
+      \frac{\Delta a}{2}\right\}
     P_{\mathrm{L}}^{i - 1}
     \\ {}
-    + \left[1
-      + \frac{(h_{\text{antibody gain}} + h_{\text{infection}}) \Delta a}{2}\right]
+    + \left\{1
+      + \left[h_{\text{antibody gain}}
+        + h_{\text{infection}}
+        + h_{\text{death}}(a^{i - 1 / 2})
+        \right]
+        \frac{\Delta a}{2}\right\}
     P_{\mathrm{L}}^i
     &= 0.
   \end{split}
 \end{align}
 \end{subequations}
+
+Let
+\begin{subequations}
+  \begin{align}
+    \vec{x}_X &=
+      \begin{pmatrix}
+        P_X^0\\
+        P_X^1\\
+        \vdots\\
+        P_X^{I - 1}
+      \end{pmatrix}
+    &&
+    \text{for $X \in
+       \left\{\mathrm{M}, \mathrm{S}, \mathrm{R}, \mathrm{L}\right\}$},
+    \\
+    \vec{x}_X &=
+      \begin{pmatrix}
+        p_X^0\\
+        p_X^1\\
+        \vdots\\
+        p_X^{I - 1}
+      \end{pmatrix}
+    &&
+    \text{for $X \in
+       \left\{\mathrm{E}, \mathrm{I}, \mathrm{C}\right\}$}.
+  \end{align}
+\end{subequations}
+Let $\vec{x}$ be the $\vec{x}_X$'s and $\vec{x}_X$'s stacked into a
+single vector,
+\begin{equation}
+  \vec{x} =
+  \begin{pmatrix}
+    \vec{x}_{\mathrm{M}}\\
+    \vec{x}_{\mathrm{S}}\\
+    \vec{x}_{\mathrm{E}}\\
+    \vec{x}_{\mathrm{I}}\\
+    \vec{x}_{\mathrm{C}}\\
+    \vec{x}_{\mathrm{R}}\\
+    \vec{x}_{\mathrm{L}}
+  \end{pmatrix}.
+\end{equation}
+Define the submatrices
+\begin{subequations}
+  \begin{align}
+    \mat{A}_{\mathrm{MM}} &=
+    \begin{bmatrix}
+      1 - b_{\mathrm{M}}^0 & - b_{\mathrm{M}}^1 & - b_{\mathrm{M}}^2 &
+      \hdots
+      \\
+      - 1 + c_{\mathrm{MM}}^1 & 1 + c_{\mathrm{MM}}^1
+      \\
+      & - 1 + c_{\mathrm{MM}}^2 & 1 + c_{\mathrm{MM}}^2
+      \\
+      & & \ddots & \ddots
+    \end{bmatrix},
+    \\
+    \mat{A}_{\mathrm{MC}} &=
+    \begin{bmatrix}
+      - b_{\mathrm{C}}^0 & - b_{\mathrm{C}}^1 & \hdots
+      \\
+      0 & 0 & \hdots
+      \\
+      \vdots & \vdots
+    \end{bmatrix},
+    \\
+    \mat{A}_{\mathrm{MR}} &=
+    \begin{bmatrix}
+      - b_{\mathrm{R}}^0 & - b_{\mathrm{R}}^1 & \hdots
+      \\
+      0 & 0 & \hdots
+      \\
+      \vdots & \vdots
+    \end{bmatrix},
+    \displaybreak[0]\\
+    \mat{A}_{\mathrm{SM}} &=
+    \begin{bmatrix}
+      0 & 0 & \hdots
+      \\
+      - c_{\mathrm{SM}}^1 & - c_{\mathrm{SM}}^1
+      \\
+      & - c_{\mathrm{SM}}^2 & - c_{\mathrm{SM}}^2
+      \\
+      & & \ddots & \ddots
+    \end{bmatrix},
+    \\
+    \mat{A}_{\mathrm{SS}} &=
+    \begin{bmatrix}
+      1 - b_{\mathrm{S}}^0 & - b_{\mathrm{S}}^1 & - b_{\mathrm{S}}^2
+      & \hdots
+      \\
+      - 1 + c_{\mathrm{SS}}^1 & 1 + c_{\mathrm{SS}}^1
+      \\
+      & - 1 + c_{\mathrm{SS}}^2 & 1 + c_{\mathrm{SS}}^2
+      \\
+      & & \ddots & \ddots
+    \end{bmatrix},
+    \\
+    \mat{A}_{\mathrm{SE}} &=
+    \begin{bmatrix}
+      - b_{\mathrm{E}}^0 & - b_{\mathrm{E}}^1 & \hdots
+      \\
+      0 & 0 & \hdots
+      \\
+      \vdots & \vdots
+    \end{bmatrix},
+    \\
+    \mat{A}_{\mathrm{SI}} &=
+    \begin{bmatrix}
+      - b_{\mathrm{I}}^0 & - b_{\mathrm{I}}^1 & \hdots
+      \\
+      0 & 0 & \hdots
+      \\
+      \vdots & \vdots
+    \end{bmatrix},
+    \\
+    \mat{A}_{\mathrm{SL}} &=
+    \begin{bmatrix}
+      - b_{\mathrm{L}}^0 & - b_{\mathrm{L}}^1 & \hdots
+      \\
+      0 & 0 & \hdots
+      \\
+      \vdots & \vdots
+    \end{bmatrix},
+    \displaybreak[0]\\
+    \mat{A}_{\mathrm{ES}} &=
+    \begin{bmatrix}
+      0 & 0 & \hdots
+      \\
+      - c_{\mathrm{ES}}^1 & - c_{\mathrm{ES}}^1
+      \\
+      & - c_{\mathrm{ES}}^2 & - c_{\mathrm{ES}}^2
+      \\
+      & & \ddots & \ddots
+    \end{bmatrix},
+    \\
+    \mat{A}_{\mathrm{EE}} &=
+    \begin{bmatrix}
+      1
+      \\
+      & 1
+      \\
+      & & \ddots
+    \end{bmatrix},
+    \\
+    \mat{A}_{\mathrm{EL}} &=
+    \begin{bmatrix}
+      0 & 0 & \hdots
+      \\
+      - c_{\mathrm{EL}}^1 & - c_{\mathrm{EL}}^1
+      \\
+      & - c_{\mathrm{EL}}^2 & - c_{\mathrm{EL}}^2
+      \\
+      & & \ddots & \ddots
+    \end{bmatrix},
+    \displaybreak[0]\\
+    \mat{A}_{\mathrm{IE}} &=
+    \begin{bmatrix}
+      - c_{\mathrm{IE}}^{0, 0}
+      \\
+      - c_{\mathrm{IE}}^{1, 0}
+      &
+      - c_{\mathrm{IE}}^{1, 1}
+      \\
+      - c_{\mathrm{IE}}^{2, 0}
+      &
+      - c_{\mathrm{IE}}^{2, 1}
+      &
+      - c_{\mathrm{IE}}^{2, 2}
+      \\
+      \vdots & \vdots & & \ddots
+    \end{bmatrix},
+    \\
+    \mat{A}_{\mathrm{II}} &=
+    \begin{bmatrix}
+      1
+      \\
+      & 1
+      \\
+      & & \ddots
+    \end{bmatrix},
+    \displaybreak[0]\\
+    \mat{A}_{\mathrm{CI}} &=
+    \begin{bmatrix}
+      - c_{\mathrm{CI}}^{0, 0}
+      \\
+      - c_{\mathrm{CI}}^{1, 0}
+      &
+      - c_{\mathrm{CI}}^{1, 1}
+      \\
+      - c_{\mathrm{CI}}^{2, 0}
+      &
+      - c_{\mathrm{CI}}^{2, 1}
+      &
+      - c_{\mathrm{CI}}^{2, 2}
+      \\
+      \vdots & \vdots & & \ddots
+    \end{bmatrix},
+    \\
+    \mat{A}_{\mathrm{CC}} &=
+    \begin{bmatrix}
+      1
+      \\
+      & 1
+      \\
+      & & \ddots
+    \end{bmatrix},
+    \displaybreak[0]\\
+    \mat{A}_{\mathrm{RI}} &=
+    \begin{bmatrix}
+      - c_{\mathrm{RI}}^{0, 0}
+      \\
+      - c_{\mathrm{RI}}^{1, 0}
+      &
+      - c_{\mathrm{RI}}^{1, 1}
+      \\
+      - c_{\mathrm{RI}}^{2, 0}
+      &
+      - c_{\mathrm{RI}}^{2, 1}
+      &
+      - c_{\mathrm{RI}}^{2, 2}
+      \\
+      \vdots & \vdots & & \ddots
+    \end{bmatrix},
+    \\
+    \mat{A}_{\mathrm{RC}} &=
+    \begin{bmatrix}
+      - c_{\mathrm{RC}}^{0, 0}
+      \\
+      - c_{\mathrm{RC}}^{1, 0}
+      &
+      - c_{\mathrm{RC}}^{1, 1}
+      \\
+      - c_{\mathrm{RC}}^{2, 0}
+      &
+      - c_{\mathrm{RC}}^{2, 1}
+      &
+      - c_{\mathrm{RC}}^{2, 2}
+      \\
+      \vdots & \vdots & & \ddots
+    \end{bmatrix},
+    \\
+    \mat{A}_{\mathrm{RR}} &=
+    \begin{bmatrix}
+      0 & 0 & 0 & \hdots
+      \\
+      - 1 + c_{\mathrm{RR}}^1 & 1 + c_{\mathrm{RR}}^1
+      \\
+      & - 1 + c_{\mathrm{RR}}^2 & 1 + c_{\mathrm{RR}}^2
+      \\
+      & & \ddots & \ddots
+    \end{bmatrix},
+    \\
+    \mat{A}_{\mathrm{RL}} &=
+    \begin{bmatrix}
+      0 & 0 & \hdots
+      \\
+      - c_{\mathrm{RL}}^1 & - c_{\mathrm{RL}}^1
+      \\
+      & - c_{\mathrm{RL}}^2 & - c_{\mathrm{RL}}^2
+      \\
+      & & \ddots & \ddots
+    \end{bmatrix},
+    \displaybreak[0]\\
+    \mat{A}_{\mathrm{LR}} &=
+    \begin{bmatrix}
+      0 & 0 & \hdots
+      \\
+      - c_{\mathrm{LR}}^1 & - c_{\mathrm{LR}}^1
+      \\
+      & - c_{\mathrm{LR}}^2 & - c_{\mathrm{LR}}^2
+      \\
+      & & \ddots & \ddots
+    \end{bmatrix},
+    \\
+    \mat{A}_{\mathrm{LL}} &=
+    \begin{bmatrix}
+      0 & 0 & 0 & \hdots
+      \\
+      - 1 + c_{\mathrm{LL}}^1 & 1 + c_{\mathrm{LL}}^1
+      \\
+      & - 1 + c_{\mathrm{LL}}^2 & 1 + c_{\mathrm{LL}}^2
+      \\
+      & & \ddots & \ddots
+    \end{bmatrix},
+  \end{align}
+\end{subequations}
+with
+\begin{subequations}
+  \begin{align}
+    b_{\mathrm{M}}^j
+    &= h_{\text{birth}}(a^j) \Delta a,
+    \\
+    b_{\mathrm{S}}^j
+    &= h_{\text{birth}}(a^j) \Delta a,
+    \\
+    b_{\mathrm{E}}^j
+    &= \sum_{k = j}^{I - 1}
+      h_{\text{birth}}(a^k) S_{\text{progression}}(r^{k - j})
+      \frac{S_{\text{death}}(a^k)}{S_{\text{death}}(a^j)}
+      (\Delta a)^2,
+    \\
+    b_{\mathrm{I}}^j
+    &= \sum_{k = j}^{I - 1}
+      h_{\text{birth}}(a^k) S_{\text{recovery}}(r^{k - j})
+      \frac{S_{\text{death}}(a^k)}{S_{\text{death}}(a^j)}
+      (\Delta a)^2,
+    \\
+    b_{\mathrm{C}}^j
+    &= \sum_{k = j}^{I - 1}
+      h_{\text{birth}}(a^k)
+      S_{\text{chronic recovery}}(r^{k - j})
+      \frac{S_{\text{death}}(a^k)}{S_{\text{death}}(a^j)}
+      (\Delta a)^2,
+    \\
+    b_{\mathrm{R}}^j
+    &= h_{\text{birth}}(a^j) \Delta a,
+    \\
+    b_{\mathrm{L}}^j
+    &= h_{\text{birth}}(a^j) \Delta a,
+  \end{align}
+\end{subequations}
+and
+\begin{subequations}
+  \begin{align}
+    c_{\mathrm{MM}}^i
+    &= \frac{1}{2} \left[h_{\text{waning}}(a^{i - 1 / 2})
+      + h_{\text{death}}(a^{i - 1 / 2})\right]
+      \Delta a,
+    \displaybreak[0]\\
+    c_{\mathrm{SM}}^i
+    &= \frac{1}{2} h_{\text{waning}}(a^{i - 1 / 2}) \Delta a,
+    \\
+    c_{\mathrm{SS}}^i
+    &= \frac{1}{2} \left[h_{\text{infection}}
+      + h_{\text{death}}(a^{i - 1 / 2})\right]
+      \Delta a,
+    \displaybreak[0]\\
+    c_{\mathrm{ES}}^i
+    &= \frac{1}{2} h_{\text{infection}},
+    \\
+    c_{\mathrm{EL}}^i
+    &= \frac{1}{2} h_{\text{infection}},
+    \displaybreak[0]\\
+    c_{\mathrm{IE}}^{i, j}
+    &= p_{\text{progression}}(r^{i - j})
+      \frac{S_{\text{death}}(a^i)}{S_{\text{death}}(a^j)}
+      \Delta a,
+    % or maybe a^{0, 0} = 0.
+    \displaybreak[0]\\
+    c_{\mathrm{CI}}^{i, j}
+    &= p_{\text{chronicity}}
+      p_{\text{recovery}}(r^{i - j})
+      \frac{S_{\text{death}}(a^i)}{S_{\text{death}}(a^j)}
+      \Delta a,
+    % or maybe a^{0, 0} = 0.
+    \displaybreak[0]\\
+    c_{\mathrm{RI}}^{i, j}
+    &= (1 - p_{\text{chronicity}})
+      p_{\text{recovery}}(r^{i - j})
+      \frac{S_{\text{death}}(a^i)}{S_{\text{death}}(a^j)}
+      \Delta a,
+    % or maybe a^{0, 0} = 0.
+    \\
+    c_{\mathrm{RC}}^{i, j}
+    &= p_{\text{chronic recovery}}(r^{i - j})
+      \frac{S_{\text{death}}(a^i)}{S_{\text{death}}(a^j)}
+      \Delta a,
+    % or maybe a^{0, 0} = 0.
+    \\
+    c_{\mathrm{RR}}^i
+    &= \frac{1}{2} \left[h_{\text{antibody loss}}
+      + h_{\text{death}}(a^{i - 1 / 2})\right]
+      \Delta a,
+    \\
+    c_{\mathrm{RL}}^i
+    &= \frac{1}{2} h_{\text{antibody gain}} \Delta a,
+    \displaybreak[0]\\
+    c_{\mathrm{LR}}^i
+    &= \frac{1}{2} h_{\text{antibody loss}} \Delta a,
+    \\
+    c_{\mathrm{LL}}^i
+    &= \frac{1}{2} \left[h_{\text{antibody gain}}
+      + h_{\text{infection}}
+      + h_{\text{death}}(a^{i - 1 / 2})\right]
+      \Delta a.
+  \end{align}
+\end{subequations}
+Define the matrix
+\begin{equation}
+  \mat{A} =
+  \begin{bmatrix}
+    \mat{A}_{\mathrm{MM}} & & & &
+    \mat{A}_{\mathrm{MC}} &
+    \mat{A}_{\mathrm{MR}} &
+    \\
+    \mat{A}_{\mathrm{SM}} &
+    \mat{A}_{\mathrm{SS}} &
+    \mat{A}_{\mathrm{SE}} &
+    \mat{A}_{\mathrm{SI}} & & &
+    \mat{A}_{\mathrm{SL}}
+    \\
+    &
+    \mat{A}_{\mathrm{ES}} &
+    \mat{A}_{\mathrm{EE}} & & & &
+    \mat{A}_{\mathrm{EL}}
+    \\
+    & &
+    \mat{A}_{\mathrm{IE}} &
+    \mat{A}_{\mathrm{II}} & & &
+    \\
+    & & &
+    \mat{A}_{\mathrm{CI}} &
+    \mat{A}_{\mathrm{CC}} & &
+    \\
+    & & &
+    \mat{A}_{\mathrm{RI}} &
+    \mat{A}_{\mathrm{RC}} &
+    \mat{A}_{\mathrm{RR}} &
+    \mat{A}_{\mathrm{RL}}
+    \\
+    & & & & &
+    \mat{A}_{\mathrm{LR}} &
+    \mat{A}_{\mathrm{LL}}
+  \end{bmatrix},
+\end{equation}
+where the blank entries are $\mat{0}$
+submatrices.  The numerical scheme is then finding the eigenvector
+$\vec{x}$ that corresponds to the eigenvalue $0$, i.e.
+\begin{equation}
+  \mat{A} \vec{x} = \vec{0}.
+\end{equation}
+
+\textbf{TODO: M matrix blah blah blah...}
+To ensure that the entries of $\vec{x}$ are non-negative,
+we require that $\mat{A}$ has positive diagonal entries and
+non-positive off-diagonal entries.
+That is, all of the entries of the submatrices $\mat{A}_{XY}$
+are non-positive except for the diagonal entries of $\mat{A}_{XX}$,
+which are positive.
+
+
+
 The coefficients must be non-negative to ensure each component of the
 $P_X$'s and $p_X$'s is non-negative. In particular, the hazards must
 satisfy
@@ -656,7 +1146,29 @@ or
 \end{equation}
 
 
-\subsection{Analysis}
+\subsection{Analysis scratch}
+
+\text{TODO: This whole subsection needs works.}
+
+For $Y \in \{\text{progression}, \text{recovery},
+\text{chronic recovery}\}$, using
+\begin{equation}
+  p_Y(r^j) = - \frac{\md S_Y}{\md r} (r^j)
+  \approx \frac{S_Y(r^{j - 1}) - S_Y(r^j)}{\Delta a},
+\end{equation} gives ...
+Also, something like
+\begin{equation}
+  \begin{split}
+    h_{\text{death}}(a^{i - 1 / 2})
+    &= - \frac{1}{S_{\text{death}} (a^{i - 1 / 2})}
+    \frac{\md S_{\text{death}}}{\md a} (a^{i - 1 / 2})
+    \\
+    &\approx \frac{1}{\Delta a}
+    \left[
+      \frac{S_{\text{death}}(a^{i - 1})}{S_{\text{death}}(a^i)} - 1
+    \right].
+  \end{split}
+\end{equation}
 
 Let
 \begin{equation}
@@ -807,5 +1319,6 @@ i.e.~zero growth rate.
 
 \bibliography{journal_abbreviations,math_epi}
 \bibliographystyle{jpmbib}
+
 
 \end{document}
