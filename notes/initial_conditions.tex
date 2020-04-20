@@ -719,8 +719,7 @@ Let
        \left\{\mathrm{E}, \mathrm{I}, \mathrm{C}\right\}$}.
   \end{align}
 \end{subequations}
-Let $\vec{x}$ be the $\vec{x}_X$'s and $\vec{x}_X$'s stacked into a
-single vector,
+Let $\vec{x}$ be the $\vec{x}_X$'s stacked into a single vector,
 \begin{equation}
   \vec{x} =
   \begin{pmatrix}
@@ -733,417 +732,311 @@ single vector,
     \vec{x}_{\mathrm{L}}
   \end{pmatrix}.
 \end{equation}
-Define the submatrices
+
+Define the birth matrix
+\begin{equation}
+  \begin{split}
+    \mat{B} &=
+    \begin{bmatrix}
+      \mat{B}_0 & \mat{0} & \mat{0} & \mat{0} &
+      \mat{0} & \mat{0} & \mat{0}
+      \\
+      \mat{0} & \mat{B}_0 & \mat{0} & \mat{0} &
+      \mat{0} & \mat{0} & \mat{0}
+      \\
+      \mat{0} & \mat{0} & \mat{0} & \mat{0} &
+      \mat{0} & \mat{0} & \mat{0}
+      \\
+      \mat{0} & \mat{0} & \mat{0} & \mat{0} &
+      \mat{0} & \mat{0} & \mat{0}
+      \\
+      \mat{0} & \mat{0} & \mat{0} & \mat{0} &
+      \mat{0} & \mat{0} & \mat{0}
+      \\
+      \mat{0} & \mat{0} & \mat{0} & \mat{0} &
+      \mat{0} & \mat{0} & \mat{0}
+      \\
+      \mat{0} & \mat{0} & \mat{0} & \mat{0} &
+      \mat{0} & \mat{0} & \mat{0}
+    \end{bmatrix}
+    \\ & \quad\quad\quad\quad {}
+    -
+    \begin{bmatrix}
+      \mat{B}_{\mathrm{M}} & \mat{0} & \mat{0} & \mat{0} &
+      \mat{B}_{\mathrm{C}} & \mat{B}_{\mathrm{R}} & \mat{0}
+      \\
+      \mat{0} & \mat{B}_{\mathrm{S}} &
+      \mat{B}_{\mathrm{E}} & \mat{B}_{\mathrm{I}} &
+      \mat{0} & \mat{0} & \mat{B}_{\mathrm{L}}
+      \\
+      \mat{0} & \mat{0} & \mat{0} & \mat{0} &
+      \mat{0} & \mat{0} & \mat{0}
+      \\
+      \mat{0} & \mat{0} & \mat{0} & \mat{0} &
+      \mat{0} & \mat{0} & \mat{0}
+      \\
+      \mat{0} & \mat{0} & \mat{0} & \mat{0} &
+      \mat{0} & \mat{0} & \mat{0}
+      \\
+      \mat{0} & \mat{0} & \mat{0} & \mat{0} &
+      \mat{0} & \mat{0} & \mat{0}
+      \\
+      \mat{0} & \mat{0} & \mat{0} & \mat{0} &
+      \mat{0} & \mat{0} & \mat{0}
+    \end{bmatrix},
+  \end{split}
+\end{equation}
+with blocks
 \begin{subequations}
   \begin{align}
-    \mat{A}_{\mathrm{MM}} &=
+    \mat{B}_0 &=
     \begin{bmatrix}
-      1 - b_{\mathrm{M}}^0 & - b_{\mathrm{M}}^1 & - b_{\mathrm{M}}^2 &
-      \hdots
+      1 & 0 & \hdots & 0
       \\
-      - 1 + c_{\mathrm{MM}}^1 & 1 + c_{\mathrm{MM}}^1
+      0 & 0 & \hdots & 0
       \\
-      & - 1 + c_{\mathrm{MM}}^2 & 1 + c_{\mathrm{MM}}^2
+      \vdots & \vdots & & \vdots
       \\
-      & & \ddots & \ddots
-    \end{bmatrix},
-    \\
-    \mat{A}_{\mathrm{MC}} &=
-    \begin{bmatrix}
-      - b_{\mathrm{C}}^0 & - b_{\mathrm{C}}^1 & \hdots
-      \\
-      0 & 0 & \hdots
-      \\
-      \vdots & \vdots
-    \end{bmatrix},
-    \\
-    \mat{A}_{\mathrm{MR}} &=
-    \begin{bmatrix}
-      - b_{\mathrm{R}}^0 & - b_{\mathrm{R}}^1 & \hdots
-      \\
-      0 & 0 & \hdots
-      \\
-      \vdots & \vdots
+      0 & 0 & \hdots & 0
     \end{bmatrix},
     \displaybreak[0]\\
-    \mat{A}_{\mathrm{SM}} &=
+    \mat{B}_X &=
     \begin{bmatrix}
-      0 & 0 & \hdots
+      b_X^0 & b_X^1 & \hdots & b_X^{I - 1}
       \\
-      - c_{\mathrm{SM}}^1 & - c_{\mathrm{SM}}^1
+      0 & 0 & \hdots & 0
       \\
-      & - c_{\mathrm{SM}}^2 & - c_{\mathrm{SM}}^2
+      \vdots & \vdots & & \vdots
       \\
-      & & \ddots & \ddots
-    \end{bmatrix},
-    \\
-    \mat{A}_{\mathrm{SS}} &=
-    \begin{bmatrix}
-      1 - b_{\mathrm{S}}^0 & - b_{\mathrm{S}}^1 & - b_{\mathrm{S}}^2
-      & \hdots
-      \\
-      - 1 + c_{\mathrm{SS}}^1 & 1 + c_{\mathrm{SS}}^1
-      \\
-      & - 1 + c_{\mathrm{SS}}^2 & 1 + c_{\mathrm{SS}}^2
-      \\
-      & & \ddots & \ddots
-    \end{bmatrix},
-    \\
-    \mat{A}_{\mathrm{SE}} &=
-    \begin{bmatrix}
-      - b_{\mathrm{E}}^0 & - b_{\mathrm{E}}^1 & \hdots
-      \\
-      0 & 0 & \hdots
-      \\
-      \vdots & \vdots
-    \end{bmatrix},
-    \\
-    \mat{A}_{\mathrm{SI}} &=
-    \begin{bmatrix}
-      - b_{\mathrm{I}}^0 & - b_{\mathrm{I}}^1 & \hdots
-      \\
-      0 & 0 & \hdots
-      \\
-      \vdots & \vdots
-    \end{bmatrix},
-    \\
-    \mat{A}_{\mathrm{SL}} &=
-    \begin{bmatrix}
-      - b_{\mathrm{L}}^0 & - b_{\mathrm{L}}^1 & \hdots
-      \\
-      0 & 0 & \hdots
-      \\
-      \vdots & \vdots
-    \end{bmatrix},
-    \displaybreak[0]\\
-    \mat{A}_{\mathrm{ES}} &=
-    \begin{bmatrix}
-      0 & 0 & \hdots
-      \\
-      - c_{\mathrm{ES}}^1 & - c_{\mathrm{ES}}^1
-      \\
-      & - c_{\mathrm{ES}}^2 & - c_{\mathrm{ES}}^2
-      \\
-      & & \ddots & \ddots
-    \end{bmatrix},
-    \\
-    \mat{A}_{\mathrm{EE}} &=
-    \begin{bmatrix}
-      1
-      \\
-      & 1
-      \\
-      & & \ddots
-    \end{bmatrix},
-    \\
-    \mat{A}_{\mathrm{EL}} &=
-    \begin{bmatrix}
-      0 & 0 & \hdots
-      \\
-      - c_{\mathrm{EL}}^1 & - c_{\mathrm{EL}}^1
-      \\
-      & - c_{\mathrm{EL}}^2 & - c_{\mathrm{EL}}^2
-      \\
-      & & \ddots & \ddots
-    \end{bmatrix},
-    \displaybreak[0]\\
-    \mat{A}_{\mathrm{IE}} &=
-    \begin{bmatrix}
-      - c_{\mathrm{IE}}^{0, 0}
-      \\
-      - c_{\mathrm{IE}}^{1, 0}
-      &
-      - c_{\mathrm{IE}}^{1, 1}
-      \\
-      - c_{\mathrm{IE}}^{2, 0}
-      &
-      - c_{\mathrm{IE}}^{2, 1}
-      &
-      - c_{\mathrm{IE}}^{2, 2}
-      \\
-      \vdots & \vdots & & \ddots
-    \end{bmatrix},
-    \\
-    \mat{A}_{\mathrm{II}} &=
-    \begin{bmatrix}
-      1
-      \\
-      & 1
-      \\
-      & & \ddots
-    \end{bmatrix},
-    \displaybreak[0]\\
-    \mat{A}_{\mathrm{CI}} &=
-    \begin{bmatrix}
-      - c_{\mathrm{CI}}^{0, 0}
-      \\
-      - c_{\mathrm{CI}}^{1, 0}
-      &
-      - c_{\mathrm{CI}}^{1, 1}
-      \\
-      - c_{\mathrm{CI}}^{2, 0}
-      &
-      - c_{\mathrm{CI}}^{2, 1}
-      &
-      - c_{\mathrm{CI}}^{2, 2}
-      \\
-      \vdots & \vdots & & \ddots
-    \end{bmatrix},
-    \\
-    \mat{A}_{\mathrm{CC}} &=
-    \begin{bmatrix}
-      1
-      \\
-      & 1
-      \\
-      & & \ddots
-    \end{bmatrix},
-    \displaybreak[0]\\
-    \mat{A}_{\mathrm{RI}} &=
-    \begin{bmatrix}
-      - c_{\mathrm{RI}}^{0, 0}
-      \\
-      - c_{\mathrm{RI}}^{1, 0}
-      &
-      - c_{\mathrm{RI}}^{1, 1}
-      \\
-      - c_{\mathrm{RI}}^{2, 0}
-      &
-      - c_{\mathrm{RI}}^{2, 1}
-      &
-      - c_{\mathrm{RI}}^{2, 2}
-      \\
-      \vdots & \vdots & & \ddots
-    \end{bmatrix},
-    \\
-    \mat{A}_{\mathrm{RC}} &=
-    \begin{bmatrix}
-      - c_{\mathrm{RC}}^{0, 0}
-      \\
-      - c_{\mathrm{RC}}^{1, 0}
-      &
-      - c_{\mathrm{RC}}^{1, 1}
-      \\
-      - c_{\mathrm{RC}}^{2, 0}
-      &
-      - c_{\mathrm{RC}}^{2, 1}
-      &
-      - c_{\mathrm{RC}}^{2, 2}
-      \\
-      \vdots & \vdots & & \ddots
-    \end{bmatrix},
-    \\
-    \mat{A}_{\mathrm{RR}} &=
-    \begin{bmatrix}
-      0 & 0 & 0 & \hdots
-      \\
-      - 1 + c_{\mathrm{RR}}^1 & 1 + c_{\mathrm{RR}}^1
-      \\
-      & - 1 + c_{\mathrm{RR}}^2 & 1 + c_{\mathrm{RR}}^2
-      \\
-      & & \ddots & \ddots
-    \end{bmatrix},
-    \\
-    \mat{A}_{\mathrm{RL}} &=
-    \begin{bmatrix}
-      0 & 0 & \hdots
-      \\
-      - c_{\mathrm{RL}}^1 & - c_{\mathrm{RL}}^1
-      \\
-      & - c_{\mathrm{RL}}^2 & - c_{\mathrm{RL}}^2
-      \\
-      & & \ddots & \ddots
-    \end{bmatrix},
-    \displaybreak[0]\\
-    \mat{A}_{\mathrm{LR}} &=
-    \begin{bmatrix}
-      0 & 0 & \hdots
-      \\
-      - c_{\mathrm{LR}}^1 & - c_{\mathrm{LR}}^1
-      \\
-      & - c_{\mathrm{LR}}^2 & - c_{\mathrm{LR}}^2
-      \\
-      & & \ddots & \ddots
-    \end{bmatrix},
-    \\
-    \mat{A}_{\mathrm{LL}} &=
-    \begin{bmatrix}
-      0 & 0 & 0 & \hdots
-      \\
-      - 1 + c_{\mathrm{LL}}^1 & 1 + c_{\mathrm{LL}}^1
-      \\
-      & - 1 + c_{\mathrm{LL}}^2 & 1 + c_{\mathrm{LL}}^2
-      \\
-      & & \ddots & \ddots
+      0 & 0 & \hdots & 0
     \end{bmatrix},
   \end{align}
 \end{subequations}
-with
-\begin{subequations}
-  \begin{align}
-    b_{\mathrm{M}}^j
-    &= h_{\text{birth}}(a^j) \Delta a,
+where
+\begin{equation}
+  b_X^j =
+  \begin{cases}
+    h_{\text{birth}}(a^j) \Delta a
+    & \text{for
+      $X \in \{\mathrm{M}, \mathrm{S}, \mathrm{R}, \mathrm{L}\}$},
     \\
-    b_{\mathrm{S}}^j
-    &= h_{\text{birth}}(a^j) \Delta a,
-    \\
-    b_{\mathrm{E}}^j
-    &= \sum_{k = j}^{I - 1}
-      h_{\text{birth}}(a^k) S_{\text{progression}}(r^{k - j})
-      \frac{S_{\text{death}}(a^k)}{S_{\text{death}}(a^j)}
-      (\Delta a)^2,
-    \\
-    b_{\mathrm{I}}^j
-    &= \sum_{k = j}^{I - 1}
-      h_{\text{birth}}(a^k) S_{\text{recovery}}(r^{k - j})
-      \frac{S_{\text{death}}(a^k)}{S_{\text{death}}(a^j)}
-      (\Delta a)^2,
-    \\
-    b_{\mathrm{C}}^j
-    &= \sum_{k = j}^{I - 1}
-      h_{\text{birth}}(a^k)
-      S_{\text{chronic recovery}}(r^{k - j})
-      \frac{S_{\text{death}}(a^k)}{S_{\text{death}}(a^j)}
-      (\Delta a)^2,
-    \\
-    b_{\mathrm{R}}^j
-    &= h_{\text{birth}}(a^j) \Delta a,
-    \\
-    b_{\mathrm{L}}^j
-    &= h_{\text{birth}}(a^j) \Delta a,
-  \end{align}
-\end{subequations}
+    \sum_{k = j}^{I - 1}
+    h_{\text{birth}}(a^k) S_{Y_X}(r^{k - j})
+    \frac{S_{\text{death}}(a^k)}{S_{\text{death}}(a^j)}
+    (\Delta a)^2
+    & \text{for
+      $X \in \{\mathrm{E}, \mathrm{I}, \mathrm{C}\}$},
+  \end{cases}
+\end{equation}
 and
+\begin{equation}
+  \begin{split}
+    Y_{\mathrm{E}} &= \text{progression},
+    \\
+    Y_{\mathrm{I}} &= \text{recovery},
+    \\
+    Y_{\mathrm{C}} &= \text{chronic recovery}.
+  \end{split}
+\end{equation}
+
+Define the influx matrix
+\begin{equation}
+  \mat{C} = -
+  \begin{bmatrix}
+    \mat{0} & \mat{0} & \mat{0} & \mat{0} &
+    \mat{0} & \mat{0} & \mat{0}
+    \\
+    \mat{C}_{\mathrm{SM}} & \mat{0} & \mat{0} &
+    \mat{0} & \mat{0} & \mat{0} & \mat{0}
+    \\
+    \mat{0} & \mat{C}_{\mathrm{ES}} & \mat{0} &
+    \mat{0} & \mat{0} & \mat{0} & \mat{C}_{\mathrm{EL}}
+    \\
+    \mat{0} & \mat{0} & \bar{\mat{C}}_{\mathrm{IE}} &
+    \mat{0} & \mat{0} & \mat{0} & \mat{0}
+    \\
+    \mat{0} & \mat{0} & \mat{0} & \bar{\mat{C}}_{\mathrm{CI}} &
+    \mat{0} & \mat{0} & \mat{0}
+    \\
+    \mat{0} & \mat{0} & \mat{0} & \bar{\mat{C}}_{\mathrm{RI}} &
+    \bar{\mat{C}}_{\mathrm{RC}} & \mat{0} & \mat{C}_{\mathrm{RL}}
+    \\
+    \mat{0} & \mat{0} & \mat{0} & \mat{0} &
+    \mat{0} & \mat{C}_{\mathrm{LR}} & \mat{0}
+  \end{bmatrix},
+\end{equation}
+with blocks
 \begin{subequations}
   \begin{align}
-    c_{\mathrm{MM}}^i
-    &= \frac{1}{2} \left[h_{\text{waning}}(a^{i - 1 / 2})
-      + h_{\text{death}}(a^{i - 1 / 2})\right]
-      \Delta a,
+    \mat{C}_{XY} &=
+    \begin{bmatrix}
+      0 & 0 & 0 & \hdots & 0
+      \\
+      c_{XY}^1 & c_{XY}^1 & 0 & \hdots & 0
+      \\
+      0 & c_{XY}^2 & c_{XY}^2 & \ddots & \vdots
+      \\
+      \vdots & \ddots & \ddots & \ddots & 0
+      \\
+      0 & \hdots & 0 & c_{XY}^{I - 1} &
+      c_{XY}^{I - 1}
+    \end{bmatrix},
     \displaybreak[0]\\
+    \bar{\mat{C}}_{XY} &=
+    \begin{bmatrix}
+      % Maybe \bar{c}_{XY}^{0, 0} = 0 instead.
+      \bar{c}_{XY}^{0, 0} & 0 & \hdots & 0
+      \\
+      \bar{c}_{XY}^{1, 0} & \bar{c}_{XY}^{1, 1} & \ddots & \vdots
+      \\
+      \vdots &  & \ddots & 0
+      \\
+      \bar{c}_{XY}^{I - 1, 0} & \bar{c}_{XY}^{I - 1, 1} & \hdots &
+      \bar{c}_{XY}^{I - 1, I - 1}
+    \end{bmatrix},
+  \end{align}
+\end{subequations}
+where
+\begin{subequations}
+  \begin{align}
     c_{\mathrm{SM}}^i
     &= \frac{1}{2} h_{\text{waning}}(a^{i - 1 / 2}) \Delta a,
     \\
-    c_{\mathrm{SS}}^i
-    &= \frac{1}{2} \left[h_{\text{infection}}
-      + h_{\text{death}}(a^{i - 1 / 2})\right]
-      \Delta a,
-    \displaybreak[0]\\
     c_{\mathrm{ES}}^i
     &= \frac{1}{2} h_{\text{infection}},
     \\
     c_{\mathrm{EL}}^i
     &= \frac{1}{2} h_{\text{infection}},
+    \\
+    c_{\mathrm{RL}}^i
+    &= \frac{1}{2} h_{\text{antibody gain}} \Delta a,
+    \\
+    c_{\mathrm{LR}}^i
+    &= \frac{1}{2} h_{\text{antibody loss}} \Delta a,
     \displaybreak[0]\\
-    c_{\mathrm{IE}}^{i, j}
+    \bar{c}_{\mathrm{IE}}^{i, j}
     &= p_{\text{progression}}(r^{i - j})
       \frac{S_{\text{death}}(a^i)}{S_{\text{death}}(a^j)}
       \Delta a,
-    % or maybe a^{0, 0} = 0.
-    \displaybreak[0]\\
-    c_{\mathrm{CI}}^{i, j}
+    \\
+    \bar{c}_{\mathrm{CI}}^{i, j}
     &= p_{\text{chronicity}}
       p_{\text{recovery}}(r^{i - j})
       \frac{S_{\text{death}}(a^i)}{S_{\text{death}}(a^j)}
       \Delta a,
-    % or maybe a^{0, 0} = 0.
-    \displaybreak[0]\\
-    c_{\mathrm{RI}}^{i, j}
+    \\
+    \bar{c}_{\mathrm{RI}}^{i, j}
     &= (1 - p_{\text{chronicity}})
       p_{\text{recovery}}(r^{i - j})
       \frac{S_{\text{death}}(a^i)}{S_{\text{death}}(a^j)}
       \Delta a,
-    % or maybe a^{0, 0} = 0.
     \\
-    c_{\mathrm{RC}}^{i, j}
+    \bar{c}_{\mathrm{RC}}^{i, j}
     &= p_{\text{chronic recovery}}(r^{i - j})
       \frac{S_{\text{death}}(a^i)}{S_{\text{death}}(a^j)}
-      \Delta a,
-    % or maybe a^{0, 0} = 0.
+      \Delta a.
+  \end{align}
+\end{subequations}
+
+Define the block diagonal matrix
+\begin{align}
+  \mat{D} &=
+  \begin{bmatrix}
+    \mat{D}_{\mathrm{M}} & \mat{0} & \mat{0} &
+    \mat{0} & \mat{0} & \mat{0} & \mat{0}
     \\
-    c_{\mathrm{RR}}^i
+    \mat{0} & \mat{D}_{\mathrm{S}} & \mat{0} &
+    \mat{0} & \mat{0} & \mat{0} & \mat{0}
+    \\
+    \mat{0} & \mat{0} & \bar{\mat{D}}_{\mathrm{E}} &
+    \mat{0} & \mat{0} & \mat{0} & \mat{0}
+    \\
+    \mat{0} & \mat{0} & \mat{0} &
+    \bar{\mat{D}}_{\mathrm{I}} & \mat{0} & \mat{0} & \mat{0}
+    \\
+    \mat{0} & \mat{0} & \mat{0} & \mat{0} &
+    \bar{\mat{D}}_{\mathrm{C}} & \mat{0} & \mat{0}
+    \\
+    \mat{0} & \mat{0} & \mat{0} & \mat{0} &
+    \mat{0} & \mat{D}_{\mathrm{R}} & \mat{0}
+    \\
+    \mat{0} & \mat{0} & \mat{0} & \mat{0} &
+    \mat{0} & \mat{0} & \mat{D}_{\mathrm{L}}
+  \end{bmatrix},
+\end{align}
+with blocks
+\begin{subequations}
+  \begin{align}
+    \mat{D}_X &=
+    \begin{bmatrix}
+      0 & 0 & 0 & \hdots & 0
+      \\
+      - 1 + d_X^1 & 1 + d_X^1 & 0 & \hdots & 0
+      \\
+      0 & - 1 + d_X^2 & 1 + d_X^2 & \ddots & \vdots
+      \\
+      \vdots & \ddots & \ddots & \ddots & 0
+      \\
+      0 & \hdots & 0 & - 1 + d_X^{I - 1} & 1 + d_X^{I - 1}
+    \end{bmatrix},
+    \\
+    \bar{\mat{D}}_X &=
+    \begin{bmatrix}
+      1 & 0 & \hdots & 0 \\
+      0 & 1 & \ddots & \vdots \\
+      \vdots & \ddots & \ddots & 0 \\
+      0 & \hdots & 0 & 1
+    \end{bmatrix},
+  \end{align}
+\end{subequations}
+where
+\begin{subequations}
+  \begin{align}
+    d_{\mathrm{M}}^i
+    &= \frac{1}{2} \left[h_{\text{waning}}(a^{i - 1 / 2})
+      + h_{\text{death}}(a^{i - 1 / 2})\right]
+      \Delta a,
+    \\
+    d_{\mathrm{S}}^i
+    &= \frac{1}{2} \left[h_{\text{infection}}
+      + h_{\text{death}}(a^{i - 1 / 2})\right]
+      \Delta a,
+    \\
+    d_{\mathrm{R}}^i
     &= \frac{1}{2} \left[h_{\text{antibody loss}}
       + h_{\text{death}}(a^{i - 1 / 2})\right]
       \Delta a,
     \\
-    c_{\mathrm{RL}}^i
-    &= \frac{1}{2} h_{\text{antibody gain}} \Delta a,
-    \displaybreak[0]\\
-    c_{\mathrm{LR}}^i
-    &= \frac{1}{2} h_{\text{antibody loss}} \Delta a,
-    \\
-    c_{\mathrm{LL}}^i
+    d_{\mathrm{L}}^i
     &= \frac{1}{2} \left[h_{\text{antibody gain}}
       + h_{\text{infection}}
       + h_{\text{death}}(a^{i - 1 / 2})\right]
       \Delta a.
   \end{align}
 \end{subequations}
+
 Define the matrix
 \begin{equation}
   \mat{A} =
-  \begin{bmatrix}
-    \mat{A}_{\mathrm{MM}} & & & &
-    \mat{A}_{\mathrm{MC}} &
-    \mat{A}_{\mathrm{MR}} &
-    \\
-    \mat{A}_{\mathrm{SM}} &
-    \mat{A}_{\mathrm{SS}} &
-    \mat{A}_{\mathrm{SE}} &
-    \mat{A}_{\mathrm{SI}} & & &
-    \mat{A}_{\mathrm{SL}}
-    \\
-    &
-    \mat{A}_{\mathrm{ES}} &
-    \mat{A}_{\mathrm{EE}} & & & &
-    \mat{A}_{\mathrm{EL}}
-    \\
-    & &
-    \mat{A}_{\mathrm{IE}} &
-    \mat{A}_{\mathrm{II}} & & &
-    \\
-    & & &
-    \mat{A}_{\mathrm{CI}} &
-    \mat{A}_{\mathrm{CC}} & &
-    \\
-    & & &
-    \mat{A}_{\mathrm{RI}} &
-    \mat{A}_{\mathrm{RC}} &
-    \mat{A}_{\mathrm{RR}} &
-    \mat{A}_{\mathrm{RL}}
-    \\
-    & & & & &
-    \mat{A}_{\mathrm{LR}} &
-    \mat{A}_{\mathrm{LL}}
-  \end{bmatrix},
+  \mat{B} + \mat{C} + \mat{D}.
 \end{equation}
-where the blank entries are $\mat{0}$
-submatrices.  The numerical scheme is then finding the eigenvector
+The numerical scheme is then finding the eigenvector
 $\vec{x}$ that corresponds to the eigenvalue $0$, i.e.
 \begin{equation}
   \mat{A} \vec{x} = \vec{0}.
 \end{equation}
 
+
+The diagonal entries of $\mat{A}$ are non-negative if
+\begin{equation}
+  h_{\text{birth}}(a^0) \Delta a \leq 1,
+\end{equation}
+and the off-diagonal entries of $\mat{A}$ are non-positive if
+\begin{equation}
+  d_X^i \leq 1.
+\end{equation}
+Under these conditions, the entries of $\vec{x}$ are non-negative.
 \textbf{TODO: M matrix blah blah blah...}
-To ensure that the entries of $\vec{x}$ are non-negative,
-we require that $\mat{A}$ has positive diagonal entries and
-non-positive off-diagonal entries.
-That is, all of the entries of the submatrices $\mat{A}_{XY}$
-are non-positive except for the diagonal entries of $\mat{A}_{XX}$,
-which are positive.
-
-
-
-The coefficients must be non-negative to ensure each component of the
-$P_X$'s and $p_X$'s is non-negative. In particular, the hazards must
-satisfy
-\begin{equation}
-  2 - h \Delta a \geq 0,
-\end{equation}
-or
-\begin{equation}
-  h \leq \frac{2}{\Delta a}.
-\end{equation}
 
 
 \subsection{Analysis scratch}
