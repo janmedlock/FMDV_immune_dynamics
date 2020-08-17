@@ -23,14 +23,14 @@
    After solving for the P_X(a), we can compute p as
    \phi = \frac{\sum_{X \in \{M, R, C\}} R_X}{\sum_X R_X},
    with
-   R_X = \int_4^{+infty} P_X(a) q(a) da,
+   R_X = \int_4^{+\infty} P_X(a) q(a) da,
    where q(a) is the probability density of age a, from age_structure.
    This parameter \phi and the comparison with its post-solution value
    is another variable to add to the root finding.
 ** Approximate the above with
    \phi = \frac{\sum_{X \in \{M, R, C\}} R_X}{\sum_X R_X}
    and
-   R_X = \int_4^{+infty} P_X(a) da,
+   R_X = \int_4^{+\infty} P_X(a) da,
    i.e. don't include q(a). Since the \sum_X P_X(a) = 1 for all a, the
    denominator is constant, so we have a linear problem. This will
    require some work to define the matrices for the solver.
