@@ -55,23 +55,14 @@ For $a > 0$ and $0 < r \leq a$, the probability densities satisfy
 \begin{subequations}
   \begin{align}
     P_{\mathrm{M}}(0)
-    &= \int_0^{+\infty} h_{\text{birth}}(a)
-      \left[
-      P_{\mathrm{M}}(a) + P_{\mathrm{C}}(a) + P_{\mathrm{R}}(a)
-      \right]
-      \md a,
+    &= \phi,
     \\
     \frac{\md P_{\mathrm{M}}}{\md a}
     &= - \left[h_{\text{waning}}(a) + h_{\text{death}}(a)\right]
       P_{\mathrm{M}}(a),
     \displaybreak[0]\\
     P_{\mathrm{S}}(0)
-    &= \int_0^{+\infty} h_{\text{birth}}(a)
-      \left[
-      P_{\mathrm{S}}(a) + P_{\mathrm{E}}(a)
-      + P_{\mathrm{I}}(a) + P_{\mathrm{L}}(a)
-      \right]
-      \md a,
+    &= 1 - \phi,
     \\
     \frac{\md P_{\mathrm{S}}}{\md a}
     &= h_{\text{waning}}(a) P_{\mathrm{M}}(a)
@@ -148,9 +139,29 @@ with
     \displaybreak[0]\\
     P_{\mathrm{I}}(a) &= \int_0^a p_{\mathrm{I}}(a, r) \md r,
     \displaybreak[0]\\
-    P_{\mathrm{C}}(a) &= \int_0^a p_{\mathrm{C}}(a, r) \md r.
+    P_{\mathrm{C}}(a) &= \int_0^a p_{\mathrm{C}}(a, r) \md r,
   \end{align}
 \end{subequations}
+and the proportion of births that have maternal immunity is
+\begin{equation}
+  \phi
+  = \frac{
+    \int_0^{+\infty} h_{\text{birth}}(a)
+    \left[
+      P_{\mathrm{M}}(a) + P_{\mathrm{C}}(a) + P_{\mathrm{R}}(a)
+    \right]
+    \md a
+  }{
+    \int_0^{+\infty} h_{\text{birth}}(a) P(a) \md a
+  },
+\end{equation}
+where
+\begin{equation}
+  P(a)
+  = P_{\mathrm{M}}(a) + P_{\mathrm{S}}(a) + P_{\mathrm{E}}(a)
+  + P_{\mathrm{I}}(a) + P_{\mathrm{C}}(a) + P_{\mathrm{R}}(a)
+  + P_{\mathrm{L}}(a).
+\end{equation}
 
 
 \subsection{Analysis}
@@ -159,23 +170,14 @@ Integrating the PDEs along the characteristics $r = a - a_0$ gives
 \begin{subequations}
   \begin{align}
     P_{\mathrm{M}}(0)
-    &= \int_0^{+\infty} h_{\text{birth}}(a)
-      \left[
-      P_{\mathrm{M}}(a) + P_{\mathrm{C}}(a) + P_{\mathrm{R}}(a)
-      \right]
-      \md a,
+    &= \phi,
     \\
     \frac{\md P_{\mathrm{M}}}{\md a}
     &= - \left[h_{\text{waning}}(a) + h_{\text{death}}(a)\right]
       P_{\mathrm{M}}(a),
     \displaybreak[0]\\
     P_{\mathrm{S}}(0)
-    &= \int_0^{+\infty} h_{\text{birth}}(a)
-      \left[
-      P_{\mathrm{S}}(a) + P_{\mathrm{E}}(a)
-      + P_{\mathrm{I}}(a) + P_{\mathrm{L}}(a)
-      \right]
-      \md a,
+    &= 1 - \phi,
     \\
     \frac{\md P_{\mathrm{S}}}{\md a}
     &= h_{\text{waning}}(a) P_{\mathrm{M}}(a)
@@ -258,14 +260,7 @@ Integrating the PDEs along the characteristics $r = a - a_0$ gives
   \end{align}
 \end{subequations}
 
-Let
-\begin{equation}
-  P(a) = P_{\mathrm{M}}(a) + P_{\mathrm{S}}(a)
-  + P_{\mathrm{E}}(a) + P_{\mathrm{I}}(a)
-  + P_{\mathrm{C}}(a) + P_{\mathrm{R}}(a)
-  + P_{\mathrm{L}}(a),
-\end{equation}
-with
+Using
 \begin{subequations}
   \begin{align}
     P_{\mathrm{E}}(a)
@@ -290,7 +285,7 @@ with
       \md a_0,
   \end{align}
 \end{subequations}
-so that
+gives
 \begin{subequations}
   \begin{align}
     \begin{split}
@@ -343,20 +338,19 @@ so that
   \end{align}
 \end{subequations}
 Then
-\begin{equation}
-  \frac{\md P}{\md a}
-  = - h_{\text{death}}(a) P(a),
-\end{equation}
-and, assuming for the moment that $P(0) = 1$,
+\begin{subequations}
+  \begin{align}
+    \frac{\md P}{\md a}
+    &= - h_{\text{death}}(a) P(a), \\
+    P(0) &= 1,
+  \end{align}
+\end{subequations}
+so that
 \begin{equation}
   P(a) = S_{\text{death}}(a).
 \end{equation}
-Using the initial conditions gives
-\begin{equation}
-  P(0) =
-  \int_0^{+\infty} h_{\text{birth}}(a) S_{\text{death}}(a) \md a,
-\end{equation}
-and then using the constant-time birth hazard
+
+The constant-time birth hazard
 (i.e.~$c_{\mathrm{v}} = 0$)
 \begin{equation}
   h_{\text{birth}}(a) =
@@ -374,10 +368,12 @@ with
 \end{equation}
 gives
 \begin{equation}
-  P(0) = 1.
+  \int_0^{+\infty} h_{\text{birth}}(a) P(a) \md a
+  = \int_0^{+\infty} h_{\text{birth}}(a) S_{\text{death}}(a) \md a
+  = 1
+  = P(0),
 \end{equation}
-This is the $\mu$ value that gives constant population size,
-i.e.~zero growth rate.
+so that the population size is constant, i.e.~zero growth rate.
 
 
 \section{Numerical method}
@@ -394,11 +390,7 @@ Crank--Nicolson method on characteristics gives
 \begin{subequations}
   \begin{align}
     P_{\mathrm{M}}^0
-    &= \sum_{j = 0}^{I - 1}
-      h_{\text{birth}}(a^j) \left(
-      P_{\mathrm{M}}^j + P_{\mathrm{C}}^j + P_{\mathrm{R}}^j
-      \right)
-      \Delta a,
+    &= \phi,
     \\
     \frac{P_{\mathrm{M}}^i - P_{\mathrm{M}}^{i - 1}}{\Delta a}
     &= - \left[
@@ -408,12 +400,7 @@ Crank--Nicolson method on characteristics gives
       \frac{P_{\mathrm{M}}^i + P_{\mathrm{M}}^{i - 1}}{2},
     \displaybreak[0]\\
     P_{\mathrm{S}}^0
-    &= \sum_{j = 0}^{I - 1}
-      h_{\text{birth}}(a^j) \left(
-      P_{\mathrm{S}}^j + P_{\mathrm{E}}^j
-      + P_{\mathrm{I}}^j + P_{\mathrm{L}}^j
-      \right)
-      \Delta a,
+    &= 1 - \phi,
     \\
     \begin{split}
       \frac{P_{\mathrm{S}}^i - P_{\mathrm{S}}^{i - 1}}{\Delta a}
@@ -517,29 +504,33 @@ with
       S_{\text{chronic recovery}}(r^j)
       \frac{S_{\text{death}}(a^i)}{S_{\text{death}}(a^{i - j})}
       p_{\mathrm{C}}^{i - j}
-      \Delta a.
+      \Delta a,
   \end{align}
 \end{subequations}
+and
+\begin{equation}
+  \phi
+  = \frac{
+    \sum_{j = 0}^{I - 1}
+    h_{\text{birth}}(a^j) \left(
+      P_{\mathrm{M}}^j + P_{\mathrm{C}}^j + P_{\mathrm{R}}^j
+    \right)
+    \Delta a
+  }{
+    \sum_{j = 0}^{I - 1} h_{\text{birth}}(a^j) P^j \Delta a
+  },
+\end{equation}
+where
+\begin{equation}
+  P^j =  P_{\mathrm{M}}^j + P_{\mathrm{S}}^j + P_{\mathrm{E}}^j
+  + P_{\mathrm{I}}^j + P_{\mathrm{C}}^j + P_{\mathrm{R}}^j + P_{\mathrm{L}}^j.
+\end{equation}
 
 That is,
 \begin{subequations}
 \begin{align}
-  \begin{split}
-    \left[1 - h_{\text{birth}}(a^0) \Delta a\right] P_{\mathrm{M}}^0
-    - \sum_{j = 1}^{I - 1} h_{\text{birth}}(a^j) \Delta a P_{\mathrm{M}}^j
-    \\ {}
-    - \sum_{j = 0}^{I - 1}
-    \sum_{k = j}^{I - 1}
-    h_{\text{birth}}(a^k)
-    S_{\text{chronic recovery}}(r^{k - j})
-    \frac{S_{\text{death}}(a^k)}{S_{\text{death}}(a^j)}
-    (\Delta a)^2
-    p_{\mathrm{C}}^j
-    \\ {}
-    - \sum_{j = 0}^{I - 1} h_{\text{birth}}(a^j) \Delta a P_{\mathrm{R}}^j
-    &= 0,
-  \end{split}
-  \\
+  P_{\mathrm{M}}^0 &= \phi,
+  \displaybreak[0]\\
   \begin{split}
     - \left\{1
       - \left[h_{\text{waning}}(a^{i - 1 / 2})
@@ -555,28 +546,8 @@ That is,
     &= 0,
   \end{split}
   \displaybreak[0]\\
-  \begin{split}
-    \left[1 - h_{\text{birth}}(a^0) \Delta a\right] P_{\mathrm{S}}^0
-    - \sum_{j = 1}^{I - 1} h_{\text{birth}}(a^j) \Delta a P_{\mathrm{S}}^j
-    \\ {}
-    - \sum_{j = 0}^{I - 1}
-    \sum_{k = j}^{I - 1}
-    h_{\text{birth}}(a^k) S_{\text{progression}}(r^{k - j})
-    \frac{S_{\text{death}}(a^k)}{S_{\text{death}}(a^j)}
-    (\Delta a)^2
-    p_{\mathrm{E}}^j
-    \\ {}
-    - \sum_{j = 0}^{I - 1}
-    \sum_{k = j}^{I - 1}
-    h_{\text{birth}}(a^k) S_{\text{recovery}}(r^{k - j})
-    \frac{S_{\text{death}}(a^k)}{S_{\text{death}}(a^j)}
-    (\Delta a)^2
-    p_{\mathrm{I}}^j
-    \\ {}
-    - \sum_{j = 0}^{I - 1} h_{\text{birth}}(a^j) \Delta a P_{\mathrm{L}}^j
-    &= 0,
-  \end{split}
-  \\
+  P_{\mathrm{S}}^0 &= 1 - \phi,
+  \displaybreak[0]\\
   \begin{split}
     - h_{\text{waning}}(a^{i - 1 / 2}) \frac{\Delta a}{2}
     P_{\mathrm{M}}^{i - 1}
@@ -693,33 +664,32 @@ That is,
 \end{align}
 \end{subequations}
 
-Let
-\begin{subequations}
-  \begin{align}
-    \vec{x}_X &=
-      \begin{pmatrix}
-        P_X^0\\
-        P_X^1\\
-        \vdots\\
-        P_X^{I - 1}
-      \end{pmatrix}
-    &&
+Define the vectors
+\begin{equation}
+  \vec{x}_X =
+  \begin{cases}
+    \begin{pmatrix}
+      P_X^0\\
+      P_X^1\\
+      \vdots\\
+      P_X^{I - 1}
+    \end{pmatrix}
+    &
     \text{for $X \in
-       \left\{\mathrm{M}, \mathrm{S}, \mathrm{R}, \mathrm{L}\right\}$},
-    \\
-    \vec{x}_X &=
-      \begin{pmatrix}
-        p_X^0\\
-        p_X^1\\
-        \vdots\\
-        p_X^{I - 1}
-      \end{pmatrix}
-    &&
+      \left\{\mathrm{M}, \mathrm{S}, \mathrm{R}, \mathrm{L}\right\}$},
+    \\[4em]
+    \begin{pmatrix}
+      p_X^0\\
+      p_X^1\\
+      \vdots\\
+      p_X^{I - 1}
+    \end{pmatrix}
+    &
     \text{for $X \in
-       \left\{\mathrm{E}, \mathrm{I}, \mathrm{C}\right\}$}.
-  \end{align}
-\end{subequations}
-Let $\vec{x}$ be the $\vec{x}_X$'s stacked into a single vector,
+      \left\{\mathrm{E}, \mathrm{I}, \mathrm{C}\right\}$},
+  \end{cases}
+\end{equation}
+and let $\vec{x}$ be the $\vec{x}_X$'s stacked into a single vector,
 \begin{equation}
   \vec{x} =
   \begin{pmatrix}
@@ -735,208 +705,41 @@ Let $\vec{x}$ be the $\vec{x}_X$'s stacked into a single vector,
 
 Define the birth matrix
 \begin{equation}
-  \begin{split}
-    \mat{B} &=
-    \begin{bmatrix}
-      \mat{B}_0 & \mat{0} & \mat{0} & \mat{0} &
-      \mat{0} & \mat{0} & \mat{0}
-      \\
-      \mat{0} & \mat{B}_0 & \mat{0} & \mat{0} &
-      \mat{0} & \mat{0} & \mat{0}
-      \\
-      \mat{0} & \mat{0} & \mat{0} & \mat{0} &
-      \mat{0} & \mat{0} & \mat{0}
-      \\
-      \mat{0} & \mat{0} & \mat{0} & \mat{0} &
-      \mat{0} & \mat{0} & \mat{0}
-      \\
-      \mat{0} & \mat{0} & \mat{0} & \mat{0} &
-      \mat{0} & \mat{0} & \mat{0}
-      \\
-      \mat{0} & \mat{0} & \mat{0} & \mat{0} &
-      \mat{0} & \mat{0} & \mat{0}
-      \\
-      \mat{0} & \mat{0} & \mat{0} & \mat{0} &
-      \mat{0} & \mat{0} & \mat{0}
-    \end{bmatrix}
-    \\ & \quad\quad\quad\quad {}
-    -
-    \begin{bmatrix}
-      \mat{B}_{\mathrm{M}} & \mat{0} & \mat{0} & \mat{0} &
-      \mat{B}_{\mathrm{C}} & \mat{B}_{\mathrm{R}} & \mat{0}
-      \\
-      \mat{0} & \mat{B}_{\mathrm{S}} &
-      \mat{B}_{\mathrm{E}} & \mat{B}_{\mathrm{I}} &
-      \mat{0} & \mat{0} & \mat{B}_{\mathrm{L}}
-      \\
-      \mat{0} & \mat{0} & \mat{0} & \mat{0} &
-      \mat{0} & \mat{0} & \mat{0}
-      \\
-      \mat{0} & \mat{0} & \mat{0} & \mat{0} &
-      \mat{0} & \mat{0} & \mat{0}
-      \\
-      \mat{0} & \mat{0} & \mat{0} & \mat{0} &
-      \mat{0} & \mat{0} & \mat{0}
-      \\
-      \mat{0} & \mat{0} & \mat{0} & \mat{0} &
-      \mat{0} & \mat{0} & \mat{0}
-      \\
-      \mat{0} & \mat{0} & \mat{0} & \mat{0} &
-      \mat{0} & \mat{0} & \mat{0}
-    \end{bmatrix},
-  \end{split}
-\end{equation}
-with blocks
-\begin{subequations}
-  \begin{align}
-    \mat{B}_0 &=
-    \begin{bmatrix}
-      1 & 0 & \hdots & 0
-      \\
-      0 & 0 & \hdots & 0
-      \\
-      \vdots & \vdots & & \vdots
-      \\
-      0 & 0 & \hdots & 0
-    \end{bmatrix},
-    \displaybreak[0]\\
-    \mat{B}_X &=
-    \begin{bmatrix}
-      b_X^0 & b_X^1 & \hdots & b_X^{I - 1}
-      \\
-      0 & 0 & \hdots & 0
-      \\
-      \vdots & \vdots & & \vdots
-      \\
-      0 & 0 & \hdots & 0
-    \end{bmatrix},
-  \end{align}
-\end{subequations}
-where
-\begin{equation}
-  b_X^j =
-  \begin{cases}
-    h_{\text{birth}}(a^j) \Delta a
-    & \text{for
-      $X \in \{\mathrm{M}, \mathrm{S}, \mathrm{R}, \mathrm{L}\}$},
-    \\
-    \sum_{k = j}^{I - 1}
-    h_{\text{birth}}(a^k) S_{Y_X}(r^{k - j})
-    \frac{S_{\text{death}}(a^k)}{S_{\text{death}}(a^j)}
-    (\Delta a)^2
-    & \text{for
-      $X \in \{\mathrm{E}, \mathrm{I}, \mathrm{C}\}$},
-  \end{cases}
-\end{equation}
-and
-\begin{equation}
-  \begin{split}
-    Y_{\mathrm{E}} &= \text{progression},
-    \\
-    Y_{\mathrm{I}} &= \text{recovery},
-    \\
-    Y_{\mathrm{C}} &= \text{chronic recovery}.
-  \end{split}
-\end{equation}
-
-Define the influx matrix
-\begin{equation}
-  \mat{C} = -
+  \mat{B} =
   \begin{bmatrix}
+    \mat{B}_{\mathrm{M}} & \mat{0} & \mat{0} &
+    \mat{0} & \mat{0} & \mat{0} & \mat{0}
+    \\
+    \mat{0} & \mat{B}_{\mathrm{S}} & \mat{0} &
+    \mat{0} & \mat{0} & \mat{0} & \mat{0}
+    \\
     \mat{0} & \mat{0} & \mat{0} & \mat{0} &
     \mat{0} & \mat{0} & \mat{0}
     \\
-    \mat{C}_{\mathrm{SM}} & \mat{0} & \mat{0} &
-    \mat{0} & \mat{0} & \mat{0} & \mat{0}
-    \\
-    \mat{0} & \mat{C}_{\mathrm{ES}} & \mat{0} &
-    \mat{0} & \mat{0} & \mat{0} & \mat{C}_{\mathrm{EL}}
-    \\
-    \mat{0} & \mat{0} & \bar{\mat{C}}_{\mathrm{IE}} &
-    \mat{0} & \mat{0} & \mat{0} & \mat{0}
-    \\
-    \mat{0} & \mat{0} & \mat{0} & \bar{\mat{C}}_{\mathrm{CI}} &
+    \mat{0} & \mat{0} & \mat{0} & \mat{0} &
     \mat{0} & \mat{0} & \mat{0}
     \\
-    \mat{0} & \mat{0} & \mat{0} & \bar{\mat{C}}_{\mathrm{RI}} &
-    \bar{\mat{C}}_{\mathrm{RC}} & \mat{0} & \mat{C}_{\mathrm{RL}}
+    \mat{0} & \mat{0} & \mat{0} & \mat{0} &
+    \mat{0} & \mat{0} & \mat{0}
     \\
     \mat{0} & \mat{0} & \mat{0} & \mat{0} &
-    \mat{0} & \mat{C}_{\mathrm{LR}} & \mat{0}
+    \mat{0} & \mat{0} & \mat{0}
+    \\
+    \mat{0} & \mat{0} & \mat{0} & \mat{0} &
+    \mat{0} & \mat{0} & \mat{0}
   \end{bmatrix},
 \end{equation}
 with blocks
-\begin{subequations}
-  \begin{align}
-    \mat{C}_{XY} &=
-    \begin{bmatrix}
-      0 & 0 & 0 & \hdots & 0
-      \\
-      c_{XY}^1 & c_{XY}^1 & 0 & \hdots & 0
-      \\
-      0 & c_{XY}^2 & c_{XY}^2 & \ddots & \vdots
-      \\
-      \vdots & \ddots & \ddots & \ddots & 0
-      \\
-      0 & \hdots & 0 & c_{XY}^{I - 1} &
-      c_{XY}^{I - 1}
-    \end{bmatrix},
-    \displaybreak[0]\\
-    \bar{\mat{C}}_{XY} &=
-    \begin{bmatrix}
-      % Maybe \bar{c}_{XY}^{0, 0} = 0 instead.
-      \bar{c}_{XY}^{0, 0} & 0 & \hdots & 0
-      \\
-      \bar{c}_{XY}^{1, 0} & \bar{c}_{XY}^{1, 1} & \ddots & \vdots
-      \\
-      \vdots &  & \ddots & 0
-      \\
-      \bar{c}_{XY}^{I - 1, 0} & \bar{c}_{XY}^{I - 1, 1} & \hdots &
-      \bar{c}_{XY}^{I - 1, I - 1}
-    \end{bmatrix},
-  \end{align}
-\end{subequations}
-where
-\begin{subequations}
-  \begin{align}
-    c_{\mathrm{SM}}^i
-    &= \frac{1}{2} h_{\text{waning}}(a^{i - 1 / 2}) \Delta a,
-    \\
-    c_{\mathrm{ES}}^i
-    &= \frac{1}{2} h_{\text{infection}},
-    \\
-    c_{\mathrm{EL}}^i
-    &= \frac{1}{2} h_{\text{infection}},
-    \\
-    c_{\mathrm{RL}}^i
-    &= \frac{1}{2} h_{\text{antibody gain}} \Delta a,
-    \\
-    c_{\mathrm{LR}}^i
-    &= \frac{1}{2} h_{\text{antibody loss}} \Delta a,
-    \displaybreak[0]\\
-    \bar{c}_{\mathrm{IE}}^{i, j}
-    &= p_{\text{progression}}(r^{i - j})
-      \frac{S_{\text{death}}(a^i)}{S_{\text{death}}(a^j)}
-      \Delta a,
-    \\
-    \bar{c}_{\mathrm{CI}}^{i, j}
-    &= p_{\text{chronicity}}
-      p_{\text{recovery}}(r^{i - j})
-      \frac{S_{\text{death}}(a^i)}{S_{\text{death}}(a^j)}
-      \Delta a,
-    \\
-    \bar{c}_{\mathrm{RI}}^{i, j}
-    &= (1 - p_{\text{chronicity}})
-      p_{\text{recovery}}(r^{i - j})
-      \frac{S_{\text{death}}(a^i)}{S_{\text{death}}(a^j)}
-      \Delta a,
-    \\
-    \bar{c}_{\mathrm{RC}}^{i, j}
-    &= p_{\text{chronic recovery}}(r^{i - j})
-      \frac{S_{\text{death}}(a^i)}{S_{\text{death}}(a^j)}
-      \Delta a.
-  \end{align}
-\end{subequations}
+\begin{equation}
+  \mat{B}_{\mathrm{M}} = \mat{B}_{\mathrm{S}}
+  =
+  \begin{bmatrix}
+    1 & 0 & \hdots & 0 \\
+    0 & 0 & \hdots & 0 \\
+    \vdots & \vdots & & \vdots \\
+    0 & 0 & \hdots & 0
+  \end{bmatrix}.
+\end{equation}
 
 Define the block diagonal matrix
 \begin{align}
@@ -1015,17 +818,148 @@ where
   \end{align}
 \end{subequations}
 
+Define the influx matrix
+\begin{equation}
+  \mat{F} =
+  \begin{bmatrix}
+    \mat{0} & \mat{0} & \mat{0} & \mat{0} &
+    \mat{0} & \mat{0} & \mat{0}
+    \\
+    \mat{F}_{\mathrm{SM}} & \mat{0} & \mat{0} &
+    \mat{0} & \mat{0} & \mat{0} & \mat{0}
+    \\
+    \mat{0} & \mat{F}_{\mathrm{ES}} & \mat{0} &
+    \mat{0} & \mat{0} & \mat{0} & \mat{F}_{\mathrm{EL}}
+    \\
+    \mat{0} & \mat{0} & \bar{\mat{F}}_{\mathrm{IE}} &
+    \mat{0} & \mat{0} & \mat{0} & \mat{0}
+    \\
+    \mat{0} & \mat{0} & \mat{0} & \bar{\mat{F}}_{\mathrm{CI}} &
+    \mat{0} & \mat{0} & \mat{0}
+    \\
+    \mat{0} & \mat{0} & \mat{0} & \bar{\mat{F}}_{\mathrm{RI}} &
+    \bar{\mat{F}}_{\mathrm{RC}} & \mat{0} & \mat{F}_{\mathrm{RL}}
+    \\
+    \mat{0} & \mat{0} & \mat{0} & \mat{0} &
+    \mat{0} & \mat{F}_{\mathrm{LR}} & \mat{0}
+  \end{bmatrix},
+\end{equation}
+with blocks
+\begin{subequations}
+  \begin{align}
+    \mat{F}_{XY} &=
+    \begin{bmatrix}
+      0 & 0 & 0 & \hdots & 0
+      \\
+      f_{XY}^1 & f_{XY}^1 & 0 & \hdots & 0
+      \\
+      0 & f_{XY}^2 & f_{XY}^2 & \ddots & \vdots
+      \\
+      \vdots & \ddots & \ddots & \ddots & 0
+      \\
+      0 & \hdots & 0 & f_{XY}^{I - 1} &
+      f_{XY}^{I - 1}
+    \end{bmatrix},
+    \displaybreak[0]\\
+    \bar{\mat{F}}_{XY} &=
+    \begin{bmatrix}
+      % Maybe \bar{f}_{XY}^{0, 0} = 0 instead.
+      \bar{f}_{XY}^{0, 0} & 0 & \hdots & 0
+      \\
+      \bar{f}_{XY}^{1, 0} & \bar{f}_{XY}^{1, 1} & \ddots & \vdots
+      \\
+      \vdots &  & \ddots & 0
+      \\
+      \bar{f}_{XY}^{I - 1, 0} & \bar{f}_{XY}^{I - 1, 1} & \hdots &
+      \bar{f}_{XY}^{I - 1, I - 1}
+    \end{bmatrix},
+  \end{align}
+\end{subequations}
+where
+\begin{subequations}
+  \begin{align}
+    f_{\mathrm{SM}}^i
+    &= \frac{1}{2} h_{\text{waning}}(a^{i - 1 / 2}) \Delta a,
+    \\
+    f_{\mathrm{ES}}^i
+    &= \frac{1}{2} h_{\text{infection}},
+    \\
+    f_{\mathrm{EL}}^i
+    &= \frac{1}{2} h_{\text{infection}},
+    \\
+    f_{\mathrm{RL}}^i
+    &= \frac{1}{2} h_{\text{antibody gain}} \Delta a,
+    \\
+    f_{\mathrm{LR}}^i
+    &= \frac{1}{2} h_{\text{antibody loss}} \Delta a,
+    \displaybreak[0]\\
+    \bar{f}_{\mathrm{IE}}^{i, j}
+    &= p_{\text{progression}}(r^{i - j})
+      \frac{S_{\text{death}}(a^i)}{S_{\text{death}}(a^j)}
+      \Delta a,
+    \\
+    \bar{f}_{\mathrm{CI}}^{i, j}
+    &= p_{\text{chronicity}}
+      p_{\text{recovery}}(r^{i - j})
+      \frac{S_{\text{death}}(a^i)}{S_{\text{death}}(a^j)}
+      \Delta a,
+    \\
+    \bar{f}_{\mathrm{RI}}^{i, j}
+    &= (1 - p_{\text{chronicity}})
+      p_{\text{recovery}}(r^{i - j})
+      \frac{S_{\text{death}}(a^i)}{S_{\text{death}}(a^j)}
+      \Delta a,
+    \\
+    \bar{f}_{\mathrm{RC}}^{i, j}
+    &= p_{\text{chronic recovery}}(r^{i - j})
+      \frac{S_{\text{death}}(a^i)}{S_{\text{death}}(a^j)}
+      \Delta a.
+  \end{align}
+\end{subequations}
+
+Define the vector
+\begin{equation}
+  \vec{b} =
+  \begin{pmatrix}
+    \vec{b}_{\mathrm{M}} \\
+    \vec{b}_{\mathrm{S}} \\
+    \vec{0} \\
+    \vec{0} \\
+    \vec{0} \\
+    \vec{0} \\
+    \vec{0}
+  \end{pmatrix},
+\end{equation}
+with
+\begin{subequations}
+  \begin{align}
+    \vec{b}_{\mathrm{M}} &=
+    \begin{pmatrix}
+      \phi \\
+      0 \\
+      \vdots \\
+      0
+    \end{pmatrix},
+    \displaybreak[0]\\
+    \vec{b}_{\mathrm{S}} &=
+    \begin{pmatrix}
+      1 - \phi \\
+      0 \\
+      \vdots \\
+      0
+    \end{pmatrix}.
+  \end{align}
+\end{subequations}
+
 Define the matrix
 \begin{equation}
   \mat{A} =
-  \mat{B} + \mat{C} + \mat{D}.
+  \mat{B} + \mat{D} - \mat{F}.
 \end{equation}
-The numerical scheme is then finding the eigenvector
-$\vec{x}$ that corresponds to the eigenvalue $0$, i.e.
+The numerical scheme is then finding the vector $\vec{x}$ that solves
 \begin{equation}
-  \mat{A} \vec{x} = \vec{0}.
+  \mat{A} \vec{x} = \vec{b}.
 \end{equation}
-
 
 The diagonal entries of $\mat{A}$ are non-negative if
 \begin{equation}
@@ -1036,12 +970,14 @@ and the off-diagonal entries of $\mat{A}$ are non-positive if
   d_X^i \leq 1.
 \end{equation}
 Under these conditions, the entries of $\vec{x}$ are non-negative.
+
 \textbf{TODO: M matrix blah blah blah...}
 
+\textbf{TODO: Describe iterative scheme for finding $\phi$.}
 
 \subsection{Analysis scratch}
 
-\text{TODO: This whole subsection needs works.}
+\textbf{TODO: This whole subsection needs works.}
 
 For $Y \in \{\text{progression}, \text{recovery},
 \text{chronic recovery}\}$, using
@@ -1063,40 +999,8 @@ Also, something like
   \end{split}
 \end{equation}
 
-Let
-\begin{equation}
-  P^i = P_{\mathrm{M}}^i + P_{\mathrm{S}}^i
-  + P_{\mathrm{E}}^i + P_{\mathrm{I}}^i
-  + P_{\mathrm{C}}^i + P_{\mathrm{R}}^i
-  + P_{\mathrm{L}}^i,
-\end{equation}
-with
-\begin{subequations}
-  \begin{align}
-    P_{\mathrm{E}}^i
-    &= \sum_{j = 0}^i
-      S_{\text{progression}}(r^j)
-      \frac{S_{\text{death}}(a^i)}{S_{\text{death}}(a^{i - j})}
-      p_{\mathrm{E}}^{i - j}
-      \Delta a,
-    \displaybreak[0]\\
-    P_{\mathrm{I}}^i
-    &= \sum_{j = 0}^i
-      S_{\text{recovery}}(r^j)
-      \frac{S_{\text{death}}(a^i)}{S_{\text{death}}(a^{i - j})}
-      p_{\mathrm{I}}^{i - j}
-      \Delta a,
-    \displaybreak[0]\\
-    P_{\mathrm{C}}^i
-    &= \sum_{j = 0}^i
-      S_{\text{chronic recovery}}(r^j)
-      \frac{S_{\text{death}}(a^i)}{S_{\text{death}}(a^{i - j})}
-      p_{\mathrm{C}}^{i - j}
-      \Delta a.
-  \end{align}
-\end{subequations}
-so that
-\textbf{TODO: Make these look like (7).}
+We have
+\textbf{TODO: Make these look like (8).}
 \begin{subequations}
   \begin{align}
     \begin{split}
@@ -1137,9 +1041,11 @@ so that
         - S_{\text{recovery}}(r^j)\right]
       p_{\mathrm{I}}^{i - j}
       \\
-      &= \sum_{j = 1}^i \left[S_{\text{progression}}(r^{j - 1})
-        - S_{\text{progression}}(r^j)\right]
+      &= \sum_{j = 0}^i  % or start at j = 1?
+      p_{\text{progression}}(r^j)
+      \frac{S_{\text{death}}(a^i)}{S_{\text{death}}(a^{i - j})}
       p_{\mathrm{E}}^{i - j}
+      \Delta a
       \\ & \quad {}
       - \sum_{j = 1}^i \left[S_{\text{recovery}}(r^{j - 1})
         - S_{\text{recovery}}(r^j)\right]
@@ -1157,8 +1063,11 @@ so that
       p_{\mathrm{C}}^{i - j}
       \\
       &= p_{\text{chronicity}}
-      \sum_{j = 1}^i \left[S_{\text{recovery}}(r^{j - 1})
-        - S_{\text{recovery}}(r^j)\right] p_{\mathrm{I}}^{i - j}
+      \sum_{j = 0}^i % or start at j = 1?
+      p_{\text{recovery}}(r^j)
+      \frac{S_{\text{death}}(a^i)}{S_{\text{death}}(a^{i - j})}
+      p_{\mathrm{I}}^{i - j}
+      \Delta a
       \\ & \quad {}
       - \sum_{j = 1}^i \left[S_{\text{chronic recovery}}(r^{j - 1})
         - S_{\text{chronic recovery}}(r^j)\right]
@@ -1166,6 +1075,120 @@ so that
     \end{split}
   \end{align}
 \end{subequations}
+
+Define
+\begin{equation}
+  \Delta^i P = P^i - P^{i - 1}
+\end{equation}
+and
+\begin{equation}
+  P^{i - 1 / 2} = \frac{P^i + P^{i - 1}}{2}
+\end{equation}
+Then
+\begin{equation}
+  \begin{split}
+    \frac{\Delta^i P}{\Delta a}
+    &= - h_{\text{death}}(a^{i - 1 / 2}) P^{i - 1 / 2}
+    \\ & \quad {}
+    - \sum_{j = 1}^i
+    S_{\text{progression}}(r^{j - 1})
+    \frac{S_{\text{death}}(a^{i - 1})}{S_{\text{death}}(a^{i - j})}
+    p_{\mathrm{E}}^{i - j}
+    \\ & \quad {}
+    + \sum_{j = 1}^i
+    S_{\text{progression}}(r^j)
+    \frac{S_{\text{death}}(a^i)}{S_{\text{death}}(a^{i - j})}
+    p_{\mathrm{E}}^{i - j}
+    \\ & \quad {}
+    + \sum_{j = 0}^i  % or start at j = 1?
+    p_{\text{progression}}(r^j)
+    \frac{S_{\text{death}}(a^i)}{S_{\text{death}}(a^{i - j})}
+    p_{\mathrm{E}}^{i - j}
+    \Delta a
+    \\ & \quad {}
+    + h_{\text{death}}(a^{i - 1 / 2}) P_{\mathrm{E}}^{i - 1 / 2}
+    \\ & \quad {}
+    - \sum_{j = 1}^i \left[S_{\text{recovery}}(r^{j - 1})
+      - S_{\text{recovery}}(r^j)\right]
+    p_{\mathrm{I}}^{i - j}
+    \\ & \quad {}
+    + \sum_{j = 0}^i  % or start at j = 1?
+    p_{\text{recovery}}(r^j)
+    \frac{S_{\text{death}}(a^i)}{S_{\text{death}}(a^{i - j})}
+    p_{\mathrm{I}}^{i - j}
+    \Delta a
+    \\ & \quad {}
+    + h_{\text{death}}(a^{i - 1 / 2}) P_{\mathrm{I}}^{i - 1 / 2}
+    \\ & \quad {}
+    + \sum_{j = 0}^i % or start at j = 1?
+    p_{\text{chronic recovery}}(r^j)
+    \frac{S_{\text{death}}(a^i)}{S_{\text{death}}(a^{i - j})}
+    p_{\mathrm{C}}^{i - j}
+    \Delta a
+    \\ & \quad {}
+    - \sum_{j = 1}^i \left[S_{\text{chronic recovery}}(r^{j - 1})
+      - S_{\text{chronic recovery}}(r^j)\right]
+    p_{\mathrm{C}}^{i - j}
+    \\ & \quad {}
+    + h_{\text{death}}(a^{i - 1 / 2}) P_{\mathrm{C}}^{i - 1 / 2}
+  \end{split}
+\end{equation}
+\begin{equation}
+  \begin{split}
+    \frac{\Delta^i P}{\Delta a}
+    &= - h_{\text{death}}(a^{i - 1 / 2}) P^{i - 1 / 2}
+    \\ & \quad {}
+    + \frac{1}{2} h_{\text{death}}(a^{i - 1 / 2}) \Delta a
+    p_{\mathrm{E}}^i
+    \\ & \quad {}
+    - \left[
+      1 - \frac{1}{2} h_{\text{death}}(a^{i - 1 / 2}) \Delta a
+    \right]
+    \sum_{j = 1}^i S_{\text{progression}}(r^{j - 1})
+    \frac{
+      S_{\text{death}}(a^{i - 1}) - S_{\text{death}}(a^i)
+    }{
+      S_{\text{death}}(a^{i - j})
+    }
+    p_{\mathrm{E}}^{i - j}
+    \\ & \quad {}
+    + h_{\text{death}}(a^{i - 1 / 2}) \Delta a
+    \sum_{j = 1}^i
+    \frac{S_{\text{progression}}(r^j) + S_{\text{progression}}(r^{j - 1})}{2}
+    \frac{S_{\text{death}}(a^i)}{S_{\text{death}}(a^{i - j})}
+    p_{\mathrm{E}}^{i - j}
+    \\ & \quad {}
+    - \sum_{j = 1}^i \left[S_{\text{recovery}}(r^{j - 1})
+      - S_{\text{recovery}}(r^j)\right]
+    p_{\mathrm{I}}^{i - j}
+    \\ & \quad {}
+    + \sum_{j = 0}^i  % or start at j = 1?
+    p_{\text{recovery}}(r^j)
+    \frac{S_{\text{death}}(a^i)}{S_{\text{death}}(a^{i - j})}
+    p_{\mathrm{I}}^{i - j}
+    \Delta a
+    \\ & \quad {}
+    + h_{\text{death}}(a^{i - 1 / 2}) P_{\mathrm{I}}^{i - 1 / 2}
+    \\ & \quad {}
+    - \sum_{j = 1}^i \left[S_{\text{chronic recovery}}(r^{j - 1})
+      - S_{\text{chronic recovery}}(r^j)\right]
+    p_{\mathrm{C}}^{i - j}
+    \\ & \quad {}
+    + \sum_{j = 0}^i % or start at j = 1?
+    p_{\text{chronic recovery}}(r^j)
+    \frac{S_{\text{death}}(a^i)}{S_{\text{death}}(a^{i - j})}
+    p_{\mathrm{C}}^{i - j}
+    \Delta a
+    \\ & \quad {}
+    + h_{\text{death}}(a^{i - 1 / 2}) P_{\mathrm{C}}^{i - 1 / 2}
+  \end{split}
+\end{equation}
+Then
+\begin{equation}
+  \frac{\Delta P^i}{\Delta a}
+  = - h_{\text{death}}(a^{i - 1 / 2}) P^{i - 1 / 2}.
+\end{equation}
+
 Then
 \begin{equation}
   \frac{P^i - P^{i - 1}}{\Delta a}
@@ -1185,7 +1208,7 @@ Using the initial conditions gives
   \Delta a,
 \end{equation}
 and then using the constant-time birth hazard
-(i.e.~$c_{\mathrm{v}} = 0$)
+(i.e.~$b_{\mathrm{v}} = 0$)
 \begin{equation}
   h_{\text{birth}}(a) =
   \begin{cases}
