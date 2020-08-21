@@ -1089,7 +1089,17 @@ The differences of the sums \eqref{eq:sums_over_r} are
       {S_{\text{death}}(a^i)}
       \sum_{j = 1}^i S_{\text{recovery}}(r^{j - 1})
       \frac{S_{\text{death}}(a^i)}{S_{\text{death}}(a^{i - j})}
-      p_{\mathrm{I}}^{i - j},
+      p_{\mathrm{I}}^{i - j}
+      \\
+      &= p_{\mathrm{I}}^i
+      \\ & \quad {}
+      - \sum_{j = 1}^i p_{\text{recovery}}(r^j)
+      \frac{S_{\text{death}}(a^i)}{S_{\text{death}}(a^{i - j})}
+      p_{\mathrm{I}}^{i - j} \Delta a
+      \\ & \quad {}
+      - \frac{S_{\text{death}}(a^{i - 1}) - S_{\text{death}}(a^i)}
+      {S_{\text{death}}(a^{i - 1})}
+      P_{\mathrm{I}}^{i - 1},
     \end{split}
     \displaybreak[0]\\
     \begin{split}
@@ -1138,7 +1148,17 @@ The differences of the sums \eqref{eq:sums_over_r} are
       {S_{\text{death}}(a^i)}
       \sum_{j = 1}^i S_{\text{chronic recovery}}(r^{j - 1})
       \frac{S_{\text{death}}(a^i)}{S_{\text{death}}(a^{i - j})}
-      p_{\mathrm{C}}^{i - j}.
+      p_{\mathrm{C}}^{i - j}
+      \\
+      &= p_{\mathrm{C}}^i
+      \\ & \quad {}
+      - \sum_{j = 1}^i p_{\text{chronic recovery}}(r^j)
+      \frac{S_{\text{death}}(a^i)}{S_{\text{death}}(a^{i - j})}
+      p_{\mathrm{C}}^{i - j} \Delta a
+      \\ & \quad {}
+      - \frac{S_{\text{death}}(a^{i - 1}) - S_{\text{death}}(a^i)}
+      {S_{\text{death}}(a^{i - 1})}
+      P_{\mathrm{C}}^{i - 1}.
     \end{split}
   \end{align}
 \end{subequations}
