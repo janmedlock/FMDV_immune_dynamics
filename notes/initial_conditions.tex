@@ -1027,10 +1027,20 @@ The differences of the sums \eqref{eq:sums_over_r} are
       p_{\mathrm{E}}^{i - j} \Delta a
       \\ & \quad {}
       - \frac{S_{\text{death}}(a^{i - 1}) - S_{\text{death}}(a^i)}
-      {S_{\text{death}}(a^i)}
-      \sum_{j = 1}^i S_{\text{progression}}(r^{j - 1})
+      {S_{\text{death}}(a^{i - 1})}
+      \sum_{j = 0}^{i - 1} S_{\text{progression}}(r^j)
+      \frac{S_{\text{death}}(a^{i - 1})}{S_{\text{death}}(a^{i - 1 - j})}
+      p_{\mathrm{E}}^{i - 1 - j},
+      \\
+      &= p_{\mathrm{E}}^i
+      \\ & \quad {}
+      - \sum_{j = 1}^i p_{\text{progression}}(r^j)
       \frac{S_{\text{death}}(a^i)}{S_{\text{death}}(a^{i - j})}
-      p_{\mathrm{E}}^{i - j},
+      p_{\mathrm{E}}^{i - j} \Delta a
+      \\ & \quad {}
+      - \frac{S_{\text{death}}(a^{i - 1}) - S_{\text{death}}(a^i)}
+      {S_{\text{death}}(a^{i - 1})}
+      P_{\mathrm{E}}^{i - 1},
     \end{split}
     \displaybreak[0]\\
     \begin{split}
@@ -1198,6 +1208,21 @@ Then
   }.
 \end{displaymath}
 \textbf{This gives}
+\begin{displaymath}
+  \begin{split}
+    \frac{
+      S_{\text{death}}(a^{i - 1}) - S_{\text{death}}(a^i)
+    }{
+      S_{\text{death}}(a^{i - 1})
+    }
+    &= \frac{
+      h_{\text{death}}(a^{i - 1 / 2}) \Delta a
+    }{
+      1 + h_{\text{death}}(a^{i - 1 / 2}) \Delta a / 2
+    }.
+  \end{split}
+\end{displaymath}
+\textbf{We need}
 \begin{displaymath}
   \begin{split}
     \frac{
