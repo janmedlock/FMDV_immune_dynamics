@@ -262,6 +262,7 @@ Integrating the PDEs along the characteristics $r = a - a_0$ gives
 
 Using
 \begin{subequations}
+  \label{eq:integrals_over_r}
   \begin{align}
     P_{\mathrm{E}}(a)
     &= \int_0^a
@@ -287,6 +288,7 @@ Using
 \end{subequations}
 gives
 \begin{subequations}
+  \label{eq:integrals_derivatives}
   \begin{align}
     \begin{split}
       \frac{\md P_{\mathrm{E}}}{\md a}
@@ -388,6 +390,7 @@ $p_X^i \approx p_X(a^i, 0)$.
 For each $i \in \{1, 2, \ldots, I - 1\}$, using the
 Crank--Nicolson method on characteristics gives
 \begin{subequations}
+  \label{eq:numerical_method}
   \begin{align}
     P_{\mathrm{M}}^0
     &= \phi,
@@ -484,6 +487,7 @@ Crank--Nicolson method on characteristics gives
 \end{subequations}
 with
 \begin{subequations}
+  \label{eq:sums_over_r}
   \begin{align}
     P_{\mathrm{E}}^i
     &= \sum_{j = 0}^i
@@ -977,233 +981,238 @@ Under these conditions, the entries of $\vec{x}$ are non-negative.
 
 \subsection{Analysis}
 
-\textbf{TODO: This whole subsection needs works.}
-
-For $Y \in \{\text{progression}, \text{recovery},
-\text{chronic recovery}\}$, using
-\begin{equation}
-  p_Y(r^j) = - \frac{\md S_Y}{\md r} (r^j)
-  \approx \frac{S_Y(r^{j - 1}) - S_Y(r^j)}{\Delta a},
-\end{equation} gives ...
-Also, something like
-\begin{equation}
-  \begin{split}
-    h_{\text{death}}(a^{i - 1 / 2})
-    &= - \frac{1}{S_{\text{death}} (a^{i - 1 / 2})}
-    \frac{\md S_{\text{death}}}{\md a} (a^{i - 1 / 2})
-    \\
-    &\approx \frac{1}{\Delta a}
-    \left[
-      \frac{S_{\text{death}}(a^{i - 1})}{S_{\text{death}}(a^i)} - 1
-    \right].
-  \end{split}
-\end{equation}
-
-We have
-\textbf{TODO: Make these look like (8).}
+The differences of the sums \eqref{eq:sums_over_r} are
 \begin{subequations}
   \begin{align}
     \begin{split}
       \frac{P_{\mathrm{E}}^i - P_{\mathrm{E}}^{i - 1}}{\Delta a}
       &=
-      \sum_{j = 0}^i
-      S_{\text{progression}}(r^j)
+      \sum_{j = 0}^i S_{\text{progression}}(r^j)
       \frac{S_{\text{death}}(a^i)}{S_{\text{death}}(a^{i - j})}
       p_{\mathrm{E}}^{i - j}
       \\ & \quad {}
-      - \sum_{j = 0}^{i - 1}
-      S_{\text{progression}}(r^j)
+      - \sum_{j = 0}^{i - 1} S_{\text{progression}}(r^j)
       \frac{S_{\text{death}}(a^{i - 1})}{S_{\text{death}}(a^{i - 1 - j})}
       p_{\mathrm{E}}^{i - 1 - j}
       \\
-      &= h_{\text{infection}}
-      \left(\frac{P_{\mathrm{S}}^i + P_{\mathrm{S}}^{i - 1}}{2}
-        + \frac{P_{\mathrm{L}}^i + P_{\mathrm{L}}^{i - 1}}{2}\right)
+      &= p_{\mathrm{E}}^i
       \\ & \quad {}
-      - \sum_{j = 1}^i
-      S_{\text{progression}}(r^{j - 1})
-      \frac{S_{\text{death}}(a^{i - 1})}{S_{\text{death}}(a^{i - j})}
+      + \sum_{j = 1}^i S_{\text{progression}}(r^j)
+      \frac{S_{\text{death}}(a^i)}{S_{\text{death}}(a^{i - j})}
       p_{\mathrm{E}}^{i - j}
       \\ & \quad {}
-      + \sum_{j = 1}^i
-      S_{\text{progression}}(r^j)
+      - \sum_{j = 1}^i S_{\text{progression}}(r^{j - 1})
+      \frac{S_{\text{death}}(a^{i - 1})}{S_{\text{death}}(a^{i - j})}
+      p_{\mathrm{E}}^{i - j}
+      \\
+      &= p_{\mathrm{E}}^i
+      \\ & \quad {}
+      - \sum_{j = 1}^i
+      \left[
+        S_{\text{progression}}(r^{j - 1})
+        - S_{\text{progression}}(r^j)
+      \right]
+      \frac{S_{\text{death}}(a^i)}{S_{\text{death}}(a^{i - j})}
+      p_{\mathrm{E}}^{i - j}
+      \\ & \quad {}
+      - \sum_{j = 1}^i S_{\text{progression}}(r^{j - 1})
+      \frac{S_{\text{death}}(a^{i - 1}) - S_{\text{death}}(a^i)}
+      {S_{\text{death}}(a^{i - j})}
+      p_{\mathrm{E}}^{i - j}
+      \\
+      &= p_{\mathrm{E}}^i
+      \\ & \quad {}
+      - \sum_{j = 1}^i p_{\text{progression}}(r^j)
+      \frac{S_{\text{death}}(a^i)}{S_{\text{death}}(a^{i - j})}
+      p_{\mathrm{E}}^{i - j} \Delta a
+      \\ & \quad {}
+      - \frac{S_{\text{death}}(a^{i - 1}) - S_{\text{death}}(a^i)}
+      {S_{\text{death}}(a^i)}
+      \sum_{j = 1}^i S_{\text{progression}}(r^{j - 1})
       \frac{S_{\text{death}}(a^i)}{S_{\text{death}}(a^{i - j})}
       p_{\mathrm{E}}^{i - j},
     \end{split}
     \displaybreak[0]\\
     \begin{split}
       \frac{P_{\mathrm{I}}^i - P_{\mathrm{I}}^{i - 1}}{\Delta a}
-      &= \sum_{j = 0}^i
-      S_{\text{recovery}}(r^j)
+      &=
+      \sum_{j = 0}^i S_{\text{recovery}}(r^j)
       \frac{S_{\text{death}}(a^i)}{S_{\text{death}}(a^{i - j})}
       p_{\mathrm{I}}^{i - j}
       \\ & \quad {}
-      - \sum_{j = 0}^{i - 1}
-      S_{\text{recovery}}(r^j)
+      - \sum_{j = 0}^{i - 1} S_{\text{recovery}}(r^j)
       \frac{S_{\text{death}}(a^{i - 1})}{S_{\text{death}}(a^{i - 1 - j})}
       p_{\mathrm{I}}^{i - 1 - j}
       \\
-      &= \sum_{j = 0}^i  % or start at j = 1?
-      p_{\text{progression}}(r^j)
-      \frac{S_{\text{death}}(a^i)}{S_{\text{death}}(a^{i - j})}
-      p_{\mathrm{E}}^{i - j}
-      \Delta a
-      \\ & \quad {}
-      - \sum_{j = 1}^i S_{\text{recovery}}(r^{j - 1})
-      \frac{S_{\text{death}}(a^{i - 1})}{S_{\text{death}}(a^{i - j})}
-      p_{\mathrm{I}}^{i - j}
+      &= p_{\mathrm{I}}^i
       \\ & \quad {}
       + \sum_{j = 1}^i S_{\text{recovery}}(r^j)
       \frac{S_{\text{death}}(a^i)}{S_{\text{death}}(a^{i - j})}
       p_{\mathrm{I}}^{i - j}
+      \\ & \quad {}
+      - \sum_{j = 1}^i S_{\text{recovery}}(r^{j - 1})
+      \frac{S_{\text{death}}(a^{i - 1})}{S_{\text{death}}(a^{i - j})}
+      p_{\mathrm{I}}^{i - j}
+      \\
+      &= p_{\mathrm{I}}^i
+      \\ & \quad {}
+      - \sum_{j = 1}^i
+      \left[
+        S_{\text{recovery}}(r^{j - 1})
+        - S_{\text{recovery}}(r^j)
+      \right]
+      \frac{S_{\text{death}}(a^i)}{S_{\text{death}}(a^{i - j})}
+      p_{\mathrm{I}}^{i - j}
+      \\ & \quad {}
+      - \sum_{j = 1}^i S_{\text{recovery}}(r^{j - 1})
+      \frac{S_{\text{death}}(a^{i - 1}) - S_{\text{death}}(a^i)}
+      {S_{\text{death}}(a^{i - j})}
+      p_{\mathrm{I}}^{i - j}
+      \\
+      &= p_{\mathrm{I}}^i
+      \\ & \quad {}
+      - \sum_{j = 1}^i p_{\text{recovery}}(r^j)
+      \frac{S_{\text{death}}(a^i)}{S_{\text{death}}(a^{i - j})}
+      p_{\mathrm{I}}^{i - j} \Delta a
+      \\ & \quad {}
+      - \frac{S_{\text{death}}(a^{i - 1}) - S_{\text{death}}(a^i)}
+      {S_{\text{death}}(a^i)}
+      \sum_{j = 1}^i S_{\text{recovery}}(r^{j - 1})
+      \frac{S_{\text{death}}(a^i)}{S_{\text{death}}(a^{i - j})}
+      p_{\mathrm{I}}^{i - j},
     \end{split}
     \displaybreak[0]\\
     \begin{split}
       \frac{P_{\mathrm{C}}^i - P_{\mathrm{C}}^{i - 1}}{\Delta a}
-      &= \sum_{j = 0}^i
-      S_{\text{chronic recovery}}(r^j)
+      &=
+      \sum_{j = 0}^i S_{\text{chronic recovery}}(r^j)
       \frac{S_{\text{death}}(a^i)}{S_{\text{death}}(a^{i - j})}
       p_{\mathrm{C}}^{i - j}
       \\ & \quad {}
-      - \sum_{j = 0}^{i - 1}
-      S_{\text{chronic recovery}}(r^j)
+      - \sum_{j = 0}^{i - 1} S_{\text{chronic recovery}}(r^j)
       \frac{S_{\text{death}}(a^{i - 1})}{S_{\text{death}}(a^{i - 1 - j})}
       p_{\mathrm{C}}^{i - 1 - j}
       \\
-      &= p_{\text{chronicity}}
-      \sum_{j = 0}^i % or start at j = 1?
-      p_{\text{recovery}}(r^j)
+      &= p_{\mathrm{C}}^i
+      \\ & \quad {}
+      + \sum_{j = 1}^i S_{\text{chronic recovery}}(r^j)
       \frac{S_{\text{death}}(a^i)}{S_{\text{death}}(a^{i - j})}
-      p_{\mathrm{I}}^{i - j}
-      \Delta a
+      p_{\mathrm{C}}^{i - j}
       \\ & \quad {}
       - \sum_{j = 1}^i S_{\text{chronic recovery}}(r^{j - 1})
       \frac{S_{\text{death}}(a^{i - 1})}{S_{\text{death}}(a^{i - j})}
       p_{\mathrm{C}}^{i - j}
+      \\
+      &= p_{\mathrm{C}}^i
       \\ & \quad {}
-      + \sum_{j = 1}^i S_{\text{chronic recovery}}(r^j)
+      - \sum_{j = 1}^i
+      \left[
+        S_{\text{chronic recovery}}(r^{j - 1})
+        - S_{\text{chronic recovery}}(r^j)
+      \right]
+      \frac{S_{\text{death}}(a^i)}{S_{\text{death}}(a^{i - j})}
+      p_{\mathrm{C}}^{i - j}
+      \\ & \quad {}
+      - \sum_{j = 1}^i S_{\text{chronic recovery}}(r^{j - 1})
+      \frac{S_{\text{death}}(a^{i - 1}) - S_{\text{death}}(a^i)}
+      {S_{\text{death}}(a^{i - j})}
+      p_{\mathrm{C}}^{i - j}
+      \\
+      &= p_{\mathrm{C}}^i
+      \\ & \quad {}
+      - \sum_{j = 1}^i p_{\text{chronic recovery}}(r^j)
+      \frac{S_{\text{death}}(a^i)}{S_{\text{death}}(a^{i - j})}
+      p_{\mathrm{C}}^{i - j} \Delta a
+      \\ & \quad {}
+      - \frac{S_{\text{death}}(a^{i - 1}) - S_{\text{death}}(a^i)}
+      {S_{\text{death}}(a^i)}
+      \sum_{j = 1}^i S_{\text{chronic recovery}}(r^{j - 1})
       \frac{S_{\text{death}}(a^i)}{S_{\text{death}}(a^{i - j})}
       p_{\mathrm{C}}^{i - j}.
     \end{split}
   \end{align}
 \end{subequations}
+%
+\textbf{TODO: These should look like
+  \eqref{eq:integrals_derivatives}. In particular, the last sum in
+  each should be transformed to something like}
+$$h_{\text{death}}(a^{i - 1 / 2})
+\frac{P_X(a^i) + P_X(a^{i - 1})}{2}.$$
+%
 
-Define
-\begin{equation}
-  \Delta^i P = P^i - P^{i - 1}
-\end{equation}
-and
-\begin{equation}
-  P^{i - 1 / 2} = \frac{P^i + P^{i - 1}}{2}
-\end{equation}
 Then
-\textbf{TODO: The next 2 equations are wrong due to an earlier error
-  in equation (37b\&c).}
-\begin{equation}
+\begin{subequations}
+  \begin{align}
+    P^0 &= 1,
+    \displaybreak[0]\\
+    \begin{split}
+      \frac{P^i - P^{i - 1}}{\Delta a}
+      &= - h_{\text{death}}(a^{i - 1 / 2})
+      \frac{P^i + P^{i - 1}}{2}
+      \\ & \quad {}
+      % or start sum in (14h) at j = 1?
+      + p_{\text{progression}}(0) p_{\mathrm{E}}^i \Delta a
+      \\ & \quad {}
+      - \sum_{j = 1}^i S_{\text{progression}}(r^{j - 1})
+      \frac{S_{\text{death}}(a^{i - 1}) - S_{\text{death}}(a^i)}
+      {S_{\text{death}}(a^{i - j})}
+      p_E^{i - j}
+      \\ & \quad {}
+      + h_{\text{death}}(a^{i - 1 / 2})
+      \frac{P_{\mathrm{E}}^i + P_{\mathrm{E}}^{i - 1}}{2}
+      \\ & \quad {}
+      % or start sums in (14j) & (14l) at j = 1?
+      + p_{\text{recovery}}(0) p_{\mathrm{I}}^i \Delta a
+      \\ & \quad {}
+      - \sum_{j = 1}^i S_{\text{recovery}}(r^{j - 1})
+      \frac{S_{\text{death}}(a^{i - 1}) - S_{\text{death}}(a^i)}
+      {S_{\text{death}}(a^{i - j})}
+      p_I^{i - j}
+      \\ & \quad {}
+      + h_{\text{death}}(a^{i - 1 / 2})
+      \frac{P_{\mathrm{I}}^i + P_{\mathrm{I}}^{i - 1}}{2}
+      \\ & \quad {}
+      % or start sum in (14l) at j = 1?
+      + p_{\text{chronic recovery}}(0) p_{\mathrm{C}}^i \Delta a
+      \\ & \quad {}
+      - \sum_{j = 1}^i S_{\text{chronic recovery}}(r^{j - 1})
+      \frac{S_{\text{death}}(a^{i - 1}) - S_{\text{death}}(a^i)}
+      {S_{\text{death}}(a^{i - j})}
+      p_C^{i - j}
+      \\ & \quad {}
+      + h_{\text{death}}(a^{i - 1 / 2})
+      \frac{P_{\mathrm{C}}^i + P_{\mathrm{C}}^{i - 1}}{2}.
+    \end{split}
+  \end{align}
+\end{subequations}
+%
+\textbf{TODO: All the terms after the top line should cancel each
+  other. From \eqref{eq:discrete_total}, we have the Crank--Nicholson
+  approximation of the survival in terms of the hazard}
+\begin{displaymath}
+  S_{\text{death}}(a^i)
+  = \prod_{j = 1}^i \frac{
+    1 - h_{\text{death}}(a^{j - 1 / 2}) \Delta a / 2
+  }{
+    1 + h_{\text{death}}(a^{j - 1 / 2}) \Delta a / 2
+  }.
+\end{displaymath}
+\textbf{This gives}
+\begin{displaymath}
   \begin{split}
-    \frac{\Delta^i P}{\Delta a}
-    &= - h_{\text{death}}(a^{i - 1 / 2}) P^{i - 1 / 2}
-    \\ & \quad {}
-    - \sum_{j = 1}^i
-    S_{\text{progression}}(r^{j - 1})
-    \frac{S_{\text{death}}(a^{i - 1})}{S_{\text{death}}(a^{i - j})}
-    p_{\mathrm{E}}^{i - j}
-    \\ & \quad {}
-    + \sum_{j = 1}^i
-    S_{\text{progression}}(r^j)
-    \frac{S_{\text{death}}(a^i)}{S_{\text{death}}(a^{i - j})}
-    p_{\mathrm{E}}^{i - j}
-    \\ & \quad {}
-    + \sum_{j = 0}^i  % or start at j = 1?
-    p_{\text{progression}}(r^j)
-    \frac{S_{\text{death}}(a^i)}{S_{\text{death}}(a^{i - j})}
-    p_{\mathrm{E}}^{i - j}
-    \Delta a
-    \\ & \quad {}
-    + h_{\text{death}}(a^{i - 1 / 2}) P_{\mathrm{E}}^{i - 1 / 2}
-    \\ & \quad {}
-    - \sum_{j = 1}^i \left[S_{\text{recovery}}(r^{j - 1})
-      - S_{\text{recovery}}(r^j)\right]
-    p_{\mathrm{I}}^{i - j}
-    \\ & \quad {}
-    + \sum_{j = 0}^i  % or start at j = 1?
-    p_{\text{recovery}}(r^j)
-    \frac{S_{\text{death}}(a^i)}{S_{\text{death}}(a^{i - j})}
-    p_{\mathrm{I}}^{i - j}
-    \Delta a
-    \\ & \quad {}
-    + h_{\text{death}}(a^{i - 1 / 2}) P_{\mathrm{I}}^{i - 1 / 2}
-    \\ & \quad {}
-    + \sum_{j = 0}^i % or start at j = 1?
-    p_{\text{chronic recovery}}(r^j)
-    \frac{S_{\text{death}}(a^i)}{S_{\text{death}}(a^{i - j})}
-    p_{\mathrm{C}}^{i - j}
-    \Delta a
-    \\ & \quad {}
-    - \sum_{j = 1}^i \left[S_{\text{chronic recovery}}(r^{j - 1})
-      - S_{\text{chronic recovery}}(r^j)\right]
-    p_{\mathrm{C}}^{i - j}
-    \\ & \quad {}
-    + h_{\text{death}}(a^{i - 1 / 2}) P_{\mathrm{C}}^{i - 1 / 2}
-  \end{split}
-\end{equation}
-\begin{equation}
-  \begin{split}
-    \frac{\Delta^i P}{\Delta a}
-    &= - h_{\text{death}}(a^{i - 1 / 2}) P^{i - 1 / 2}
-    \\ & \quad {}
-    + \frac{1}{2} h_{\text{death}}(a^{i - 1 / 2}) \Delta a
-    p_{\mathrm{E}}^i
-    \\ & \quad {}
-    - \left[
-      1 - \frac{1}{2} h_{\text{death}}(a^{i - 1 / 2}) \Delta a
-    \right]
-    \sum_{j = 1}^i S_{\text{progression}}(r^{j - 1})
     \frac{
       S_{\text{death}}(a^{i - 1}) - S_{\text{death}}(a^i)
     }{
-      S_{\text{death}}(a^{i - j})
+      S_{\text{death}}(a^{i - 1})
     }
-    p_{\mathrm{E}}^{i - j}
-    \\ & \quad {}
-    + h_{\text{death}}(a^{i - 1 / 2}) \Delta a
-    \sum_{j = 1}^i
-    \frac{S_{\text{progression}}(r^j) + S_{\text{progression}}(r^{j - 1})}{2}
-    \frac{S_{\text{death}}(a^i)}{S_{\text{death}}(a^{i - j})}
-    p_{\mathrm{E}}^{i - j}
-    \\ & \quad {}
-    - \sum_{j = 1}^i \left[S_{\text{recovery}}(r^{j - 1})
-      - S_{\text{recovery}}(r^j)\right]
-    p_{\mathrm{I}}^{i - j}
-    \\ & \quad {}
-    + \sum_{j = 0}^i  % or start at j = 1?
-    p_{\text{recovery}}(r^j)
-    \frac{S_{\text{death}}(a^i)}{S_{\text{death}}(a^{i - j})}
-    p_{\mathrm{I}}^{i - j}
-    \Delta a
-    \\ & \quad {}
-    + h_{\text{death}}(a^{i - 1 / 2}) P_{\mathrm{I}}^{i - 1 / 2}
-    \\ & \quad {}
-    - \sum_{j = 1}^i \left[S_{\text{chronic recovery}}(r^{j - 1})
-      - S_{\text{chronic recovery}}(r^j)\right]
-    p_{\mathrm{C}}^{i - j}
-    \\ & \quad {}
-    + \sum_{j = 0}^i % or start at j = 1?
-    p_{\text{chronic recovery}}(r^j)
-    \frac{S_{\text{death}}(a^i)}{S_{\text{death}}(a^{i - j})}
-    p_{\mathrm{C}}^{i - j}
-    \Delta a
-    \\ & \quad {}
-    + h_{\text{death}}(a^{i - 1 / 2}) P_{\mathrm{C}}^{i - 1 / 2}
+    &= \frac{
+      h_{\text{death}}(a^{i - 1 / 2}) \Delta a
+    }{
+      1 + h_{\text{death}}(a^{i - 1 / 2}) \Delta a / 2
+    }.
   \end{split}
-\end{equation}
-\textbf{TODO: The next equation should be the result of the above, but
-  it's not yet.}
-Then
-\begin{equation}
-  \frac{\Delta P^i}{\Delta a}
-  = - h_{\text{death}}(a^{i - 1 / 2}) P^{i - 1 / 2}.
-\end{equation}
+\end{displaymath}
+%
 
 Then
 \begin{equation}
@@ -1211,19 +1220,28 @@ Then
   = - h_{\text{death}}(a^{i - 1 / 2})
   \frac{P^i + P^{i - 1}}{2},
 \end{equation}
-\textbf{TODO: Update below.}
-and, assuming for the moment that $P^0 = 1$,
+so that
 \begin{equation}
-  P^i = S_{\text{death}}(a^i).
+  \label{eq:discrete_total}
+  \begin{split}
+    P^i
+    &= \frac{
+      1 - h_{\text{death}}(a^{i - 1 / 2}) \Delta a / 2
+    }{
+      1 + h_{\text{death}}(a^{i - 1 / 2}) \Delta a / 2
+    } P^{i - 1}
+    \\
+    &= \prod_{j = 1}^i \frac{
+      1 - h_{\text{death}}(a^{j - 1 / 2}) \Delta a / 2
+    }{
+      1 + h_{\text{death}}(a^{j - 1 / 2}) \Delta a / 2
+    }
+    \\
+    &= S_{\text{death}}(a^i).
+  \end{split}
 \end{equation}
-Using the initial conditions gives
-\begin{equation}
-  P^0
-  = \sum_{i = 0}^{I - 1}
-  h_{\text{birth}}(a^i) S_{\text{death}}(a^i)
-  \Delta a,
-\end{equation}
-and then using the constant-time birth hazard
+
+The the constant-time birth hazard
 (i.e.~$c_{\mathrm{v}} = 0$)
 \begin{equation}
   h_{\text{birth}}(a) =
@@ -1243,10 +1261,15 @@ with
 \end{equation}
 gives
 \begin{equation}
-  P^0 = 1.
+  \sum_{i = 0}^{I - 1}
+  h_{\text{birth}}(a^i) P^i
+  \Delta a
+  = \sum_{i = 0}^{I - 1}
+  h_{\text{birth}}(a^i) S_{\text{death}}(a^i)
+  \Delta a
+  = 1 = P^0,
 \end{equation}
-This is the $\mu$ value that gives constant population size,
-i.e.~zero growth rate.
+so that the population size is constant, i.e.~zero growth rate.
 
 
 \bibliography{journal_abbreviations,math_epi}
