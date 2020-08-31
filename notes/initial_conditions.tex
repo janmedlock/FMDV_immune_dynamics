@@ -27,19 +27,34 @@
 
 \section{Model}
 
-We will find the equilibrium probability densities as a function of
-model compartment and age (\autoref{model_diagram}), i.e.
-\begin{equation}
-  P_X(a) = \Prob\{\text{in compartment $X$ at age $a$}\},
-\end{equation}
-for $X \in \{\mathrm{M}, \mathrm{S}, \mathrm{E}, \mathrm{I},
-\mathrm{C}, \mathrm{R}, \mathrm{L}\}$
-and $a \geq 0$.
-We will assume that
-\begin{itemize}
-\item the birth hazard is constant in time, and
-\item the hazard for antibody gain is constant in time.
-\end{itemize}
+For given hazard of infection, $h_{\text{infection}}$,
+and fraction of newborns with maternal immunity,
+$\phi_{\text{maternal immunity}}$, we will find the equilibrium
+probability densities as a function of model compartment, age, and
+duration in the current compartment
+(\autoref{model_diagram}), i.e.
+\begin{subequations}
+  \begin{align}
+    P_{\mathrm{M}}(a)
+    &= \Prob\{\text{in compartment $\mathrm{M}$ at age $a$}\},\\
+    P_{\mathrm{S}}(a)
+    &= \Prob\{\text{in compartment $\mathrm{S}$ at age $a$}\},\\
+    p_{\mathrm{E}}(a, r)
+    &= \Prob\{\text{in compartment $\mathrm{E}$ at age $a$ and
+      duration $r$}\},\\
+    p_{\mathrm{I}}(a, r)
+    &= \Prob\{\text{in compartment $\mathrm{I}$ at age $a$ and
+      duration $r$}\},\\
+    p_{\mathrm{C}}(a, r)
+    &= \Prob\{\text{in compartment $\mathrm{C}$ at age $a$ and
+      duration $r$}\},\\
+    P_{\mathrm{R}}(a)
+    &= \Prob\{\text{in compartment $\mathrm{R}$ at age $a$}\},\\
+    P_{\mathrm{L}}(a)
+    &= \Prob\{\text{in compartment $\mathrm{L}$ at age $a$}\},
+  \end{align}
+\end{subequations}
+for $a \geq 0$ and $0 \leq r \leq a$.
 
 \begin{figure}
   \begin{center}
@@ -49,20 +64,29 @@ We will assume that
   \label{model_diagram}
 \end{figure}
 
-\clearpage
+We will use these $P_X(a)$ and $p_X(a, r)$ to iteratively find the
+fixed point for $h_{\text{infection}}$ and
+$\phi_{\text{maternal immunity}}$ and, finally, the equilibrium
+densities $P_X(a)$ at this fixed point.
+
+We will assume that
+\begin{itemize}
+\item the birth hazard is constant in time, and
+\item the hazard for antibody gain is constant in time.
+\end{itemize}
 
 For $a > 0$ and $0 < r \leq a$, the probability densities satisfy
 \begin{subequations}
   \begin{align}
     P_{\mathrm{M}}(0)
-    &= \phi,
+    &= \phi_{\text{maternal immunity}},
     \\
     \frac{\md P_{\mathrm{M}}}{\md a}
     &= - \left[h_{\text{waning}}(a) + h_{\text{death}}(a)\right]
       P_{\mathrm{M}}(a),
     \displaybreak[0]\\
     P_{\mathrm{S}}(0)
-    &= 1 - \phi,
+    &= 1 - \phi_{\text{maternal immunity}},
     \\
     \frac{\md P_{\mathrm{S}}}{\md a}
     &= h_{\text{waning}}(a) P_{\mathrm{M}}(a)
@@ -139,12 +163,23 @@ with
     \displaybreak[0]\\
     P_{\mathrm{I}}(a) &= \int_0^a p_{\mathrm{I}}(a, r) \md r,
     \displaybreak[0]\\
-    P_{\mathrm{C}}(a) &= \int_0^a p_{\mathrm{C}}(a, r) \md r,
+    P_{\mathrm{C}}(a) &= \int_0^a p_{\mathrm{C}}(a, r) \md r.
   \end{align}
 \end{subequations}
+
+The infection hazard is
+\begin{equation}
+  h_{\text{infection}} =
+  \int_0^{+\infty} N
+  \left[
+    \beta_{\text{infectious}} P_{\mathrm{I}}(a)
+    + \beta_{\text{chronic}} P_{\mathrm{C}}(a)
+  \right]
+  \md a
+\end{equation}
 and the proportion of births that have maternal immunity is
 \begin{equation}
-  \phi
+  \phi_{\text{maternal immunity}}
   = \frac{
     \int_0^{+\infty} h_{\text{birth}}(a)
     \left[
@@ -160,8 +195,9 @@ where
   P(a)
   = P_{\mathrm{M}}(a) + P_{\mathrm{S}}(a) + P_{\mathrm{E}}(a)
   + P_{\mathrm{I}}(a) + P_{\mathrm{C}}(a) + P_{\mathrm{R}}(a)
-  + P_{\mathrm{L}}(a).
+  + P_{\mathrm{L}}(a),
 \end{equation}
+and $N$ is the population size.
 
 
 \subsection{Analysis}
@@ -170,14 +206,14 @@ Integrating the PDEs along the characteristics $r = a - a_0$ gives
 \begin{subequations}
   \begin{align}
     P_{\mathrm{M}}(0)
-    &= \phi,
+    &= \phi_{\text{maternal immunity}},
     \\
     \frac{\md P_{\mathrm{M}}}{\md a}
     &= - \left[h_{\text{waning}}(a) + h_{\text{death}}(a)\right]
       P_{\mathrm{M}}(a),
     \displaybreak[0]\\
     P_{\mathrm{S}}(0)
-    &= 1 - \phi,
+    &= 1 - \phi_{\text{maternal immunity}},
     \\
     \frac{\md P_{\mathrm{S}}}{\md a}
     &= h_{\text{waning}}(a) P_{\mathrm{M}}(a)
@@ -393,7 +429,7 @@ Crank--Nicolson method on characteristics gives
   \label{eq:numerical_method}
   \begin{align}
     P_{\mathrm{M}}^0
-    &= \phi,
+    &= \phi_{\text{maternal immunity}},
     \\
     \frac{P_{\mathrm{M}}^i - P_{\mathrm{M}}^{i - 1}}{\Delta a}
     &= - \left[
@@ -403,7 +439,7 @@ Crank--Nicolson method on characteristics gives
       \frac{P_{\mathrm{M}}^i + P_{\mathrm{M}}^{i - 1}}{2},
     \displaybreak[0]\\
     P_{\mathrm{S}}^0
-    &= 1 - \phi,
+    &= 1 - \phi_{\text{maternal immunity}},
     \\
     \begin{split}
       \frac{P_{\mathrm{S}}^i - P_{\mathrm{S}}^{i - 1}}{\Delta a}
@@ -508,32 +544,324 @@ with
       S_{\text{chronic recovery}}(r^j)
       \frac{S_{\text{death}}(a^i)}{S_{\text{death}}(a^{i - j})}
       p_{\mathrm{C}}^{i - j}
-      \Delta a,
+      \Delta a.
   \end{align}
 \end{subequations}
-and
+
+The infection hazard is
 \begin{equation}
-  \phi
+  h_{\text{infection}}
+  = \sum_{i = 0}^{I - 1} N
+  \left(
+    \beta_{\text{infectious}} P_{\mathrm{I}}^i
+    + \beta_{\text{chronic}} P_{\mathrm{C}}^i
+  \right)
+  \Delta a,
+\end{equation}
+and the proportion of births that have maternal immunity is
+\begin{equation}
+  \phi_{\text{maternal immunity}}
   = \frac{
-    \sum_{j = 0}^{I - 1}
-    h_{\text{birth}}(a^j) \left(
-      P_{\mathrm{M}}^j + P_{\mathrm{C}}^j + P_{\mathrm{R}}^j
+    \sum_{i = 0}^{I - 1}
+    h_{\text{birth}}(a^i) \left(
+      P_{\mathrm{M}}^i + P_{\mathrm{C}}^i + P_{\mathrm{R}}^i
     \right)
     \Delta a
   }{
-    \sum_{j = 0}^{I - 1} h_{\text{birth}}(a^j) P^j \Delta a
+    \sum_{i = 0}^{I - 1} h_{\text{birth}}(a^i) P^i \Delta a
   },
 \end{equation}
 where
 \begin{equation}
-  P^j =  P_{\mathrm{M}}^j + P_{\mathrm{S}}^j + P_{\mathrm{E}}^j
-  + P_{\mathrm{I}}^j + P_{\mathrm{C}}^j + P_{\mathrm{R}}^j + P_{\mathrm{L}}^j.
+  P^i =  P_{\mathrm{M}}^i + P_{\mathrm{S}}^i + P_{\mathrm{E}}^i
+  + P_{\mathrm{I}}^i + P_{\mathrm{C}}^i + P_{\mathrm{R}}^i + P_{\mathrm{L}}^i,
+\end{equation}
+and $N$ is the population size.
+
+\subsection{Analysis}
+
+The differences of the sums \eqref{eq:sums_over_r} are
+\begin{equation}
+  \label{eq:sums_differences}
+  \begin{split}
+    \frac{P_X^i - P_X^{i - 1}}{\Delta a}
+    &=
+    \sum_{j = 0}^i S_{Y_X}(r^j)
+    \frac{S_{\text{death}}(a^i)}{S_{\text{death}}(a^{i - j})}
+    p_X^{i - j}
+    \\ & \quad {}
+    - \sum_{j = 0}^{i - 1} S_{Y_X}(r^j)
+    \frac{S_{\text{death}}(a^{i - 1})}{S_{\text{death}}(a^{i - 1 - j})}
+    p_X^{i - 1 - j}
+    \\
+    &= p_X^i
+    \\ & \quad {}
+    + \sum_{j = 1}^i S_{Y_X}(r^j)
+    \frac{S_{\text{death}}(a^i)}{S_{\text{death}}(a^{i - j})}
+    p_X^{i - j}
+    \\ & \quad {}
+    - \sum_{j = 1}^i S_{Y_X}(r^{j - 1})
+    \frac{S_{\text{death}}(a^{i - 1})}{S_{\text{death}}(a^{i - j})}
+    p_X^{i - j}
+    \\
+    &= p_X^i
+    \\ & \quad {}
+    - \sum_{j = 1}^i
+    \left[
+      S_{Y_X}(r^{j - 1})
+      - S_{Y_X}(r^j)
+    \right]
+    \frac{S_{\text{death}}(a^i)}{S_{\text{death}}(a^{i - j})}
+    p_X^{i - j}
+    \\ & \quad {}
+    - \sum_{j = 1}^i S_{Y_X}(r^{j - 1})
+    \frac{S_{\text{death}}(a^{i - 1}) - S_{\text{death}}(a^i)}
+    {S_{\text{death}}(a^{i - j})}
+    p_X^{i - j}
+    \\
+    &= p_X^i
+    \\ & \quad {}
+    - \sum_{j = 1}^i p_{Y_X}(r^j)
+    \frac{S_{\text{death}}(a^i)}{S_{\text{death}}(a^{i - j})}
+    p_X^{i - j} \Delta a
+    \\ & \quad {}
+    - \frac{S_{\text{death}}(a^{i - 1}) - S_{\text{death}}(a^i)}
+    {S_{\text{death}}(a^{i - 1})}
+    \sum_{j = 0}^{i - 1} S_{Y_X}(r^j)
+    \frac{S_{\text{death}}(a^{i - 1})}{S_{\text{death}}(a^{i - 1 - j})}
+    p_X^{i - 1 - j},
+    \\
+    &= p_X^i
+    \\ & \quad {}
+    - \sum_{j = 1}^i p_{Y_X}(r^j)
+    \frac{S_{\text{death}}(a^i)}{S_{\text{death}}(a^{i - j})}
+    p_X^{i - j} \Delta a
+    \\ & \quad {}
+    - \frac{S_{\text{death}}(a^{i - 1}) - S_{\text{death}}(a^i)}
+    {S_{\text{death}}(a^{i - 1})}
+    \frac{P_X^{i - 1}}{\Delta a},
+  \end{split}
+\end{equation}
+for
+\begin{equation}
+  X \in \{\mathrm{E}, \mathrm{I}, \mathrm{C}\},
+\end{equation}
+and
+\begin{equation}
+  \begin{split}
+    Y_{\mathrm{E}} &= \text{progression},
+    \\
+    Y_{\mathrm{I}} &= \text{recovery},
+    \\
+    Y_{\mathrm{C}} &= \text{chronic recovery}.
+  \end{split}
+\end{equation}
+%
+\textbf{TODO: \eqref{eq:sums_differences} should look like
+  \eqref{eq:integrals_derivatives}. In particular, the last sum should
+  be transformed to something like}
+$$h_{\text{death}}(a^{i - 1 / 2})
+\frac{P_X(a^i) + P_X(a^{i - 1})}{2}.$$
+%
+
+Then
+\begin{subequations}
+  \begin{align}
+    P^0 &= 1,
+    \displaybreak[0]\\
+    \begin{split}
+      \frac{P^i - P^{i - 1}}{\Delta a}
+      &= - h_{\text{death}}(a^{i - 1 / 2})
+      \frac{P^i + P^{i - 1}}{2}
+      \\ & \quad {}
+      % or start sum in (14h) at j = 1?
+      + p_{\text{progression}}(0) p_{\mathrm{E}}^i \Delta a
+      % or start sums in (14j) & (14l) at j = 1?
+      + p_{\text{recovery}}(0) p_{\mathrm{I}}^i \Delta a
+      % or start sum in (14l) at j = 1?
+      + p_{\text{chronic recovery}}(0) p_{\mathrm{C}}^i \Delta a
+      \\ & \quad {}
+      + h_{\text{death}}(a^{i - 1 / 2})
+      \left(
+        \frac{P_{\mathrm{E}}^i + P_{\mathrm{E}}^{i - 1}}{2}
+        + \frac{P_{\mathrm{I}}^i + P_{\mathrm{I}}^{i - 1}}{2}
+        + \frac{P_{\mathrm{C}}^i + P_{\mathrm{C}}^{i - 1}}{2}
+      \right)
+      \\ & \quad {}
+      - \frac{S_{\text{death}}(a^{i - 1}) - S_{\text{death}}(a^i)}
+      {S_{\text{death}}(a^{i - 1})}
+      \left(P_{\mathrm{E}}^{i - 1} + P_{\mathrm{I}}^{i - 1}
+        + P_{\mathrm{C}}^{i - 1}\right)
+      \frac{1}{\Delta a}
+      \\
+      &= - h_{\text{death}}(a^{i - 1 / 2})
+      \frac{P^i + P^{i - 1}}{2}
+      \\ & \quad {}
+      % or start sum in (14h) at j = 1?
+      + p_{\text{progression}}(0) p_{\mathrm{E}}^i \Delta a
+      % or start sums in (14j) & (14l) at j = 1?
+      + p_{\text{recovery}}(0) p_{\mathrm{I}}^i \Delta a
+      % or start sum in (14l) at j = 1?
+      + p_{\text{chronic recovery}}(0) p_{\mathrm{C}}^i \Delta a
+      \\ & \quad {}
+      + h_{\text{death}}(a^{i - 1 / 2})
+      \left(
+        \frac{P_{\mathrm{E}}^i + P_{\mathrm{E}}^{i - 1}}{2}
+        + \frac{P_{\mathrm{I}}^i + P_{\mathrm{I}}^{i - 1}}{2}
+        + \frac{P_{\mathrm{C}}^i + P_{\mathrm{C}}^{i - 1}}{2}
+      \right)
+      \\ & \quad {}
+      - \frac{h_{\text{death}}(a^{i - 1 / 2})}
+      {1 + h_{\text{death}}(a^{i - 1 / 2}) \Delta a / 2}
+      \left(
+        P_{\mathrm{E}}^{i - 1} + P_{\mathrm{I}}^{i - 1}
+        + P_{\mathrm{C}}^{i - 1}
+      \right)
+      \\
+      &= - h_{\text{death}}(a^{i - 1 / 2})
+      \frac{P^i + P^{i - 1}}{2}
+      \\ & \quad {}
+      % or start sum in (14h) at j = 1?
+      + p_{\text{progression}}(0) p_{\mathrm{E}}^i \Delta a
+      % or start sums in (14j) & (14l) at j = 1?
+      + p_{\text{recovery}}(0) p_{\mathrm{I}}^i \Delta a
+      % or start sum in (14l) at j = 1?
+      + p_{\text{chronic recovery}}(0) p_{\mathrm{C}}^i \Delta a
+      \\ & \quad {}
+      + \frac{1}{2} h_{\text{death}}(a^{i - 1 / 2})
+      \left[
+        \left(P_{\mathrm{E}}^i
+          + P_{\mathrm{I}}^i
+          + P_{\mathrm{C}}^i
+        \right)
+        - \frac{1 - h_{\text{death}}(a^{i - 1 / 2}) \Delta a / 2}
+        {1 + h_{\text{death}}(a^{i - 1 / 2}) \Delta a / 2}
+        \left(
+          P_{\mathrm{E}}^{i - 1}
+          + P_{\mathrm{I}}^{i - 1}
+          + P_{\mathrm{C}}^{i - 1}
+        \right)
+      \right]
+      \\
+      &= - h_{\text{death}}(a^{i - 1 / 2})
+      \frac{P^i + P^{i - 1}}{2}
+      \\ & \quad {}
+      % or start sum in (14h) at j = 1?
+      + p_{\text{progression}}(0) p_{\mathrm{E}}^i \Delta a
+      % or start sums in (14j) & (14l) at j = 1?
+      + p_{\text{recovery}}(0) p_{\mathrm{I}}^i \Delta a
+      % or start sum in (14l) at j = 1?
+      + p_{\text{chronic recovery}}(0) p_{\mathrm{C}}^i \Delta a
+      \\ & \quad {}
+      + \frac{1}{2} h_{\text{death}}(a^{i - 1 / 2})
+      \left[
+        \left(P_{\mathrm{E}}^i
+          + P_{\mathrm{I}}^i
+          + P_{\mathrm{C}}^i
+        \right)
+        - \frac{S_{\text{death}}(a^i)}{S_{\text{death}}(a^{i - 1})}
+        \left(
+          P_{\mathrm{E}}^{i - 1}
+          + P_{\mathrm{I}}^{i - 1}
+          + P_{\mathrm{C}}^{i - 1}
+        \right)
+      \right].
+    \end{split}
+  \end{align}
+\end{subequations}
+%
+\textbf{TODO: All the terms after the top line should cancel each
+  other. From \eqref{eq:discrete_total}, we have the Crank--Nicholson
+  approximation of the survival in terms of the hazard}
+\begin{displaymath}
+  S_{\text{death}}(a^i)
+  = \prod_{j = 1}^i \frac{
+    1 - h_{\text{death}}(a^{j - 1 / 2}) \Delta a / 2
+  }{
+    1 + h_{\text{death}}(a^{j - 1 / 2}) \Delta a / 2
+  }.
+\end{displaymath}
+\textbf{This gives}
+\begin{displaymath}
+  \begin{split}
+    \frac{
+      S_{\text{death}}(a^{i - 1}) - S_{\text{death}}(a^i)
+    }{
+      S_{\text{death}}(a^{i - 1})
+    }
+    &= \frac{
+      h_{\text{death}}(a^{i - 1 / 2}) \Delta a
+    }{
+      1 + h_{\text{death}}(a^{i - 1 / 2}) \Delta a / 2
+    }.
+  \end{split}
+\end{displaymath}
+%
+
+Then
+\begin{equation}
+  \frac{P^i - P^{i - 1}}{\Delta a}
+  = - h_{\text{death}}(a^{i - 1 / 2})
+  \frac{P^i + P^{i - 1}}{2},
+\end{equation}
+so that
+\begin{equation}
+  \label{eq:discrete_total}
+  \begin{split}
+    P^i
+    &= \frac{
+      1 - h_{\text{death}}(a^{i - 1 / 2}) \Delta a / 2
+    }{
+      1 + h_{\text{death}}(a^{i - 1 / 2}) \Delta a / 2
+    } P^{i - 1}
+    \\
+    &= \prod_{j = 1}^i \frac{
+      1 - h_{\text{death}}(a^{j - 1 / 2}) \Delta a / 2
+    }{
+      1 + h_{\text{death}}(a^{j - 1 / 2}) \Delta a / 2
+    }
+    \\
+    &= S_{\text{death}}(a^i).
+  \end{split}
 \end{equation}
 
-That is,
+The the constant-time birth hazard
+(i.e.~$c_{\mathrm{v}} = 0$)
+\begin{equation}
+  h_{\text{birth}}(a) =
+  \begin{cases}
+    0 & \text{if $a < 4$}, \\
+    \mu & \text{if $a \geq 4$},
+  \end{cases}
+\end{equation}
+with
+\begin{equation}
+  \mu =
+  \left[
+    \sum_{a^i \geq 4}
+    S_{\text{death}}(a^i)
+    \Delta a
+  \right]^{-1},
+\end{equation}
+gives
+\begin{equation}
+  \sum_{i = 0}^{I - 1}
+  h_{\text{birth}}(a^i) P^i
+  \Delta a
+  = \sum_{i = 0}^{I - 1}
+  h_{\text{birth}}(a^i) S_{\text{death}}(a^i)
+  \Delta a
+  = 1 = P^0,
+\end{equation}
+so that the population size is constant, i.e.~zero growth rate.
+
+
+\section{Implementation}
+
+The numerical scheme can be written as
 \begin{subequations}
 \begin{align}
-  P_{\mathrm{M}}^0 &= \phi,
+  P_{\mathrm{M}}^0 &= \phi_{\text{maternal immunity}},
   \displaybreak[0]\\
   \begin{split}
     - \left\{1
@@ -550,7 +878,7 @@ That is,
     &= 0,
   \end{split}
   \displaybreak[0]\\
-  P_{\mathrm{S}}^0 &= 1 - \phi,
+  P_{\mathrm{S}}^0 &= 1 - \phi_{\text{maternal immunity}},
   \displaybreak[0]\\
   \begin{split}
     - h_{\text{waning}}(a^{i - 1 / 2}) \frac{\Delta a}{2}
@@ -939,7 +1267,7 @@ with
   \begin{align}
     \vec{b}_{\mathrm{M}} &=
     \begin{pmatrix}
-      \phi \\
+      \phi_{\text{maternal immunity}} \\
       0 \\
       \vdots \\
       0
@@ -947,7 +1275,7 @@ with
     \displaybreak[0]\\
     \vec{b}_{\mathrm{S}} &=
     \begin{pmatrix}
-      1 - \phi \\
+      1 - \phi_{\text{maternal immunity}} \\
       0 \\
       \vdots \\
       0
@@ -977,404 +1305,8 @@ Under these conditions, the entries of $\vec{x}$ are non-negative.
 
 \textbf{TODO: M matrix blah blah blah...}
 
-\textbf{TODO: Describe iterative scheme for finding $\phi$.}
-
-\subsection{Analysis}
-
-The differences of the sums \eqref{eq:sums_over_r} are
-\begin{subequations}
-  \begin{align}
-    \begin{split}
-      \frac{P_{\mathrm{E}}^i - P_{\mathrm{E}}^{i - 1}}{\Delta a}
-      &=
-      \sum_{j = 0}^i S_{\text{progression}}(r^j)
-      \frac{S_{\text{death}}(a^i)}{S_{\text{death}}(a^{i - j})}
-      p_{\mathrm{E}}^{i - j}
-      \\ & \quad {}
-      - \sum_{j = 0}^{i - 1} S_{\text{progression}}(r^j)
-      \frac{S_{\text{death}}(a^{i - 1})}{S_{\text{death}}(a^{i - 1 - j})}
-      p_{\mathrm{E}}^{i - 1 - j}
-      \\
-      &= p_{\mathrm{E}}^i
-      \\ & \quad {}
-      + \sum_{j = 1}^i S_{\text{progression}}(r^j)
-      \frac{S_{\text{death}}(a^i)}{S_{\text{death}}(a^{i - j})}
-      p_{\mathrm{E}}^{i - j}
-      \\ & \quad {}
-      - \sum_{j = 1}^i S_{\text{progression}}(r^{j - 1})
-      \frac{S_{\text{death}}(a^{i - 1})}{S_{\text{death}}(a^{i - j})}
-      p_{\mathrm{E}}^{i - j}
-      \\
-      &= p_{\mathrm{E}}^i
-      \\ & \quad {}
-      - \sum_{j = 1}^i
-      \left[
-        S_{\text{progression}}(r^{j - 1})
-        - S_{\text{progression}}(r^j)
-      \right]
-      \frac{S_{\text{death}}(a^i)}{S_{\text{death}}(a^{i - j})}
-      p_{\mathrm{E}}^{i - j}
-      \\ & \quad {}
-      - \sum_{j = 1}^i S_{\text{progression}}(r^{j - 1})
-      \frac{S_{\text{death}}(a^{i - 1}) - S_{\text{death}}(a^i)}
-      {S_{\text{death}}(a^{i - j})}
-      p_{\mathrm{E}}^{i - j}
-      \\
-      &= p_{\mathrm{E}}^i
-      \\ & \quad {}
-      - \sum_{j = 1}^i p_{\text{progression}}(r^j)
-      \frac{S_{\text{death}}(a^i)}{S_{\text{death}}(a^{i - j})}
-      p_{\mathrm{E}}^{i - j} \Delta a
-      \\ & \quad {}
-      - \frac{S_{\text{death}}(a^{i - 1}) - S_{\text{death}}(a^i)}
-      {S_{\text{death}}(a^{i - 1})}
-      \sum_{j = 0}^{i - 1} S_{\text{progression}}(r^j)
-      \frac{S_{\text{death}}(a^{i - 1})}{S_{\text{death}}(a^{i - 1 - j})}
-      p_{\mathrm{E}}^{i - 1 - j},
-      \\
-      &= p_{\mathrm{E}}^i
-      \\ & \quad {}
-      - \sum_{j = 1}^i p_{\text{progression}}(r^j)
-      \frac{S_{\text{death}}(a^i)}{S_{\text{death}}(a^{i - j})}
-      p_{\mathrm{E}}^{i - j} \Delta a
-      \\ & \quad {}
-      - \frac{S_{\text{death}}(a^{i - 1}) - S_{\text{death}}(a^i)}
-      {S_{\text{death}}(a^{i - 1})}
-      \frac{P_{\mathrm{E}}^{i - 1}}{\Delta a},
-    \end{split}
-    \displaybreak[0]\\
-    \begin{split}
-      \frac{P_{\mathrm{I}}^i - P_{\mathrm{I}}^{i - 1}}{\Delta a}
-      &=
-      \sum_{j = 0}^i S_{\text{recovery}}(r^j)
-      \frac{S_{\text{death}}(a^i)}{S_{\text{death}}(a^{i - j})}
-      p_{\mathrm{I}}^{i - j}
-      \\ & \quad {}
-      - \sum_{j = 0}^{i - 1} S_{\text{recovery}}(r^j)
-      \frac{S_{\text{death}}(a^{i - 1})}{S_{\text{death}}(a^{i - 1 - j})}
-      p_{\mathrm{I}}^{i - 1 - j}
-      \\
-      &= p_{\mathrm{I}}^i
-      \\ & \quad {}
-      + \sum_{j = 1}^i S_{\text{recovery}}(r^j)
-      \frac{S_{\text{death}}(a^i)}{S_{\text{death}}(a^{i - j})}
-      p_{\mathrm{I}}^{i - j}
-      \\ & \quad {}
-      - \sum_{j = 1}^i S_{\text{recovery}}(r^{j - 1})
-      \frac{S_{\text{death}}(a^{i - 1})}{S_{\text{death}}(a^{i - j})}
-      p_{\mathrm{I}}^{i - j}
-      \\
-      &= p_{\mathrm{I}}^i
-      \\ & \quad {}
-      - \sum_{j = 1}^i
-      \left[
-        S_{\text{recovery}}(r^{j - 1})
-        - S_{\text{recovery}}(r^j)
-      \right]
-      \frac{S_{\text{death}}(a^i)}{S_{\text{death}}(a^{i - j})}
-      p_{\mathrm{I}}^{i - j}
-      \\ & \quad {}
-      - \sum_{j = 1}^i S_{\text{recovery}}(r^{j - 1})
-      \frac{S_{\text{death}}(a^{i - 1}) - S_{\text{death}}(a^i)}
-      {S_{\text{death}}(a^{i - j})}
-      p_{\mathrm{I}}^{i - j}
-      \\
-      &= p_{\mathrm{I}}^i
-      \\ & \quad {}
-      - \sum_{j = 1}^i p_{\text{recovery}}(r^j)
-      \frac{S_{\text{death}}(a^i)}{S_{\text{death}}(a^{i - j})}
-      p_{\mathrm{I}}^{i - j} \Delta a
-      \\ & \quad {}
-      - \frac{S_{\text{death}}(a^{i - 1}) - S_{\text{death}}(a^i)}
-      {S_{\text{death}}(a^i)}
-      \sum_{j = 1}^i S_{\text{recovery}}(r^{j - 1})
-      \frac{S_{\text{death}}(a^i)}{S_{\text{death}}(a^{i - j})}
-      p_{\mathrm{I}}^{i - j}
-      \\
-      &= p_{\mathrm{I}}^i
-      \\ & \quad {}
-      - \sum_{j = 1}^i p_{\text{recovery}}(r^j)
-      \frac{S_{\text{death}}(a^i)}{S_{\text{death}}(a^{i - j})}
-      p_{\mathrm{I}}^{i - j} \Delta a
-      \\ & \quad {}
-      - \frac{S_{\text{death}}(a^{i - 1}) - S_{\text{death}}(a^i)}
-      {S_{\text{death}}(a^{i - 1})}
-      \frac{P_{\mathrm{I}}^{i - 1}}{\Delta a},
-    \end{split}
-    \displaybreak[0]\\
-    \begin{split}
-      \frac{P_{\mathrm{C}}^i - P_{\mathrm{C}}^{i - 1}}{\Delta a}
-      &=
-      \sum_{j = 0}^i S_{\text{chronic recovery}}(r^j)
-      \frac{S_{\text{death}}(a^i)}{S_{\text{death}}(a^{i - j})}
-      p_{\mathrm{C}}^{i - j}
-      \\ & \quad {}
-      - \sum_{j = 0}^{i - 1} S_{\text{chronic recovery}}(r^j)
-      \frac{S_{\text{death}}(a^{i - 1})}{S_{\text{death}}(a^{i - 1 - j})}
-      p_{\mathrm{C}}^{i - 1 - j}
-      \\
-      &= p_{\mathrm{C}}^i
-      \\ & \quad {}
-      + \sum_{j = 1}^i S_{\text{chronic recovery}}(r^j)
-      \frac{S_{\text{death}}(a^i)}{S_{\text{death}}(a^{i - j})}
-      p_{\mathrm{C}}^{i - j}
-      \\ & \quad {}
-      - \sum_{j = 1}^i S_{\text{chronic recovery}}(r^{j - 1})
-      \frac{S_{\text{death}}(a^{i - 1})}{S_{\text{death}}(a^{i - j})}
-      p_{\mathrm{C}}^{i - j}
-      \\
-      &= p_{\mathrm{C}}^i
-      \\ & \quad {}
-      - \sum_{j = 1}^i
-      \left[
-        S_{\text{chronic recovery}}(r^{j - 1})
-        - S_{\text{chronic recovery}}(r^j)
-      \right]
-      \frac{S_{\text{death}}(a^i)}{S_{\text{death}}(a^{i - j})}
-      p_{\mathrm{C}}^{i - j}
-      \\ & \quad {}
-      - \sum_{j = 1}^i S_{\text{chronic recovery}}(r^{j - 1})
-      \frac{S_{\text{death}}(a^{i - 1}) - S_{\text{death}}(a^i)}
-      {S_{\text{death}}(a^{i - j})}
-      p_{\mathrm{C}}^{i - j}
-      \\
-      &= p_{\mathrm{C}}^i
-      \\ & \quad {}
-      - \sum_{j = 1}^i p_{\text{chronic recovery}}(r^j)
-      \frac{S_{\text{death}}(a^i)}{S_{\text{death}}(a^{i - j})}
-      p_{\mathrm{C}}^{i - j} \Delta a
-      \\ & \quad {}
-      - \frac{S_{\text{death}}(a^{i - 1}) - S_{\text{death}}(a^i)}
-      {S_{\text{death}}(a^i)}
-      \sum_{j = 1}^i S_{\text{chronic recovery}}(r^{j - 1})
-      \frac{S_{\text{death}}(a^i)}{S_{\text{death}}(a^{i - j})}
-      p_{\mathrm{C}}^{i - j}
-      \\
-      &= p_{\mathrm{C}}^i
-      \\ & \quad {}
-      - \sum_{j = 1}^i p_{\text{chronic recovery}}(r^j)
-      \frac{S_{\text{death}}(a^i)}{S_{\text{death}}(a^{i - j})}
-      p_{\mathrm{C}}^{i - j} \Delta a
-      \\ & \quad {}
-      - \frac{S_{\text{death}}(a^{i - 1}) - S_{\text{death}}(a^i)}
-      {S_{\text{death}}(a^{i - 1})}
-      \frac{P_{\mathrm{C}}^{i - 1}}{\Delta a}.
-    \end{split}
-  \end{align}
-\end{subequations}
-%
-\textbf{TODO: These should look like
-  \eqref{eq:integrals_derivatives}. In particular, the last sum in
-  each should be transformed to something like}
-$$h_{\text{death}}(a^{i - 1 / 2})
-\frac{P_X(a^i) + P_X(a^{i - 1})}{2}.$$
-%
-
-Then
-\begin{subequations}
-  \begin{align}
-    P^0 &= 1,
-    \displaybreak[0]\\
-    \begin{split}
-      \frac{P^i - P^{i - 1}}{\Delta a}
-      &= - h_{\text{death}}(a^{i - 1 / 2})
-      \frac{P^i + P^{i - 1}}{2}
-      \\ & \quad {}
-      % or start sum in (14h) at j = 1?
-      + p_{\text{progression}}(0) p_{\mathrm{E}}^i \Delta a
-      % or start sums in (14j) & (14l) at j = 1?
-      + p_{\text{recovery}}(0) p_{\mathrm{I}}^i \Delta a
-      % or start sum in (14l) at j = 1?
-      + p_{\text{chronic recovery}}(0) p_{\mathrm{C}}^i \Delta a
-      \\ & \quad {}
-      + h_{\text{death}}(a^{i - 1 / 2})
-      \left(
-        \frac{P_{\mathrm{E}}^i + P_{\mathrm{E}}^{i - 1}}{2}
-        + \frac{P_{\mathrm{I}}^i + P_{\mathrm{I}}^{i - 1}}{2}
-        + \frac{P_{\mathrm{C}}^i + P_{\mathrm{C}}^{i - 1}}{2}
-      \right)
-      \\ & \quad {}
-      - \frac{S_{\text{death}}(a^{i - 1}) - S_{\text{death}}(a^i)}
-      {S_{\text{death}}(a^{i - 1})}
-      \left(P_{\mathrm{E}}^{i - 1} + P_{\mathrm{I}}^{i - 1}
-        + P_{\mathrm{C}}^{i - 1}\right)
-      \frac{1}{\Delta a}
-      \\
-      &= - h_{\text{death}}(a^{i - 1 / 2})
-      \frac{P^i + P^{i - 1}}{2}
-      \\ & \quad {}
-      % or start sum in (14h) at j = 1?
-      + p_{\text{progression}}(0) p_{\mathrm{E}}^i \Delta a
-      % or start sums in (14j) & (14l) at j = 1?
-      + p_{\text{recovery}}(0) p_{\mathrm{I}}^i \Delta a
-      % or start sum in (14l) at j = 1?
-      + p_{\text{chronic recovery}}(0) p_{\mathrm{C}}^i \Delta a
-      \\ & \quad {}
-      + h_{\text{death}}(a^{i - 1 / 2})
-      \left(
-        \frac{P_{\mathrm{E}}^i + P_{\mathrm{E}}^{i - 1}}{2}
-        + \frac{P_{\mathrm{I}}^i + P_{\mathrm{I}}^{i - 1}}{2}
-        + \frac{P_{\mathrm{C}}^i + P_{\mathrm{C}}^{i - 1}}{2}
-      \right)
-      \\ & \quad {}
-      - \frac{h_{\text{death}}(a^{i - 1 / 2})}
-      {1 + h_{\text{death}}(a^{i - 1 / 2}) \Delta a / 2}
-      \left(
-        P_{\mathrm{E}}^{i - 1} + P_{\mathrm{I}}^{i - 1}
-        + P_{\mathrm{C}}^{i - 1}
-      \right)
-      \\
-      &= - h_{\text{death}}(a^{i - 1 / 2})
-      \frac{P^i + P^{i - 1}}{2}
-      \\ & \quad {}
-      % or start sum in (14h) at j = 1?
-      + p_{\text{progression}}(0) p_{\mathrm{E}}^i \Delta a
-      % or start sums in (14j) & (14l) at j = 1?
-      + p_{\text{recovery}}(0) p_{\mathrm{I}}^i \Delta a
-      % or start sum in (14l) at j = 1?
-      + p_{\text{chronic recovery}}(0) p_{\mathrm{C}}^i \Delta a
-      \\ & \quad {}
-      + \frac{1}{2} h_{\text{death}}(a^{i - 1 / 2})
-      \left[
-        \left(P_{\mathrm{E}}^i
-          + P_{\mathrm{I}}^i
-          + P_{\mathrm{C}}^i
-        \right)
-        - \frac{1 - h_{\text{death}}(a^{i - 1 / 2}) \Delta a / 2}
-        {1 + h_{\text{death}}(a^{i - 1 / 2}) \Delta a / 2}
-        \left(
-          P_{\mathrm{E}}^{i - 1}
-          + P_{\mathrm{I}}^{i - 1}
-          + P_{\mathrm{C}}^{i - 1}
-        \right)
-      \right]
-      \\
-      &= - h_{\text{death}}(a^{i - 1 / 2})
-      \frac{P^i + P^{i - 1}}{2}
-      \\ & \quad {}
-      % or start sum in (14h) at j = 1?
-      + p_{\text{progression}}(0) p_{\mathrm{E}}^i \Delta a
-      % or start sums in (14j) & (14l) at j = 1?
-      + p_{\text{recovery}}(0) p_{\mathrm{I}}^i \Delta a
-      % or start sum in (14l) at j = 1?
-      + p_{\text{chronic recovery}}(0) p_{\mathrm{C}}^i \Delta a
-      \\ & \quad {}
-      + \frac{1}{2} h_{\text{death}}(a^{i - 1 / 2})
-      \left[
-        \left(P_{\mathrm{E}}^i
-          + P_{\mathrm{I}}^i
-          + P_{\mathrm{C}}^i
-        \right)
-        - \frac{S_{\text{death}}(a^i)}{S_{\text{death}}(a^{i - 1})}
-        \left(
-          P_{\mathrm{E}}^{i - 1}
-          + P_{\mathrm{I}}^{i - 1}
-          + P_{\mathrm{C}}^{i - 1}
-        \right)
-      \right].
-    \end{split}
-  \end{align}
-\end{subequations}
-%
-\textbf{TODO: All the terms after the top line should cancel each
-  other. From \eqref{eq:discrete_total}, we have the Crank--Nicholson
-  approximation of the survival in terms of the hazard}
-\begin{displaymath}
-  S_{\text{death}}(a^i)
-  = \prod_{j = 1}^i \frac{
-    1 - h_{\text{death}}(a^{j - 1 / 2}) \Delta a / 2
-  }{
-    1 + h_{\text{death}}(a^{j - 1 / 2}) \Delta a / 2
-  }.
-\end{displaymath}
-\textbf{This gives}
-\begin{displaymath}
-  \begin{split}
-    \frac{
-      S_{\text{death}}(a^{i - 1}) - S_{\text{death}}(a^i)
-    }{
-      S_{\text{death}}(a^{i - 1})
-    }
-    &= \frac{
-      h_{\text{death}}(a^{i - 1 / 2}) \Delta a
-    }{
-      1 + h_{\text{death}}(a^{i - 1 / 2}) \Delta a / 2
-    }.
-  \end{split}
-\end{displaymath}
-\textbf{We need}
-\begin{displaymath}
-  \begin{split}
-    \frac{
-      S_{\text{death}}(a^{i - 1}) - S_{\text{death}}(a^i)
-    }{
-      S_{\text{death}}(a^{i - 1})
-    }
-    &= \frac{
-      h_{\text{death}}(a^{i - 1 / 2}) \Delta a
-    }{
-      1 + h_{\text{death}}(a^{i - 1 / 2}) \Delta a / 2
-    }.
-  \end{split}
-\end{displaymath}
-%
-
-Then
-\begin{equation}
-  \frac{P^i - P^{i - 1}}{\Delta a}
-  = - h_{\text{death}}(a^{i - 1 / 2})
-  \frac{P^i + P^{i - 1}}{2},
-\end{equation}
-so that
-\begin{equation}
-  \label{eq:discrete_total}
-  \begin{split}
-    P^i
-    &= \frac{
-      1 - h_{\text{death}}(a^{i - 1 / 2}) \Delta a / 2
-    }{
-      1 + h_{\text{death}}(a^{i - 1 / 2}) \Delta a / 2
-    } P^{i - 1}
-    \\
-    &= \prod_{j = 1}^i \frac{
-      1 - h_{\text{death}}(a^{j - 1 / 2}) \Delta a / 2
-    }{
-      1 + h_{\text{death}}(a^{j - 1 / 2}) \Delta a / 2
-    }
-    \\
-    &= S_{\text{death}}(a^i).
-  \end{split}
-\end{equation}
-
-The the constant-time birth hazard
-(i.e.~$c_{\mathrm{v}} = 0$)
-\begin{equation}
-  h_{\text{birth}}(a) =
-  \begin{cases}
-    0 & \text{if $a < 4$}, \\
-    \mu & \text{if $a \geq 4$},
-  \end{cases}
-\end{equation}
-with
-\begin{equation}
-  \mu =
-  \left[
-    \sum_{a^i \geq 4}
-    S_{\text{death}}(a^i)
-    \Delta a
-  \right]^{-1},
-\end{equation}
-gives
-\begin{equation}
-  \sum_{i = 0}^{I - 1}
-  h_{\text{birth}}(a^i) P^i
-  \Delta a
-  = \sum_{i = 0}^{I - 1}
-  h_{\text{birth}}(a^i) S_{\text{death}}(a^i)
-  \Delta a
-  = 1 = P^0,
-\end{equation}
-so that the population size is constant, i.e.~zero growth rate.
+\textbf{TODO: Describe iterative scheme for finding
+  $h_{\text{infection}}$ and $\phi_{\text{maternal immunity}}$.}
 
 
 \bibliography{journal_abbreviations,math_epi}
