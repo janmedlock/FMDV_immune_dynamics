@@ -673,6 +673,98 @@ and
     Y_{\mathrm{C}} &= \text{chronic recovery}.
   \end{split}
 \end{equation}
+%
+\textbf{TODO: From \eqref{eq:discrete_total}, we have the
+  Crank--Nicholson approximation of the survival in terms of the
+  hazard}
+\begin{displaymath}
+  S_{\text{death}}(a^i)
+  = \prod_{j = 1}^i \frac{
+    1 - h_{\text{death}}(a^{j - 1 / 2}) \Delta a / 2
+  }{
+    1 + h_{\text{death}}(a^{j - 1 / 2}) \Delta a / 2
+  }.
+\end{displaymath}
+\textbf{This gives}
+\begin{displaymath}
+  \begin{split}
+    \frac{
+      S_{\text{death}}(a^{i - 1}) - S_{\text{death}}(a^i)
+    }{
+      S_{\text{death}}(a^{i - 1})
+    }
+    &= \frac{
+      h_{\text{death}}(a^{i - 1 / 2}) \Delta a
+    }{
+      1 + h_{\text{death}}(a^{i - 1 / 2}) \Delta a / 2
+    }.
+  \end{split}
+\end{displaymath}
+%
+Continuing,
+\begin{equation}
+  \begin{split}
+    \frac{P_X^i - P_X^{i - 1}}{\Delta a}
+    &= p_X^i
+    - \sum_{j = 0}^i p_{Y_X}(r^j)
+    \frac{S_{\text{death}}(a^i)}{S_{\text{death}}(a^{i - j})}
+    p_X^{i - j} \Delta a
+    - h_{\text{death}}(a^{i - 1 / 2})
+    \frac{P_X^i + P_X^{i - 1}}{2}
+    \\ & \quad {}
+    + p_{Y_X}(0) p_X^i \Delta a
+    - \frac{S_{\text{death}}(a^{i - 1}) - S_{\text{death}}(a^i)}
+    {S_{\text{death}}(a^{i - 1})}
+    \frac{P_X^{i - 1}}{\Delta a}
+    + h_{\text{death}}(a^{i - 1 / 2})
+    \frac{P_X^i + P_X^{i - 1}}{2}
+    \\
+    &= p_X^i
+    - \sum_{j = 0}^i p_{Y_X}(r^j)
+    \frac{S_{\text{death}}(a^i)}{S_{\text{death}}(a^{i - j})}
+    p_X^{i - j} \Delta a
+    - h_{\text{death}}(a^{i - 1 / 2})
+    \frac{P_X^i + P_X^{i - 1}}{2}
+    \\ & \quad {}
+    + p_{Y_X}(0) p_X^i \Delta a
+    - \frac{h_{\text{death}}(a^{i - 1 / 2})}
+    {1 + h_{\text{death}}(a^{i - 1 / 2}) \Delta a / 2}
+    P_X^{i - 1}
+    + h_{\text{death}}(a^{i - 1 / 2})
+    \frac{P_X^i + P_X^{i - 1}}{2}
+    \\
+    &= p_X^i
+    - \sum_{j = 0}^i p_{Y_X}(r^j)
+    \frac{S_{\text{death}}(a^i)}{S_{\text{death}}(a^{i - j})}
+    p_X^{i - j} \Delta a
+    - h_{\text{death}}(a^{i - 1 / 2})
+    \frac{P_X^i + P_X^{i - 1}}{2}
+    \\ & \quad {}
+    + p_{Y_X}(0) p_X^i \Delta a
+    + \frac{1}{2} h_{\text{death}}(a^{i - 1 / 2})
+    \left[
+      P_X^i
+      - \frac{1 - h_{\text{death}}(a^{i - 1 / 2}) \Delta a / 2}
+      {1 + h_{\text{death}}(a^{i - 1 / 2}) \Delta a / 2}
+      P_X^{i - 1}
+    \right]
+    \\
+    &= p_X^i
+    - \sum_{j = 0}^i p_{Y_X}(r^j)
+    \frac{S_{\text{death}}(a^i)}{S_{\text{death}}(a^{i - j})}
+    p_X^{i - j} \Delta a
+    - h_{\text{death}}(a^{i - 1 / 2})
+    \frac{P_X^i + P_X^{i - 1}}{2}
+    \\ & \quad {}
+    + p_{Y_X}(0) p_X^i \Delta a
+    + \frac{1}{2} h_{\text{death}}(a^{i - 1 / 2})
+    \left[
+      P_X^i
+      - \frac{S_{\text{death}}(a^i)}{S_{\text{death}}(a^{i - 1})}
+        P_X^{i - 1}
+    \right].
+  \end{split}
+\end{equation}
 
 Then
 \begin{subequations}
@@ -681,78 +773,6 @@ Then
     \displaybreak[0]\\
     \begin{split}
       \frac{P^i - P^{i - 1}}{\Delta a}
-      &= - h_{\text{death}}(a^{i - 1 / 2})
-      \frac{P^i + P^{i - 1}}{2}
-      \\ & \quad {}
-      % or start sum in (14h) at j = 1?
-      + p_{\text{progression}}(0) p_{\mathrm{E}}^i \Delta a
-      % or start sums in (14j) & (14l) at j = 1?
-      + p_{\text{recovery}}(0) p_{\mathrm{I}}^i \Delta a
-      % or start sum in (14l) at j = 1?
-      + p_{\text{chronic recovery}}(0) p_{\mathrm{C}}^i \Delta a
-      \\ & \quad {}
-      - \frac{S_{\text{death}}(a^{i - 1}) - S_{\text{death}}(a^i)}
-      {S_{\text{death}}(a^{i - 1})}
-      \left(P_{\mathrm{E}}^{i - 1} + P_{\mathrm{I}}^{i - 1}
-        + P_{\mathrm{C}}^{i - 1}\right)
-      \frac{1}{\Delta a}
-      \\ & \quad {}
-      + h_{\text{death}}(a^{i - 1 / 2})
-      \left(
-        \frac{P_{\mathrm{E}}^i + P_{\mathrm{E}}^{i - 1}}{2}
-        + \frac{P_{\mathrm{I}}^i + P_{\mathrm{I}}^{i - 1}}{2}
-        + \frac{P_{\mathrm{C}}^i + P_{\mathrm{C}}^{i - 1}}{2}
-      \right)
-      \\
-      &= - h_{\text{death}}(a^{i - 1 / 2})
-      \frac{P^i + P^{i - 1}}{2}
-      \\ & \quad {}
-      % or start sum in (14h) at j = 1?
-      + p_{\text{progression}}(0) p_{\mathrm{E}}^i \Delta a
-      % or start sums in (14j) & (14l) at j = 1?
-      + p_{\text{recovery}}(0) p_{\mathrm{I}}^i \Delta a
-      % or start sum in (14l) at j = 1?
-      + p_{\text{chronic recovery}}(0) p_{\mathrm{C}}^i \Delta a
-      \\ & \quad {}
-      - \frac{h_{\text{death}}(a^{i - 1 / 2})}
-      {1 + h_{\text{death}}(a^{i - 1 / 2}) \Delta a / 2}
-      \left(
-        P_{\mathrm{E}}^{i - 1} + P_{\mathrm{I}}^{i - 1}
-        + P_{\mathrm{C}}^{i - 1}
-      \right)
-      \\ & \quad {}
-      + h_{\text{death}}(a^{i - 1 / 2})
-      \left(
-        \frac{P_{\mathrm{E}}^i + P_{\mathrm{E}}^{i - 1}}{2}
-        + \frac{P_{\mathrm{I}}^i + P_{\mathrm{I}}^{i - 1}}{2}
-        + \frac{P_{\mathrm{C}}^i + P_{\mathrm{C}}^{i - 1}}{2}
-      \right)
-      \\
-      &= - h_{\text{death}}(a^{i - 1 / 2})
-      \frac{P^i + P^{i - 1}}{2}
-      \\ & \quad {}
-      % or start sum in (14h) at j = 1?
-      + p_{\text{progression}}(0) p_{\mathrm{E}}^i \Delta a
-      % or start sums in (14j) & (14l) at j = 1?
-      + p_{\text{recovery}}(0) p_{\mathrm{I}}^i \Delta a
-      % or start sum in (14l) at j = 1?
-      + p_{\text{chronic recovery}}(0) p_{\mathrm{C}}^i \Delta a
-      \\ & \quad {}
-      + \frac{1}{2} h_{\text{death}}(a^{i - 1 / 2})
-      \left[
-        \left(P_{\mathrm{E}}^i
-          + P_{\mathrm{I}}^i
-          + P_{\mathrm{C}}^i
-        \right)
-        - \frac{1 - h_{\text{death}}(a^{i - 1 / 2}) \Delta a / 2}
-        {1 + h_{\text{death}}(a^{i - 1 / 2}) \Delta a / 2}
-        \left(
-          P_{\mathrm{E}}^{i - 1}
-          + P_{\mathrm{I}}^{i - 1}
-          + P_{\mathrm{C}}^{i - 1}
-        \right)
-      \right]
-      \\
       &= - h_{\text{death}}(a^{i - 1 / 2})
       \frac{P^i + P^{i - 1}}{2}
       \\ & \quad {}
@@ -779,34 +799,8 @@ Then
     \end{split}
   \end{align}
 \end{subequations}
-%
 \textbf{TODO: All the terms after the top line should cancel each
-  other. From \eqref{eq:discrete_total}, we have the Crank--Nicholson
-  approximation of the survival in terms of the hazard}
-\begin{displaymath}
-  S_{\text{death}}(a^i)
-  = \prod_{j = 1}^i \frac{
-    1 - h_{\text{death}}(a^{j - 1 / 2}) \Delta a / 2
-  }{
-    1 + h_{\text{death}}(a^{j - 1 / 2}) \Delta a / 2
-  }.
-\end{displaymath}
-\textbf{This gives}
-\begin{displaymath}
-  \begin{split}
-    \frac{
-      S_{\text{death}}(a^{i - 1}) - S_{\text{death}}(a^i)
-    }{
-      S_{\text{death}}(a^{i - 1})
-    }
-    &= \frac{
-      h_{\text{death}}(a^{i - 1 / 2}) \Delta a
-    }{
-      1 + h_{\text{death}}(a^{i - 1 / 2}) \Delta a / 2
-    }.
-  \end{split}
-\end{displaymath}
-%
+  other.}
 
 Then
 \begin{equation}
