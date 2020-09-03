@@ -27,9 +27,17 @@
 
 \section{Model}
 
-For given hazard of infection, $h_{\text{infection}}$,
-and fraction of newborns with maternal immunity,
-$\phi_{\text{maternal immunity}}$, we will find the equilibrium
+We simplified the larger problem by using
+\begin{itemize}
+\item the birth hazard that is constant in time, and
+\item the hazard for antibody gain that is constant in time.
+\end{itemize}
+We found the equilibrium of this problem by iteratively solving for
+the fixed point of the hazard of infection, $h_{\text{infection}}$,
+and the fraction of newborns with maternal immunity,
+$\phi_{\text{maternal immunity}}$. With given values of
+$h_{\text{infection}}$ and $\phi_{\text{maternal immunity}}$, we
+solved a linear-algebra problem for the equilibrium
 probability densities as a function of model compartment, age, and
 duration in the current compartment
 (\autoref{model_diagram}), i.e.
@@ -55,6 +63,9 @@ duration in the current compartment
   \end{align}
 \end{subequations}
 for $a \geq 0$ and $0 \leq r \leq a$.
+These $P_X(a)$ and $p_X(a, r)$ were then used to iteratively update
+$h_{\text{infection}}$ and $\phi_{\text{maternal immunity}}$. Finally,
+the equilibrium densities $P_X(a)$ were found at this fixed point.
 
 \begin{figure}
   \begin{center}
@@ -64,18 +75,8 @@ for $a \geq 0$ and $0 \leq r \leq a$.
   \label{model_diagram}
 \end{figure}
 
-We will use these $P_X(a)$ and $p_X(a, r)$ to iteratively find the
-fixed point for $h_{\text{infection}}$ and
-$\phi_{\text{maternal immunity}}$ and, finally, the equilibrium
-densities $P_X(a)$ at this fixed point.
-
-We will assume that
-\begin{itemize}
-\item the birth hazard is constant in time, and
-\item the hazard for antibody gain is constant in time.
-\end{itemize}
-
-For $a > 0$ and $0 < r \leq a$, the probability densities satisfy
+For $a > 0$ and $0 < r \leq a$, the equilibrium probability densities
+satisfy
 \begin{subequations}
   \begin{align}
     P_{\mathrm{M}}(0)
@@ -595,7 +596,6 @@ The differences of the sums \eqref{eq:sums_over_r} are
     p_X^{i - 1 - j}
     \\
     &= p_X^i
-    \\ & \quad {}
     + \sum_{j = 1}^i S_{Y_X}(r^j)
     \frac{S_{\text{death}}(a^i)}{S_{\text{death}}(a^{i - j})}
     p_X^{i - j}
@@ -605,7 +605,6 @@ The differences of the sums \eqref{eq:sums_over_r} are
     p_X^{i - j}
     \\
     &= p_X^i
-    \\ & \quad {}
     - \sum_{j = 1}^i
     \left[
       S_{Y_X}(r^{j - 1})
@@ -620,7 +619,6 @@ The differences of the sums \eqref{eq:sums_over_r} are
     p_X^{i - j}
     \\
     &= p_X^i
-    \\ & \quad {}
     - \sum_{j = 1}^i p_{Y_X}(r^j)
     \frac{S_{\text{death}}(a^i)}{S_{\text{death}}(a^{i - j})}
     p_X^{i - j} \Delta a
@@ -629,14 +627,24 @@ The differences of the sums \eqref{eq:sums_over_r} are
     {S_{\text{death}}(a^{i - 1})}
     \sum_{j = 0}^{i - 1} S_{Y_X}(r^j)
     \frac{S_{\text{death}}(a^{i - 1})}{S_{\text{death}}(a^{i - 1 - j})}
-    p_X^{i - 1 - j},
+    p_X^{i - 1 - j}
     \\
     &= p_X^i
-    \\ & \quad {}
-    - \sum_{j = 1}^i p_{Y_X}(r^j)
+    - \sum_{j = 0}^i p_{Y_X}(r^j)
     \frac{S_{\text{death}}(a^i)}{S_{\text{death}}(a^{i - j})}
     p_X^{i - j} \Delta a
     \\ & \quad {}
+    + p_{Y_X}(0) p_X^i \Delta a
+    - \frac{S_{\text{death}}(a^{i - 1}) - S_{\text{death}}(a^i)}
+    {S_{\text{death}}(a^{i - 1})}
+    \frac{P_X^{i - 1}}{\Delta a}
+    \\
+    &= p_X^i
+    - \sum_{j = 0}^i p_{Y_X}(r^j)
+    \frac{S_{\text{death}}(a^i)}{S_{\text{death}}(a^{i - j})}
+    p_X^{i - j} \Delta a
+    \\ & \quad {}
+    + p_{Y_X}(0) p_X^i \Delta a
     - \frac{S_{\text{death}}(a^{i - 1}) - S_{\text{death}}(a^i)}
     {S_{\text{death}}(a^{i - 1})}
     \frac{P_X^{i - 1}}{\Delta a},
