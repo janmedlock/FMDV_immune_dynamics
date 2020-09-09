@@ -765,6 +765,40 @@ Continuing,
     \right].
   \end{split}
 \end{equation}
+Or
+\begin{equation}
+  \begin{split}
+    \frac{P_X^i - P_X^{i - 1}}{\Delta a}
+    &= p_X^i
+    - \sum_{j = 0}^i p_{Y_X}(r^j)
+    \frac{S_{\text{death}}(a^i)}{S_{\text{death}}(a^{i - j})}
+    p_X^{i - j} \Delta a
+    - h_{\text{death}}(a^{i - 1 / 2})
+    \frac{P_X^i + P_X^{i - 1}}{2}
+    \\ & \quad {}
+    + p_{Y_X}(0) p_X^i \Delta a
+    \\ & \quad {}
+    + h_{\text{death}}(a^{i - 1 / 2}) \frac{\Delta a}{2}
+    \left[
+      p_X^i
+      - \sum_{j = 0}^i p_{Y_X}(r^j)
+      \frac{S_{\text{death}}(a^i)}{S_{\text{death}}(a^{i - 1})}
+      p_X^{i - j} \Delta a
+    \right]
+    \\
+    &= \left[1 + h_{\text{death}}(a^{i - 1 / 2}) \frac{\Delta a}{2}\right]
+    \left[p_X^i
+      - \sum_{j = 0}^i p_{Y_X}(r^j)
+      \frac{S_{\text{death}}(a^i)}{S_{\text{death}}(a^{i - j})}
+      p_X^{i - j} \Delta a
+    \right]
+    \\ & \quad {}
+    - h_{\text{death}}(a^{i - 1 / 2})
+    \frac{P_X^i + P_X^{i - 1}}{2}
+    \\ & \quad {}
+    + p_{Y_X}(0) p_X^i \Delta a
+  \end{split}
+\end{equation}
 
 Then
 \begin{subequations}
@@ -795,7 +829,59 @@ Then
           + P_{\mathrm{I}}^{i - 1}
           + P_{\mathrm{C}}^{i - 1}
         \right)
-      \right].
+      \right]
+      \\
+      &= - h_{\text{death}}(a^{i - 1 / 2})
+      \frac{P^i + P^{i - 1}}{2}
+      \\ & \quad {}
+      % or start sum in (14h) at j = 1?
+      + p_{\text{progression}}(0) p_{\mathrm{E}}^i \Delta a
+      % or start sums in (14j) & (14l) at j = 1?
+      + p_{\text{recovery}}(0) p_{\mathrm{I}}^i \Delta a
+      % or start sum in (14l) at j = 1?
+      + p_{\text{chronic recovery}}(0) p_{\mathrm{C}}^i \Delta a
+      \\ & \quad {}
+      + h_{\text{death}}(a^{i - 1 / 2}) \frac{\Delta a}{2}
+      h_{\text{infection}} \left(
+        \frac{P_{\mathrm{S}}^i + P_{\mathrm{S}}^{i - 1}}{2}
+        + \frac{P_{\mathrm{L}}^i + P_{\mathrm{L}}^{i - 1}}{2}
+      \right)
+      \\ & \quad {}
+      - h_{\text{death}}(a^{i - 1 / 2}) \frac{\Delta a}{2}
+      (1 - p_{\text{chronicity}})
+      \sum_{j = 0}^i % or start at j = 1?
+      p_{\text{recovery}}(r^j)
+      \frac{S_{\text{death}}(a^i)}{S_{\text{death}}(a^{i - j})}
+      p_{\mathrm{I}}^{i - j}
+      \Delta a
+      \\ & \quad {}
+      - h_{\text{death}}(a^{i - 1 / 2}) \frac{\Delta a}{2}
+      \sum_{j = 0}^i p_{\text{chronic recovery}}(r^j)
+      \frac{S_{\text{death}}(a^i)}{S_{\text{death}}(a^{i - j})}
+      p_{\mathrm{C}}^{i - j} \Delta a
+      \\
+      &= - h_{\text{death}}(a^{i - 1 / 2})
+      \frac{P^i + P^{i - 1}}{2}
+      \\ & \quad {}
+      % or start sum in (14h) at j = 1?
+      + \left[p_{\text{progression}}(0)
+        + \frac{1}{2} h_{\text{death}}(a^{i - 1 / 2})\right]
+      p_{\mathrm{E}}^i \Delta a
+      \\ & \quad {}
+      % or start sums in (14j) & (14l) at j = 1?
+      + p_{\text{recovery}}(0) p_{\mathrm{I}}^i \Delta a
+      \\ & \quad {}
+      % or start sum in (14l) at j = 1?
+      + \left[p_{\text{chronic recovery}}(0)
+        - \frac{1}{2} h_{\text{death}}(a^{i - 1 / 2})
+        \frac{1 - p_{\text{chronicity}}}{p_{\text{chronicity}}}
+      \right]
+      p_{\mathrm{C}}^i \Delta a
+      \\ & \quad {}
+      - h_{\text{death}}(a^{i - 1 / 2}) \frac{\Delta a}{2}
+      \sum_{j = 0}^i p_{\text{chronic recovery}}(r^j)
+      \frac{S_{\text{death}}(a^i)}{S_{\text{death}}(a^{i - j})}
+      p_{\mathrm{C}}^{i - j} \Delta a.
     \end{split}
   \end{align}
 \end{subequations}
