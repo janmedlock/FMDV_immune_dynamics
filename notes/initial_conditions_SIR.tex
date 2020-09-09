@@ -1,0 +1,518 @@
+\documentclass[12pt]{article}
+
+\title{Initial conditions for SIR}
+\author{Jan Medlock et al.}
+
+\usepackage{microtype}
+\usepackage{tikz}
+\usepackage{hyperref}
+\hypersetup{breaklinks}
+\hypersetup{pdfborder=0 0 0}
+\usepackage{amsmath}
+\DeclareMathOperator{\Prob}{Prob}
+\newcommand{\md}{\mathrm{d}}
+
+
+\begin{document}
+
+\maketitle
+
+\section{Model}
+
+\begin{subequations}
+  \begin{align}
+    P_{\mathrm{S}}(a)
+    &= \Prob\{\text{in compartment $\mathrm{S}$ at age $a$}\},\\
+    p_{\mathrm{I}}(a, r)
+    &= \Prob\{\text{in compartment $\mathrm{I}$ at age $a$ and
+      duration $r$}\},\\
+    P_{\mathrm{R}}(a)
+    &= \Prob\{\text{in compartment $\mathrm{R}$ at age $a$}\},
+  \end{align}
+\end{subequations}
+for $a \geq 0$ and $0 \leq r \leq a$.
+
+\begin{figure}
+  \begin{center}
+    \include{diagram_SIR}
+  \end{center}
+  \caption{Model diagram.}
+  \label{model_diagram}
+\end{figure}
+
+For $a > 0$ and $0 < r \leq a$, the equilibrium probability densities
+satisfy
+\begin{subequations}
+  \begin{align}
+    P_{\mathrm{S}}(0)
+    &= 1,
+    \\
+    \frac{\md P_{\mathrm{S}}}{\md a}
+    &= - \left[h_{\text{infection}} + h_{\text{death}}(a)\right]
+      P_{\mathrm{S}}(a),
+    \displaybreak[0]\\
+    p_{\mathrm{I}}(0, 0) &= 0,
+    \\
+    p_{\mathrm{I}}(a, 0)
+    &= h_{\text{infection}} P_{\mathrm{S}}(a),
+    \\
+    \left(\frac{\partial}{\partial a}
+    + \frac{\partial}{\partial r}\right)
+    p_{\mathrm{I}}
+    &= - \left[h_{\text{recovery}}(r) + h_{\text{death}}(a)\right]
+      p_{\mathrm{I}}(a, r),
+    \displaybreak[0]\\
+    P_{\mathrm{R}}(0) &= 0,
+    \\
+    \frac{\md P_{\mathrm{R}}}{\md a} &=
+    \int_0^a h_{\text{recovery}}(r) p_{\mathrm{I}}(a, r) \md r
+    - h_{\text{death}}(a) P_{\mathrm{R}}(a),
+  \end{align}
+\end{subequations}
+with
+\begin{equation}
+  P_{\mathrm{I}}(a) = \int_0^a p_{\mathrm{I}}(a, r) \md r
+\end{equation}
+and
+\begin{equation}
+  P(a) = P_{\mathrm{S}}(a) + P_{\mathrm{I}}(a) + P_{\mathrm{R}}(a).
+\end{equation}
+
+
+\subsection{Analysis}
+
+Integrating the PDEs along the characteristics $r = a - a_0$ gives
+\begin{subequations}
+  \begin{align}
+    P_{\mathrm{S}}(0)
+    &= 1,
+    \\
+    \frac{\md P_{\mathrm{S}}}{\md a}
+    &= - \left[h_{\text{infection}}  + h_{\text{death}}(a)\right]
+      P_{\mathrm{S}}(a),
+    \displaybreak[0]\\
+    p_{\mathrm{I}}(0, 0) &= 0,
+    \\
+    p_{\mathrm{I}}(a, 0)
+    &= h_{\text{infection}} P_{\mathrm{S}}(a),
+    \\
+    p_{\mathrm{I}}(a, r)
+    &= S_{\text{recovery}}(r)
+      \frac{S_{\text{death}}(a)}{S_{\text{death}}(a - r)}
+      p_{\mathrm{I}}(a - r, 0),
+    \displaybreak[0]\\
+    P_{\mathrm{R}}(0) &= 0,
+    \\
+    \frac{\md P_{\mathrm{R}}}{\md a} &=
+    \int_0^a p_{\text{recovery}}(r)
+    \frac{S_{\text{death}}(a)}{S_{\text{death}}(a - r)}
+    p_{\mathrm{I}}(a - r, 0)
+    \md r
+    - h_{\text{death}}(a) P_{\mathrm{R}}(a).
+  \end{align}
+\end{subequations}
+
+Using
+\begin{equation}
+  \label{eq:integral_over_r}
+  P_{\mathrm{I}}(a)
+  = \int_0^a
+  S_{\text{recovery}}(a - a_0)
+  \frac{S_{\text{death}}(a)}{S_{\text{death}}(a_0)}
+  p_{\mathrm{I}}(a_0, 0)
+  \md a_0,
+\end{equation}
+gives
+\begin{equation}
+  \label{eq:integral_derivative}
+  \begin{split}
+    \frac{\md P_{\mathrm{I}}}{\md a}
+    &= h_{\text{infection}} P_{\mathrm{S}}(a)
+    \\ & \quad {}
+    - \int_0^a
+    p_{\text{recovery}}(r)
+    \frac{S_{\text{death}}(a)}{S_{\text{death}}(a - r)}
+    p_{\mathrm{I}}(a - r, 0)
+    \md r
+    \\ & \quad {}
+    - h_{\text{death}}(a) P_{\mathrm{I}}(a).
+  \end{split}
+\end{equation}
+Then
+\begin{subequations}
+  \begin{align}
+    \frac{\md P}{\md a}
+    &= - h_{\text{death}}(a) P(a), \\
+    P(0) &= 1,
+  \end{align}
+\end{subequations}
+so that
+\begin{equation}
+  P(a) = S_{\text{death}}(a).
+\end{equation}
+
+The constant-time birth hazard
+(i.e.~$c_{\mathrm{v}} = 0$)
+\begin{equation}
+  h_{\text{birth}}(a) =
+  \begin{cases}
+    0 & \text{if $a < 4$}, \\
+    \mu & \text{if $a \geq 4$},
+  \end{cases}
+\end{equation}
+with
+\begin{equation}
+  \mu =
+  \left[
+    \int_4^{+\infty} S_{\text{death}}(a) \md a
+  \right]^{-1},
+\end{equation}
+gives
+\begin{equation}
+  \int_0^{+\infty} h_{\text{birth}}(a) P(a) \md a
+  = \int_0^{+\infty} h_{\text{birth}}(a) S_{\text{death}}(a) \md a
+  = 1
+  = P(0),
+\end{equation}
+so that the population size is constant, i.e.~zero growth rate.
+
+
+\section{Numerical method}
+
+To compute the probability densities, we used the Crank--Nicolson
+method on characteristics and the composite trapezoid rule for the
+integrals.  Given the age step $\Delta a$,
+for $i \in \{0, 1, 2, \ldots, I - 1\}$ and
+$j \in \{0, 1, 2, \ldots, i\}$, let $a^i = i \Delta a$, $r^j = j
+\Delta a$, $P_X^i \approx P_X(a^i)$, and
+$p_{\mathrm{I}}^i \approx p_{\mathrm{I}}(a^i, 0)$.
+For each $i \in \{1, 2, \ldots, I - 1\}$, using the
+Crank--Nicolson method on characteristics gives
+\begin{subequations}
+  \label{eq:numerical_method}
+  \begin{align}
+    P_{\mathrm{S}}^0
+    &= 1,
+    \\
+    \frac{P_{\mathrm{S}}^i - P_{\mathrm{S}}^{i - 1}}{\Delta a}
+    &= - \left[
+      h_{\text{infection}}
+      + h_{\text{death}}(a^{i - 1 / 2})
+      \right]
+      \frac{P_{\mathrm{S}}^i + P_{\mathrm{S}}^{i - 1}}{2},
+    \displaybreak[0]\\
+    p_{\mathrm{I}}^0 &= 0,
+    \\
+    p_{\mathrm{I}}^i
+    &= h_{\text{infection}}
+    \frac{P_{\mathrm{S}}^i + P_{\mathrm{S}}^{i - 1}}{2},
+    \displaybreak[0]\\
+    P_{\mathrm{R}}^0 &= 0,
+    \\
+    \begin{split}
+      \frac{P_{\mathrm{R}}^i - P_{\mathrm{R}}^{i - 1}}{\Delta a}
+      &=
+      \sum_{j = 0}^i  % or start at j = 1?
+      p_{\text{recovery}}(r^j)
+      \frac{S_{\text{death}}(a^i)}{S_{\text{death}}(a^{i - j})}
+      p_{\mathrm{I}}^{i - j}
+      \Delta a
+      \\ & \quad {}
+      - h_{\text{death}}(a^{i - 1 / 2})
+      \frac{P_{\mathrm{R}}^i + P_{\mathrm{R}}^{i - 1}}{2},
+    \end{split}
+  \end{align}
+\end{subequations}
+with
+\begin{equation}
+  \label{eq:sum_over_r}
+  P_{\mathrm{I}}^i
+  = \sum_{j = 0}^i
+  S_{\text{recovery}}(r^j)
+  \frac{S_{\text{death}}(a^i)}{S_{\text{death}}(a^{i - j})}
+  p_{\mathrm{I}}^{i - j}
+  \Delta a
+\end{equation}
+and
+\begin{equation}
+  P^i =  P_{\mathrm{S}}^i + P_{\mathrm{I}}^i + P_{\mathrm{R}}^i.
+\end{equation}
+
+
+\subsection{Analysis}
+
+The difference of the sum \eqref{eq:sum_over_r} is
+\begin{equation}
+  \label{eq:sum_difference}
+  \begin{split}
+    \frac{P_{\mathrm{I}}^i - P_{\mathrm{I}}^{i - 1}}{\Delta a}
+    &=
+    \sum_{j = 0}^i S_{\text{recovery}}(r^j)
+    \frac{S_{\text{death}}(a^i)}{S_{\text{death}}(a^{i - j})}
+    p_{\mathrm{I}}^{i - j}
+    \\ & \quad {}
+    - \sum_{j = 0}^{i - 1} S_{\text{recovery}}(r^j)
+    \frac{S_{\text{death}}(a^{i - 1})}{S_{\text{death}}(a^{i - 1 - j})}
+    p_{\mathrm{I}}^{i - 1 - j}
+    \\
+    &= p_{\mathrm{I}}^i
+    + \sum_{j = 1}^i S_{\text{recovery}}(r^j)
+    \frac{S_{\text{death}}(a^i)}{S_{\text{death}}(a^{i - j})}
+    p_{\mathrm{I}}^{i - j}
+    \\ & \quad {}
+    - \sum_{j = 1}^i S_{\text{recovery}}(r^{j - 1})
+    \frac{S_{\text{death}}(a^{i - 1})}{S_{\text{death}}(a^{i - j})}
+    p_{\mathrm{I}}^{i - j}
+    \\
+    &= p_{\mathrm{I}}^i
+    - \sum_{j = 1}^i
+    \left[
+      S_{\text{recovery}}(r^{j - 1})
+      - S_{\text{recovery}}(r^j)
+    \right]
+    \frac{S_{\text{death}}(a^i)}{S_{\text{death}}(a^{i - j})}
+    p_{\mathrm{I}}^{i - j}
+    \\ & \quad {}
+    - \sum_{j = 1}^i S_{\text{recovery}}(r^{j - 1})
+    \frac{S_{\text{death}}(a^{i - 1}) - S_{\text{death}}(a^i)}
+    {S_{\text{death}}(a^{i - j})}
+    p_{\mathrm{I}}^{i - j}
+    \\
+    &= p_{\mathrm{I}}^i
+    - \sum_{j = 1}^i p_{\text{recovery}}(r^j)
+    \frac{S_{\text{death}}(a^i)}{S_{\text{death}}(a^{i - j})}
+    p_{\mathrm{I}}^{i - j} \Delta a
+    \\ & \quad {}
+    - \frac{S_{\text{death}}(a^{i - 1}) - S_{\text{death}}(a^i)}
+    {S_{\text{death}}(a^{i - 1})}
+    \sum_{j = 0}^{i - 1} S_{\text{recovery}}(r^j)
+    \frac{S_{\text{death}}(a^{i - 1})}{S_{\text{death}}(a^{i - 1 - j})}
+    p_{\mathrm{I}}^{i - 1 - j}
+    \\
+    &= p_{\mathrm{I}}^i
+    - \sum_{j = 0}^i p_{\text{recovery}}(r^j)
+    \frac{S_{\text{death}}(a^i)}{S_{\text{death}}(a^{i - j})}
+    p_{\mathrm{I}}^{i - j} \Delta a
+    \\ & \quad {}
+    + p_{\text{recovery}}(0) p_{\mathrm{I}}^i \Delta a
+    - \frac{S_{\text{death}}(a^{i - 1}) - S_{\text{death}}(a^i)}
+    {S_{\text{death}}(a^{i - 1})}
+    \frac{P_{\mathrm{I}}^{i - 1}}{\Delta a}
+    \\
+    &= p_{\mathrm{I}}^i
+    - \sum_{j = 0}^i p_{\text{recovery}}(r^j)
+    \frac{S_{\text{death}}(a^i)}{S_{\text{death}}(a^{i - j})}
+    p_{\mathrm{I}}^{i - j} \Delta a
+    - h_{\text{death}}(a^{i - 1 / 2})
+    \frac{P_{\mathrm{I}}^i + P_{\mathrm{I}}^{i - 1}}{2}
+    \\ & \quad {}
+    + p_{\text{recovery}}(0) p_{\mathrm{I}}^i \Delta a
+    - \frac{S_{\text{death}}(a^{i - 1}) - S_{\text{death}}(a^i)}
+    {S_{\text{death}}(a^{i - 1})}
+    \frac{P_{\mathrm{I}}^{i - 1}}{\Delta a}
+    + h_{\text{death}}(a^{i - 1 / 2})
+    \frac{P_{\mathrm{I}}^i + P_{\mathrm{I}}^{i - 1}}{2},
+  \end{split}
+\end{equation}
+%
+\textbf{TODO: \eqref{eq:sum_difference} should look like
+  \eqref{eq:integral_derivative}. In particular, the last 3 terms should
+  all cancel each other.}
+%
+\textbf{TODO: From \eqref{eq:discrete_total}, we have the
+  Crank--Nicholson approximation of the survival in terms of the
+  hazard}
+\begin{displaymath}
+  S_{\text{death}}(a^i)
+  = \prod_{j = 1}^i \frac{
+    1 - h_{\text{death}}(a^{j - 1 / 2}) \Delta a / 2
+  }{
+    1 + h_{\text{death}}(a^{j - 1 / 2}) \Delta a / 2
+  }.
+\end{displaymath}
+\textbf{This gives}
+\begin{displaymath}
+  \begin{split}
+    \frac{
+      S_{\text{death}}(a^{i - 1}) - S_{\text{death}}(a^i)
+    }{
+      S_{\text{death}}(a^{i - 1})
+    }
+    &= \frac{
+      h_{\text{death}}(a^{i - 1 / 2}) \Delta a
+    }{
+      1 + h_{\text{death}}(a^{i - 1 / 2}) \Delta a / 2
+    }.
+  \end{split}
+\end{displaymath}
+%
+Continuing,
+\begin{equation}
+  \begin{split}
+    \frac{P_{\mathrm{I}}^i - P_{\mathrm{I}}^{i - 1}}{\Delta a}
+    &= p_{\mathrm{I}}^i
+    - \sum_{j = 0}^i p_{\text{recovery}}(r^j)
+    \frac{S_{\text{death}}(a^i)}{S_{\text{death}}(a^{i - j})}
+    p_{\mathrm{I}}^{i - j} \Delta a
+    - h_{\text{death}}(a^{i - 1 / 2})
+    \frac{P_{\mathrm{I}}^i + P_{\mathrm{I}}^{i - 1}}{2}
+    \\ & \quad {}
+    + p_{\text{recovery}}(0) p_{\mathrm{I}}^i \Delta a
+    - \frac{S_{\text{death}}(a^{i - 1}) - S_{\text{death}}(a^i)}
+    {S_{\text{death}}(a^{i - 1})}
+    \frac{P_{\mathrm{I}}^{i - 1}}{\Delta a}
+    + h_{\text{death}}(a^{i - 1 / 2})
+    \frac{P_{\mathrm{I}}^i + P_{\mathrm{I}}^{i - 1}}{2}
+    \\
+    &= p_{\mathrm{I}}^i
+    - \sum_{j = 0}^i p_{\text{recovery}}(r^j)
+    \frac{S_{\text{death}}(a^i)}{S_{\text{death}}(a^{i - j})}
+    p_{\mathrm{I}}^{i - j} \Delta a
+    - h_{\text{death}}(a^{i - 1 / 2})
+    \frac{P_{\mathrm{I}}^i + P_{\mathrm{I}}^{i - 1}}{2}
+    \\ & \quad {}
+    + p_{\text{recovery}}(0) p_{\mathrm{I}}^i \Delta a
+    - \frac{h_{\text{death}}(a^{i - 1 / 2})}
+    {1 + h_{\text{death}}(a^{i - 1 / 2}) \Delta a / 2}
+    P_{\mathrm{I}}^{i - 1}
+    + h_{\text{death}}(a^{i - 1 / 2})
+    \frac{P_{\mathrm{I}}^i + P_{\mathrm{I}}^{i - 1}}{2}
+    \\
+    &= p_{\mathrm{I}}^i
+    - \sum_{j = 0}^i p_{\text{recovery}}(r^j)
+    \frac{S_{\text{death}}(a^i)}{S_{\text{death}}(a^{i - j})}
+    p_{\mathrm{I}}^{i - j} \Delta a
+    - h_{\text{death}}(a^{i - 1 / 2})
+    \frac{P_{\mathrm{I}}^i + P_{\mathrm{I}}^{i - 1}}{2}
+    \\ & \quad {}
+    + p_{\text{recovery}}(0) p_{\mathrm{I}}^i \Delta a
+    + \frac{1}{2} h_{\text{death}}(a^{i - 1 / 2})
+    \left[
+      P_{\mathrm{I}}^i
+      - \frac{1 - h_{\text{death}}(a^{i - 1 / 2}) \Delta a / 2}
+      {1 + h_{\text{death}}(a^{i - 1 / 2}) \Delta a / 2}
+      P_{\mathrm{I}}^{i - 1}
+    \right]
+    \\
+    &= p_{\mathrm{I}}^i
+    - \sum_{j = 0}^i p_{\text{recovery}}(r^j)
+    \frac{S_{\text{death}}(a^i)}{S_{\text{death}}(a^{i - j})}
+    p_{\mathrm{I}}^{i - j} \Delta a
+    - h_{\text{death}}(a^{i - 1 / 2})
+    \frac{P_{\mathrm{I}}^i + P_{\mathrm{I}}^{i - 1}}{2}
+    \\ & \quad {}
+    + p_{\text{recovery}}(0) p_{\mathrm{I}}^i \Delta a
+    + \frac{1}{2} h_{\text{death}}(a^{i - 1 / 2})
+    \left[
+      P_{\mathrm{I}}^i
+      - \frac{S_{\text{death}}(a^i)}{S_{\text{death}}(a^{i - 1})}
+        P_{\mathrm{I}}^{i - 1}
+    \right]
+    \\
+    &= p_{\mathrm{I}}^i
+    - \sum_{j = 0}^i p_{\text{recovery}}(r^j)
+    \frac{S_{\text{death}}(a^i)}{S_{\text{death}}(a^{i - j})}
+    p_{\mathrm{I}}^{i - j} \Delta a
+    - h_{\text{death}}(a^{i - 1 / 2})
+    \frac{P_{\mathrm{I}}^i + P_{\mathrm{I}}^{i - 1}}{2}
+    \\ & \quad {}
+    + p_{\text{recovery}}(0) p_{\mathrm{I}}^i \Delta a
+    \\ & \quad {}
+    + h_{\text{death}}(a^{i - 1 / 2}) \frac{\Delta a}{2}
+    \left[
+      p_{\mathrm{I}}^i
+      - \sum_{j = 0}^i p_{\text{recovery}}(r^j)
+      \frac{S_{\text{death}}(a^i)}{S_{\text{death}}(a^{i - 1})}
+      p_{\mathrm{I}}^{i - j} \Delta a
+    \right].
+  \end{split}
+\end{equation}
+
+Then
+\begin{subequations}
+  \begin{align}
+    P^0 &= 1,
+    \displaybreak[0]\\
+    \begin{split}
+      \frac{P^i - P^{i - 1}}{\Delta a}
+      &= - h_{\text{death}}(a^{i - 1 / 2})
+      \frac{P^i + P^{i - 1}}{2}
+      \\ & \quad {}
+      + \Delta a \left[
+        p_{\text{recovery}}(0)
+        + \frac{1}{2} h_{\text{death}}(a^{i - 1 / 2})
+      \right]
+      h_{\text{infection}}
+      \frac{P_{\mathrm{S}}^i + P_{\mathrm{S}}^{i - 1}}{2}
+      \\ & \quad {}
+      - \Delta a \frac{1}{2} h_{\text{death}}(a^{i - 1 / 2})
+      \sum_{j = 0}^i % or start at j = 1?
+      p_{\text{recovery}}(r^j)
+      \frac{S_{\text{death}}(a^i)}{S_{\text{death}}(a^{i - j})}
+      p_{\mathrm{I}}^{i - j}
+      \Delta a.
+    \end{split}
+  \end{align}
+\end{subequations}
+\textbf{TODO: All the terms after the top line should cancel each
+  other.}
+
+Then
+\begin{equation}
+  \frac{P^i - P^{i - 1}}{\Delta a}
+  = - h_{\text{death}}(a^{i - 1 / 2})
+  \frac{P^i + P^{i - 1}}{2},
+\end{equation}
+so that
+\begin{equation}
+  \label{eq:discrete_total}
+  \begin{split}
+    P^i
+    &= \frac{
+      1 - h_{\text{death}}(a^{i - 1 / 2}) \Delta a / 2
+    }{
+      1 + h_{\text{death}}(a^{i - 1 / 2}) \Delta a / 2
+    } P^{i - 1}
+    \\
+    &= \prod_{j = 1}^i \frac{
+      1 - h_{\text{death}}(a^{j - 1 / 2}) \Delta a / 2
+    }{
+      1 + h_{\text{death}}(a^{j - 1 / 2}) \Delta a / 2
+    }
+    \\
+    &= S_{\text{death}}(a^i).
+  \end{split}
+\end{equation}
+
+The the constant-time birth hazard
+(i.e.~$c_{\mathrm{v}} = 0$)
+\begin{equation}
+  h_{\text{birth}}(a) =
+  \begin{cases}
+    0 & \text{if $a < 4$}, \\
+    \mu & \text{if $a \geq 4$},
+  \end{cases}
+\end{equation}
+with
+\begin{equation}
+  \mu =
+  \left[
+    \sum_{a^i \geq 4}
+    S_{\text{death}}(a^i)
+    \Delta a
+  \right]^{-1},
+\end{equation}
+gives
+\begin{equation}
+  \sum_{i = 0}^{I - 1}
+  h_{\text{birth}}(a^i) P^i
+  \Delta a
+  = \sum_{i = 0}^{I - 1}
+  h_{\text{birth}}(a^i) S_{\text{death}}(a^i)
+  \Delta a
+  = 1 = P^0,
+\end{equation}
+so that the population size is constant, i.e.~zero growth rate.
+
+
+\end{document}

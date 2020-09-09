@@ -1,0 +1,35 @@
+\begin{tikzpicture}[compartment/.style = {rectangle, draw}, font=\fontsize{5pt}{6}\selectfont]
+  % Compartments.
+  \node at (0, 9) [compartment, name=Susceptible] {Susceptible};
+  \node at (0, 7) [compartment, name=Infectious] {Infectious};
+  \node at (0, 5) [compartment, name=Recovered] {Recovered};
+
+  \draw [->] (Susceptible)
+             to node [rotate=-90, below] {infection}
+             (Infectious);
+  \draw [->] (Infectious)
+             to node [rotate=-90, below] {recovery}
+             (Recovered);
+
+  % Births
+  \draw [->] (Susceptible.196)
+             to [out=225, in=180, looseness=3.5] node [] {}
+             (Susceptible.180);
+  \draw [->] (Infectious.180)
+             to [out=180, in=180, looseness=0.9] node [sloped, above, pos=0.85] {}
+             (Susceptible.180);
+  \draw [->] (Recovered.180)
+             to [out=180, in=180, looseness=0.6] node [sloped, above, pos=0.8] {birth}
+             (Susceptible.180);
+
+  % Deaths
+  \draw [->] (Susceptible.344)
+             to node [sloped, below, yshift=1pt] {death}
+             +(315: 1);
+  \draw [->] (Infectious.345)
+             to node [sloped, below, yshift=1pt] {death}
+             +(315: 1);
+  \draw [->] (Recovered.345)
+             to node [sloped, below, yshift=1pt] {death}
+             +(315: 1);
+\end{tikzpicture}
