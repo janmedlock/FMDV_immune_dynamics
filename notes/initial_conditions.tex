@@ -1095,44 +1095,6 @@ and let $\vec{x}$ be the $\vec{x}_X$'s stacked into a single vector,
   \end{pmatrix}.
 \end{equation}
 
-Define the birth matrix
-\begin{equation}
-  \mat{B} =
-  \begin{bmatrix}
-    \mat{B}_{\mathrm{M}} & \mat{0} & \mat{0} &
-    \mat{0} & \mat{0} & \mat{0} & \mat{0}
-    \\
-    \mat{0} & \mat{B}_{\mathrm{S}} & \mat{0} &
-    \mat{0} & \mat{0} & \mat{0} & \mat{0}
-    \\
-    \mat{0} & \mat{0} & \mat{0} & \mat{0} &
-    \mat{0} & \mat{0} & \mat{0}
-    \\
-    \mat{0} & \mat{0} & \mat{0} & \mat{0} &
-    \mat{0} & \mat{0} & \mat{0}
-    \\
-    \mat{0} & \mat{0} & \mat{0} & \mat{0} &
-    \mat{0} & \mat{0} & \mat{0}
-    \\
-    \mat{0} & \mat{0} & \mat{0} & \mat{0} &
-    \mat{0} & \mat{0} & \mat{0}
-    \\
-    \mat{0} & \mat{0} & \mat{0} & \mat{0} &
-    \mat{0} & \mat{0} & \mat{0}
-  \end{bmatrix},
-\end{equation}
-with blocks
-\begin{equation}
-  \mat{B}_{\mathrm{M}} = \mat{B}_{\mathrm{S}}
-  =
-  \begin{bmatrix}
-    1 & 0 & \hdots & 0 \\
-    0 & 0 & \hdots & 0 \\
-    \vdots & \vdots & & \vdots \\
-    0 & 0 & \hdots & 0
-  \end{bmatrix}.
-\end{equation}
-
 Define the block diagonal matrix
 \begin{align}
   \mat{D} &=
@@ -1164,7 +1126,7 @@ with blocks
   \begin{align}
     \mat{D}_X &=
     \begin{bmatrix}
-      0 & 0 & 0 & \hdots & 0
+      1 & 0 & 0 & \hdots & 0
       \\
       - 1 + d_X^1 & 1 + d_X^1 & 0 & \hdots & 0
       \\
@@ -1346,7 +1308,7 @@ with
 Define the matrix
 \begin{equation}
   \mat{A} =
-  \mat{B} + \mat{D} - \mat{F}.
+  \mat{D} - \mat{F}.
 \end{equation}
 The numerical scheme is then finding the vector $\vec{x}$ that solves
 \begin{equation}
