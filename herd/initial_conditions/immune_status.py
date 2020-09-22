@@ -9,7 +9,8 @@ from scipy import integrate, optimize, sparse
 
 from herd import (age_structure, antibody_gain, antibody_loss,
                   chronic_recovery, maternal_immunity_waning,
-                  parameters, progression, recovery, utility)
+                  mortality, parameters, progression, recovery,
+                  utility)
 
 
 class Block:
@@ -117,14 +118,17 @@ class BlockPDE(Block):
 
 
 class BlockM(BlockODE):
+    # TODO: Convert to phi.
     initial_value = 1
 
     def set_A_MM(self):
         self.A_X['M'] = self._get_A_XX(
-            self.params.hazard.maternal_immunity_waning)
+            self.params.hazard.maternal_immunity_waning
+            + self.params.hazard.mortality)
 
 
 class BlockS(BlockODE):
+    # TODO: Convert to 1 - phi.
     initial_value = 0
 
     def set_A_SM(self):
@@ -132,7 +136,9 @@ class BlockS(BlockODE):
             self.params.hazard.maternal_immunity_waning)
 
     def set_A_SS(self):
-        self.A_X['S'] = self._get_A_XX(self.params.hazard.infection)
+        self.A_X['S'] = self._get_A_XX(
+            self.params.hazard.infection
+            + self.params.hazard.mortality)
 
     def update_hazard_infection(self):
         self.set_A_SS()
@@ -189,7 +195,7 @@ class BlockR(BlockODE):
     initial_value = 0
 
     def set_A_RI(self):
-        self.A_X['I'] =  self._get_A_XY_PDE(
+        self.A_X['I'] = self._get_A_XY_PDE(
             (1 - self.params.probability_chronic)
             * self.params.survival.recovery)
 
@@ -198,21 +204,27 @@ class BlockR(BlockODE):
             self.params.survival.chronic_recovery)
 
     def set_A_RR(self):
-        self.A_X['R'] = self._get_A_XX(self.params.hazard.antibody_loss)
+        self.A_X['R'] = self._get_A_XX(
+            self.params.hazard.antibody_loss
+            + self.params.hazard.mortality)
 
     def set_A_RL(self):
-        self.A_X['L'] = self._get_A_XY_ODE(self.params.hazard.antibody_gain)
+        self.A_X['L'] = self._get_A_XY_ODE(
+            self.params.hazard.antibody_gain)
 
 
 class BlockL(BlockODE):
     initial_value = 0
 
     def set_A_LR(self):
-        self.A_X['R'] = self._get_A_XY_ODE(self.params.hazard.antibody_loss)
+        self.A_X['R'] = self._get_A_XY_ODE(
+            self.params.hazard.antibody_loss)
 
     def set_A_LL(self):
-        self.A_X['L'] = self._get_A_XX(self.params.hazard.antibody_gain
-                                       + self.params.hazard.infection)
+        self.A_X['L'] = self._get_A_XX(
+            self.params.hazard.antibody_gain
+            + self.params.hazard.infection
+            + self.params.hazard.mortality)
 
     def update_hazard_infection(self):
         self.set_A_LL()
@@ -284,6 +296,7 @@ class Solver:
         self.params.length_ODE = self.length_ODE
         self.params.length_PDE = self.length_PDE
         RVs = {
+            'mortality': mortality.gen(params),
             'maternal_immunity_waning': maternal_immunity_waning.gen(params),
             'progression': progression.gen(params),
             'recovery': recovery.gen(params),
