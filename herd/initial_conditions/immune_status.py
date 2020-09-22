@@ -8,9 +8,9 @@ import pandas
 from scipy import integrate, optimize, sparse
 
 from herd import (age_structure, antibody_gain, antibody_loss,
-                  chronic_recovery, maternal_immunity_waning,
-                  mortality, parameters, progression, recovery,
-                  utility)
+                  birth, buffalo, chronic_recovery,
+                  maternal_immunity_waning, mortality, parameters,
+                  progression, recovery, utility)
 
 
 class Block:
@@ -26,11 +26,11 @@ class Block:
         '''Get the variable name from the last letter of the class name.'''
         return self.__class__.__name__[-1]
 
-    def set_b_X(self):
+    def _set_b_X(self, initial_value):
         '''Make a sparse n × 1 matrix of the right-hand sides.'''
         # The initial value is in the 0th entry,
         # then zeros everywhere else.
-        self.b_X = sparse.csr_matrix(([self.initial_value], ([0], [0])),
+        self.b_X = sparse.csr_matrix(([initial_value], ([0], [0])),
                                      shape=(len(self), 1))
 
     def _is_set_A_XY(self, attr):
@@ -44,7 +44,7 @@ class Block:
             if self._is_set_A_XY(attr):
                 getattr(self, attr)()
 
-    def update_hazard_infection(self):
+    def update(self):
         '''Do nothing unless overridden.'''
 
 
@@ -55,10 +55,11 @@ class BlockODE(Block):
 
     def _get_A_XX(self, hazard_out):
         '''Get the diagonal block `A_XX` that maps state X to itself.'''
+        hazard_out_total = hazard_out + self.params.hazard.mortality
         # The values on the diagonal.
-        d_0 = 1 + hazard_out * self.params.step / 2
+        d_0 = 1 + hazard_out_total * self.params.step / 2
         # The values on the subdiagonal.
-        d_1 = - 1 + hazard_out * self.params.step / 2
+        d_1 = - 1 + hazard_out_total * self.params.step / 2
         assert (d_1 <= 0).all()
         return sparse.diags([numpy.hstack([1, d_0]), d_1], [0, -1],
                             shape=(len(self), len(self)))
@@ -71,14 +72,17 @@ class BlockODE(Block):
         return sparse.diags([numpy.hstack([0, d]), d], [0, -1],
                             shape=(len(self), self.params.length_ODE))
 
-    def _get_A_XY_PDE(self, survival_in):
+    def _get_A_XY_PDE(self, pdf_in):
         '''Get the off-diagonal block `A_XY` that maps state Y to X,
         where Y is a variable governed by a PDE.'''
         A_XY = sparse.lil_matrix((len(self), self.params.length_PDE))
-        dS = - numpy.diff(survival_in)
-        for i in range(1, self.params.length_ODE):
-            j = numpy.arange(1, i + 1)
-            A_XY[i, i - j] = - dS[j - 1] * self.params.step
+        # TODO: Should this start at i = 1?
+        for i in range(self):
+            j = numpy.arange(i + 1)
+            A_XY[i, j] = - (pdf_in[i - j]
+                            * self.params.survival.mortality[i]
+                            / self.params.survival.mortality[j]
+                            * self.params.step)
         return A_XY
 
 
@@ -99,54 +103,63 @@ class BlockPDE(Block):
         A_XY[i, i - 1] = A_XY[i, i] = - hazard_in / 2
         return A_XY
 
-    def _get_A_XY_PDE(self, survival_in):
+    def _get_A_XY_PDE(self, pdf_in):
         '''Get the off-diagonal block `A_XY` that maps state Y to X,
         where Y is a variable governed by a PDE.'''
         A_XY = sparse.lil_matrix((len(self), self.params.length_PDE))
-        dS = - numpy.diff(survival_in)
-        for i in range(1, self.params.length_ODE):
-            j = numpy.arange(1, i + 1)
-            A_XY[i, i - j] = - dS[j - 1]
+        # TODO: Should this start at i = 1?
+        for i in range(self):
+            j = numpy.arange(i + 1)
+            A_XY[i, j] = - (pdf_in[i - j]
+                            * self.params.survival.mortality[i]
+                            / self.params.survival.mortality[j]
+                            * self.params.step)
         return A_XY
+
+    def set_b_X(self):
+        self._set_b_X(0)
 
     def integrate(self, p_X, survival_out):
         P_X = numpy.empty(self.params.length_ODE)
         for i in range(self.params.length_ODE):
             j = numpy.arange(i + 1)
-            P_X[i] = numpy.dot(survival_out[j], p_X[i - j]) * self.params.step
+            P_X[i] = (numpy.dot(survival_out[j],
+                                (self.params.survival.mortality[i]
+                                 / self.params.survival.mortality[i - j]
+                                 * p_X[i - j]))
+                      * self.params.step)
         return P_X
 
 
 class BlockM(BlockODE):
-    # TODO: Convert to phi.
-    initial_value = 1
-
     def set_A_MM(self):
         self.A_X['M'] = self._get_A_XX(
-            self.params.hazard.maternal_immunity_waning
-            + self.params.hazard.mortality)
+            self.params.hazard.maternal_immunity_waning)
+
+    def set_b_X(self):
+        self._set_b_X(self.params.newborn_proportion_immune)
+
+    def update(self):
+        self.set_b_X()
 
 
 class BlockS(BlockODE):
-    # TODO: Convert to 1 - phi.
-    initial_value = 0
-
     def set_A_SM(self):
         self.A_X['M'] = self._get_A_XY_ODE(
             self.params.hazard.maternal_immunity_waning)
 
     def set_A_SS(self):
-        self.A_X['S'] = self._get_A_XX(
-            self.params.hazard.infection
-            + self.params.hazard.mortality)
+        self.A_X['S'] = self._get_A_XX(self.params.hazard.infection)
 
-    def update_hazard_infection(self):
+    def set_b_X(self):
+        self._set_b_X(1 - self.params.newborn_proportion_immune)
+
+    def update(self):
         self.set_A_SS()
+        self.set_b_X()
 
 
 class BlockE(BlockPDE):
-    initial_value = 0
-
     def set_A_ES(self):
         self.A_X['S'] = self._get_A_XY_ODE(self.params.hazard.infection)
 
@@ -156,19 +169,17 @@ class BlockE(BlockPDE):
     def set_A_EE(self):
         self.A_X['E'] = self._get_A_XX()
 
-    def integrate(self, p_E):
-        return super().integrate(p_E, self.params.survival.progression)
-
-    def update_hazard_infection(self):
+    def update(self):
         self.set_A_ES()
         self.set_A_EL()
 
+    def integrate(self, p_E):
+        return super().integrate(p_E, self.params.survival.progression)
+
 
 class BlockI(BlockPDE):
-    initial_value = 0
-
     def set_A_IE(self):
-        self.A_X['E'] = self._get_A_XY_PDE(self.params.survival.progression)
+        self.A_X['E'] = self._get_A_XY_PDE(self.params.pdf.progression)
 
     def set_A_II(self):
         self.A_X['I'] = self._get_A_XX()
@@ -178,11 +189,9 @@ class BlockI(BlockPDE):
 
 
 class BlockC(BlockPDE):
-    initial_value = 0
-
     def set_A_CI(self):
         self.A_X['I'] = self._get_A_XY_PDE(self.params.probability_chronic
-                                           * self.params.survival.recovery)
+                                           * self.params.pdf.recovery)
 
     def set_A_CC(self):
         self.A_X['C'] = self._get_A_XX()
@@ -192,41 +201,36 @@ class BlockC(BlockPDE):
 
 
 class BlockR(BlockODE):
-    initial_value = 0
-
     def set_A_RI(self):
         self.A_X['I'] = self._get_A_XY_PDE(
             (1 - self.params.probability_chronic)
-            * self.params.survival.recovery)
+            * self.params.pdf.recovery)
 
     def set_A_RC(self):
-        self.A_X['C'] = self._get_A_XY_PDE(
-            self.params.survival.chronic_recovery)
+        self.A_X['C'] = self._get_A_XY_PDE(self.params.pdf.chronic_recovery)
 
     def set_A_RR(self):
-        self.A_X['R'] = self._get_A_XX(
-            self.params.hazard.antibody_loss
-            + self.params.hazard.mortality)
+        self.A_X['R'] = self._get_A_XX(self.params.hazard.antibody_loss)
 
     def set_A_RL(self):
-        self.A_X['L'] = self._get_A_XY_ODE(
-            self.params.hazard.antibody_gain)
+        self.A_X['L'] = self._get_A_XY_ODE(self.params.hazard.antibody_gain)
+
+    def set_b_X(self):
+        self._set_b_X(0)
 
 
 class BlockL(BlockODE):
-    initial_value = 0
-
     def set_A_LR(self):
-        self.A_X['R'] = self._get_A_XY_ODE(
-            self.params.hazard.antibody_loss)
+        self.A_X['R'] = self._get_A_XY_ODE(self.params.hazard.antibody_loss)
 
     def set_A_LL(self):
-        self.A_X['L'] = self._get_A_XX(
-            self.params.hazard.antibody_gain
-            + self.params.hazard.infection
-            + self.params.hazard.mortality)
+        self.A_X['L'] = self._get_A_XX(self.params.hazard.antibody_gain
+                                       + self.params.hazard.infection)
 
-    def update_hazard_infection(self):
+    def set_b_X(self):
+        self._set_b_X(0)
+
+    def update(self):
         self.set_A_LL()
 
 
@@ -277,7 +281,7 @@ class Solver:
         self.ages = utility.arange(0, self.age_max, self.step,
                                    endpoint=True)
         assert len(self.ages) > 1
-        self.ages_mid = (self.ages[ : -1] + self.ages[1 : ]) / 2
+        self.ages_mid = (self.ages[:-1] + self.ages[1:]) / 2
         self.length_ODE = self.length_PDE = len(self.ages)
         self.set_params(params)
         self.set_blocks()
@@ -295,29 +299,38 @@ class Solver:
         self.params.step = self.step
         self.params.length_ODE = self.length_ODE
         self.params.length_PDE = self.length_PDE
+        # We need the survival, pdf, and hazard for these RVs.
         RVs = {
-            'mortality': mortality.gen(params),
-            'maternal_immunity_waning': maternal_immunity_waning.gen(params),
             'progression': progression.gen(params),
             'recovery': recovery.gen(params),
             'chronic_recovery': chronic_recovery.gen(params),
-            'antibody_loss': antibody_loss.gen(params)
         }
+        survival = {k: RV.sf(self.ages)
+                    for (k, RV) in RVs.items()}
+        self.params.survival = self.rec_fromkwds(**survival)
+        pdf = {k: RV.pdf(self.ages)
+               for (k, RV) in RVs.items()}
+        self.params.pdf = self.rec_fromkwds(**pdf)
+        # We also need the hazard for these RVs.
+        RVs.update({
+            'mortality': mortality.gen(params),
+            'maternal_immunity_waning': maternal_immunity_waning.gen(params),
+            'antibody_loss': antibody_loss.gen(params),
+        })
         with numpy.errstate(divide='ignore'):
             hazard = {k: RV.hazard(self.ages_mid)
                       for (k, RV) in RVs.items()}
-        survival = {k: RV.sf(self.ages)
-                    for (k, RV) in RVs.items()}
         antibody_gain_RV = antibody_gain.gen(params)
         hazard['antibody_gain'] = antibody_gain_RV.hazard(
             antibody_gain_RV.time_min)
         hazard['infection'] = 1  # Dummy value. Set on calls to `solve_step()`.
         self.params.hazard = self.rec_fromkwds(**hazard)
-        self.params.survival = self.rec_fromkwds(**survival)
         self.params.probability_chronic = params.probability_chronic
         self.params.transmission_rate = params.transmission_rate
-        self.params.chronic_transmission_rate = params.chronic_transmission_rate
-        self.params.age_pdf = age_structure.gen(params).pdf(self.ages)
+        self.params.chronic_transmission_rate = (
+            params.chronic_transmission_rate)
+        # TODO
+        self.params.hazard_birth = numpy.ones(len(self.ages))
 
     def set_blocks(self):
         self.blocks = {}
@@ -348,8 +361,8 @@ class Solver:
         '''Unstack the P_X and p_X vectors.'''
         # `vars_ODE` are first, then `vars_PDE`.
         split = len(self.vars_ODE) * self.length_ODE
-        P = self.unstack_and_label(Pp[ : split], self.vars_ODE)
-        p = self.unstack_and_label(Pp[split : ], self.vars_PDE)
+        P = self.unstack_and_label(Pp[:split], self.vars_ODE)
+        p = self.unstack_and_label(Pp[split:], self.vars_PDE)
         return (P, p)
 
     def stack_sparse(self, rows, format='csr'):
@@ -367,10 +380,11 @@ class Solver:
                         for n in p.dtype.names}
         return self.rec_fromkwds(**p_integrated)
 
-    def solve_step(self, hazard_infection):
-        self.params.hazard.infection = hazard_infection
+    def solve_step(self, x):
+        (self.params.hazard.infection,
+         self.params.newborn_proportion_immune) = x
         for block in self.blocks.values():
-            block.update_hazard_infection()
+            block.update()
         A = self.stack_sparse(self.A)
         b = self.stack_sparse(self.b)
         assert numpy.isfinite(A.data).all()
@@ -394,45 +408,38 @@ class Solver:
         return P
 
     def get_hazard_infection(self, P):
-        '''Compute the hazard of infection from the solution 'P'.'''
-        # P is the probability of being in each immune status as a
-        # function of age, conditioned on being alive at that age.
-        # Compute the unconditional probability of being in each
-        # immune status as a function of age.
-        P = P.mul(self.params.age_pdf, axis='index')
-        # Compute probability of being in each immune status
-        # integrated over age.
-        P = P.apply(integrate.trapz, args=(self.ages, ))
+        '''Compute the hazard of infection from the solution `P`.'''
+        # The probability of being in each immune status integrated
+        # over age.
+        P_total = P.apply(integrate.trapz, args=(self.ages, ))
         # Compute the hazard of infection from the solution.
-        hazard_infection = ((self.params.transmission_rate
-                             * P['infectious'])
-                            + (self.params.chronic_transmission_rate
-                               * P['chronic']))
-        return hazard_infection
+        return (self.params.transmission_rate * P_total['infectious']
+                + self.params.chronic_transmission_rate * P_total['chronic'])
 
-    def solve_objective(self, hazard_infection):
+    def get_newborn_proportion_immune(self, P):
+        '''Compute the proportions of newborns who have maternal immunity from
+        the solution `P`.'''
+        # The birth rate from moms in each immune status and age.
+        births = P.mul(self.params.hazard_birth, axis='index')
+        # The birth rate from moms in each immune status.
+        births_total = births.apply(integrate.trapz, args=(self.ages, ))
+        return (births_total[list(buffalo.Buffalo.has_antibodies)].sum()
+                / births_total.sum())
+
+    def solve_objective(self, x):
         '''This is called by `optimize.root_scalar()` to find
         the equilibrium `hazard_infection`.'''
-        P = self.solve_step(hazard_infection)
-        retval = self.get_hazard_infection(P) - hazard_infection
-        return retval
+        P = self.solve_step(x)
+        return (self.get_hazard_infection(P),
+                self.get_newborn_proportion_immune(P))
 
     def solve(self):
-        # Find the bracketing interval [a, b]
-        # where `self.solve_objective(a) > 0`
-        # and `self.solve_objective(b) < 0`.
-        multiplier = 2
-        a = 15
-        while self.solve_objective(a) < 0:
-            a /= multiplier
-        b = a * multiplier
-        while self.solve_objective(b) > 0:
-            a = b
-            b *= multiplier
-        sol = optimize.root_scalar(self.solve_objective, bracket=(a, b))
-        assert sol.converged, sol
-        hazard_infection = sol.root
-        P = self.solve_step(hazard_infection)
+        # TODO: Should I use log for x[0] & logit for x[1]
+        #       to implement the constraints?
+        x_guess = (15, 0.95)
+        x_sol = optimize.fixed_point(self.solve_objective,
+                                     x_guess)
+        P = self.solve_step(x_sol)
         return ProbabilityInterpolant(P)
 
 
@@ -476,6 +483,8 @@ class CacheParameters(parameters.Parameters):
 # file is in.
 _cachedir = os.path.join(os.path.dirname(__file__), '_cache')
 _cache = Memory(_cachedir)
+
+
 @_cache.cache
 def _probability_interpolant(params):
     return Solver(params).solve()
@@ -488,6 +497,5 @@ def probability_interpolant(params):
 
 
 def probability(age, params):
-    '''The probability of being in each immune status at age `a`,
-    given being alive at age `a`.'''
+    '''The probability of being in each immune status at age `a`.'''
     return probability_interpolant(params)(age)
