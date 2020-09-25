@@ -35,8 +35,8 @@ def get_gap_size_from_seasonal_coefficient_of_variation(c_v):
 class gen(RV):
     def __init__(self, parameters, _scaling=None, *args, **kwargs):
         self.peak_time_of_year = parameters.birth_peak_time_of_year
-        self.seasonal_coefficient_of_variation \
-            = parameters.birth_seasonal_coefficient_of_variation
+        self.seasonal_coefficient_of_variation = (
+            parameters.birth_seasonal_coefficient_of_variation)
         if self.seasonal_coefficient_of_variation < 1 / numpy.sqrt(3):
             self._alpha = (1 + numpy.sqrt(3)
                            * self.seasonal_coefficient_of_variation)
@@ -74,7 +74,8 @@ class gen(RV):
         # Now out = fracpart(time - self.peak_time_of_year)
         #         = tau.
         # Without building intermediate arrays, compute
-        # `out = self._alpha * (1 - self._beta * (1 - numpy.abs(1 - 2 * tau)))`.
+        # `out = (self._alpha
+        #         * (1 - self._beta * (1 - numpy.abs(1 - 2 * tau))))`.
         out *= 2
         out -= 1
         numpy.abs(out, out=out)

@@ -23,6 +23,6 @@ def arange(*args, dtype=None, endpoint=False):
         # due to roundoff errors.
         stop = val.dtype.type(stop)
         if (((step > 0) and (val[-1] < stop))
-            or ((step < 0) and (val[-1] > stop))):
+                or ((step < 0) and (val[-1] > stop))):
             val = numpy.hstack((val, stop))
     return val
