@@ -7,10 +7,26 @@ import numpy.lib.recfunctions
 import pandas
 from scipy import integrate, optimize, sparse
 
-from herd import (age_structure, antibody_gain, antibody_loss,
-                  birth, buffalo, chronic_recovery,
-                  maternal_immunity_waning, mortality, parameters,
-                  progression, recovery, utility)
+from herd import (antibody_gain, antibody_loss, birth, buffalo,
+                  chronic_recovery, maternal_immunity_waning,
+                  mortality, parameters, progression, recovery,
+                  utility)
+
+
+def hazard_birth_constant_time(ages, RV_mortality, age_step):
+    RV_birth = birth.from_param_values(
+        birth_seasonal_coefficient_of_variation=0,
+        # This value doesn't matter when the variation is 0.
+        birth_peak_time_of_year=0,
+        # We will handle scaling ourselves.
+        _scaling=1)
+    hazard = RV_birth.hazard(
+        age=ages,
+        # This value doesn't matter when the variation is 0.
+        time=0)
+    # Scale so that the population growth rate is 0.
+    hazard /= numpy.dot(hazard, RV_mortality.sf(ages)) * age_step
+    return hazard
 
 
 class Block:
@@ -329,8 +345,8 @@ class Solver:
         self.params.transmission_rate = params.transmission_rate
         self.params.chronic_transmission_rate = (
             params.chronic_transmission_rate)
-        # TODO
-        self.params.hazard_birth = numpy.ones(len(self.ages))
+        self.params.hazard_birth = hazard_birth_constant_time(
+            self.ages, RVs['mortality'], self.step)
 
     def set_blocks(self):
         self.blocks = {}
