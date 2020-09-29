@@ -92,13 +92,13 @@ class BlockODE(Block):
         '''Get the off-diagonal block `A_XY` that maps state Y to X,
         where Y is a variable governed by a PDE.'''
         A_XY = sparse.lil_matrix((len(self), self.params.length_PDE))
-        # TODO: Should this start at i = 1?
-        for i in range(self):
+        # TODO: Should this start at i = 0?
+        for i in range(1, self):
             j = numpy.arange(i + 1)
             A_XY[i, j] = - (pdf_in[i - j]
                             * self.params.survival.mortality[i]
                             / self.params.survival.mortality[j]
-                            * self.params.step)
+                            * self.params.step ** 2)
         return A_XY
 
 
@@ -115,6 +115,7 @@ class BlockPDE(Block):
         '''Get the off-diagonal block `A_XY` that maps state Y to X,
         where Y is a variable governed by an ODE.'''
         A_XY = sparse.lil_matrix((len(self), self.params.length_ODE))
+        A_XY[0, 0] = - hazard_in[0]
         i = numpy.arange(1, self.params.length_ODE)
         A_XY[i, i - 1] = A_XY[i, i] = - hazard_in / 2
         return A_XY
@@ -123,8 +124,8 @@ class BlockPDE(Block):
         '''Get the off-diagonal block `A_XY` that maps state Y to X,
         where Y is a variable governed by a PDE.'''
         A_XY = sparse.lil_matrix((len(self), self.params.length_PDE))
-        # TODO: Should this start at i = 1?
-        for i in range(self):
+        # TODO: Should this start at i = 0?
+        for i in range(1, self):
             j = numpy.arange(i + 1)
             A_XY[i, j] = - (pdf_in[i - j]
                             * self.params.survival.mortality[i]

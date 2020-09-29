@@ -11,6 +11,8 @@
 \usepackage{amsmath}
 \DeclareMathOperator{\Prob}{Prob}
 \newcommand{\md}{\mathrm{d}}
+\renewcommand{\vec}[1]{\mathbf{#1}}
+\newcommand{\mat}[1]{\mathbf{#1}}
 
 
 \begin{document}
@@ -51,7 +53,8 @@ satisfy
     &= - \left[h_{\text{infection}} + h_{\text{death}}(a)\right]
       P_{\mathrm{S}}(a),
     \displaybreak[0]\\
-    p_{\mathrm{I}}(0, 0) &= 0,
+    p_{\mathrm{I}}(0, 0)
+    &= h_{\text{infection}} P_{\mathrm{S}}(0),
     \\
     p_{\mathrm{I}}(a, 0)
     &= h_{\text{infection}} P_{\mathrm{S}}(a),
@@ -91,7 +94,8 @@ Integrating the PDEs along the characteristics $r = a - a_0$ gives
     &= - \left[h_{\text{infection}}  + h_{\text{death}}(a)\right]
       P_{\mathrm{S}}(a),
     \displaybreak[0]\\
-    p_{\mathrm{I}}(0, 0) &= 0,
+    p_{\mathrm{I}}(0, 0)
+    &= h_{\text{infection}} P_{\mathrm{S}}(0),
     \\
     p_{\mathrm{I}}(a, 0)
     &= h_{\text{infection}} P_{\mathrm{S}}(a),
@@ -201,7 +205,7 @@ Crank--Nicolson method on characteristics gives
       \right]
       \frac{P_{\mathrm{S}}^i + P_{\mathrm{S}}^{i - 1}}{2},
     \displaybreak[0]\\
-    p_{\mathrm{I}}^0 &= 0,
+    p_{\mathrm{I}}^0 &= h_{\text{infection}} P_{\mathrm{S}}^0,
     \\
     p_{\mathrm{I}}^i
     &= h_{\text{infection}}
@@ -509,6 +513,248 @@ gives
 so that the population size is constant, i.e.~zero growth rate.
 
 
+\subsection{Implementation}
+
+Numerical scheme \eqref{eq:numerical_method} can be written as
+\begin{subequations}
+  \begin{align}
+    P_{\mathrm{S}}^0
+    &= 1,
+    \\
+    \begin{split}
+      - \left\{
+        1
+        - \left[h_{\text{infection}} + h_{\text{death}}(a^{i - 1 / 2})\right]
+        \frac{\Delta a}{2}
+      \right\} P_{\mathrm{S}}^{i - 1}
+      \\ {}
+      + \left\{
+        1
+        + \left[h_{\text{infection}} + h_{\text{death}}(a^{i - 1 / 2})\right]
+        \frac{\Delta a}{2}
+      \right\} P_{\mathrm{S}}^i
+      &= 0,
+    \end{split}
+    \displaybreak[0]\\
+    - h_{\text{infection}} P_{\mathrm{S}}^0
+    + p_{\mathrm{I}}^0 &= 0,
+    \\
+    - \frac{h_{\text{infection}}}{2} P_{\mathrm{S}}^{i - 1}
+    - \frac{h_{\text{infection}}}{2} P_{\mathrm{S}}^i
+    + p_{\mathrm{I}}^i
+    &= 0,
+    \displaybreak[0]\\
+    P_{\mathrm{R}}^0 &= 0,
+    \\
+    \begin{split}
+      - \sum_{j = 0}^i
+      p_{\text{recovery}}(r^{i - j})
+      \frac{S_{\text{death}}(a^i)}{S_{\text{death}}(a^j)}
+      \Delta a^2
+      p_{\mathrm{I}}^j
+      \\ {}
+      - \left[1 - h_{\text{death}}(a^{i - 1 / 2}) \frac{\Delta a}{2}\right]
+      P_{\mathrm{R}}^{i - 1}
+      \\ {}
+      + \left[1 + h_{\text{death}}(a^{i - 1 / 2}) \frac{\Delta a}{2}\right]
+      P_{\mathrm{R}}^i
+      &= 0.
+    \end{split}
+  \end{align}
+\end{subequations}
+
+Define the vectors
+\begin{equation}
+  \vec{x}_X =
+  \begin{cases}
+    \begin{pmatrix}
+      P_X^0\\
+      P_X^1\\
+      \vdots\\
+      P_X^{I - 1}
+    \end{pmatrix}
+    &
+    \text{for $X \in \left\{\mathrm{S}, \mathrm{R}\right\}$},
+    \\[4em]
+    \begin{pmatrix}
+      p_X^0\\
+      p_X^1\\
+      \vdots\\
+      p_X^{I - 1}
+    \end{pmatrix}
+    &
+    \text{for $X \in \left\{\mathrm{I}\right\}$},
+  \end{cases}
+\end{equation}
+and let $\vec{x}$ be the $\vec{x}_X$'s stacked into a single vector,
+\begin{equation}
+  \vec{x} =
+  \begin{pmatrix}
+    \vec{x}_{\mathrm{S}}\\
+    \vec{x}_{\mathrm{I}}\\
+    \vec{x}_{\mathrm{R}}
+  \end{pmatrix}.
+\end{equation}
+
+Define the block diagonal matrix
+\begin{align}
+  \mat{D} &=
+  \begin{bmatrix}
+    \mat{D}_{\mathrm{S}} & \mat{0} & \mat{0}
+    \\
+    \mat{0} & \bar{\mat{D}}_{\mathrm{I}} & \mat{0}
+    \\
+    \mat{0} & \mat{0} & \mat{D}_{\mathrm{R}}
+  \end{bmatrix},
+\end{align}
+with blocks
+\begin{subequations}
+  \begin{align}
+    \mat{D}_X &=
+    \begin{bmatrix}
+      1 & 0 & 0 & \hdots & 0
+      \\
+      - (1 - d_X^1) & 1 + d_X^1 & 0 & \hdots & 0
+      \\
+      0 & - (1 - d_X^2) & 1 + d_X^2 & \ddots & \vdots
+      \\
+      \vdots & \ddots & \ddots & \ddots & 0
+      \\
+      0 & \hdots & 0 & - (1 - d_X^{I - 1}) & 1 + d_X^{I - 1}
+    \end{bmatrix},
+    \\
+    \bar{\mat{D}}_X &=
+    \begin{bmatrix}
+      1 & 0 & \hdots & 0 \\
+      0 & 1 & \ddots & \vdots \\
+      \vdots & \ddots & \ddots & 0 \\
+      0 & \hdots & 0 & 1
+    \end{bmatrix},
+  \end{align}
+\end{subequations}
+where
+\begin{subequations}
+  \begin{align}
+    d_{\mathrm{S}}^i
+    &= \frac{1}{2} \left[h_{\text{infection}}
+      + h_{\text{death}}(a^{i - 1 / 2})\right]
+      \Delta a,
+    \\
+    d_{\mathrm{R}}^i
+    &= \frac{1}{2} h_{\text{death}}(a^{i - 1 / 2}) \Delta a,
+  \end{align}
+\end{subequations}
+for $i \in \{1, 2, \ldots, I - 1\}$.
+
+Define the influx matrix
+\begin{equation}
+  \mat{F} =
+  \begin{bmatrix}
+    \mat{0} & \mat{0} & \mat{0}
+    \\
+    \mat{F}_{\mathrm{IS}} & \mat{0} & \mat{0}
+    \\
+    \mat{0} & \bar{\mat{F}}_{\mathrm{RI}} & \mat{0}
+  \end{bmatrix},
+\end{equation}
+with blocks
+\begin{subequations}
+  \begin{align}
+    \mat{F}_{XY} &=
+    \begin{bmatrix}
+      f_{XY}^0 & 0 & 0 & \hdots & 0
+      \\
+      f_{XY}^1 & f_{XY}^1 & 0 & \hdots & 0
+      \\
+      0 & f_{XY}^2 & f_{XY}^2 & \ddots & \vdots
+      \\
+      \vdots & \ddots & \ddots & \ddots & 0
+      \\
+      0 & \hdots & 0 & f_{XY}^{I - 1} &
+      f_{XY}^{I - 1}
+    \end{bmatrix},
+    \displaybreak[0]\\
+    \bar{\mat{F}}_{XY} &=
+    \begin{bmatrix}
+      \bar{f}_{XY}^{0, 0} & 0 & \hdots & 0
+      \\
+      \bar{f}_{XY}^{1, 0} & \bar{f}_{XY}^{1, 1} & \ddots & \vdots
+      \\
+      \vdots &  & \ddots & 0
+      \\
+      \bar{f}_{XY}^{I - 1, 0} & \bar{f}_{XY}^{I - 1, 1} & \hdots &
+      \bar{f}_{XY}^{I - 1, I - 1}
+    \end{bmatrix},
+  \end{align}
+\end{subequations}
+where
+\begin{subequations}
+  \begin{align}
+    f_{\mathrm{IS}}^i &=
+    \begin{cases}
+      h_{\text{infection}}
+      & \text{for $i \in \{0\}$},
+      \\
+      \frac{1}{2} h_{\text{infection}}
+      & \text{for $i \in \{1, 2, \ldots, I - 1\}$},
+    \end{cases}
+    \displaybreak[0]\\
+    \bar{f}_{\mathrm{RI}}^{i, j} &=
+    \begin{cases}
+      0 & \text{for $i \in \{0\}$ and $j \in \{0\}$},
+      \\
+      p_{\text{recovery}}(r^{i - j})
+      \frac{S_{\text{death}}(a^i)}{S_{\text{death}}(a^j)}
+      \Delta a^2 &
+      \begin{aligned}
+        \text{for $i \in \{1, 2, \ldots, I - 1\}$}&\\
+        \text{and $j \in \{0, 1, 2, \ldots, i\}$}&.
+      \end{aligned}
+    \end{cases}
+  \end{align}
+\end{subequations}
+
+Define the vector
+\begin{equation}
+  \vec{b} =
+  \begin{pmatrix}
+    \vec{b}_{\mathrm{S}} \\
+    \vec{0} \\
+    \vec{0}
+  \end{pmatrix},
+\end{equation}
+with
+\begin{equation}
+  \vec{b}_{\mathrm{S}} =
+  \begin{pmatrix}
+    1 \\
+    0 \\
+    \vdots \\
+    0
+  \end{pmatrix}.
+\end{equation}
+
+Define the matrix
+\begin{equation}
+  \mat{A} =
+  \mat{D} - \mat{F}.
+\end{equation}
+The numerical scheme is then finding the vector $\vec{x}$ that solves
+\begin{equation}
+  \mat{A} \vec{x} = \vec{b}.
+\end{equation}
+
+The diagonal entries of $\mat{A}$ are non-negative if
+\begin{equation}
+  h_{\text{birth}}(a^0) \Delta a \leq 1,
+\end{equation}
+and the off-diagonal entries of $\mat{A}$ are non-positive if
+\begin{equation}
+  d_X^i \leq 1.
+\end{equation}
+Under these conditions, the entries of $\vec{x}$ are non-negative.
+
+
 \section{SCRATCH}
 
 \begin{equation}
@@ -558,7 +804,8 @@ satisfy
     &= - \left[h_{\text{infection}} + h_{\text{death}}(a)\right]
       P_{\mathrm{S}}(a),
     \displaybreak[0]\\
-    p_{\mathrm{I}}(0, 0) &= 0,
+    p_{\mathrm{I}}(0, 0)
+    &= h_{\text{infection}} P_{\mathrm{S}}(0),
     \\
     p_{\mathrm{I}}(a, 0)
     &= h_{\text{infection}} P_{\mathrm{S}}(a),
@@ -623,7 +870,8 @@ so $P(a) = 1$ for $a \geq 0$.
       \right]
       \frac{P_{\mathrm{S}}^i + P_{\mathrm{S}}^{i - 1}}{2},
     \displaybreak[0]\\
-    p_{\mathrm{I}}^0 &= 0,
+    p_{\mathrm{I}}^0
+    &= h_{\text{infection}} P_{\mathrm{S}}^0,
     \\
     p_{\mathrm{I}}^i
     &= h_{\text{infection}}
