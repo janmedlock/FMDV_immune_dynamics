@@ -1050,7 +1050,54 @@ gives
 \end{equation}
 so that the population size is constant, i.e.~zero growth rate.
 
-\textbf{TODO: Can we turn this back into a scheme for just $p_I(a - r, 0)$?}
+We can turn this back into a scheme for just $p_I(a - r, 0)$:
+\begin{equation}
+  \begin{split}
+    p_{\text{I}}^{i, j}
+    &= \frac{1 - \left[h_{\text{recovery}}(r^{j - 1})
+        + h_{\text{death}}(a^{i - 1})\right] \Delta a / 2}
+    {1 + \left[h_{\text{recovery}}(r^j)
+        + h_{\text{death}}(a^i)\right] \Delta a / 2}
+    p_{\text{I}}^{i - 1, j - 1}
+    \\
+    &= \left\{
+      \prod_{k = 1}^j
+      \frac{1 - \left[h_{\text{recovery}}(r^{j - k})
+          + h_{\text{death}}(a^{i - k})\right] \Delta a / 2}
+      {1 + \left[h_{\text{recovery}}(r^{j - k + 1})
+          + h_{\text{death}}(a^{i - k + 1})\right] \Delta a / 2}
+    \right\}
+    p_{\text{I}}^{i - j, 0}
+    \\
+    &= \left\{
+      \prod_{\ell = 1}^j
+      \frac{1 - \left[h_{\text{recovery}}(r^{\ell - 1})
+          + h_{\text{death}}(a^{i - j + \ell - 1})\right] \Delta a / 2}
+      {1 + \left[h_{\text{recovery}}(r^{\ell})
+          + h_{\text{death}}(a^{i - j + \ell})\right] \Delta a / 2}
+    \right\}
+    p_{\text{I}}^{i - j, 0}
+    \\
+    &= S_{\text{recovery}}(r^j)
+    \frac{S_{\text{death}}(a^i)}{S_{\text{death}}(a^i - r^j)}
+    p_{\text{I}}^{i - j, 0}?
+  \end{split}
+\end{equation}
+Because the hazards can be very large, can we rewrite this in terms of
+survivals or densities? I.e.~something like
+\begin{equation}
+  \begin{split}
+    \prod_{\ell = 1}^j
+    \frac{1 - \left[h_{\text{recovery}}(r^{\ell - 1})
+        + h_{\text{death}}(a^{i - j + \ell - 1})\right] \Delta a / 2}
+    {1 + \left[h_{\text{recovery}}(r^{\ell})
+        + h_{\text{death}}(a^{i - j + \ell})\right] \Delta a / 2}
+    \\
+    = S_{\text{recovery}}(r^j)
+    \frac{S_{\text{death}}(a^i)}{S_{\text{death}}(a^i - r^j)}?
+  \end{split}
+\end{equation}
+
 
 
 % \section{SCRATCH}
