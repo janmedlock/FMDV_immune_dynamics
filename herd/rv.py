@@ -11,8 +11,7 @@ class RV:
     def hazard(self, age):
         return exp(self.logpdf(age) - self.logsf(age))
 
-    def __repr__(self, params = ()):
-        cls = self.__class__
+    def __repr__(self, params=()):
         clsname = '{}.{}'.format(self.__module__, self.__class__.__name__)
         paramstrs = ['{} = {}'.format(p, getattr(self, p))
                      for p in params]
