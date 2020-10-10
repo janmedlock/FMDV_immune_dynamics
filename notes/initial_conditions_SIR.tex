@@ -388,7 +388,12 @@ Continuing,
       - \frac{1 - h_{\text{death}}(a^{i - 1}) \Delta a / 2}
       {1 + h_{\text{death}}(a^i) \Delta a / 2}
       P_{\mathrm{I}}^{i - 1}\right]
-    \\
+  \end{split}
+\end{equation}
+and
+\begin{equation}
+  \begin{split}
+    \frac{P_{\mathrm{I}}^i - P_{\mathrm{I}}^{i - 1}}{\Delta a}
     &= p_{\mathrm{I}}^i
     - \sum_{j = 0}^i p_{\text{recovery}}(r^j)
     \frac{S_{\text{death}}(a^i)}{S_{\text{death}}(a^{i - j})}
@@ -402,9 +407,31 @@ Continuing,
     + \frac{1}{2} h_{\text{death}}(a^i)
     \left[P_{\mathrm{I}}^i
       - \frac{S_{\text{death}}(a^i)}{S_{\text{death}}(a^{i - 1})}
-      P_{\mathrm{I}}^{i - 1}\right].
+      P_{\mathrm{I}}^{i - 1}\right],
+    \\
+    &= p_{\mathrm{I}}^i
+    - \sum_{j = 0}^i p_{\text{recovery}}(r^j)
+    \frac{S_{\text{death}}(a^i)}{S_{\text{death}}(a^{i - j})}
+    p_{\mathrm{I}}^{i - j} \Delta a
+    \\ & \quad {}
+    - \frac{1}{2} \left[h_{\text{death}}(a^i) P_{\mathrm{I}}^i
+      + h_{\text{death}}(a^{i - 1}) P_{\mathrm{I}}^{i - 1}\right]
+    \\ & \quad {}
+    + \left\{
+      p_{\text{recovery}}(0)
+      + \frac{1}{2} h_{\text{death}}(a^i)
+      \left[1 + p_{\text{recovery}}(0) \Delta a \right]
+    \right\} \Delta a p_{\mathrm{I}}^i
+    \\ & \quad {}
+    - \frac{1}{2} h_{\text{death}}(a^i) \Delta a
+    \sum_{j = 0}^i p_{\text{recovery}}(r^j)
+     \frac{S_{\text{death}}(a^i)}{S_{\text{death}}(a^{i - j})}
+     p_{\mathrm{I}}^{i - j} \Delta a
   \end{split}
 \end{equation}
+\textbf{TODO: Shit. The 2nd term isn't correct to balance those in
+  $\frac{P_{\mathrm{R}}^i - P_{\mathrm{R}}^{i - 1}}{\Delta a}$. Should
+  $P_{\mathrm{I}}^i$ be the average over sums at $i$ and $i - 1$?}
 
 Then
 \begin{subequations}
@@ -418,12 +445,7 @@ Then
         + h_{\text{death}}(a^{i - 1}) P^{i - 1}
       \right]
       \\ & \quad {}
-      + p_{\text{recovery}}(0) p_{\mathrm{I}}^i \Delta a
-      \\ & \quad {}
-      + \frac{1}{2} h_{\text{death}}(a^i)
-      \left[P_{\mathrm{I}}^i
-        - \frac{S_{\text{death}}(a^i)}{S_{\text{death}}(a^{i - 1})}
-        P_{\mathrm{I}}^{i - 1}\right].
+      + ...
     \end{split}
   \end{align}
 \end{subequations}
