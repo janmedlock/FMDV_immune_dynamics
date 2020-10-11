@@ -253,6 +253,37 @@ and
 
 \subsection{Analysis}
 
+The Crank--Nicholson approximation of the survival in terms of the
+hazard is
+\begin{equation}
+  \begin{split}
+    \frac{S_{\text{death}}(a^i) - S_{\text{death}}(a^{i - 1})}
+    {\Delta a}
+    &= - \frac{1}{2} h_{\text{death}}(a^i) S_{\text{death}}(a^i)
+    \\ &\quad {}
+    - \frac{1}{2} h_{\text{death}}(a^{i - 1}) S_{\text{death}}(a^{i - 1}),
+  \end{split}
+\end{equation}
+so that
+\begin{equation}
+  S_{\text{death}}(a^i)
+  = \prod_{j = 1}^i
+  \frac{1 - h_{\text{death}}(a^{j - 1}) \Delta a / 2}
+  {1 + h_{\text{death}}(a^j) \Delta a / 2}.
+\end{equation}
+This gives
+\begin{equation}
+  \begin{split}
+    \frac{S_{\text{death}}(a^{i - 1}) - S_{\text{death}}(a^i)}
+    {S_{\text{death}}(a^{i - 1}) \Delta a}
+    &= \frac{h_{\text{death}}(a^i) + h_{\text{death}}(a^{i - 1})}
+    {2 + h_{\text{death}}(a^i) \Delta a}.
+  \end{split}
+\end{equation}
+
+\textbf{TODO: \eqref{eq:sum_difference} should look like
+  \eqref{eq:integral_derivative}.}
+%
 The difference of the sum \eqref{eq:sum_over_r} is
 \begin{equation}
   \label{eq:sum_difference}
@@ -311,32 +342,9 @@ The difference of the sum \eqref{eq:sum_over_r} is
     + p_{\text{recovery}}(0) p_{\mathrm{I}}^i \Delta a
     - \frac{S_{\text{death}}(a^{i - 1}) - S_{\text{death}}(a^i)}
     {S_{\text{death}}(a^{i - 1}) \Delta a}
-    P_{\mathrm{I}}^{i - 1}.
+    P_{\mathrm{I}}^{i - 1}
   \end{split}
 \end{equation}
-\textbf{TODO: \eqref{eq:sum_difference} should look like
-  \eqref{eq:integral_derivative}.}
-%
-\textbf{TODO: From \eqref{eq:discrete_total}, we have the
-  Crank--Nicholson approximation of the survival in terms of the
-  hazard}
-\begin{displaymath}
-  S_{\text{death}}(a^i)
-  = \prod_{j = 1}^i
-  \frac{1 - h_{\text{death}}(a^{j - 1}) \Delta a / 2}
-  {1 + h_{\text{death}}(a^j) \Delta a / 2}.
-\end{displaymath}
-\textbf{This gives}
-\begin{displaymath}
-  \begin{split}
-    \frac{S_{\text{death}}(a^{i - 1}) - S_{\text{death}}(a^i)}
-    {S_{\text{death}}(a^{i - 1}) \Delta a}
-    &= \frac{h_{\text{death}}(a^i) + h_{\text{death}}(a^{i - 1})}
-    {2 + h_{\text{death}}(a^i) \Delta a}.
-  \end{split}
-\end{displaymath}
-%
-Continuing,
 \begin{equation}
   \begin{split}
     \frac{P_{\mathrm{I}}^i - P_{\mathrm{I}}^{i - 1}}{\Delta a}
@@ -390,7 +398,6 @@ Continuing,
       P_{\mathrm{I}}^{i - 1}\right]
   \end{split}
 \end{equation}
-and
 \begin{equation}
   \begin{split}
     \frac{P_{\mathrm{I}}^i - P_{\mathrm{I}}^{i - 1}}{\Delta a}
@@ -410,9 +417,17 @@ and
       P_{\mathrm{I}}^{i - 1}\right],
     \\
     &= p_{\mathrm{I}}^i
-    - \sum_{j = 0}^i p_{\text{recovery}}(r^j)
+    - \frac{1}{2} \sum_{j = 0}^i
+    p_{\text{recovery}}(r^j)
     \frac{S_{\text{death}}(a^i)}{S_{\text{death}}(a^{i - j})}
-    p_{\mathrm{I}}^{i - j} \Delta a
+    p_{\mathrm{I}}^{i - j}
+    \Delta a
+    \\ & \quad {}
+    - \frac{1}{2} \sum_{j = 0}^{i - 1}
+    p_{\text{recovery}}(r^j)
+    \frac{S_{\text{death}}(a^{i - 1})}{S_{\text{death}}(a^{i - 1 - j})}
+    p_{\mathrm{I}}^{i - 1 - j}
+    \Delta a
     \\ & \quad {}
     - \frac{1}{2} \left[h_{\text{death}}(a^i) P_{\mathrm{I}}^i
       + h_{\text{death}}(a^{i - 1}) P_{\mathrm{I}}^{i - 1}\right]
@@ -423,15 +438,22 @@ and
       \left[1 + p_{\text{recovery}}(0) \Delta a \right]
     \right\} \Delta a p_{\mathrm{I}}^i
     \\ & \quad {}
-    - \frac{1}{2} h_{\text{death}}(a^i) \Delta a
+    - \frac{1}{2}
+    \left[1 + h_{\text{death}}(a^i) \Delta a\right]
     \sum_{j = 0}^i p_{\text{recovery}}(r^j)
-     \frac{S_{\text{death}}(a^i)}{S_{\text{death}}(a^{i - j})}
-     p_{\mathrm{I}}^{i - j} \Delta a
+    \frac{S_{\text{death}}(a^i)}{S_{\text{death}}(a^{i - j})}
+    p_{\mathrm{I}}^{i - j} \Delta a
+    \\ & \quad {}
+    + \frac{1}{2} \sum_{j = 0}^{i - 1}
+    p_{\text{recovery}}(r^j)
+    \frac{S_{\text{death}}(a^{i - 1})}{S_{\text{death}}(a^{i - 1 - j})}
+    p_{\mathrm{I}}^{i - 1 - j}
+    \Delta a
   \end{split}
 \end{equation}
-\textbf{TODO: Shit. The 2nd term isn't correct to balance those in
-  $\frac{P_{\mathrm{R}}^i - P_{\mathrm{R}}^{i - 1}}{\Delta a}$. Should
-  $P_{\mathrm{I}}^i$ be the average over sums at $i$ and $i - 1$?}
+\textbf{TODO: Shit. The first 4 terms are correct but the rest are
+  hideous. Should $P_{\mathrm{I}}^i$ be the average over sums at $i$
+  and $i - 1$?}
 
 Then
 \begin{subequations}
@@ -443,23 +465,10 @@ Then
       &= - \frac{1}{2} \left[
         h_{\text{death}}(a^i) P^i
         + h_{\text{death}}(a^{i - 1}) P^{i - 1}
-      \right]
-      \\ & \quad {}
-      + ...
+      \right],
     \end{split}
   \end{align}
 \end{subequations}
-\textbf{TODO: All the terms after the top line should cancel each
-  other.}
-
-Then
-\begin{equation}
-  \frac{P^i - P^{i - 1}}{\Delta a}
-  = - \frac{1}{2} \left[
-    h_{\text{death}}(a^i) P^i
-    + h_{\text{death}}(a^{i - 1}) P^{i - 1}
-  \right],
-\end{equation}
 so that
 \begin{equation}
   \label{eq:discrete_total}
@@ -480,7 +489,6 @@ so that
     &= S_{\text{death}}(a^i).
   \end{split}
 \end{equation}
-
 The the constant-time birth hazard
 (i.e.~$c_{\mathrm{v}} = 0$)
 \begin{equation}
@@ -768,7 +776,7 @@ For each $i \in \{1, 2, \ldots, I - 1\}$
 and $j \in \{1, 2, \ldots, i\}$,
 using the Crank--Nicolson method on characteristics gives
 \begin{subequations}
-  \label{eq:numerical_method}
+  \label{eq:pde_numerical_method}
   \begin{align}
     P_{\mathrm{S}}^0
     &= 1,
@@ -831,7 +839,7 @@ using the Crank--Nicolson method on characteristics gives
 \end{subequations}
 with
 \begin{equation}
-  \label{eq:sum_over_r}
+  \label{eq:pde_sum_over_r}
   P_{\mathrm{I}}^i
   = \sum_{j = 0}^i p_{\mathrm{I}}^{i, j} \Delta a,
 \end{equation}
@@ -843,9 +851,9 @@ and
 
 \subsection{Analysis}
 
-The difference of the sum \eqref{eq:sum_over_r} is
+The difference of the sum \eqref{eq:pde_sum_over_r} is
 \begin{equation}
-  \label{eq:sum_difference}
+  \label{eq:pde_sum_difference}
   \begin{split}
     \frac{P_{\mathrm{I}}^i - P_{\mathrm{I}}^{i - 1}}{\Delta a}
     &=
