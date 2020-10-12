@@ -285,7 +285,7 @@ This gives
   \eqref{eq:integral_derivative}.}
 %
 The difference of the sum \eqref{eq:sum_over_r} is
-\begin{equation}
+\begin{align}
   \label{eq:sum_difference}
   \begin{split}
     \frac{P_{\mathrm{I}}^i - P_{\mathrm{I}}^{i - 1}}{\Delta a}
@@ -297,7 +297,9 @@ The difference of the sum \eqref{eq:sum_over_r} is
     - \sum_{j = 0}^{i - 1} S_{\text{recovery}}(r^j)
     \frac{S_{\text{death}}(a^{i - 1})}{S_{\text{death}}(a^{i - 1 - j})}
     p_{\mathrm{I}}^{i - 1 - j}
-    \\
+  \end{split}
+  \displaybreak[0]\\
+  \begin{split}
     &= p_{\mathrm{I}}^i
     + \sum_{j = 1}^i S_{\text{recovery}}(r^j)
     \frac{S_{\text{death}}(a^i)}{S_{\text{death}}(a^{i - j})}
@@ -306,7 +308,9 @@ The difference of the sum \eqref{eq:sum_over_r} is
     - \sum_{j = 1}^i S_{\text{recovery}}(r^{j - 1})
     \frac{S_{\text{death}}(a^{i - 1})}{S_{\text{death}}(a^{i - j})}
     p_{\mathrm{I}}^{i - j}
-    \\
+  \end{split}
+  \displaybreak[0]\\
+  \begin{split}
     &= p_{\mathrm{I}}^i
     - \sum_{j = 1}^i \left[
       S_{\text{recovery}}(r^{j - 1})
@@ -319,7 +323,9 @@ The difference of the sum \eqref{eq:sum_over_r} is
     \frac{S_{\text{death}}(a^{i - 1}) - S_{\text{death}}(a^i)}
     {S_{\text{death}}(a^{i - j})}
     p_{\mathrm{I}}^{i - j}
-    \\
+  \end{split}
+  \displaybreak[0]\\
+  \begin{split}
     &= p_{\mathrm{I}}^i
     - \sum_{j = 1}^i
     \frac{S_{\text{recovery}}(r^{j - 1}) - S_{\text{recovery}}(r^j)}
@@ -333,7 +339,9 @@ The difference of the sum \eqref{eq:sum_over_r} is
     \sum_{j = 0}^{i - 1} S_{\text{recovery}}(r^j)
     \frac{S_{\text{death}}(a^{i - 1})}{S_{\text{death}}(a^{i - 1 - j})}
     p_{\mathrm{I}}^{i - 1 - j} \Delta a
-    \\
+  \end{split}
+  \displaybreak[0]\\
+  \begin{split}
     &= p_{\mathrm{I}}^i
     - \sum_{j = 0}^i p_{\text{recovery}}(r^j)
     \frac{S_{\text{death}}(a^i)}{S_{\text{death}}(a^{i - j})}
@@ -344,10 +352,8 @@ The difference of the sum \eqref{eq:sum_over_r} is
     {S_{\text{death}}(a^{i - 1}) \Delta a}
     P_{\mathrm{I}}^{i - 1}
   \end{split}
-\end{equation}
-\begin{equation}
+  \displaybreak[0]\\
   \begin{split}
-    \frac{P_{\mathrm{I}}^i - P_{\mathrm{I}}^{i - 1}}{\Delta a}
     &= p_{\mathrm{I}}^i
     - \sum_{j = 0}^i p_{\text{recovery}}(r^j)
     \frac{S_{\text{death}}(a^i)}{S_{\text{death}}(a^{i - j})}
@@ -363,7 +369,9 @@ The difference of the sum \eqref{eq:sum_over_r} is
     \\ & \quad {}
     + \frac{1}{2} \left[h_{\text{death}}(a^i) P_{\mathrm{I}}^i
       + h_{\text{death}}(a^{i - 1}) P_{\mathrm{I}}^{i - 1}\right]
-    \\
+  \end{split}
+  \displaybreak[0]\\
+  \begin{split}
     &= p_{\mathrm{I}}^i
     - \sum_{j = 0}^i p_{\text{recovery}}(r^j)
     \frac{S_{\text{death}}(a^i)}{S_{\text{death}}(a^{i - j})}
@@ -380,7 +388,9 @@ The difference of the sum \eqref{eq:sum_over_r} is
     \\ & \quad {}
     + \frac{1}{2} \left[h_{\text{death}}(a^i) P_{\mathrm{I}}^i
       + h_{\text{death}}(a^{i - 1}) P_{\mathrm{I}}^{i - 1}\right]
-    \\
+  \end{split}
+  \displaybreak[0]\\
+  \begin{split}
     &= p_{\mathrm{I}}^i
     - \sum_{j = 0}^i p_{\text{recovery}}(r^j)
     \frac{S_{\text{death}}(a^i)}{S_{\text{death}}(a^{i - j})}
@@ -397,10 +407,8 @@ The difference of the sum \eqref{eq:sum_over_r} is
       {1 + h_{\text{death}}(a^i) \Delta a / 2}
       P_{\mathrm{I}}^{i - 1}\right]
   \end{split}
-\end{equation}
-\begin{equation}
+  \displaybreak[0]\\
   \begin{split}
-    \frac{P_{\mathrm{I}}^i - P_{\mathrm{I}}^{i - 1}}{\Delta a}
     &= p_{\mathrm{I}}^i
     - \sum_{j = 0}^i p_{\text{recovery}}(r^j)
     \frac{S_{\text{death}}(a^i)}{S_{\text{death}}(a^{i - j})}
@@ -415,7 +423,9 @@ The difference of the sum \eqref{eq:sum_over_r} is
     \left[P_{\mathrm{I}}^i
       - \frac{S_{\text{death}}(a^i)}{S_{\text{death}}(a^{i - 1})}
       P_{\mathrm{I}}^{i - 1}\right],
-    \\
+  \end{split}
+  \displaybreak[0]\\
+  \begin{split}
     &= p_{\mathrm{I}}^i
     - \frac{1}{2} \sum_{j = 0}^i
     p_{\text{recovery}}(r^j)
@@ -450,7 +460,7 @@ The difference of the sum \eqref{eq:sum_over_r} is
     p_{\mathrm{I}}^{i - 1 - j}
     \Delta a
   \end{split}
-\end{equation}
+\end{align}
 \textbf{TODO: Shit. The first 4 terms are correct but the rest are
   hideous. Should $P_{\mathrm{I}}^i$ be the average over sums at $i$
   and $i - 1$?}
