@@ -71,28 +71,31 @@ class BlockODE(Block):
 
     def _get_A_XX(self, hazard_out):
         '''Get the diagonal block `A_XX` that maps state X to itself.'''
-        hazard_out_total = hazard_out + self.params.hazard.mortality
-        # The values on the diagonal.
-        d_0 = 1 + hazard_out_total * self.params.step / 2
-        # The values on the subdiagonal.
-        d_1 = - 1 + hazard_out_total * self.params.step / 2
-        assert (d_1 <= 0).all()
-        return sparse.diags([numpy.hstack([1, d_0]), d_1], [0, -1],
+        d_X = ((hazard_out + self.params.hazard.mortality)
+               * self.params.step / 2)
+        diags = ((numpy.hstack([1, 1 + d_X]), 0),  # The diagonal
+                 (- 1 + d_X, -1))  # The subdiagonal
+        # Ensure that the off-diagonal entries are non-positive.
+        for (v, k) in diags:
+            if k != 0:
+                assert (v <= 0).all()
+        return sparse.diags(*zip(*diags),
                             shape=(len(self), len(self)))
 
     def _get_A_XY_ODE(self, hazard_in):
         '''Get the off-diagonal block `A_XY` that maps state Y to X,
         where Y is a variable governed by an ODE.'''
         # The values on the diagonal and subdiagonal.
-        d = - hazard_in * self.params.step / 2
-        return sparse.diags([numpy.hstack([0, d]), d], [0, -1],
+        f_XY = - hazard_in * self.params.step / 2
+        diags = ((numpy.hstack([0, f_XY]), 0),  # The diagonal
+                 (f_XY, -1))  # The subdiagonal
+        return sparse.diags(*zip(*diags),
                             shape=(len(self), self.params.length_ODE))
 
     def _get_A_XY_PDE(self, pdf_in):
         '''Get the off-diagonal block `A_XY` that maps state Y to X,
         where Y is a variable governed by a PDE.'''
         A_XY = sparse.lil_matrix((len(self), self.params.length_PDE))
-        # TODO: Should this start at i = 0?
         for i in range(1, self):
             j = numpy.arange(i + 1)
             A_XY[i, j] = - (pdf_in[i - j]
@@ -114,17 +117,17 @@ class BlockPDE(Block):
     def _get_A_XY_ODE(self, hazard_in):
         '''Get the off-diagonal block `A_XY` that maps state Y to X,
         where Y is a variable governed by an ODE.'''
-        A_XY = sparse.lil_matrix((len(self), self.params.length_ODE))
-        A_XY[0, 0] = - hazard_in[0]
-        i = numpy.arange(1, self.params.length_ODE)
-        A_XY[i, i - 1] = A_XY[i, i] = - hazard_in / 2
-        return A_XY
+        # The values on the diagonal and subdiagonal.
+        f_XY = - hazard_in / 2
+        diags = ((numpy.hstack([0, f_XY]), 0),  # The diagonal
+                 (f_XY, -1))  # The subdiagonal
+        return sparse.diags(*zip(*diags),
+                            shape=(len(self), self.params.length_ODE))
 
     def _get_A_XY_PDE(self, pdf_in):
         '''Get the off-diagonal block `A_XY` that maps state Y to X,
         where Y is a variable governed by a PDE.'''
         A_XY = sparse.lil_matrix((len(self), self.params.length_PDE))
-        # TODO: Should this start at i = 0?
         for i in range(1, self):
             j = numpy.arange(i + 1)
             A_XY[i, j] = - (pdf_in[i - j]
