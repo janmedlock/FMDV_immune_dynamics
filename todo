@@ -1,7 +1,3 @@
-* buffalo.herd.initial_conditions.immune_status: Implement the
-  constant-time birth rate.
-* Check if the i = 0 terms from \bar{F} fix the analysis issues.
-
 * Should we just solve for the equilibrium of the probability of being
   in state X at age a, *not* conditioned on being alive at age a? It's
   a simpler problem to explain...
