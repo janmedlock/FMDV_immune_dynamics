@@ -47,14 +47,15 @@ def plot_sample(ax, sample, width=0.1):
     ax.set_ylabel('number in\nsample')
 
 
-def plot(parameters, ages):
+def plot_ICs(parameters, ages):
     from matplotlib import pyplot
     ICs = initial_conditions.gen(parameters)
     fig, axes = pyplot.subplots(3, 1, sharex=True)
-    conditional_probability = ICs.immune_status_probability_interpolant(ages)
-    plot_conditional_probability(axes[0], conditional_probability)
     probability = ICs.pdf(ages)
     plot_probability(axes[1], probability)
+    conditional_probability = probability.divide(
+        probability.sum(axis='columns'), axis='index')
+    plot_conditional_probability(axes[0], conditional_probability)
     numpy.random.seed(1)  # Make `ICs.rvs()` cache friendly.
     sample = ICs.rvs()
     plot_sample(axes[2], sample)
@@ -72,5 +73,8 @@ def plot(parameters, ages):
 
 if __name__ == '__main__':
     parameters = Parameters(SAT=1)
-    ages = numpy.linspace(0, 20, 101)
-    plot(parameters, ages)
+    # ages = numpy.linspace(0, 20, 101)
+    # plot_ICs(parameters, ages)
+
+    solver = initial_conditions.immune_status.Solver(parameters)
+    PI = solver.solve()

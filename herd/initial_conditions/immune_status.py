@@ -5,7 +5,7 @@ from joblib import Memory
 import numpy
 import numpy.lib.recfunctions
 import pandas
-from scipy import integrate, optimize, sparse
+from scipy import integrate, optimize, sparse, special
 
 from herd import (antibody_gain, antibody_loss, birth, buffalo,
                   chronic_recovery, maternal_immunity_waning,
@@ -403,9 +403,20 @@ class Solver:
                         for n in p.dtype.names}
         return self.rec_fromkwds(**p_integrated)
 
-    def solve_step(self, x):
+    @staticmethod
+    def transform(x):
+        '''Transform the solver variables to enforce the constraints x[0] ≥ 0
+        and 0 ≤ x[1] ≤ 1.'''
+        return numpy.array((numpy.log(x[0]), special.logit(x[1])))
+
+    @staticmethod
+    def transform_inverse(y):
+        '''Untransform the solver variables.'''
+        return numpy.array((numpy.exp(y[0]), special.expit(y[1])))
+
+    def solve_step(self, y):
         (self.params.hazard.infection,
-         self.params.newborn_proportion_immune) = x
+         self.params.newborn_proportion_immune) = self.transform_inverse(y)
         for block in self.blocks.values():
             block.update()
         A = self.stack_sparse(self.A)
@@ -448,20 +459,19 @@ class Solver:
         return (births_total[list(buffalo.Buffalo.has_antibodies)].sum()
                 / births_total.sum())
 
-    def solve_objective(self, x):
-        '''This is called by `optimize.root_scalar()` to find
-        the equilibrium `hazard_infection`.'''
-        P = self.solve_step(x)
-        return (self.get_hazard_infection(P),
-                self.get_newborn_proportion_immune(P))
+    def solve_objective(self, y):
+        '''This is called by `optimize.root_scalar()` to find the equilibrium
+        `hazard_infection` and `newborn_propotion_immune`.'''
+        print(self.transform_inverse(y))
+        P = self.solve_step(y)
+        return self.transform((self.get_hazard_infection(P),
+                               self.get_newborn_proportion_immune(P)))
 
     def solve(self):
-        # TODO: Should I use log for x[0] & logit for x[1]
-        #       to implement the constraints?
-        x_guess = (15, 0.95)
-        x_sol = optimize.fixed_point(self.solve_objective,
-                                     x_guess)
-        P = self.solve_step(x_sol)
+        x_guess = (1.7, 0.9)
+        y_sol = optimize.fixed_point(self.solve_objective,
+                                     self.transform(x_guess))
+        P = self.solve_step(y_sol)
         return ProbabilityInterpolant(P)
 
 
