@@ -1,4 +1,3 @@
-from numpy import inf
 from pandas import Timestamp
 
 
