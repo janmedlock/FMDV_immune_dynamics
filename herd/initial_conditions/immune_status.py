@@ -305,8 +305,6 @@ class Solver:
         self.length_ODE = self.length_PDE = len(self.ages)
         self.set_params(params)
         self.set_blocks()
-        self.set_A()
-        self.set_b()
 
     @staticmethod
     def rec_fromkwds(**kwds):
@@ -391,11 +389,16 @@ class Solver:
     def stack_sparse(self, rows, format='csr'):
         return sparse.bmat(self.stack(rows), format=format)
 
-    def set_A(self):
-        self.A = {var: block.A_X for (var, block) in self.blocks.items()}
+    def get_A(self):
+        A = self.stack_sparse({var: block.A_X
+                               for (var, block) in self.blocks.items()})
+        assert numpy.isfinite(A.data).all()
+        return A
 
-    def set_b(self):
-        self.b = {var: [block.b_X] for (var, block) in self.blocks.items()}
+    def get_b(self):
+        b = self.stack_sparse({var: [block.b_X]
+                               for (var, block) in self.blocks.items()})
+        return b
 
     def integrate_PDE_vars(self, p):
         # Integrate the p_X variables over r.
@@ -414,14 +417,16 @@ class Solver:
         '''Untransform the solver variables.'''
         return numpy.array((numpy.exp(y[0]), special.expit(y[1])))
 
+    def update_blocks(self):
+        for block in self.blocks.values():
+            block.update()
+
     def solve_step(self, y):
         (self.params.hazard.infection,
          self.params.newborn_proportion_immune) = self.transform_inverse(y)
-        for block in self.blocks.values():
-            block.update()
-        A = self.stack_sparse(self.A)
-        b = self.stack_sparse(self.b)
-        assert numpy.isfinite(A.data).all()
+        self.update_blocks()
+        A = self.get_A()
+        b = self.get_b()
         Pp = sparse.linalg.spsolve(A, b)
         (P, p) = self.unstack(Pp)
         p_integrated = self.integrate_PDE_vars(p)
@@ -461,7 +466,7 @@ class Solver:
 
     def solve_objective(self, y):
         '''This is called by `optimize.root_scalar()` to find the equilibrium
-        `hazard_infection` and `newborn_propotion_immune`.'''
+        `hazard_infection` and `newborn_proportion_immune`.'''
         P = self.solve_step(y)
         return self.transform((self.get_hazard_infection(P),
                                self.get_newborn_proportion_immune(P)))
