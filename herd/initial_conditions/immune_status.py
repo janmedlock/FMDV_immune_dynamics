@@ -96,7 +96,7 @@ class BlockODE(Block):
         '''Get the off-diagonal block `A_XY` that maps state Y to X,
         where Y is a variable governed by a PDE.'''
         A_XY = sparse.lil_matrix((len(self), self.params.length_PDE))
-        for i in range(1, self):
+        for i in range(1, len(self)):
             j = numpy.arange(i + 1)
             A_XY[i, j] = - (pdf_in[i - j]
                             * self.params.survival.mortality[i]
@@ -128,7 +128,7 @@ class BlockPDE(Block):
         '''Get the off-diagonal block `A_XY` that maps state Y to X,
         where Y is a variable governed by a PDE.'''
         A_XY = sparse.lil_matrix((len(self), self.params.length_PDE))
-        for i in range(1, self):
+        for i in range(1, len(self)):
             j = numpy.arange(i + 1)
             A_XY[i, j] = - (pdf_in[i - j]
                             * self.params.survival.mortality[i]
@@ -310,6 +310,7 @@ class Solver:
 
     @staticmethod
     def rec_fromkwds(**kwds):
+        '''Build a `numpy.recarray()` from `kwds`.'''
         return numpy.rec.fromarrays(
             numpy.broadcast_arrays(*kwds.values()),
             dtype=[(k, float) for k in kwds.keys()])
@@ -321,6 +322,7 @@ class Solver:
         self.params.length_PDE = self.length_PDE
         # We need the survival, pdf, and hazard for these RVs.
         RVs = {
+            'mortality': mortality.gen(params),
             'progression': progression.gen(params),
             'recovery': recovery.gen(params),
             'chronic_recovery': chronic_recovery.gen(params),
@@ -333,7 +335,6 @@ class Solver:
         self.params.pdf = self.rec_fromkwds(**pdf)
         # We also need the hazard for these RVs.
         RVs.update({
-            'mortality': mortality.gen(params),
             'maternal_immunity_waning': maternal_immunity_waning.gen(params),
             'antibody_loss': antibody_loss.gen(params),
         })
@@ -351,6 +352,8 @@ class Solver:
             params.chronic_transmission_rate)
         self.params.hazard_birth = hazard_birth_constant_time(
             self.ages, RVs['mortality'], self.step)
+        # Dummy value. Set on calls to `solve_step()`.
+        self.params.newborn_proportion_immune = 1
 
     def set_blocks(self):
         self.blocks = {}
