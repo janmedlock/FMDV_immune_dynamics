@@ -462,13 +462,12 @@ class Solver:
     def solve_objective(self, y):
         '''This is called by `optimize.root_scalar()` to find the equilibrium
         `hazard_infection` and `newborn_propotion_immune`.'''
-        print(self.transform_inverse(y))
         P = self.solve_step(y)
         return self.transform((self.get_hazard_infection(P),
                                self.get_newborn_proportion_immune(P)))
 
     def solve(self):
-        x_guess = (1.7, 0.9)
+        x_guess = (1.4, 0.83)
         y_sol = optimize.fixed_point(self.solve_objective,
                                      self.transform(x_guess))
         P = self.solve_step(y_sol)
