@@ -426,7 +426,6 @@ class Solver:
                    axis='columns', inplace=True)
         P.sort_index(axis='columns', inplace=True)
         assert ((P >= 0) | numpy.isclose(P, 0)).all(axis=None)
-        assert numpy.isclose(P.sum(axis='columns'), 1).all()
         P.clip(lower=0, inplace=True)
         return P
 
