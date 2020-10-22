@@ -5,7 +5,7 @@ import sys
 import numpy
 
 sys.path.append('..')
-from herd import initial_conditions, Parameters
+from herd import initial_conditions, Parameters, utility
 sys.path.pop()
 
 
@@ -85,5 +85,5 @@ def plot_ICs(parameters, ages):
 
 if __name__ == '__main__':
     parameters = Parameters(SAT=1)
-    ages = numpy.linspace(0, 20, 101)
+    ages = utility.arange(0, 35, 0.01, endpoint=True)
     plot_ICs(parameters, ages)
