@@ -1,3 +1,6 @@
+* Check hazards of infection => equilibrium prevalence for the SATs.
+  Could there be multiple equilibria?
+
 * Should we just solve for the equilibrium of the probability of being
   in state X at age a, *not* conditioned on being alive at age a? It's
   a simpler problem to explain...
