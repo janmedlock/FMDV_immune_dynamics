@@ -1,5 +1,13 @@
 * Check hazards of infection => equilibrium prevalence for the SATs.
-  Could there be multiple equilibria?
+** Why are the density vs. age, summed over immune state, so different
+   between the SATs? Is this the \Delta a terms in the analysis of the
+   numerical scheme breaking things?
+** What do hazards imply about prevalence?
+*** Look at fraction in each state at equilibrium.
+*** Look at hazard and S + L by SAT.
+    How do these relate to each other?
+*** Chronics => lots of transmission?
+**  Could there be multiple equilibria?
 
 * Should we just solve for the equilibrium of the probability of being
   in state X at age a, *not* conditioned on being alive at age a? It's
