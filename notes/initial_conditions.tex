@@ -40,26 +40,27 @@ $h_{\text{infection}}$ and $\phi_{\text{maternal immunity}}$, we
 solved a linear-algebra problem for the equilibrium
 probability densities as a function of model compartment, age, and
 duration in the current compartment
-(\autoref{model_diagram}), i.e.
+(\autoref{model_diagram}), conditioned on being alive at that age,
+i.e.
 \begin{subequations}
   \begin{align}
     P_{\mathrm{M}}(a)
-    &= \Prob\{\text{in compartment $\mathrm{M}$ at age $a$}\},\\
+    &= \Prob\{\text{in $\mathrm{M}$ at age $a$ given alive}\},\\
     P_{\mathrm{S}}(a)
-    &= \Prob\{\text{in compartment $\mathrm{S}$ at age $a$}\},\\
+    &= \Prob\{\text{in $\mathrm{S}$ at age $a$ given alive}\},\\
     p_{\mathrm{E}}(a, r)
-    &= \Prob\{\text{in compartment $\mathrm{E}$ at age $a$ and
-      duration $r$}\},\\
+    &= \Prob\{\text{in $\mathrm{E}$ at age $a$ and
+      duration $r$ given alive}\},\\
     p_{\mathrm{I}}(a, r)
-    &= \Prob\{\text{in compartment $\mathrm{I}$ at age $a$ and
-      duration $r$}\},\\
+    &= \Prob\{\text{in $\mathrm{I}$ at age $a$ and
+      duration $r$ given alive}\},\\
     p_{\mathrm{C}}(a, r)
-    &= \Prob\{\text{in compartment $\mathrm{C}$ at age $a$ and
-      duration $r$}\},\\
+    &= \Prob\{\text{in $\mathrm{C}$ at age $a$ and
+      duration $r$ given alive}\},\\
     P_{\mathrm{R}}(a)
-    &= \Prob\{\text{in compartment $\mathrm{R}$ at age $a$}\},\\
+    &= \Prob\{\text{in $\mathrm{R}$ at age $a$ given alive}\},\\
     P_{\mathrm{L}}(a)
-    &= \Prob\{\text{in compartment $\mathrm{L}$ at age $a$}\},
+    &= \Prob\{\text{in $\mathrm{L}$ at age $a$ given alive}\},
   \end{align}
 \end{subequations}
 for $a \geq 0$ and $0 \leq r \leq a$.
@@ -83,16 +84,14 @@ satisfy
     &= \phi_{\text{maternal immunity}},
     \\
     \frac{\md P_{\mathrm{M}}}{\md a}
-    &= - \left[h_{\text{waning}}(a) + h_{\text{death}}(a)\right]
-      P_{\mathrm{M}}(a),
+    &= - h_{\text{waning}}(a) P_{\mathrm{M}}(a),
     \displaybreak[0]\\
     P_{\mathrm{S}}(0)
     &= 1 - \phi_{\text{maternal immunity}},
     \\
     \frac{\md P_{\mathrm{S}}}{\md a}
     &= h_{\text{waning}}(a) P_{\mathrm{M}}(a)
-      - \left[h_{\text{infection}} + h_{\text{death}}(a)\right]
-      P_{\mathrm{S}}(a),
+      - h_{\text{infection}} P_{\mathrm{S}}(a),
     \displaybreak[0]\\
     p_{\mathrm{E}}(0, 0) &= h_{\text{infection}}
       \left[P_{\mathrm{S}}(0) + P_{\mathrm{L}}(0)\right],
@@ -104,8 +103,7 @@ satisfy
     \left(\frac{\partial}{\partial a}
     + \frac{\partial}{\partial r}\right)
     p_{\mathrm{E}}
-    &= - \left[h_{\text{progression}}(r) + h_{\text{death}}(a)\right]
-      p_{\mathrm{E}}(a, r),
+    &= - h_{\text{progression}}(r) p_{\mathrm{E}}(a, r),
     \displaybreak[0]\\
     p_{\mathrm{I}}(0, 0) &= 0,
     \\
@@ -116,8 +114,7 @@ satisfy
     \left(\frac{\partial}{\partial a}
     + \frac{\partial}{\partial r}\right)
     p_{\mathrm{I}}
-    &= - \left[h_{\text{recovery}}(r) + h_{\text{death}}(a)\right]
-      p_{\mathrm{I}}(a, r),
+    &= - h_{\text{recovery}}(r) p_{\mathrm{I}}(a, r),
     \displaybreak[0]\\
     p_{\mathrm{C}}(0, 0) &= 0,
     \\
@@ -128,8 +125,7 @@ satisfy
     \left(\frac{\partial}{\partial a}
     + \frac{\partial}{\partial r}\right)
     p_{\mathrm{C}}
-    &= - \left[h_{\text{chronic recovery}}(r) + h_{\text{death}}(a)\right]
-      p_{\mathrm{C}}(a, r),
+    &= - h_{\text{chronic recovery}}(r) p_{\mathrm{C}}(a, r),
     \displaybreak[0]\\
     P_{\mathrm{R}}(0) &= 0,
     \\
@@ -141,9 +137,7 @@ satisfy
       + \int_0^a h_{\text{chronic recovery}}(r) p_{\mathrm{C}}(a, r) \md r
       \\ & \quad {}
       + h_{\text{antibody gain}} P_{\mathrm{L}}(a)
-      \\ & \quad {}
-      - \left[h_{\text{antibody loss}} + h_{\text{death}}(a)\right]
-      P_{\mathrm{R}}(a),
+      - h_{\text{antibody loss}} P_{\mathrm{R}}(a),
     \end{split}
     \displaybreak[0]\\
     P_{\mathrm{L}}(0) &= 0,
@@ -152,8 +146,7 @@ satisfy
       \frac{\md P_{\mathrm{L}}}{\md a} &=
       h_{\text{antibody loss}} P_{\mathrm{R}}(a)
       \\ & \quad {}
-      - \left[h_{\text{antibody gain}} + h_{\text{infection}}
-        + h_{\text{death}}(a)\right]
+      - \left[h_{\text{antibody gain}} + h_{\text{infection}}\right]
       P_{\mathrm{L}}(a),
     \end{split}
   \end{align}
@@ -177,7 +170,7 @@ The infection hazard is
     \beta_{\text{infectious}} P_{\mathrm{I}}(a)
     + \beta_{\text{chronic}} P_{\mathrm{C}}(a)
   \right]
-  \md a
+  d(a) \md a
 \end{equation}
 and the proportion of births that have maternal immunity is
 \begin{equation}
@@ -185,18 +178,12 @@ and the proportion of births that have maternal immunity is
   = \frac{
     \int_0^{+\infty} h_{\text{birth}}(a)
     \left[P_{\mathrm{C}}(a) + P_{\mathrm{R}}(a)\right]
-    \md a
+    d(a) \md a
   }{
-    \int_0^{+\infty} h_{\text{birth}}(a) P(a) \md a
+    \int_0^{+\infty} h_{\text{birth}}(a) d(a) \md a
   },
 \end{equation}
-where
-\begin{equation}
-  P(a)
-  = P_{\mathrm{M}}(a) + P_{\mathrm{S}}(a) + P_{\mathrm{E}}(a)
-  + P_{\mathrm{I}}(a) + P_{\mathrm{C}}(a) + P_{\mathrm{R}}(a)
-  + P_{\mathrm{L}}(a),
-\end{equation}
+where $d(a)$ is the density of age $a$ buffalo in the population
 and $N$ is the population size.
 
 
@@ -209,16 +196,14 @@ Integrating the PDEs along the characteristics $r = a - a_0$ gives
     &= \phi_{\text{maternal immunity}},
     \\
     \frac{\md P_{\mathrm{M}}}{\md a}
-    &= - \left[h_{\text{waning}}(a) + h_{\text{death}}(a)\right]
-      P_{\mathrm{M}}(a),
+    &= - h_{\text{waning}}(a) P_{\mathrm{M}}(a),
     \displaybreak[0]\\
     P_{\mathrm{S}}(0)
     &= 1 - \phi_{\text{maternal immunity}},
     \\
     \frac{\md P_{\mathrm{S}}}{\md a}
     &= h_{\text{waning}}(a) P_{\mathrm{M}}(a)
-      - \left[h_{\text{infection}}  + h_{\text{death}}(a)\right]
-      P_{\mathrm{S}}(a),
+      - h_{\text{infection}} P_{\mathrm{S}}(a),
     \displaybreak[0]\\
     p_{\mathrm{E}}(0, 0) &= h_{\text{infection}}
       \left[P_{\mathrm{S}}(0) + P_{\mathrm{L}}(0)\right],
@@ -228,23 +213,18 @@ Integrating the PDEs along the characteristics $r = a - a_0$ gives
       \left[P_{\mathrm{S}}(a) + P_{\mathrm{L}}(a)\right],
     \\
     p_{\mathrm{E}}(a, r)
-    &= S_{\text{progression}}(r)
-      \frac{S_{\text{death}}(a)}{S_{\text{death}}(a - r)}
-      p_{\mathrm{E}}(a - r, 0),
+    &= S_{\text{progression}}(r) p_{\mathrm{E}}(a - r, 0),
     \displaybreak[0]\\
     p_{\mathrm{I}}(0, 0) &= 0,
     \\
     p_{\mathrm{I}}(a, 0)
     &= \int_0^a
       p_{\text{progression}}(r)
-      \frac{S_{\text{death}}(a)}{S_{\text{death}}(a - r)}
       p_{\mathrm{E}}(a - r, 0)
       \md r,
     \\
     p_{\mathrm{I}}(a, r)
-    &= S_{\text{recovery}}(r)
-      \frac{S_{\text{death}}(a)}{S_{\text{death}}(a - r)}
-      p_{\mathrm{I}}(a - r, 0),
+    &= S_{\text{recovery}}(r) p_{\mathrm{I}}(a - r, 0),
     \displaybreak[0]\\
     p_{\mathrm{C}}(0, 0) &= 0,
     \\
@@ -252,14 +232,11 @@ Integrating the PDEs along the characteristics $r = a - a_0$ gives
     &= p_{\text{chronicity}}
       \int_0^a
       p_{\text{recovery}}(r)
-      \frac{S_{\text{death}}(a)}{S_{\text{death}}(a - r)}
       p_{\mathrm{I}}(a - r, 0)
       \md r,
     \\
     p_{\mathrm{C}}(a, r)
-    &= S_{\text{chronic recovery}}(r)
-      \frac{S_{\text{death}}(a)}{S_{\text{death}}(a - r)}
-      p_{\mathrm{C}}(a - r, 0),
+    &= S_{\text{chronic recovery}}(r) p_{\mathrm{C}}(a - r, 0),
     \displaybreak[0]\\
     P_{\mathrm{R}}(0) &= 0,
     \\
@@ -268,20 +245,16 @@ Integrating the PDEs along the characteristics $r = a - a_0$ gives
       \left(1 - p_{\text{chronicity}}\right)
       \int_0^a
       p_{\text{recovery}}(r)
-      \frac{S_{\text{death}}(a)}{S_{\text{death}}(a - r)}
       p_{\mathrm{I}}(a - r, 0)
       \md r
       \\ & \quad {}
       + \int_0^a
       p_{\text{chronic recovery}}(r)
-      \frac{S_{\text{death}}(a)}{S_{\text{death}}(a - r)}
       p_{\mathrm{C}}(a - r, 0)
       \md r
       \\ & \quad {}
       + h_{\text{antibody gain}} P_{\mathrm{L}}(a)
-      \\ & \quad {}
-      - \left[h_{\text{antibody loss}}  + h_{\text{death}}(a)\right]
-      P_{\mathrm{R}}(a),
+      - h_{\text{antibody loss}} P_{\mathrm{R}}(a),
     \end{split}
     \displaybreak[0]\\
     P_{\mathrm{L}}(0) &= 0,
@@ -290,8 +263,7 @@ Integrating the PDEs along the characteristics $r = a - a_0$ gives
       \frac{\md P_{\mathrm{L}}}{\md a}
       &= h_{\text{antibody loss}} P_{\mathrm{R}}(a)
       \\ & \quad {}
-      - \left[h_{\text{antibody gain}} + h_{\text{infection}}
-        + h_{\text{death}}(a)\right]
+      - \left(h_{\text{antibody gain}} + h_{\text{infection}}\right)
       P_{\mathrm{L}}(a).
     \end{split}
   \end{align}
@@ -304,21 +276,18 @@ Using
     P_{\mathrm{E}}(a)
     &= \int_0^a
       S_{\text{progression}}(a - a_0)
-      \frac{S_{\text{death}}(a)}{S_{\text{death}}(a_0)}
       p_{\mathrm{E}}(a_0, 0)
       \md a_0,
     \displaybreak[0]\\
     P_{\mathrm{I}}(a)
     &= \int_0^a
       S_{\text{recovery}}(a - a_0)
-      \frac{S_{\text{death}}(a)}{S_{\text{death}}(a_0)}
       p_{\mathrm{I}}(a_0, 0)
       \md a_0,
     \displaybreak[0]\\
     P_{\mathrm{C}}(a)
     &= \int_0^a
       S_{\text{chronic recovery}}(a - a_0)
-      \frac{S_{\text{death}}(a)}{S_{\text{death}}(a_0)}
       p_{\mathrm{C}}(a_0, 0)
       \md a_0,
   \end{align}
@@ -334,27 +303,20 @@ gives
       \\ & \quad {}
       - \int_0^a
       p_{\text{progression}}(r)
-      \frac{S_{\text{death}}(a)}{S_{\text{death}}(a - r)}
       p_{\mathrm{E}}(a - r, 0)
-      \md r
-      \\ & \quad {}
-      - h_{\text{death}}(a) P_{\mathrm{E}}(a),
+      \md r,
     \end{split}
     \displaybreak[0]\\
     \begin{split}
       \frac{\md P_{\mathrm{I}}}{\md a}
       &= \int_0^a
       p_{\text{progression}}(r)
-      \frac{S_{\text{death}}(a)}{S_{\text{death}}(a - r)}
       p_{\mathrm{E}}(a - r, 0) \md r
       \\ & \quad {}
       - \int_0^a
       p_{\text{recovery}}(r)
-      \frac{S_{\text{death}}(a)}{S_{\text{death}}(a - r)}
       p_{\mathrm{I}}(a - r, 0)
-      \md r
-      \\ & \quad {}
-      - h_{\text{death}}(a) P_{\mathrm{I}}(a),
+      \md r,
     \end{split}
     \displaybreak[0]\\
     \begin{split}
@@ -362,57 +324,33 @@ gives
       &= p_{\text{chronicity}}
       \int_0^a
       p_{\text{recovery}}(r)
-      \frac{S_{\text{death}}(a)}{S_{\text{death}}(a - r)}
       p_{\mathrm{I}}(a - r, 0)
       \md r
       \\ & \quad {}
       - \int_0^a
       p_{\text{chronic recovery}}(r)
-      \frac{S_{\text{death}}(a)}{S_{\text{death}}(a - r)}
       p_{\mathrm{C}}(a - r, 0)
-      \md r
-      \\ & \quad {}
-      - h_{\text{death}}(a) P_{\mathrm{C}}(a).
+      \md r.
     \end{split}
   \end{align}
 \end{subequations}
-Then
+Then, for
+\begin{equation}
+  P(a) = P_{\mathrm{M}}(a) + P_{\mathrm{S}}(a) +
+  P_{\mathrm{E}}(a) + P_{\mathrm{I}}(a) + P_{\mathrm{C}}(a) +
+  P_{\mathrm{R}}(a) + P_{\mathrm{L}}(a),
+\end{equation}
+we have
 \begin{subequations}
   \begin{align}
-    \frac{\md P}{\md a}
-    &= - h_{\text{death}}(a) P(a), \\
-    P(0) &= 1,
+    P(0) &= 1, \\
+    \frac{\md P}{\md a} &= 0,
   \end{align}
 \end{subequations}
 so that
 \begin{equation}
-  P(a) = S_{\text{death}}(a).
+  P(a) = 1.
 \end{equation}
-
-The constant-time birth hazard
-(i.e.~$c_{\mathrm{v}} = 0$)
-\begin{equation}
-  h_{\text{birth}}(a) =
-  \begin{cases}
-    0 & \text{if $a < 4$}, \\
-    \mu & \text{if $a \geq 4$},
-  \end{cases}
-\end{equation}
-with
-\begin{equation}
-  \mu =
-  \left[
-    \int_4^{+\infty} S_{\text{death}}(a) \md a
-  \right]^{-1},
-\end{equation}
-gives
-\begin{equation}
-  \int_0^{+\infty} h_{\text{birth}}(a) P(a) \md a
-  = \int_0^{+\infty} h_{\text{birth}}(a) S_{\text{death}}(a) \md a
-  = 1
-  = P(0),
-\end{equation}
-so that the population size is constant, i.e.~zero growth rate.
 
 
 \section{Numerical method}
@@ -433,10 +371,7 @@ Crank--Nicolson method on characteristics gives
     &= \phi_{\text{maternal immunity}},
     \\
     \frac{P_{\mathrm{M}}^i - P_{\mathrm{M}}^{i - 1}}{\Delta a}
-    &= - \left[
-      h_{\text{waning}}(a^{i - 1 / 2})
-      + h_{\text{death}}(a^{i - 1 / 2})
-      \right]
+    &= - h_{\text{waning}}(a^{i - 1 / 2})
       \frac{P_{\mathrm{M}}^i + P_{\mathrm{M}}^{i - 1}}{2},
     \displaybreak[0]\\
     P_{\mathrm{S}}^0
@@ -446,11 +381,7 @@ Crank--Nicolson method on characteristics gives
       \frac{P_{\mathrm{S}}^i - P_{\mathrm{S}}^{i - 1}}{\Delta a}
       &= h_{\text{waning}}(a^{i - 1 / 2})
       \frac{P_{\mathrm{M}}^i + P_{\mathrm{M}}^{i - 1}}{2}
-      \\ & \quad {}
-      - \left[
-        h_{\text{infection}}
-        + h_{\text{death}}(a^{i - 1 / 2})
-      \right]
+      - h_{\text{infection}}
       \frac{P_{\mathrm{S}}^i + P_{\mathrm{S}}^{i - 1}}{2},
     \end{split}
     \displaybreak[0]\\
@@ -467,7 +398,6 @@ Crank--Nicolson method on characteristics gives
     p_{\mathrm{I}}^i
     &= \sum_{j = 0}^i
       p_{\text{progression}}(r^j)
-      \frac{S_{\text{death}}(a^i)}{S_{\text{death}}(a^{i - j})}
       p_{\mathrm{E}}^{i - j}
       \Delta a,
     \displaybreak[0]\\
@@ -477,7 +407,6 @@ Crank--Nicolson method on characteristics gives
     &= p_{\text{chronicity}}
       \sum_{j = 0}^i
       p_{\text{recovery}}(r^j)
-      \frac{S_{\text{death}}(a^i)}{S_{\text{death}}(a^{i - j})}
       p_{\mathrm{I}}^{i - j}
       \Delta a,
     \displaybreak[0]\\
@@ -488,22 +417,17 @@ Crank--Nicolson method on characteristics gives
       &= \left(1 - p_{\text{chronicity}}\right)
       \sum_{j = 0}^i
       p_{\text{recovery}}(r^j)
-      \frac{S_{\text{death}}(a^i)}{S_{\text{death}}(a^{i - j})}
       p_{\mathrm{I}}^{i - j}
       \Delta a
       \\ & \quad {}
       + \sum_{j = 0}^i
       p_{\text{chronic recovery}}(r^j)
-      \frac{S_{\text{death}}(a^i)}{S_{\text{death}}(a^{i - j})}
       p_{\mathrm{C}}^{i - j}
       \Delta a
       \\ & \quad {}
       + h_{\text{antibody gain}}
       \frac{P_{\mathrm{L}}^i + P_{\mathrm{L}}^{i - 1}}{2}
-      \\ & \quad {}
-      - \left[
-        h_{\text{antibody loss}} + h_{\text{death}}(a^{i - 1 / 2})
-      \right]
+      - h_{\text{antibody loss}}
       \frac{P_{\mathrm{R}}^i + P_{\mathrm{R}}^{i - 1}}{2},
     \end{split}
     \displaybreak[0]\\
@@ -514,10 +438,9 @@ Crank--Nicolson method on characteristics gives
       &= h_{\text{antibody loss}}
       \frac{P_{\mathrm{R}}^i + P_{\mathrm{R}}^{i - 1}}{2}
       \\ & \quad {}
-      - \left[
+      - \left(
         h_{\text{antibody gain}} + h_{\text{infection}}
-        + h_{\text{death}}(a^{i - 1 / 2})
-      \right]
+      \right)
       \frac{P_{\mathrm{L}}^i + P_{\mathrm{L}}^{i - 1}}{2},
     \end{split}
   \end{align}
@@ -529,21 +452,18 @@ with
     P_{\mathrm{E}}^i
     &= \sum_{j = 0}^i
       S_{\text{progression}}(r^j)
-      \frac{S_{\text{death}}(a^i)}{S_{\text{death}}(a^{i - j})}
       p_{\mathrm{E}}^{i - j}
       \Delta a,
     \displaybreak[0]\\
     P_{\mathrm{I}}^i
     &= \sum_{j = 0}^i
       S_{\text{recovery}}(r^j)
-      \frac{S_{\text{death}}(a^i)}{S_{\text{death}}(a^{i - j})}
       p_{\mathrm{I}}^{i - j}
       \Delta a,
     \displaybreak[0]\\
     P_{\mathrm{C}}^i
     &= \sum_{j = 0}^i
       S_{\text{chronic recovery}}(r^j)
-      \frac{S_{\text{death}}(a^i)}{S_{\text{death}}(a^{i - j})}
       p_{\mathrm{C}}^{i - j}
       \Delta a.
   \end{align}
@@ -557,6 +477,7 @@ The infection hazard is
     \beta_{\text{infectious}} P_{\mathrm{I}}^i
     + \beta_{\text{chronic}} P_{\mathrm{C}}^i
   \right)
+  d(a^i)
   \Delta a,
 \end{equation}
 and the proportion of births that have maternal immunity is
@@ -567,17 +488,57 @@ and the proportion of births that have maternal immunity is
     h_{\text{birth}}(a^i) \left(
       P_{\mathrm{M}}^i + P_{\mathrm{C}}^i + P_{\mathrm{R}}^i
     \right)
-    \Delta a
+    d(a^i) \Delta a
   }{
-    \sum_{i = 0}^{I - 1} h_{\text{birth}}(a^i) P^i \Delta a
-  },
+    \sum_{i = 0}^{I - 1} h_{\text{birth}}(a^i) d(a^i) \Delta a
+  }.
 \end{equation}
-where
+
+
+\subsection{Analysis}
+
+Using \eqref{eq:sums_over_r} gives
+\begin{subequations}
+  \begin{align}
+    \frac{P_{\mathrm{E}}^i - P_{\mathrm{E}}^{i - 1}}{\Delta a}
+    &= p_{\mathrm{E}}^i
+      - \sum_{j = 1}^i
+      p_{\text{progression}}(r^j)
+      p_{\mathrm{E}}^{i - j} \Delta a,
+    \\
+    \frac{P_{\mathrm{I}}^i - P_{\mathrm{I}}^{i - 1}}{\Delta a}
+    &= p_{\mathrm{I}}^i
+      - \sum_{j = 1}^i
+      p_{\text{recovery}}(r^j)
+      p_{\mathrm{I}}^{i - j} \Delta a,
+    \\
+    \frac{P_{\mathrm{C}}^i - P_{\mathrm{C}}^{i - 1}}{\Delta a}
+    &= p_{\mathrm{C}}^i
+      - \sum_{j = 1}^i
+      p_{\text{chronic recovery}}(r^j)
+      p_{\mathrm{C}}^{i - j} \Delta a.
+  \end{align}
+\end{subequations}
+Then, for
 \begin{equation}
-  P^i =  P_{\mathrm{M}}^i + P_{\mathrm{S}}^i + P_{\mathrm{E}}^i
-  + P_{\mathrm{I}}^i + P_{\mathrm{C}}^i + P_{\mathrm{R}}^i + P_{\mathrm{L}}^i,
+  P^i = P_{\mathrm{M}}^i + P_{\mathrm{S}}^i +
+  P_{\mathrm{E}}^i + P_{\mathrm{I}}^i + P_{\mathrm{C}}^i +
+  P_{\mathrm{R}}^i + P_{\mathrm{L}}^i,
 \end{equation}
-and $N$ is the population size.
+we have
+\begin{subequations}
+  \begin{align}
+    P^0 &= 1,
+    \\
+    \frac{P^i - P^{i - 1}}{\Delta a}
+    &= \left[
+      p_{\text{progression}}(0) p_{\mathrm{E}}^i
+      + p_{\text{recovery}}(0) p_{\mathrm{I}}^i
+      + p_{\text{chronic recovery}}(0) p_{\mathrm{C}}^i
+      \right]\Delta a.
+  \end{align}
+\end{subequations}
+\textbf{The $p(0)$'s may be 0...}
 
 
 \subsection{Implementation}
@@ -588,16 +549,14 @@ Numerical scheme \eqref{eq:numerical_method} can be written as
     P_{\mathrm{M}}^0 &= \phi_{\text{maternal immunity}},
     \displaybreak[0]\\
     \begin{split}
-      - \left\{1
-        - \left[h_{\text{waning}}(a^{i - 1 / 2})
-          + h_{\text{death}}(a^{i - 1 / 2})\right]
-        \frac{\Delta a}{2}\right\}
+      - \left[1
+        - h_{\text{waning}}(a^{i - 1 / 2})
+        \frac{\Delta a}{2}\right]
       P_{\mathrm{M}}^{i - 1}
       \\ {}
-      + \left\{1
-        + \left[h_{\text{waning}}(a^{i - 1 / 2})
-          + h_{\text{death}}(a^{i - 1 / 2})\right]
-        \frac{\Delta a}{2}\right\}
+      + \left[1
+        + h_{\text{waning}}(a^{i - 1 / 2})
+        \frac{\Delta a}{2}\right]
       P_{\mathrm{M}}^i
       &= 0,
     \end{split}
@@ -610,16 +569,14 @@ Numerical scheme \eqref{eq:numerical_method} can be written as
       - h_{\text{waning}}(a^{i - 1 / 2}) \frac{\Delta a}{2}
       P_{\mathrm{M}}^i
       \\ {}
-      - \left\{1
-        - \left[h_{\text{infection}}
-          + h_{\text{death}}(a^{i - 1 / 2})\right]
-        \frac{\Delta a}{2}\right\}
+      - \left[1
+        - h_{\text{infection}}
+        \frac{\Delta a}{2}\right]
       P_{\mathrm{S}}^{i - 1}
       \\ {}
-      + \left\{1
-        + \left[h_{\text{infection}}
-          + h_{\text{death}}(a^{i - 1 / 2})\right]
-          \frac{\Delta a}{2}\right\}
+      + \left[1
+        + h_{\text{infection}}
+        \frac{\Delta a}{2}\right]
       P_{\mathrm{S}}^i
       &= 0,
     \end{split}
@@ -640,7 +597,6 @@ Numerical scheme \eqref{eq:numerical_method} can be written as
     p_{\mathrm{I}}^0 &= 0,
     \\
     - \sum_{j = 0}^i p_{\text{progression}}(r^{i - j})
-    \frac{S_{\text{death}}(a^i)}{S_{\text{death}}(a^j)}
     \Delta a
     p_{\mathrm{E}}^j
     + p_{\mathrm{I}}^i
@@ -650,7 +606,6 @@ Numerical scheme \eqref{eq:numerical_method} can be written as
     \\
     - \sum_{j = 0}^i
     p_{\text{chronicity}} p_{\text{recovery}}(r^{i - j})
-    \frac{S_{\text{death}}(a^i)}{S_{\text{death}}(a^j)}
     \Delta a
     p_{\mathrm{I}}^j
     + p_{\mathrm{C}}^i
@@ -662,27 +617,22 @@ Numerical scheme \eqref{eq:numerical_method} can be written as
       - \sum_{j = 0}^i
       \left(1 - p_{\text{chronicity}}\right)
       p_{\text{recovery}}(r^{i - j})
-      \frac{S_{\text{death}}(a^i)}{S_{\text{death}}(a^j)}
       \Delta a^2
       p_{\mathrm{I}}^j
       \\ {}
       - \sum_{j = 0}^i
       p_{\text{chronic recovery}}(r^{i - j})
-      \frac{S_{\text{death}}(a^i)}{S_{\text{death}}(a^j)}
       \Delta a^2
       p_{\mathrm{C}}^j
       \\ {}
-      - \left\{1
-        - \left[h_{\text{antibody loss}}
-          + h_{\text{death}}(a^{i - 1 / 2})
-        \right]
-        \frac{\Delta a}{2}\right\}
+      - \left[1
+        - h_{\text{antibody loss}}
+        \frac{\Delta a}{2}\right]
       P_{\mathrm{R}}^{i - 1}
       \\ {}
-      + \left\{1
-        + \left[h_{\text{antibody loss}}
-          + h_{\text{death}}(a^{i - 1 / 2})\right]
-        \frac{\Delta a}{2}\right\}
+      + \left[1
+        + h_{\text{antibody loss}}
+        \frac{\Delta a}{2}\right]
       P_{\mathrm{R}}^i
       \\ {}
       - h_{\text{antibody gain}} \frac{\Delta a}{2}
@@ -700,20 +650,17 @@ Numerical scheme \eqref{eq:numerical_method} can be written as
       - h_{\text{antibody loss}} \frac{\Delta a}{2}
       P_{\mathrm{R}}^i
       \\ {}
-      - \left\{1
-        - \left[h_{\text{antibody gain}}
-          + h_{\text{infection}}
-          + h_{\text{death}}(a^{i - 1 / 2})
-        \right]
-        \frac{\Delta a}{2}\right\}
+      - \left[1
+        - \left(h_{\text{antibody gain}}
+          + h_{\text{infection}}\right)
+        \frac{\Delta a}{2}\right]
       P_{\mathrm{L}}^{i - 1}
       \\ {}
-      + \left\{1
-        + \left[h_{\text{antibody gain}}
+      + \left[1
+        + \left(h_{\text{antibody gain}}
           + h_{\text{infection}}
-          + h_{\text{death}}(a^{i - 1 / 2})
-        \right]
-        \frac{\Delta a}{2}\right\}
+        \right)
+        \frac{\Delta a}{2}\right]
       P_{\mathrm{L}}^i
       &= 0,
     \end{split}
@@ -815,24 +762,20 @@ where
 \begin{subequations}
   \begin{align}
     d_{\mathrm{M}}^i
-    &= \frac{1}{2} \left[h_{\text{waning}}(a^{i - 1 / 2})
-      + h_{\text{death}}(a^{i - 1 / 2})\right]
+    &= \frac{1}{2} h_{\text{waning}}(a^{i - 1 / 2})
       \Delta a,
     \\
     d_{\mathrm{S}}^i
-    &= \frac{1}{2} \left[h_{\text{infection}}
-      + h_{\text{death}}(a^{i - 1 / 2})\right]
+    &= \frac{1}{2} h_{\text{infection}}
       \Delta a,
     \\
     d_{\mathrm{R}}^i
-    &= \frac{1}{2} \left[h_{\text{antibody loss}}
-      + h_{\text{death}}(a^{i - 1 / 2})\right]
+    &= \frac{1}{2} h_{\text{antibody loss}}
       \Delta a,
     \\
     d_{\mathrm{L}}^i
-    &= \frac{1}{2} \left[h_{\text{antibody gain}}
-      + h_{\text{infection}}
-      + h_{\text{death}}(a^{i - 1 / 2})\right]
+    &= \frac{1}{2} \left(h_{\text{antibody gain}}
+      + h_{\text{infection}}\right)
       \Delta a,
   \end{align}
 \end{subequations}
@@ -914,22 +857,18 @@ where
     \displaybreak[0]\\
     \bar{f}_{\mathrm{IE}}^{i, j} &=
     p_{\text{progression}}(r^{i - j})
-    \frac{S_{\text{death}}(a^i)}{S_{\text{death}}(a^j)}
     \Delta a,
     \displaybreak[0]\\
     \bar{f}_{\mathrm{CI}}^{i, j} &=
     p_{\text{chronicity}} p_{\text{recovery}}(r^{i - j})
-    \frac{S_{\text{death}}(a^i)}{S_{\text{death}}(a^j)}
     \Delta a,
     \displaybreak[0]\\
     \bar{f}_{\mathrm{RI}}^{i, j} &=
     (1 - p_{\text{chronicity}}) p_{\text{recovery}}(r^{i - j})
-    \frac{S_{\text{death}}(a^i)}{S_{\text{death}}(a^j)}
     \Delta a^2,
     \displaybreak[0]\\
     \bar{f}_{\mathrm{RC}}^{i, j} &=
     p_{\text{chronic recovery}}(r^{i - j})
-    \frac{S_{\text{death}}(a^i)}{S_{\text{death}}(a^j)}
     \Delta a^2.
   \end{align}
 \end{subequations}
