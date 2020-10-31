@@ -5,11 +5,6 @@
 
 \usepackage{microtype}
 \usepackage{tikz}
-\usepackage{hyperref}
-\hypersetup{breaklinks}
-\hypersetup{pdfborder=0 0 0}
-\usepackage{natbib}
-\usepackage{hypernat}
 \usepackage{amsmath}
 \renewcommand{\vec}[1]{\mathbf{#1}}
 \newcommand{\mat}[1]{\mathbf{#1}}
@@ -19,6 +14,11 @@
 \newcommand{\me}{\mathrm{e}}
 \newcommand{\mT}{\mathrm{T}}
 \setcounter{MaxMatrixCols}{12}
+\usepackage{hyperref}
+\hypersetup{breaklinks}
+\hypersetup{pdfborder=0 0 0}
+\usepackage{natbib}
+\usepackage{hypernat}
 
 
 \begin{document}
@@ -133,7 +133,7 @@ satisfy
     \displaybreak[0]\\
     P_{\mathrm{R}}(0) &= 0,
     \\
-    \begin{split}
+    \begin{aligned}
       \frac{\md P_{\mathrm{R}}}{\md a} &=
       \left(1 - p_{\text{chronicity}}\right)
       \int_0^a h_{\text{recovery}}(r) p_{\mathrm{I}}(a, r) \md r
@@ -144,18 +144,18 @@ satisfy
       \\ & \quad {}
       - \left[h_{\text{antibody loss}} + h_{\text{death}}(a)\right]
       P_{\mathrm{R}}(a),
-    \end{split}
+    \end{aligned}
     \displaybreak[0]\\
     P_{\mathrm{L}}(0) &= 0,
     \\
-    \begin{split}
+    \begin{aligned}
       \frac{\md P_{\mathrm{L}}}{\md a} &=
       h_{\text{antibody loss}} P_{\mathrm{R}}(a)
       \\ & \quad {}
       - \left[h_{\text{antibody gain}} + h_{\text{infection}}
         + h_{\text{death}}(a)\right]
       P_{\mathrm{L}}(a),
-    \end{split}
+    \end{aligned}
   \end{align}
 \end{subequations}
 with
@@ -263,7 +263,7 @@ Integrating the PDEs along the characteristics $r = a - a_0$ gives
     \displaybreak[0]\\
     P_{\mathrm{R}}(0) &= 0,
     \\
-    \begin{split}
+    \begin{aligned}
       \frac{\md P_{\mathrm{R}}}{\md a} &=
       \left(1 - p_{\text{chronicity}}\right)
       \int_0^a
@@ -282,18 +282,18 @@ Integrating the PDEs along the characteristics $r = a - a_0$ gives
       \\ & \quad {}
       - \left[h_{\text{antibody loss}}  + h_{\text{death}}(a)\right]
       P_{\mathrm{R}}(a),
-    \end{split}
+    \end{aligned}
     \displaybreak[0]\\
     P_{\mathrm{L}}(0) &= 0,
     \\
-    \begin{split}
+    \begin{aligned}
       \frac{\md P_{\mathrm{L}}}{\md a}
       &= h_{\text{antibody loss}} P_{\mathrm{R}}(a)
       \\ & \quad {}
       - \left[h_{\text{antibody gain}} + h_{\text{infection}}
         + h_{\text{death}}(a)\right]
       P_{\mathrm{L}}(a).
-    \end{split}
+    \end{aligned}
   \end{align}
 \end{subequations}
 
@@ -327,7 +327,7 @@ gives
 \begin{subequations}
   \label{eq:integrals_derivatives}
   \begin{align}
-    \begin{split}
+    \begin{aligned}
       \frac{\md P_{\mathrm{E}}}{\md a}
       &= h_{\text{infection}}
       \left[P_{\mathrm{S}}(a) + P_{\mathrm{L}}(a)\right]
@@ -339,9 +339,9 @@ gives
       \md r
       \\ & \quad {}
       - h_{\text{death}}(a) P_{\mathrm{E}}(a),
-    \end{split}
+    \end{aligned}
     \displaybreak[0]\\
-    \begin{split}
+    \begin{aligned}
       \frac{\md P_{\mathrm{I}}}{\md a}
       &= \int_0^a
       p_{\text{progression}}(r)
@@ -355,9 +355,9 @@ gives
       \md r
       \\ & \quad {}
       - h_{\text{death}}(a) P_{\mathrm{I}}(a),
-    \end{split}
+    \end{aligned}
     \displaybreak[0]\\
-    \begin{split}
+    \begin{aligned}
       \frac{\md P_{\mathrm{C}}}{\md a}
       &= p_{\text{chronicity}}
       \int_0^a
@@ -373,7 +373,7 @@ gives
       \md r
       \\ & \quad {}
       - h_{\text{death}}(a) P_{\mathrm{C}}(a).
-    \end{split}
+    \end{aligned}
   \end{align}
 \end{subequations}
 Then
@@ -442,7 +442,7 @@ Crank--Nicolson method on characteristics gives
     P_{\mathrm{S}}^0
     &= 1 - \phi_{\text{maternal immunity}},
     \\
-    \begin{split}
+    \begin{aligned}
       \frac{P_{\mathrm{S}}^i - P_{\mathrm{S}}^{i - 1}}{\Delta a}
       &= h_{\text{waning}}(a^{i - 1 / 2})
       \frac{P_{\mathrm{M}}^i + P_{\mathrm{M}}^{i - 1}}{2}
@@ -452,7 +452,7 @@ Crank--Nicolson method on characteristics gives
         + h_{\text{death}}(a^{i - 1 / 2})
       \right]
       \frac{P_{\mathrm{S}}^i + P_{\mathrm{S}}^{i - 1}}{2},
-    \end{split}
+    \end{aligned}
     \displaybreak[0]\\
     p_{\mathrm{E}}^0 &= 0,
     \\
@@ -483,7 +483,7 @@ Crank--Nicolson method on characteristics gives
     \displaybreak[0]\\
     P_{\mathrm{R}}^0 &= 0,
     \\
-    \begin{split}
+    \begin{aligned}
       \frac{P_{\mathrm{R}}^i - P_{\mathrm{R}}^{i - 1}}{\Delta a}
       &= \left(1 - p_{\text{chronicity}}\right)
       \sum_{j = 0}^i
@@ -505,11 +505,11 @@ Crank--Nicolson method on characteristics gives
         h_{\text{antibody loss}} + h_{\text{death}}(a^{i - 1 / 2})
       \right]
       \frac{P_{\mathrm{R}}^i + P_{\mathrm{R}}^{i - 1}}{2},
-    \end{split}
+    \end{aligned}
     \displaybreak[0]\\
     P_{\mathrm{L}}^0 &= 0,
     \\
-    \begin{split}
+    \begin{aligned}
       \frac{P_{\mathrm{L}}^i - P_{\mathrm{L}}^{i - 1}}{\Delta a}
       &= h_{\text{antibody loss}}
       \frac{P_{\mathrm{R}}^i + P_{\mathrm{R}}^{i - 1}}{2}
@@ -519,7 +519,7 @@ Crank--Nicolson method on characteristics gives
         + h_{\text{death}}(a^{i - 1 / 2})
       \right]
       \frac{P_{\mathrm{L}}^i + P_{\mathrm{L}}^{i - 1}}{2},
-    \end{split}
+    \end{aligned}
   \end{align}
 \end{subequations}
 with
@@ -587,7 +587,7 @@ Numerical scheme \eqref{eq:numerical_method} can be written as
   \begin{align}
     P_{\mathrm{M}}^0 &= \phi_{\text{maternal immunity}},
     \displaybreak[0]\\
-    \begin{split}
+    \begin{aligned}
       - \left\{1
         - \left[h_{\text{waning}}(a^{i - 1 / 2})
           + h_{\text{death}}(a^{i - 1 / 2})\right]
@@ -600,11 +600,11 @@ Numerical scheme \eqref{eq:numerical_method} can be written as
         \frac{\Delta a}{2}\right\}
       P_{\mathrm{M}}^i
       &= 0,
-    \end{split}
+    \end{aligned}
     \displaybreak[0]\\
     P_{\mathrm{S}}^0 &= 1 - \phi_{\text{maternal immunity}},
     \displaybreak[0]\\
-    \begin{split}
+    \begin{aligned}
       - h_{\text{waning}}(a^{i - 1 / 2}) \frac{\Delta a}{2}
       P_{\mathrm{M}}^{i - 1}
       - h_{\text{waning}}(a^{i - 1 / 2}) \frac{\Delta a}{2}
@@ -622,11 +622,11 @@ Numerical scheme \eqref{eq:numerical_method} can be written as
           \frac{\Delta a}{2}\right\}
       P_{\mathrm{S}}^i
       &= 0,
-    \end{split}
+    \end{aligned}
     \displaybreak[0]\\
     p_{\mathrm{E}}^0 &= 0,
     \displaybreak[0]\\
-    \begin{split}
+    \begin{aligned}
       - \frac{h_{\text{infection}}}{2} P_{\mathrm{S}}^{i - 1}
       - \frac{h_{\text{infection}}}{2} P_{\mathrm{S}}^i
       \\ {}
@@ -635,7 +635,7 @@ Numerical scheme \eqref{eq:numerical_method} can be written as
       - \frac{h_{\text{infection}}}{2} P_{\mathrm{L}}^{i - 1}
       - \frac{h_{\text{infection}}}{2} P_{\mathrm{L}}^i
       &= 0,
-    \end{split}
+    \end{aligned}
     \displaybreak[0]\\
     p_{\mathrm{I}}^0 &= 0,
     \\
@@ -658,7 +658,7 @@ Numerical scheme \eqref{eq:numerical_method} can be written as
     \displaybreak[0]\\
     P_{\mathrm{R}}^0 &= 0,
     \\
-    \begin{split}
+    \begin{aligned}
       - \sum_{j = 0}^i
       \left(1 - p_{\text{chronicity}}\right)
       p_{\text{recovery}}(r^{i - j})
@@ -690,11 +690,11 @@ Numerical scheme \eqref{eq:numerical_method} can be written as
       - h_{\text{antibody gain}} \frac{\Delta a}{2}
       P_{\mathrm{L}}^i
       &= 0,
-    \end{split}
+    \end{aligned}
     \displaybreak[0]\\
     P_{\mathrm{L}}^0 &= 0,
     \\
-    \begin{split}
+    \begin{aligned}
       - h_{\text{antibody loss}} \frac{\Delta a}{2}
       P_{\mathrm{R}}^{i - 1}
       - h_{\text{antibody loss}} \frac{\Delta a}{2}
@@ -716,7 +716,7 @@ Numerical scheme \eqref{eq:numerical_method} can be written as
         \frac{\Delta a}{2}\right\}
       P_{\mathrm{L}}^i
       &= 0,
-    \end{split}
+    \end{aligned}
   \end{align}
 \end{subequations}
 for $i \in \{1, 2, \ldots, I - 1\}$.
