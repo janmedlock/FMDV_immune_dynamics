@@ -13,7 +13,7 @@ from herd import (antibody_gain, antibody_loss, birth, buffalo,
                   utility)
 
 
-def hazard_birth_constant_time(ages, RV_mortality, age_step):
+def hazard_birth_constant_time(ages, age_step, survival_mortality):
     RV_birth = birth.from_param_values(
         birth_seasonal_coefficient_of_variation=0,
         # This value doesn't matter when the variation is 0.
@@ -25,7 +25,7 @@ def hazard_birth_constant_time(ages, RV_mortality, age_step):
         # This value doesn't matter when the variation is 0.
         time=0)
     # Scale so that the population growth rate is 0.
-    hazard /= numpy.dot(hazard, RV_mortality.sf(ages)) * age_step
+    hazard /= numpy.dot(hazard, survival_mortality) * age_step
     return hazard
 
 
@@ -313,43 +313,60 @@ class Solver:
             numpy.broadcast_arrays(*kwds.values()),
             dtype=[(k, float) for k in kwds.keys()])
 
+    @staticmethod
+    def get_pdf(RV, ages):
+        '''Use the survival function `RV.sf()` to get the PDF over each
+        interval in `ages`. The PDF `RV.pdf()` at each age might
+        change too quickly to capture the difference over the age
+        interval.'''
+        # Use `RV.pdf()` at the first age.
+        return numpy.hstack([RV.pdf(ages[0]),
+                             - numpy.diff(RV.sf(ages)) / numpy.diff(ages)])
+
     def set_params(self, params):
         self.params = Params()
         self.params.step = self.step
         self.params.length_ODE = self.length_ODE
         self.params.length_PDE = self.length_PDE
-        # We need the survival, pdf, and hazard for these RVs.
+        # Get the pdf and survival for these RVs.
         RVs = {
-            'mortality': mortality.gen(params),
             'progression': progression.gen(params),
             'recovery': recovery.gen(params),
             'chronic_recovery': chronic_recovery.gen(params),
         }
+        pdf = {k: self.get_pdf(RV, self.ages)
+               for (k, RV) in RVs.items()}
+        self.params.pdf = self.rec_fromkwds(**pdf)
+        # Also get the survival for these RVs.
+        RV_mortality = mortality.gen(params)
+        RVs.update({
+            'mortality': RV_mortality,
+        })
         survival = {k: RV.sf(self.ages)
                     for (k, RV) in RVs.items()}
         self.params.survival = self.rec_fromkwds(**survival)
-        pdf = {k: RV.pdf(self.ages)
-               for (k, RV) in RVs.items()}
-        self.params.pdf = self.rec_fromkwds(**pdf)
-        # We also need the hazard for these RVs.
-        RVs.update({
+        # Get the hazard for these RVs.
+        RVs = {
+            'mortality': RV_mortality,
             'maternal_immunity_waning': maternal_immunity_waning.gen(params),
             'antibody_loss': antibody_loss.gen(params),
-        })
-        with numpy.errstate(divide='ignore'):
-            hazard = {k: RV.hazard(self.ages_mid)
-                      for (k, RV) in RVs.items()}
+        }
+        hazard = {k: RV.hazard(self.ages_mid)
+                  for (k, RV) in RVs.items()}
+        # Hazards that are constant in age.
         antibody_gain_RV = antibody_gain.gen(params)
         hazard['antibody_gain'] = antibody_gain_RV.hazard(
             antibody_gain_RV.time_min)
         hazard['infection'] = 1  # Dummy value. Set on calls to `solve_step()`.
+        # Other parameters.
         self.params.hazard = self.rec_fromkwds(**hazard)
         self.params.probability_chronic = params.probability_chronic
         self.params.transmission_rate = params.transmission_rate
         self.params.chronic_transmission_rate = (
             params.chronic_transmission_rate)
+        # The birth hazard is needed at `ages`, not `ages_mid`.
         self.params.hazard_birth = hazard_birth_constant_time(
-            self.ages, RVs['mortality'], self.step)
+            self.ages, self.step, self.params.survival.mortality)
         # Dummy value. Set on calls to `solve_step()`.
         self.params.newborn_proportion_immune = 1
 
@@ -458,7 +475,8 @@ class Solver:
         '''Compute the proportions of newborns who have maternal immunity from
         the solution `P`.'''
         # The birth rate from moms in each immune status and age.
-        births = P.mul(self.params.hazard_birth, axis='index')
+        births = P.mul(self.params.hazard_birth,
+                       axis='index')
         # The birth rate from moms in each immune status.
         births_total = births.apply(integrate.trapz, args=(self.ages, ))
         return (births_total[list(buffalo.Buffalo.has_antibodies)].sum()
