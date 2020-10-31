@@ -8,7 +8,6 @@
 *** SAT2: 15.1min, hazard_infection = 137.7, newborn_proportion_immune = 0.899
 *** SAT3: 22.6min, hazard_infection =  82.9, newborn_proportion_immune = 0.907
 *** Why are the hazards so large?!?
-** clean up _cache
 
 * Check hazards of infection => equilibrium prevalence for the SATs.
 ** Why are the density vs. age, summed over immune state, so different

@@ -13,22 +13,6 @@ from herd import (antibody_gain, antibody_loss, birth, buffalo,
                   utility)
 
 
-def hazard_birth_constant_time(ages, age_step, survival_mortality):
-    RV_birth = birth.from_param_values(
-        birth_seasonal_coefficient_of_variation=0,
-        # This value doesn't matter when the variation is 0.
-        birth_peak_time_of_year=0,
-        # We will handle scaling ourselves.
-        _scaling=1)
-    hazard = RV_birth.hazard(
-        age=ages,
-        # This value doesn't matter when the variation is 0.
-        time=0)
-    # Scale so that the population growth rate is 0.
-    hazard /= numpy.dot(hazard, survival_mortality) * age_step
-    return hazard
-
-
 class Block:
     '''Get a block row A_X of A and block b_X of b.'''
 
@@ -323,6 +307,22 @@ class Solver:
         return numpy.hstack([RV.pdf(ages[0]),
                              - numpy.diff(RV.sf(ages)) / numpy.diff(ages)])
 
+    def hazard_birth_constant_time(self):
+        RV_birth = birth.from_param_values(
+            birth_seasonal_coefficient_of_variation=0,
+            # This value doesn't matter when the variation is 0.
+            birth_peak_time_of_year=0,
+            # We will handle scaling ourselves.
+            _scaling=1)
+        hazard = RV_birth.hazard(
+            age=self.ages,
+            # This value doesn't matter when the variation is 0.
+            time=0)
+        # Scale so that the population growth rate is 0.
+        hazard /= integrate.trapz(hazard * self.params.survival.mortality,
+                                  self.ages)
+        return hazard
+
     def set_params(self, params):
         self.params = Params()
         self.params.step = self.step
@@ -365,8 +365,7 @@ class Solver:
         self.params.chronic_transmission_rate = (
             params.chronic_transmission_rate)
         # The birth hazard is needed at `ages`, not `ages_mid`.
-        self.params.hazard_birth = hazard_birth_constant_time(
-            self.ages, self.step, self.params.survival.mortality)
+        self.params.hazard_birth = self.hazard_birth_constant_time()
         # Dummy value. Set on calls to `solve_step()`.
         self.params.newborn_proportion_immune = 1
 
