@@ -1,13 +1,13 @@
 * initial conditions
-** conditional probability
-*** SAT1: 12.6min, hazard_infection = 28.0, newborn_proportion_immune = 0.935
-*** SAT2: 13.6min, hazard_infection = 19.6, newborn_proportion_immune = 0.843
-*** SAT3: 28.7min, hazard_infection = 13.8, newborn_proportion_immune = 0.820
-** nonconditional probability
+** unconditional probability
 *** SAT1: 11.9min, hazard_infection = 153.8, newborn_proportion_immune = 0.958
 *** SAT2: 15.1min, hazard_infection = 137.7, newborn_proportion_immune = 0.899
 *** SAT3: 22.6min, hazard_infection =  82.9, newborn_proportion_immune = 0.907
 *** Why are the hazards so large?!?
+** conditional probability
+*** SAT1: 12.6min, hazard_infection = 28.0, newborn_proportion_immune = 0.935
+*** SAT2: 13.6min, hazard_infection = 19.6, newborn_proportion_immune = 0.843
+*** SAT3: 28.7min, hazard_infection = 13.8, newborn_proportion_immune = 0.820
 
 * Check hazards of infection => equilibrium prevalence for the SATs.
 ** Why are the density vs. age, summed over immune state, so different

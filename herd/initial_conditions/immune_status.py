@@ -328,31 +328,31 @@ class Solver:
         self.params.step = self.step
         self.params.length_ODE = self.length_ODE
         self.params.length_PDE = self.length_PDE
-        # Get the pdf and survival for these RVs.
-        RVs = {
+        # Get the pdf for these RVs.
+        RVs_pdf = {
             'progression': progression.gen(params),
             'recovery': recovery.gen(params),
             'chronic_recovery': chronic_recovery.gen(params),
         }
         pdf = {k: self.get_pdf(RV, self.ages)
-               for (k, RV) in RVs.items()}
+               for (k, RV) in RVs_pdf.items()}
         self.params.pdf = self.rec_fromkwds(**pdf)
-        # Also get the survival for these RVs.
-        RV_mortality = mortality.gen(params)
-        RVs.update({
-            'mortality': RV_mortality,
-        })
+        # Get the survival for these RVs.
+        RVs_survival = {
+            **RVs_pdf,  # The entries in `RVs_pdf`.
+            'mortality': mortality.gen(params),
+        }
         survival = {k: RV.sf(self.ages)
-                    for (k, RV) in RVs.items()}
+                    for (k, RV) in RVs_survival.items()}
         self.params.survival = self.rec_fromkwds(**survival)
         # Get the hazard for these RVs.
-        RVs = {
-            'mortality': RV_mortality,
+        RVs_hazard = {
+            'mortality': RVs_survival['mortality'],
             'maternal_immunity_waning': maternal_immunity_waning.gen(params),
             'antibody_loss': antibody_loss.gen(params),
         }
         hazard = {k: RV.hazard(self.ages_mid)
-                  for (k, RV) in RVs.items()}
+                  for (k, RV) in RVs_hazard.items()}
         # Hazards that are constant in age.
         antibody_gain_RV = antibody_gain.gen(params)
         hazard['antibody_gain'] = antibody_gain_RV.hazard(
@@ -465,7 +465,8 @@ class Solver:
         '''Compute the hazard of infection from the solution `P`.'''
         # The probability of being in each immune status integrated
         # over age.
-        P_total = P.apply(integrate.trapz, args=(self.ages, ))
+        P_total = P.apply(integrate.trapz,
+                          args=(self.ages, ))
         # Compute the hazard of infection from the solution.
         return (self.params.transmission_rate * P_total['infectious']
                 + self.params.chronic_transmission_rate * P_total['chronic'])
@@ -477,7 +478,8 @@ class Solver:
         births = P.mul(self.params.hazard_birth,
                        axis='index')
         # The birth rate from moms in each immune status.
-        births_total = births.apply(integrate.trapz, args=(self.ages, ))
+        births_total = births.apply(integrate.trapz,
+                                    args=(self.ages, ))
         return (births_total[list(buffalo.Buffalo.has_antibodies)].sum()
                 / births_total.sum())
 
