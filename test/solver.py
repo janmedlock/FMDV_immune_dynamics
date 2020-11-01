@@ -2,8 +2,8 @@
 
 import sys
 
-import numpy
 import matplotlib.pyplot
+import numpy
 
 sys.path.append('..')
 from herd import initial_conditions, Parameters, utility
