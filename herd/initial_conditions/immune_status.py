@@ -491,7 +491,7 @@ class Solver:
                                self.get_newborn_proportion_immune(P)))
 
     def solve(self):
-        x_guess = (20, 0.9)
+        x_guess = (100, 0.9)
         y_sol = optimize.fixed_point(self.solve_objective,
                                      self.transform(x_guess))
         P = self.solve_step(y_sol)
