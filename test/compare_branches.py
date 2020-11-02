@@ -120,17 +120,17 @@ def check_solutions(solutions, rtol=1e-3, atol=1e-3):
         # both unconditional and conditional form.
         for which in BRANCHES:
             get_P = operator.attrgetter(f'P_{which}')
-            P = (get_P(solutions[branch][SAT])
-                 for branch in BRANCHES)
-            P_are_close = numpy.allclose(*P, rtol=rtol, atol=atol)
-            assert P_are_close, f'{SAT=}, {which=} failed!'
+            Ps = (get_P(solutions[branch][SAT])
+                  for branch in BRANCHES)
+            Ps_are_close = numpy.allclose(*Ps, rtol=rtol, atol=atol)
+            assert Ps_are_close, f'{SAT=}, {which=} failed!'
         # Check that the sums over the immune states is 1 for all ages
         # for the conditional form.
         for branch in BRANCHES:
             P_conditional = solutions[branch][SAT].P_conditional
-            sums_to_one = numpy.allclose(P_conditional.sum(axis='columns'), 1,
-                                         rtol=rtol, atol=atol)
-            assert sums_to_one, f'{SAT=}, {branch=} failed!'
+            sum_is_one = numpy.allclose(P_conditional.sum(axis='columns'), 1,
+                                        rtol=rtol, atol=atol)
+            assert sum_is_one, f'{SAT=}, {branch=} failed!'
         # Check that the hazards of infection and newborn proportions
         # immune from the two branches agree.
         for stat in ('hazard_infection', 'newborn_proportion_immune'):
