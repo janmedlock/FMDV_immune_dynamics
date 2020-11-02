@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 
-from operator import attrgetter
+import operator
 import pickle
 import subprocess
 import sys
@@ -12,8 +12,8 @@ import numpy
 import pandas
 
 sys.path.append('..')
-from herd import mortality, Parameters
-from herd.initial_conditions import immune_status
+import herd
+import herd.initial_conditions.immune_status
 sys.path.pop()
 
 
@@ -25,7 +25,8 @@ class Solution:
     def __init__(self, branch, SAT):
         self.branch = branch
         self.SAT = SAT
-        solver = immune_status.Solver(Parameters(SAT=self.SAT))
+        solver = herd.initial_conditions.immune_status.Solver(
+            herd.Parameters(SAT=self.SAT))
         P = self.solve(solver)
         if branch == 'unconditional':
             self.P_unconditional = P
@@ -48,6 +49,7 @@ class Solution:
 
 
 def get_branch():
+    '''Get the branch of the solver from git.'''
     cp = subprocess.run(('git', 'branch', '--show-current'),
                         capture_output=True, check=True)
     branch = cp.stdout.decode().strip()
@@ -76,29 +78,24 @@ def load():
     return solutions
 
 
-def isclose(a, b, rtol=1e-3, atol=1e-3, *args, **kwds):
-    '''Relax the default tolerances from `rtol=1e-5` and `atol=1e-8`.'''
-    return numpy.isclose(a, b, rtol=rtol, atol=atol, *args, **kwds)
-
-
-def allclose(a, b, *args, **kwds):
-    return numpy.all(isclose(a, b, *args, **kwds))
-
-
 def plot_solutions(solutions, which):
-    get_P = attrgetter(f'P_{which}')
+    get_P = operator.attrgetter(f'P_{which}')
     P = {branch: pandas.concat({SAT: get_P(solutions[branch][SAT])
                                 for SAT in SATS},
                                axis='columns')
          for branch in BRANCHES}
+    # Error between the solutions from the two solvers.
     err = P['unconditional'] - P['conditional']
     immune_states = err.columns.levels[1]
     X = range(len(immune_states))
     ages = err.index
     cmap = 'PiYG'
-    # Put the middle of the colormap at 0.
-    norm = matplotlib.colors.TwoSlopeNorm(0, err.min().min(), err.max().max())
-    (fig, axes) = matplotlib.pyplot.subplots(len(SATS), 1,
+    # Use the same norm for all the subplots and put the middle of the
+    # colormap at 0.
+    norm = matplotlib.colors.TwoSlopeNorm(0,
+                                          err.values.min(),
+                                          err.values.max())
+    (fig, axes) = matplotlib.pyplot.subplots(len(SATS),
                                              sharex=True,
                                              constrained_layout=True)
     for (ax, SAT) in zip(axes, SATS):
@@ -111,33 +108,37 @@ def plot_solutions(solutions, which):
                  ax=axes, label='error')
 
 
-def check_solutions(solutions):
-    # Check that the solutions from the two branches agree,
-    # in both unconditional and conditional form.
+def check_solutions(solutions, rtol=1e-3, atol=1e-3):
+    '''Compare the solutions from the two solver branches.
+    The arguments `rtol` and `atol` set the tolerances for
+    `numpy.isclose()` and `numpy.allclose()` from their defaults of
+    `rtol=1e-5` and `atol=1e-8`.'''
+    # Some of the tests below only work with two branches.
+    assert len(BRANCHES) == 2
     for SAT in SATS:
+        # Check that the solutions from the two branches agree, in
+        # both unconditional and conditional form.
         for which in BRANCHES:
-            get_P = attrgetter(f'P_{which}')
-            check = allclose(*(get_P(solutions[branch][SAT])
-                               for branch in BRANCHES))
-            assert check, f'{which=}, {SAT=} failed!'
-    # Check that the sums over the immune states is 1 for all ages
-    # for the conditional form.
-    for branch in BRANCHES:
-        for SAT in SATS:
-            check = allclose(
-                solutions[branch][SAT].P_conditional.sum(axis='columns'),
-                1)
-            assert check, f'{branch=}, {SAT=} failed!'
-    # Check that the hazards of infection agree.
-    for SAT in SATS:
-        check = isclose(*(solutions[branch][SAT].hazard_infection
-                          for branch in BRANCHES))
-        assert check, f'{SAT=} failed!'
-    # Check that the newborn proportions immune agree.
-    for SAT in SATS:
-        check = isclose(*(solutions[branch][SAT].newborn_proportion_immune
-                          for branch in BRANCHES))
-        assert check, f'{SAT=} failed!'
+            get_P = operator.attrgetter(f'P_{which}')
+            P = (get_P(solutions[branch][SAT])
+                 for branch in BRANCHES)
+            P_are_close = numpy.allclose(*P, rtol=rtol, atol=atol)
+            assert P_are_close, f'{SAT=}, {which=} failed!'
+        # Check that the sums over the immune states is 1 for all ages
+        # for the conditional form.
+        for branch in BRANCHES:
+            P_conditional = solutions[branch][SAT].P_conditional
+            sums_to_one = numpy.allclose(P_conditional.sum(axis='columns'), 1,
+                                         rtol=rtol, atol=atol)
+            assert sums_to_one, f'{SAT=}, {branch=} failed!'
+        # Check that the hazards of infection and newborn proportions
+        # immune from the two branches agree.
+        for stat in ('hazard_infection', 'newborn_proportion_immune'):
+            get_stat = operator.attrgetter(stat)
+            stats = (get_stat(solutions[branch][SAT])
+                     for branch in BRANCHES)
+            stats_are_close = numpy.isclose(*stats, rtol=rtol, atol=atol)
+            assert stats_are_close, f'{SAT=}, {stat=} failed!'
 
 
 if __name__ == '__main__':
