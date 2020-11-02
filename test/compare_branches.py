@@ -120,25 +120,32 @@ def check_solutions(solutions, rtol=1e-3, atol=1e-3):
         # both unconditional and conditional form.
         for which in BRANCHES:
             get_P = operator.attrgetter(f'P_{which}')
-            Ps = (get_P(solutions[branch][SAT])
-                  for branch in BRANCHES)
-            Ps_are_close = numpy.allclose(*Ps, rtol=rtol, atol=atol)
-            assert Ps_are_close, f'{SAT=}, {which=} failed!'
+            P = {branch: get_P(solutions[branch][SAT])
+                 for branch in BRANCHES}
+            P_are_close = numpy.allclose(*P.values(),
+                                         rtol=rtol, atol=atol)
+            msg = f'P_{which} are not close for {SAT=}!'
+            assert P_are_close, msg
         # Check that the sums over the immune states is 1 for all ages
         # for the conditional form.
         for branch in BRANCHES:
-            P_conditional = solutions[branch][SAT].P_conditional
-            sum_is_one = numpy.allclose(P_conditional.sum(axis='columns'), 1,
+            P_sum = solutions[branch][SAT].P_conditional.sum(axis='columns')
+            sum_is_one = numpy.allclose(P_sum, 1,
                                         rtol=rtol, atol=atol)
-            assert sum_is_one, f'{SAT=}, {branch=} failed!'
+            msg = (f'P_conditional does not sum to 1 for {SAT=}, {branch=}!'
+                   + f'\n{P_sum=}')
+            assert sum_is_one, msg
         # Check that the hazards of infection and newborn proportions
         # immune from the two branches agree.
-        for stat in ('hazard_infection', 'newborn_proportion_immune'):
-            get_stat = operator.attrgetter(stat)
-            stats = (get_stat(solutions[branch][SAT])
-                     for branch in BRANCHES)
-            stats_are_close = numpy.isclose(*stats, rtol=rtol, atol=atol)
-            assert stats_are_close, f'{SAT=}, {stat=} failed!'
+        for which in ('hazard_infection', 'newborn_proportion_immune'):
+            get_stat = operator.attrgetter(which)
+            stat = {branch: get_stat(solutions[branch][SAT])
+                    for branch in BRANCHES}
+            stat_are_close = numpy.isclose(*stat.values(),
+                                           rtol=rtol, atol=atol)
+            msg = (f'{which} are not close for {SAT=}!'
+                   + f'\n{stat}')
+            assert stat_are_close, msg
 
 
 if __name__ == '__main__':
