@@ -18,3 +18,4 @@ __pycache__/
 _cache/
 .ipynb_checkpoints/
 /herd/floquet/monodromy*.so
+/test/solution_*conditional.pkl
