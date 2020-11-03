@@ -29,15 +29,15 @@ class Solution:
             herd.Parameters(SAT=self.SAT))
         P = self.solve(solver)
         if branch == 'unconditional':
-            self.P_unconditional = P
-            self.P_conditional = P.divide(solver.params.survival.mortality,
+            self.P_conditional = P.divide(P.sum(axis='columns'),
                                           axis='index')
         elif branch == 'conditional':
             self.P_conditional = P
-            self.P_unconditional = P.multiply(solver.params.survival.mortality,
-                                              axis='index')
         else:
             raise ValueError(f'Unknown {branch=}!')
+        self.P_unconditional = self.P_conditional.multiply(
+            solver.params.survival.mortality,
+            axis='index')
         self.hazard_infection = solver.get_hazard_infection(P)
         self.newborn_proportion_immune = (
             solver.get_newborn_proportion_immune(P))
