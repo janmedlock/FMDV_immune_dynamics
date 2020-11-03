@@ -92,9 +92,8 @@ def plot_solutions(solutions, which):
     cmap = 'PiYG'
     # Use the same norm for all the subplots and put the middle of the
     # colormap at 0.
-    norm = matplotlib.colors.TwoSlopeNorm(0,
-                                          err.values.min(),
-                                          err.values.max())
+    absmax = err.abs().max().max()
+    norm = matplotlib.colors.Normalize(-absmax, absmax)
     (fig, axes) = matplotlib.pyplot.subplots(len(SATS),
                                              sharex=True,
                                              constrained_layout=True)
@@ -108,11 +107,8 @@ def plot_solutions(solutions, which):
                  ax=axes, label='error')
 
 
-def check_solutions(solutions, rtol=1e-3, atol=1e-3):
-    '''Compare the solutions from the two solver branches.
-    The arguments `rtol` and `atol` set the tolerances for
-    `numpy.isclose()` and `numpy.allclose()` from their defaults of
-    `rtol=1e-5` and `atol=1e-8`.'''
+def check_solutions(solutions):
+    '''Compare the solutions from the two solver branches.'''
     # Some of the tests below only work with two branches.
     assert len(BRANCHES) == 2
     for SAT in SATS:
@@ -122,16 +118,16 @@ def check_solutions(solutions, rtol=1e-3, atol=1e-3):
             get_P = operator.attrgetter(f'P_{which}')
             P = {branch: get_P(solutions[branch][SAT])
                  for branch in BRANCHES}
+            # Increase the absolute tolerance from `atol=1e-8`.
             P_are_close = numpy.allclose(*P.values(),
-                                         rtol=rtol, atol=atol)
+                                         atol=1e-3)
             msg = f'P_{which} are not close for {SAT=}!'
             assert P_are_close, msg
         # Check that the sums over the immune states is 1 for all ages
         # for the conditional form.
         for branch in BRANCHES:
             P_sum = solutions[branch][SAT].P_conditional.sum(axis='columns')
-            sum_is_one = numpy.allclose(P_sum, 1,
-                                        rtol=rtol, atol=atol)
+            sum_is_one = numpy.allclose(P_sum, 1)
             msg = (f'P_conditional does not sum to 1 for {SAT=}, {branch=}!'
                    + f'\n{P_sum=}')
             assert sum_is_one, msg
@@ -141,8 +137,9 @@ def check_solutions(solutions, rtol=1e-3, atol=1e-3):
             get_stat = operator.attrgetter(which)
             stat = {branch: get_stat(solutions[branch][SAT])
                     for branch in BRANCHES}
+            # Increase the relative tolerance from `rtol=1e-5`.
             stat_are_close = numpy.isclose(*stat.values(),
-                                           rtol=rtol, atol=atol)
+                                           rtol=1e-3)
             msg = (f'{which} are not close for {SAT=}!'
                    + f'\n{stat}')
             assert stat_are_close, msg
