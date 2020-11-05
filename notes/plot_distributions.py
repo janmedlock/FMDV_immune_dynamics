@@ -10,7 +10,7 @@ import plot_common
 sys.path.pop()
 
 
-# The of these determines the order of the legend.
+# The of order these determines the order of the legend.
 SATs = ('all', 1, 2, 3)
 
 colors = {SAT: 'black' if (SAT == 'all') else plot_common.SAT_colors[SAT]
