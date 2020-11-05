@@ -1,5 +1,6 @@
 #!/usr/bin/python3
 
+import itertools
 import sys
 
 from matplotlib import pyplot
@@ -51,6 +52,10 @@ def plot_samples(ICs, ages, ax):
     ax.set_ylabel('count in\nsample')
 
 
+def reorder_for_lr(items, ncol):
+    return itertools.chain(*[items[i::ncol] for i in range(ncol)])
+
+
 def plot_ICs(SAT):
     parameters = Parameters(SAT=SAT)
     ICs = initial_conditions.gen(parameters)
@@ -67,10 +72,12 @@ def plot_ICs(SAT):
         ax.margins(0)
     fig.align_ylabels()
     fig.tight_layout(rect=(0, 0.1, 1, 1))
-    (_, labels) = axes[0].get_legend_handles_labels()
+    (handles, labels) = axes[0].get_legend_handles_labels()
     nrow = 2
     ncol = (len(labels) + nrow - 1) // nrow
-    fig.legend(loc='lower center', ncol=ncol)
+    fig.legend(reorder_for_lr(handles, ncol),
+               reorder_for_lr(labels, ncol),
+               ncol=ncol, loc='lower center')
 
 
 if __name__ == '__main__':
