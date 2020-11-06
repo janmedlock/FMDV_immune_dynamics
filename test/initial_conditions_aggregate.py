@@ -62,8 +62,8 @@ def plot_sum_over_immune_state(p):
     ax = P.plot(alpha=0.6)
     ax.set_xlabel('age')
     ax.set_ylabel('survival')
-    S = mortality.from_param_values().sf(ages)
-    ax.plot(ages, S, color='black', linestyle='dashed', alpha=0.6)
+    survival = mortality.from_param_values().sf(ages)
+    ax.plot(ages, survival, color='black', linestyle='dashed', alpha=0.6)
     return ax
 
 
@@ -142,7 +142,6 @@ def get_incidence(p, params):
 if __name__ == '__main__':
     params = get_params()
     p = get_solutions(params)
-
     # plot_integral_over_age(p)
     # plot_sum_over_immune_state(p)
     plot_probability_constant_birth(p)
