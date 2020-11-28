@@ -1,3 +1,5 @@
+# Build the Cython monodromy solver.
+
 NAME := monodromy
 SO := $(shell python3-config --extension-suffix)
 MODULE := $(NAME)$(SO)
@@ -11,7 +13,6 @@ LDFLAGS += -shared
 LDLIBS := $(shell python3-config --libs)
 LDLIBS += -lblas
 
-# Suppress warning.
 CPPFLAGS := -DNPY_NO_DEPRECATED_API=NPY_1_7_API_VERSION
 
 
