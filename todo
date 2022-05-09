@@ -1,3 +1,13 @@
+* Simulations of carrier model
+** Plot like Science paper Fig 3 B (rotated 90 degrees?).
+
+* Vary susceptibility of the lost-immunity class
+** Plot like Science paper Fig 4 A.
+
+* Sample parameters
+** Use MCMC to sample from likelihood for hazard parameters
+** Plot like Science paper Fig 4 B
+
 * initial conditions
 ** The linear models give the same answer to 1e-3.
 ** Nonlinear models
