@@ -2,6 +2,7 @@
 ** Plot like Science paper Fig 3 B (rotated 90 degrees?).
 
 * Vary susceptibility of the lost-immunity class
+** Build susceptibility parameter into model.
 ** Plot like Science paper Fig 4 A.
 
 * Sample parameters

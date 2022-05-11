@@ -39,10 +39,10 @@ class Parameters:
                 self.chronic_recovery_shape = 3.2
                 self.chronic_transmission_rate = 0.028 * 365
                 # Rate, not duration, leaving R to L.
-                self.antibody_loss_hazard = 0.196475388537497 * 365
+                self.antibody_loss_hazard = 0.0013358 * 365
                 # Rate, not duration, leaving L to R.
-                self.antibody_gain_hazard_alpha = 0.806963554549310 * 365
-                self.antibody_gain_hazard_beta = 0.526609836776813 * 365
+                self.antibody_gain_hazard_alpha = 0.011411 * 365
+                self.antibody_gain_hazard_beta = 0.0014165 * 365
             elif self.SAT == 2:
                 self.progression_shape = 1.6
                 self.progression_mean = 1.3 / 365
@@ -56,10 +56,10 @@ class Parameters:
                 self.chronic_recovery_shape = 3.2
                 self.chronic_transmission_rate = 0.003 * 365
                 # Rate, not duration, leaving R to L.
-                self.antibody_loss_hazard = 0.170818746554546 * 365
+                self.antibody_loss_hazard = 0.0031631 * 365
                 # Rate, not duration, leaving L to R.
-                self.antibody_gain_hazard_alpha = 0.556766458367885 * 365
-                self.antibody_gain_hazard_beta = 0.193347097224800 * 365
+                self.antibody_gain_hazard_alpha = 0.0044599 * 365
+                self.antibody_gain_hazard_beta = 0.0054681 * 365
             elif self.SAT == 3:
                 self.progression_shape = 1.6
                 self.progression_mean = 2.8 / 365
@@ -73,12 +73,12 @@ class Parameters:
                 self.chronic_recovery_shape = 3.2
                 self.chronic_transmission_rate = 0.012 * 365
                 # Rate, not duration, leaving R to L.
-                self.antibody_loss_hazard = 0.785619195960972 * 365
+                self.antibody_loss_hazard = 0.0053853 * 365
                 # Rate, not duration, leaving L to R.
-                self.antibody_gain_hazard_alpha = 0.692630405604967 * 365
-                self.antibody_gain_hazard_beta = 0.711002310720960 * 365
+                self.antibody_gain_hazard_alpha = 0.0058625 * 365
+                self.antibody_gain_hazard_beta = 0.0024883 * 365
             else:
-                raise ValueError("Unknown SAT '{}'!".format(self.SAT))
+                raise ValueError(f'Unknown {SAT=}!')
 
     def __repr__(self):
         'Make instances print nicely.'

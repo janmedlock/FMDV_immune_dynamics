@@ -102,6 +102,8 @@ def _load_antibody_hazards():
                            'antibody_loss_hazard'],
                           name=_PARAMETERS_NAME)
     dfr.columns = pandas.MultiIndex.from_product([_SATs, params])
+    # Convert from per day to per year.
+    dfr *= 365
     return dfr
 
 
