@@ -168,7 +168,9 @@ class BlockE(BlockPDE):
         self.A_X['S'] = self._get_A_XY_ODE(self.params.hazard.infection)
 
     def set_A_EL(self):
-        self.A_X['L'] = self._get_A_XY_ODE(self.params.hazard.infection)
+        self.A_X['L'] = self._get_A_XY_ODE(
+            self.params.lost_immunity_susceptibility
+            * self.params.hazard.infection)
 
     def set_A_EE(self):
         self.A_X['E'] = self._get_A_XX()
@@ -228,8 +230,10 @@ class BlockL(BlockODE):
         self.A_X['R'] = self._get_A_XY_ODE(self.params.hazard.antibody_loss)
 
     def set_A_LL(self):
-        self.A_X['L'] = self._get_A_XX(self.params.hazard.antibody_gain
-                                       + self.params.hazard.infection)
+        self.A_X['L'] = self._get_A_XX(
+            self.params.hazard.antibody_gain
+            + (self.params.lost_immunity_susceptibility
+               * self.params.hazard.infection))
 
     def set_b_X(self):
         self._set_b_X(0)
@@ -518,6 +522,7 @@ class CacheParameters(parameters.Parameters):
                  'chronic_recovery_shape',
                  'chronic_transmission_rate',
                  'female_probability_at_birth',
+                 'lost_immunity_susceptibility',
                  'maternal_immunity_duration_mean',
                  'maternal_immunity_duration_shape',
                  'probability_chronic',

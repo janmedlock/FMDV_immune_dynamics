@@ -90,12 +90,15 @@ satisfy
       - \left[h_{\text{infection}} + h_{\text{death}}(a)\right]
       P_{\mathrm{S}}(a),
     \displaybreak[0]\\
-    p_{\mathrm{E}}(0, 0) &= h_{\text{infection}}
-      \left[P_{\mathrm{S}}(0) + P_{\mathrm{L}}(0)\right],
+    p_{\mathrm{E}}(0, 0)
+    &= h_{\text{infection}}
+      \left[P_{\mathrm{S}}(0)
+      + \sigma_{\text{lost immunity}} P_{\mathrm{L}}(0)\right],
     \\
     p_{\mathrm{E}}(a, 0)
     &= h_{\text{infection}}
-      \left[P_{\mathrm{S}}(a) + P_{\mathrm{L}}(a)\right],
+      \left[P_{\mathrm{S}}(a)
+      + \sigma_{\text{lost immunity}} P_{\mathrm{L}}(a)\right],
     \\
     \left(\frac{\partial}{\partial a}
     + \frac{\partial}{\partial r}\right)
@@ -148,7 +151,8 @@ satisfy
       \frac{\md P_{\mathrm{L}}}{\md a} &=
       h_{\text{antibody loss}} P_{\mathrm{R}}(a)
       \\ & \quad {}
-      - \left[h_{\text{antibody gain}} + h_{\text{infection}}
+      - \left[h_{\text{antibody gain}}
+        + \sigma_{\text{lost immunity}} h_{\text{infection}}
         + h_{\text{death}}(a)\right]
       P_{\mathrm{L}}(a),
     \end{split}
@@ -213,12 +217,15 @@ Integrating the PDEs along the characteristics $r = a - a_0$ gives
       - \left[h_{\text{infection}}  + h_{\text{death}}(a)\right]
       P_{\mathrm{S}}(a),
     \displaybreak[0]\\
-    p_{\mathrm{E}}(0, 0) &= h_{\text{infection}}
-      \left[P_{\mathrm{S}}(0) + P_{\mathrm{L}}(0)\right],
+    p_{\mathrm{E}}(0, 0)
+    &= h_{\text{infection}}
+      \left[P_{\mathrm{S}}(0)
+      + \sigma_{\text{lost immunity}} P_{\mathrm{L}}(0)\right],
     \\
     p_{\mathrm{E}}(a, 0)
     &= h_{\text{infection}}
-      \left[P_{\mathrm{S}}(a) + P_{\mathrm{L}}(a)\right],
+      \left[P_{\mathrm{S}}(a)
+      + \sigma_{\text{lost immunity}} P_{\mathrm{L}}(a)\right],
     \\
     p_{\mathrm{E}}(a, r)
     &= S_{\text{progression}}(r)
@@ -283,7 +290,8 @@ Integrating the PDEs along the characteristics $r = a - a_0$ gives
       \frac{\md P_{\mathrm{L}}}{\md a}
       &= h_{\text{antibody loss}} P_{\mathrm{R}}(a)
       \\ & \quad {}
-      - \left[h_{\text{antibody gain}} + h_{\text{infection}}
+      - \left[h_{\text{antibody gain}}
+        + \sigma_{\text{lost immunity}} h_{\text{infection}}
         + h_{\text{death}}(a)\right]
       P_{\mathrm{L}}(a).
     \end{split}
@@ -323,7 +331,8 @@ gives
     \begin{split}
       \frac{\md P_{\mathrm{E}}}{\md a}
       &= h_{\text{infection}}
-      \left[P_{\mathrm{S}}(a) + P_{\mathrm{L}}(a)\right]
+      \left[P_{\mathrm{S}}(a)
+        + \sigma_{\text{lost immunity}} P_{\mathrm{L}}(a)\right]
       \\ & \quad {}
       - \int_0^a
       p_{\text{progression}}(r)
@@ -452,7 +461,8 @@ Crank--Nicolson method on characteristics gives
     p_{\mathrm{E}}^i
     &= h_{\text{infection}} \left(
       \frac{P_{\mathrm{S}}^i + P_{\mathrm{S}}^{i - 1}}{2}
-      + \frac{P_{\mathrm{L}}^i + P_{\mathrm{L}}^{i - 1}}{2}
+      + \sigma_{\text{lost immunity}}
+      \frac{P_{\mathrm{L}}^i + P_{\mathrm{L}}^{i - 1}}{2}
       \right),
     \displaybreak[0]\\
     p_{\mathrm{I}}^0 &= 0,
@@ -508,7 +518,8 @@ Crank--Nicolson method on characteristics gives
       \frac{P_{\mathrm{R}}^i + P_{\mathrm{R}}^{i - 1}}{2}
       \\ & \quad {}
       - \left[
-        h_{\text{antibody gain}} + h_{\text{infection}}
+        h_{\text{antibody gain}}
+        + \sigma_{\text{lost immunity}} h_{\text{infection}}
         + h_{\text{death}}(a^{i - 1 / 2})
       \right]
       \frac{P_{\mathrm{L}}^i + P_{\mathrm{L}}^{i - 1}}{2},
@@ -625,8 +636,10 @@ Numerical scheme \eqref{eq:numerical_method} can be written as
       \\ {}
       + p_{\mathrm{E}}^i
       \\ {}
-      - \frac{h_{\text{infection}}}{2} P_{\mathrm{L}}^{i - 1}
-      - \frac{h_{\text{infection}}}{2} P_{\mathrm{L}}^i
+      - \frac{\sigma_{\text{lost immunity}} h_{\text{infection}}}{2}
+      P_{\mathrm{L}}^{i - 1}
+      - \frac{\sigma_{\text{lost immunity}} h_{\text{infection}}}{2}
+      P_{\mathrm{L}}^i
       &= 0,
     \end{split}
     \displaybreak[0]\\
@@ -695,7 +708,7 @@ Numerical scheme \eqref{eq:numerical_method} can be written as
       \\ {}
       - \left\{1
         - \left[h_{\text{antibody gain}}
-          + h_{\text{infection}}
+          + \sigma_{\text{lost immunity}} h_{\text{infection}}
           + h_{\text{death}}(a^{i - 1 / 2})
         \right]
         \frac{\Delta a}{2}\right\}
@@ -703,7 +716,7 @@ Numerical scheme \eqref{eq:numerical_method} can be written as
       \\ {}
       + \left\{1
         + \left[h_{\text{antibody gain}}
-          + h_{\text{infection}}
+          + \sigma_{\text{lost immunity}} h_{\text{infection}}
           + h_{\text{death}}(a^{i - 1 / 2})
         \right]
         \frac{\Delta a}{2}\right\}
@@ -824,7 +837,7 @@ where
     \\
     d_{\mathrm{L}}^i
     &= \frac{1}{2} \left[h_{\text{antibody gain}}
-      + h_{\text{infection}}
+      + \sigma_{\text{lost immunity}} h_{\text{infection}}
       + h_{\text{death}}(a^{i - 1 / 2})\right]
       \Delta a,
   \end{align}
@@ -897,7 +910,7 @@ where
     \frac{1}{2} h_{\text{infection}},
     \displaybreak[0]\\
     f_{\mathrm{EL}}^i &=
-    \frac{1}{2} h_{\text{infection}},
+    \frac{1}{2} \sigma_{\text{lost immunity}} h_{\text{infection}},
     \displaybreak[0]\\
     f_{\mathrm{RL}}^i &=
     \frac{1}{2} h_{\text{antibody gain}} \Delta a,

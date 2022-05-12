@@ -8,7 +8,7 @@ class Parameters:
         if _set_defaults:
             self.population_size = 1000
             self.female_probability_at_birth = 0.5
-            self.birth_peak_time_of_year = 0  # 01 January.
+            self.birth_peak_time_of_year = 0  # January 01.
             # self.birth_seasonal_coefficient_of_variation = 0.505  # 1st year.
             # self.birth_seasonal_coefficient_of_variation = 0.984  # 2nd year.
             self.birth_seasonal_coefficient_of_variation = 0.613  # Both years.
@@ -16,7 +16,7 @@ class Parameters:
             self.maternal_immunity_duration_mean = 0.37
             self.maternal_immunity_duration_shape = 1.19
             # For the rate, not duration, leaving R to P.
-            # The first day is 2014 March 5.
+            # The first day is 2014 March 05.
             date_min = Timestamp(year=2014, month=3, day=5)
             # Convert to years, with January 1 at 0,
             # like `start_time` below.
@@ -26,6 +26,7 @@ class Parameters:
             self.antibody_gain_hazard_time_min = time_min
             self.antibody_gain_hazard_time_max = time_max
             self.start_time = self.antibody_gain_hazard_time_min
+            self.lost_immunity_susceptibility = 1
             if self.SAT == 1:
                 self.progression_shape = 1.2
                 self.progression_mean = 0.5 / 365

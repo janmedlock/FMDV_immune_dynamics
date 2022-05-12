@@ -116,17 +116,20 @@ class Infection(Event):
     def do(self):
         self.buffalo.change_immune_status_to('exposed')
 
+    def get_force_of_infection(self):
+        return ((self.buffalo.herd.rvs.transmission_rate
+                 * self.buffalo.herd.number_infectious)
+                + (self.buffalo.herd.rvs.chronic_transmission_rate
+                   * self.buffalo.herd.number_chronic))
+
     def sample_time(self):
-        force_of_infection = (
-            (self.buffalo.herd.rvs.transmission_rate
-             * self.buffalo.herd.number_infectious)
-            + (self.buffalo.herd.rvs.chronic_transmission_rate
-               * self.buffalo.herd.number_chronic))
+        force_of_infection = self.get_force_of_infection()
         # scale = 1 / force_of_infection
         # Handle division by 0.
-        scale = numpy.ma.filled(
-            numpy.ma.divide(1, force_of_infection),
-            numpy.inf)
+        if force_of_infection > 0:
+            scale = 1 / force_of_infection
+        else:
+            scale = numpy.inf
         return (self.buffalo.herd.time
                 + stats.expon.rvs(scale=scale))
 
@@ -207,6 +210,10 @@ class SecondaryInfection(Infection):
         # in the queue.
         self.remove_event(AntibodyGain)
         self.buffalo.change_immune_status_to('exposed')
+
+    def get_force_of_infection(self):
+        return (self.buffalo.herd.params.lost_immunity_susceptibility
+                * super().get_force_of_infection())
 
 events_by_immune_status['lost immunity'].add(SecondaryInfection)
 
