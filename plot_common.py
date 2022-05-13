@@ -6,7 +6,6 @@ import numpy
 import pandas
 
 import h5
-import run_common
 
 
 t_name = 'time (y)'

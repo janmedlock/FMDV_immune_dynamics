@@ -6,12 +6,10 @@ import os
 
 from joblib import delayed, Parallel
 import numpy
-import pandas
 
-import h5
 import herd
 import herd.samples
-import run_common
+import run
 
 
 _path = 'samples'
@@ -48,7 +46,7 @@ def run_samples(tmax):
     os.makedirs(_path, exist_ok=True)
     jobs = itertools.chain.from_iterable(
         _run_samples_SAT(SAT, tmax, _path)
-        for SAT in run_common._SATs)
+        for SAT in run._SATs)
     Parallel(n_jobs=-1)(jobs)
 
 

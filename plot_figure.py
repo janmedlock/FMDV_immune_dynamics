@@ -9,11 +9,9 @@ from matplotlib import pyplot
 from matplotlib import ticker
 import numpy
 import seaborn
-import pandas
 
 import plot_common
 import plot_start_times_SATs
-import run_common
 
 
 # From `pdfinfo notes/diagram_standalone.pdf'.

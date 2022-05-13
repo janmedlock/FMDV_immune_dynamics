@@ -17,7 +17,7 @@ seaborn.set_context('talk')
 
 
 def load_SIR_data():
-    return h5.load('run_SATs.h5')
+    return h5.load('run.h5')
 
 
 def load_extinction_data():

@@ -2,10 +2,10 @@
 
 import time
 
-import herd
-import run_common
-
 from matplotlib import pyplot
+
+import herd
+import run
 
 
 def make_plot(data, show=True):
@@ -28,7 +28,7 @@ if __name__ == '__main__':
 
     p = herd.Parameters(SAT=SAT)
     t0 = time.time()
-    data = run_common.run_one(p, tmax, seed, debug=debug)
+    data = run.run_one(p, tmax, seed, debug=debug)
     t1 = time.time()
     print('Run time: {} seconds.'.format(t1 - t0))
 
