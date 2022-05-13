@@ -368,6 +368,8 @@ class Solver:
         self.params.transmission_rate = params.transmission_rate
         self.params.chronic_transmission_rate = (
             params.chronic_transmission_rate)
+        self.params.lost_immunity_susceptibility = (
+            params.lost_immunity_susceptibility)
         # The birth hazard is needed at `ages`, not `ages_mid`.
         self.params.hazard_birth = self.hazard_birth_constant_time()
         # Dummy value. Set on calls to `solve_step()`.
