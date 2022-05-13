@@ -3,11 +3,11 @@
 import os.path
 
 import herd
-import run_samples
+import samples_run
 
 
 def get_path_and_logging_prefix(SAT):
-    path = os.path.join(run_samples._path, str(SAT))
+    path = os.path.join(samples_run._path, str(SAT))
     logging_prefix = f'SAT {SAT}, '
     return (path, logging_prefix)
 
@@ -28,7 +28,7 @@ def load_parameters_and_samples(SAT):
 
 def _run_sample(parameters, sample, tmax, path, sample_number, logging_prefix):
     print(f'Running {logging_prefix}sample {sample_number}.')
-    run_samples._run_sample(parameters, sample, tmax, path,
+    samples_run._run_sample(parameters, sample, tmax, path,
                             sample_number, logging_prefix)
 
 

@@ -14,7 +14,7 @@ import herd.samples
 import run_common
 
 
-_path = 'run_samples'
+_path = 'samples'
 _index = 'time (y)'
 
 
@@ -52,39 +52,7 @@ def run_samples(tmax):
     Parallel(n_jobs=-1)(jobs)
 
 
-def _get_sample_number(filename):
-    base, _ = os.path.splitext(filename)
-    return int(base)
-
-
-def combine():
-    with h5.HDFStore('run_samples.h5', mode='a') as store:
-        # (SAT, sample) that are already in `store`.
-        store_idx = store.get_index().droplevel(_index).unique()
-        for SAT in map(int, sorted(os.listdir(_path))):
-            path_SAT = os.path.join(_path, str(SAT))
-            # Sort in integer order.
-            for filename in sorted(os.listdir(path_SAT),
-                                   key=_get_sample_number):
-                sample = _get_sample_number(filename)
-                if (SAT, sample) not in store_idx:
-                    path_sample = os.path.join(path_SAT, filename)
-                    recarray = numpy.load(path_sample)
-                    df = pandas.DataFrame.from_records(recarray,
-                                                       index=_index)
-                    run_common._prepend_index_levels(df,
-                                                     SAT=SAT,
-                                                     sample=sample)
-                    print('Inserting '
-                          + ', '.join((f'SAT={SAT}',
-                                       f'sample={sample}'))
-                          + '.')
-                    store.put(df, min_itemsize=run_common._min_itemsize)
-                    # os.remove(path_sample)
-
-
 if __name__ == '__main__':
     tmax = 10
 
     run_samples(tmax)
-    # combine()

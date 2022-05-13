@@ -21,7 +21,7 @@ def _get_extinction(infected):
 
 
 def _load_extinction_times():
-    with h5.HDFStore('run_samples.h5', mode='r') as store:
+    with h5.HDFStore('samples.h5', mode='r') as store:
         df = []
         for SAT in (1, 2, 3):
             by = ['SAT', 'sample']
