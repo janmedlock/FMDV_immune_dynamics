@@ -1,33 +1,10 @@
-* Simulations of carrier model
+* Fix herd.initial_conditions!
+
+* Simulations of model
 ** Plot like Science paper Fig 3 B (rotated 90 degrees?).
 
 * Vary susceptibility of the lost-immunity class
-** Build susceptibility parameter into model.
 ** Plot like Science paper Fig 4 A.
 
 * Sample parameters
-** Use MCMC to sample from likelihood for hazard parameters
 ** Plot like Science paper Fig 4 B
-
-* initial conditions
-** The linear models give the same answer to 1e-3.
-** Nonlinear models
-*** unconditional probability
-**** SAT1: 10.6min, hazard_infection = 153.8, newborn_proportion_immune = 0.958
-**** SAT2: 13.8min, hazard_infection = 137.7, newborn_proportion_immune = 0.899
-**** SAT3: 20.9min, hazard_infection =  82.9, newborn_proportion_immune = 0.907
-*** conditional probability
-**** SAT1: 10.9min, hazard_infection = 153.7, newborn_proportion_immune = 0.958
-**** SAT2: 14.6min, hazard_infection = 137.6, newborn_proportion_immune = 0.899
-**** SAT3: 21.0min, hazard_infection =  82.8, newborn_proportion_immune = 0.907
-
-* Check hazards of infection => equilibrium prevalence for the SATs.
-** Why are the density vs. age, summed over immune state, so different
-   between the SATs? Is this the \Delta a terms in the analysis of the
-   numerical scheme breaking things?
-** What do hazards imply about prevalence?
-*** Look at fraction in each state at equilibrium.
-*** Look at hazard and S + L by SAT.
-    How do these relate to each other?
-*** Chronics => lots of transmission?
-**  Could there be multiple equilibria?
