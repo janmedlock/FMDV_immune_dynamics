@@ -251,9 +251,15 @@ class ProbabilityInterpolant:
 
     def __call__(self, age):
         # Interpolate `self._probability` to `age`.
-        return (self._probability.reindex(self._probability.index.union(age))
-                                 .interpolate()
-                                 .loc[age])
+        ages = numpy.atleast_1d(age)
+        # For some reason, duplicates may be present after `.union()`.
+        index = self._probability.index.union(ages) \
+                                       .drop_duplicates()
+        probability = self._probability.reindex(index) \
+                                       .interpolate() \
+                                       .loc[age]
+        assert probability.shape[:-1] == numpy.shape(age)
+        return probability
 
 
 class Params:

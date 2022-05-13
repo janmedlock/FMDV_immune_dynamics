@@ -20,7 +20,6 @@ class gen:
         '''The probability of being in each immune state vs. `ages`,
         conditioned on being alive.'''
         p = self.immune_status_pdf(ages)
-        assert len(p) == len(ages)
         return p.divide(p.sum(axis='columns'), axis='index')
 
     def pdf(self, age):
