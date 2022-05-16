@@ -100,7 +100,6 @@ class gen(RV):
             time = numpy.PINF * numpy.ones_like(q)
         else:  # time0 < support[0]
             time = self.isf(q, support[0]) + (support[0] - time0)
-        assert numpy.all((time > 0) | numpy.isclose(time, 0))
         return time
 
     def cdf(self, time, time0):

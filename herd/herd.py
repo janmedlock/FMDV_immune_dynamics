@@ -83,10 +83,12 @@ class Herd(set):
                  for s in immune_statuses]
         return (self.time, stats)
 
+    _INFECTED = {'exposed', 'infectious', 'chronic'}
+
     @property
     def number_infected(self):
         return sum(len(self.by_immune_status[s])
-                   for s in {'exposed', 'infectious', 'chronic'})
+                   for s in self._INFECTED)
 
     def stop(self):
         return (self.number_infected == 0)
@@ -98,6 +100,9 @@ class Herd(set):
             and (event.time < self.params.start_time + tmax)):
             if self.debug:
                 print(event)
+            # Make sure the simulation is moving *forward* in time.
+            assert ((event.time >= self.time)
+                    | numpy.isclose(event.time, self.time))
             self.time = event.time
             event()
         else:
