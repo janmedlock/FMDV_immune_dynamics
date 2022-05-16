@@ -18,6 +18,7 @@ def make_plot(data, show=True):
     ax.legend(loc='center right')
     if show:
         pyplot.show()
+    return fig
 
 
 if __name__ == '__main__':
@@ -32,4 +33,4 @@ if __name__ == '__main__':
     t1 = time.time()
     print('Run time: {} seconds.'.format(t1 - t0))
 
-    make_plot(data)
+    fig = make_plot(data)
