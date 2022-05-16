@@ -31,14 +31,14 @@ class gen(RV):
             # alpha == beta == 0, i.e. the hazard is 0 everywhere,
             # but the methods that use _support() all continue to give
             # correct results in that case with any return value here.
-            return (-numpy.inf, numpy.inf)
+            return (numpy.NINF, numpy.PINF)
         else:
             # Where the linear part of the hazard would cross 0.
             time_intercept = self.time_min - self.alpha / self._slope
             if self.alpha > self.beta:
-                return (-numpy.inf, time_intercept)
+                return (numpy.NINF, time_intercept)
             else:
-                return (time_intercept, numpy.inf)
+                return (time_intercept, numpy.PINF)
 
     def logsf(self, time, time0):
         '''Logarithm of the survival function.'''
@@ -57,7 +57,7 @@ class gen(RV):
     def isf(self, q, time0):
         '''Inverse survival function.'''
         support = self._support()
-        if (support[0] <= time0 <= support[1]):
+        if support[0] <= time0 <= support[1]:
             # log q = - \int_{time0}^{time0 + time}
             #                slope * (u - time_min) + alpha du.
             # Let t0 = time0 - time_min,
@@ -75,15 +75,20 @@ class gen(RV):
             c = (numpy.ma.log(q)
                  - self._slope / 2 * t0 ** 2
                  - self.alpha * t0)
-            # The sqrt is imaginary when the q is very small
-            # because there is some chance that an animal survives until
-            # the hazard hits 0. We will say that the survival time
-            # is infinity in this case.
+            # sqrt_D is imaginary when the q is very small.  (When
+            # alpha > beta, this is because there is some chance that
+            # an animal survives until the hazard hits 0. In general,
+            # it can also happen because log(q) is large and
+            # negative.) We will say that the survival time is
+            # infinity in this case.
             sqrt_D = numpy.ma.sqrt(b ** 2 - 4 * a * c)
-            t = numpy.ma.filled(
-                numpy.ma.stack(((- b + sqrt_D) / 2 / a,
-                                (- b - sqrt_D) / 2 / a)),
-                numpy.inf).min(axis=0)
+            t_vals = numpy.ma.stack(((- b + sqrt_D) / 2 / a,
+                                     (- b - sqrt_D) / 2 / a))
+            t_vals = numpy.ma.filled(t_vals, numpy.PINF)
+            if self.alpha >= self.beta:  # self._slope <= 0
+                t = t_vals.min(axis=0)
+            else:
+                t = t_vals.max(axis=0)
             # t -> time_min + t
             # undoes the change of variables in the integral
             # u -> u - time_min.
@@ -91,8 +96,11 @@ class gen(RV):
             # gives a result that is time since time0,
             # as the other RVs do.
             time = self.time_min + t - time0
-        else:
-            time = numpy.inf * numpy.ones_like(q)
+        elif time0 > support[1]:
+            time = numpy.PINF * numpy.ones_like(q)
+        else:  # time0 < support[0]
+            time = self.isf(q, support[0]) + (support[0] - time0)
+        assert numpy.all((time > 0) | numpy.isclose(time, 0))
         return time
 
     def cdf(self, time, time0):
