@@ -19,11 +19,11 @@ def _insert_index_levels(df, i, **levels):
 
 
 def _append_index_levels(df, **levels):
-    _insert_index_levels(df, 0, **levels)
+    _insert_index_levels(df, df.index.nlevels, **levels)
 
 
 def _prepend_index_levels(df, **levels):
-    _insert_index_levels(df, df.index.nlevels, **levels)
+    _insert_index_levels(df, 0, **levels)
 
 
 def run_one(parameters, tmax, run_number, *args, **kwargs):
