@@ -14,7 +14,7 @@ import plot_common
 # Science
 rc = plot_common.rc.copy()
 width = 183 / 25.4  # convert mm to in
-height = 4  # in
+height = 3  # in
 rc['figure.figsize'] = (width, height)
 # Between 5pt and 7pt.
 rc['font.size'] = 6
@@ -38,13 +38,15 @@ def plot_infected(ax, infected, SAT, draft=False):
         # Only plot the first 100 runs for speed.
         i = i.iloc[:, :100]
     # Start time at 0.
-    t = 365 * (i.index - i.index.min())
+    t = i.index - i.index.min()
     ax.plot(t, i, color=plot_common.SAT_colors[SAT],
-            alpha=0.15, linewidth=0.5, drawstyle='steps-pre')
+            alpha=0.15, linewidth=0.5,
+            drawstyle='steps-pre', clip_on=False, zorder=4)
     # `i.fillna(0)` gives mean including those that
     # have gone extinct.
-    ax.plot(t, i.fillna(0).mean(axis='columns'), color='black',
-            alpha=1)
+    ax.plot(t, i.fillna(0).mean(axis='columns'),
+            color='black', alpha=1,
+            drawstyle='steps-pre', clip_on=False, zorder=4)
     # Tighten y-axis limits.
     ax.margins(y=0)
     # Shared x-axis with extinction time.
@@ -67,7 +69,8 @@ def plot_extinction_time(ax, extinction_time, SAT):
     e = et.time.copy()
     e[~et.observed] = numpy.nan
     color = plot_common.SAT_colors[SAT]
-    plot_common.kdeplot(365 * e.dropna(), ax=ax, color=color, shade=True)
+    plot_common.kdeplot(e.dropna(), ax=ax, color=color, shade=True,
+                        clip_on=False, zorder=4)
     not_extinct = len(e[e.isnull()]) / len(e)
     if not_extinct > 0:
         (ne_min, p_min) = (0.6, 0.3)
@@ -77,15 +80,16 @@ def plot_extinction_time(ax, extinction_time, SAT):
         bbox = dict(boxstyle=f'rarrow, pad={pad}',
                     facecolor=color, linewidth=0)
         ax.annotate('{:g}%'.format(not_extinct * 100),
-                    (0.95, 0.8), xycoords='axes fraction',
+                    (0.92, 0.8), xycoords='axes fraction',
                     bbox=bbox, color='white',
                     verticalalignment='bottom',
-                    horizontalalignment='right')
+                    horizontalalignment='right',
+                    zorder=4)
     # No y ticks.
     ax.yaxis.set_major_locator(ticker.NullLocator())
     # Shared x-axes between SATs.
     if ax.get_subplotspec().is_last_row():
-        ax.set_xlabel('Time (d)')
+        ax.set_xlabel(plot_common.t_name.capitalize())
     else:
         ax.xaxis.set_tick_params(which='both',
                                  labelbottom=False, labeltop=False)
@@ -99,13 +103,14 @@ def plot(infected, extinction_time, draft=False):
     SATs = infected.index.get_level_values('SAT').unique()
     nrows = 2
     ncols = len(SATs)
-    height_ratios = (3, 1)
+    height_ratios = (4, 1)
     row_inf = 0
     row_ext = 1
     with seaborn.axes_style('whitegrid'), pyplot.rc_context(rc=rc):
-        fig = pyplot.figure(constrained_layout=True)
+        fig = pyplot.figure(layout='constrained')
         gs = fig.add_gridspec(nrows, ncols,
-                              height_ratios=height_ratios)
+                              height_ratios=height_ratios,
+                              wspace=0.1, hspace=0.1)
         axes = numpy.empty((nrows, ncols), dtype=object)
         axes[0, 0] = None  # Make sharex & sharey work for axes[0, 0].
         for (col, SAT) in enumerate(SATs):
@@ -127,17 +132,18 @@ def plot(infected, extinction_time, draft=False):
             plot_infected(axes[row_inf, col], infected, SAT,
                           draft=draft)
             plot_extinction_time(axes[row_ext, col], extinction_time, SAT)
+        t_max = infected.index.get_level_values(plot_common.t_name).max()
         # I get weird results if I set these limits individually.
         for (col, SAT) in enumerate(SATs):
             for row in (row_inf, row_ext):
                 ax = axes[row, col]
-                ax.set_xlim(left=0)
+                ax.set_xlim(left=0, right=t_max)
                 ax.set_ylim(bottom=0)
-                ax.xaxis.set_major_locator(ticker.MultipleLocator(1000))
+                ax.xaxis.set_major_locator(ticker.MultipleLocator(2))
                 if row == row_inf:
                     ax.yaxis.set_major_locator(ticker.MultipleLocator(100))
-        seaborn.despine(fig=fig, top=True, right=True,
-                        bottom=False, left=False)
+        seaborn.despine(fig=fig, top=True,
+                        right=False, bottom=False, left=False)
         # For some reason, aligning the rows and columns works better
         # than aligning all axes.
         fig.align_xlabels(axes[-1, :])
