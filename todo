@@ -1,10 +1,8 @@
-* Fix herd.initial_conditions!
+* Runs
+** Vary susceptibility of the lost-immunity class
+** Sample parameters
 
-* Simulations of model
-** Plot like Science paper Fig 3 B (rotated 90 degrees?).
-
-* Vary susceptibility of the lost-immunity class
-** Plot like Science paper Fig 4 A.
-
-* Sample parameters
-** Plot like Science paper Fig 4 B
+* Plots
+** Simulations like Science paper Fig 3 B (rotated 90 degrees?).
+** Susceptibility like Science paper Fig 4 A.
+** Samples like Science paper Fig 4 B

@@ -52,13 +52,13 @@ def plot_infected(ax, infected, SAT, draft=False):
                              labelbottom=False, labeltop=False)
     ax.xaxis.offsetText.set_visible(False)
     # Shared y-axis between SATs.
-    if ax.is_first_col():
+    if ax.get_subplotspec().is_first_col():
         ax.set_ylabel('Number\ninfected')
     else:
         ax.yaxis.set_tick_params(which='both',
                                  labelleft=False, labelright=False)
         ax.yaxis.offsetText.set_visible(False)
-    if ax.is_first_row():
+    if ax.get_subplotspec().is_first_row():
         ax.set_title(f'SAT{SAT}', loc='center')
 
 
@@ -69,9 +69,6 @@ def plot_extinction_time(ax, extinction_time, SAT):
     color = plot_common.SAT_colors[SAT]
     plot_common.kdeplot(365 * e.dropna(), ax=ax, color=color, shade=True)
     not_extinct = len(e[e.isnull()]) / len(e)
-    # TODO: Needed?
-    arrow_loc = {1: (0.96, 0.65),
-                 3: (0.99, 0.8)}
     if not_extinct > 0:
         (ne_min, p_min) = (0.6, 0.3)
         (ne_max, p_max) = (1, 1)
@@ -80,21 +77,21 @@ def plot_extinction_time(ax, extinction_time, SAT):
         bbox = dict(boxstyle=f'rarrow, pad={pad}',
                     facecolor=color, linewidth=0)
         ax.annotate('{:g}%'.format(not_extinct * 100),
-                    arrow_loc[SAT], xycoords='axes fraction',
+                    (0.95, 0.8), xycoords='axes fraction',
                     bbox=bbox, color='white',
                     verticalalignment='bottom',
                     horizontalalignment='right')
     # No y ticks.
     ax.yaxis.set_major_locator(ticker.NullLocator())
     # Shared x-axes between SATs.
-    if ax.is_last_row():
+    if ax.get_subplotspec().is_last_row():
         ax.set_xlabel('Time (d)')
     else:
         ax.xaxis.set_tick_params(which='both',
                                  labelbottom=False, labeltop=False)
         ax.xaxis.offsetText.set_visible(False)
     # Shared y-axis between SATs.
-    if ax.is_first_col():
+    if ax.get_subplotspec().is_first_col():
         ax.set_ylabel('Extinction\ntime')
 
 

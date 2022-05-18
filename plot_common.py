@@ -32,22 +32,18 @@ cols_infected = ['exposed', 'infectious', 'chronic']
 
 
 def _get_infected(dfr):
-    return dfr[cols_infected].sum(axis='columns')
+    return dfr[cols_infected].sum(axis='columns').rename('infected')
 
 
-def _build_downsampled_group(group, t, t_step, by, tmax=10):
-    t = group.index.get_level_values(t_name)
-    time = t.max() - t.min()
-    infected = _get_infected(group)
-    observed = (infected.iloc[-1] == 0)
-    assert observed or (time == tmax)
+def _build_downsampled_group(group, t, t_step, by):
     # Only keep time index.
     group = group.reset_index(by, drop=True)
     # Shift start to 0.
     group.index -= group.index.min()
     # Only interpolate between start and extinction.
     # Round up to the next multiple of `t_step`.
-    mask = (t <= (numpy.ceil(group.index.max() / t_step) * t_step))
+    t_max = numpy.ceil(group.index.max() / t_step) * t_step
+    mask = (t <= t_max)
     # Interpolate from the closest point <= t.
     return group.reindex(t[mask], method='ffill')
 
@@ -62,10 +58,10 @@ def build_downsampled(filename_in, t_min=0, t_max=10, t_step=1/365, by=None):
             by = [n for n in store_in.get_index_names() if n != t_name]
         for (ix, group) in store_in.groupby(by):
             downsampled = _build_downsampled_group(group, t, t_step, by)
-            # Append `ix` to the index levels.
-            downsampled = pandas.concat({ix: downsampled},
-                                        names=by, copy=False)
-            store_out.put(downsampled.dropna(), index=False)
+            levels = dict(zip(by, ix))
+            run._prepend_index_levels(downsampled, **levels)
+            assert numpy.all(downsampled.notnull().all())
+            store_out.put(downsampled, index=False)
         store_out.create_table_index()
         store_out.repack()
 
@@ -79,13 +75,13 @@ def get_downsampled(filename, by=None):
 
 
 def _build_infected(filename, filename_out, by=None):
-    store = get_downsampled(filename, by=by)
-    infected = []
-    for chunk in store.select(columns=cols_infected, iterator=True):
-        infected.append(_get_infected(chunk))
-    infected = pandas.concat(infected, copy=False)
-    infected.name = 'infected'
-    h5.dump(infected, filename_out, mode='w')
+    with get_downsampled(filename, by=by) as store_in, \
+         h5.HDFStore(filename_out, mode='w') as store_out:
+        for chunk in store_in.select(columns=cols_infected, iterator=True):
+            infected = _get_infected(chunk)
+            store_out.put(infected, index=False)
+        store_out.create_table_index()
+        store_out.repack()
 
 
 def get_infected(filename, by=None):

@@ -5,22 +5,12 @@ import numpy
 import seaborn
 import statsmodels.nonparametric.api
 
-import extinction_times
-import h5
 import plot_common
 import stats
 
 
 def load_extinction_times():
-    filename = 'plot_birth_seasonality.h5'
-    try:
-        df = h5.load(filename)
-    except OSError:
-        df = extinction_times.load_extinction_times(
-            'run_birth_seasonality.h5',
-            ['SAT', 'birth_seasonal_coefficient_of_variation', 'run'])
-        h5.dump(df, filename)
-    return df
+    return plot_common.get_extinction_time('susceptibility.h5')
 
 
 def plot_median(df, CI=0.5):
@@ -31,7 +21,7 @@ def plot_median(df, CI=0.5):
         for (SAT, group) in df.groupby('SAT'):
             i = row[SAT]
             ax = axes[i]
-            by = 'birth_seasonal_coefficient_of_variation'
+            by = 'lost_immunity_susceptibility'
             times = group.groupby(by).time
             median = times.median()
             ax.plot(median, median.index,
@@ -44,7 +34,7 @@ def plot_median(df, CI=0.5):
             ax.set_xlabel('extinction time (y)')
             if ax.is_first_col():
                 if i == 1:
-                    ylabel = 'Birth seasonal\ncoefficient of\nvariation'
+                    ylabel = 'Susceptibility\nof lost-immunity\nstate'
                 else:
                     ylabel = '\n\n'
                 ax.set_ylabel(f'SAT {SAT}\n{ylabel}')
@@ -58,11 +48,11 @@ def plot_survival(df):
     for (SAT, group) in df.groupby('SAT'):
         i = row[SAT]
         ax = axes[i]
-        for (b, g) in group.groupby('birth_seasonal_coefficient_of_variation'):
+        for (s, g) in group.groupby('lost_immunity_susceptibility'):
             survival = stats.get_survival(g, 'time', 'observed')
             ax.step(survival.index, survival,
                     where='post',
-                    label=f'birth_seasonal_coefficient_of_variation {b}')
+                    label=f'lost_immunity_susceptibility {s}')
 
 
 def plot_kde(df):
@@ -72,8 +62,7 @@ def plot_kde(df):
         for (SAT, group) in df.groupby('SAT'):
             i = row[SAT]
             ax = axes[i]
-            for (b, g) in group.groupby(
-                    'birth_seasonal_coefficient_of_variation'):
+            for (s, g) in group.groupby('lost_immunity_susceptibility'):
                 ser = g.time[g.observed]
                 proportion_observed = len(ser) / len(g)
                 if proportion_observed > 0:
@@ -83,7 +72,7 @@ def plot_kde(df):
                     y = proportion_observed * kde.density
                 else:
                     x, y = [], []
-                label = b if i == 0 else ''
+                label = s if i == 0 else ''
                 ax.plot(x, y, label=label, alpha=0.7)
             ax.yaxis.set_major_locator(ticker.NullLocator())
             ax.set_xlim(left=0)
@@ -92,7 +81,7 @@ def plot_kde(df):
                 ylabel = 'density' if i == 1 else ''
                 ax.set_ylabel(f'SAT {SAT}\n{ylabel}')
         leg = fig.legend(loc='center left', bbox_to_anchor=(0.8, 0.5),
-                         title='Birth seasonal\ncoefficient of\nvariation')
+                         title='Susceptibility\nof lost-immunity\nstate')
         fig.tight_layout(rect=(0, 0, 0.82, 1))
 
 
@@ -104,20 +93,20 @@ def _get_cmap(color):
 
 def plot_kde_2d(df):
     persistence_time_max = 5
-    bscovs = (df.index
-                .get_level_values('birth_seasonal_coefficient_of_variation')
-                .unique()
-                .sort_values())
-    bscov_baseline = bscovs[len(bscovs) // 2]
+    sigmas = df.index \
+               .get_level_values('lost_immunity_susceptibility') \
+               .unique() \
+               .sort_values()
+    sigma_baseline = 1.
     fig, axes = pyplot.subplots(3, 1 + 1, sharex='col', sharey='row',
                                 gridspec_kw=dict(width_ratios=(1, 0.5)))
     persistence_time = numpy.linspace(0, persistence_time_max, 301)
     for (i, (SAT, group_SAT)) in enumerate(df.groupby('SAT')):
         ax = axes[i, 0]
-        density = numpy.zeros((len(bscovs), len(persistence_time)))
+        density = numpy.zeros((len(sigmas), len(persistence_time)))
         proportion_observed = numpy.zeros_like(bscovs, dtype=float)
-        for (k, (b, g)) in enumerate(group_SAT.groupby(
-                'birth_seasonal_coefficient_of_variation')):
+        for (k, (s, g)) in enumerate(group_SAT.groupby(
+                'lost_immunity_susceptibility')):
             ser = g.time[g.observed]
             nruns = len(g)
             proportion_observed[k] = len(ser) / nruns
@@ -134,11 +123,11 @@ def plot_kde_2d(df):
         ax.imshow(density * proportion_observed[:, None],
                   cmap=cmap, norm=norm, interpolation='bilinear',
                   extent=(min(persistence_time), max(persistence_time),
-                          min(bscovs), max(bscovs)),
+                          min(sigmas), max(sigmas)),
                   aspect='auto', origin='lower', clip_on=False)
         ax.autoscale(tight=True)
         ax_po = axes[i, -1]
-        ax_po.plot(1 - proportion_observed, bscovs,
+        ax_po.plot(1 - proportion_observed, sigmas,
                    color=plot_common.SAT_colors[SAT],
                    clip_on=False, zorder=3)
         ax_po.autoscale(tight=True)
@@ -154,17 +143,17 @@ def plot_kde_2d(df):
                 ticker.MultipleLocator(max(persistence_time) / 5))
             ax.xaxis.set_minor_locator(ticker.AutoMinorLocator(2))
         if ax.is_first_col():
-            ax.set_ylabel('birth seasonal\ncoefficient of\nvariation')
+            ax.set_ylabel('Susceptibility\nof lost-immunity\nstate')
             ax.annotate(f'SAT {SAT}',
                         (-0.65, 0.5), xycoords='axes fraction',
                         rotation=90, verticalalignment='center')
     for ax in fig.axes:
-        ax.axhline(bscov_baseline,
+        ax.axhline(sigma_baseline,
                    color='black', linestyle='dotted', alpha=0.7)
         for sp in ('top', 'right'):
             ax.spines[sp].set_visible(False)
     fig.tight_layout()
-    fig.savefig('plot_birth_seasonality.pdf')
+    fig.savefig('susceptibility.pdf')
 
 
 if __name__ == '__main__':
