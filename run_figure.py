@@ -14,7 +14,7 @@ import plot_common
 # Science
 rc = plot_common.rc.copy()
 width = 183 / 25.4  # convert mm to in
-height = 6  # in
+height = 4  # in
 rc['figure.figsize'] = (width, height)
 # Between 5pt and 7pt.
 rc['font.size'] = 6
