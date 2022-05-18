@@ -14,6 +14,7 @@
 *.png
 *.pgf
 *.h5
+flycheck_*
 __pycache__/
 _cache/
 .ipynb_checkpoints/
