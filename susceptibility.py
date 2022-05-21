@@ -31,7 +31,7 @@ def plot_median(df, CI=0.5):
                              color=plot_common.SAT_colors[SAT],
                              alpha=0.5)
             ax.set_xlim(left=0)
-            ax.set_xlabel('extinction time (y)')
+            ax.set_xlabel(f'extinction {plot_common.t_name}')
             if ax.is_first_col():
                 if i == 1:
                     ylabel = 'Susceptibility\nof lost-immunity\nstate'
@@ -76,7 +76,7 @@ def plot_kde(df):
                 ax.plot(x, y, label=label, alpha=0.7)
             ax.yaxis.set_major_locator(ticker.NullLocator())
             ax.set_xlim(left=0)
-            ax.set_xlabel('extinction time (y)')
+            ax.set_xlabel(f'extinction {plot_common.t_name}')
             if ax.is_first_col():
                 ylabel = 'density' if i == 1 else ''
                 ax.set_ylabel(f'SAT{SAT}\n{ylabel}')
@@ -138,7 +138,7 @@ def plot_kde_2d(df):
             ax_po.xaxis.set_minor_locator(
                 ticker.AutoMinorLocator(2))
         if ax.is_last_row():
-            ax.set_xlabel('extinction time (y)')
+            ax.set_xlabel(f'extinction {plot_common.t_name}')
             ax.xaxis.set_major_locator(
                 ticker.MultipleLocator(max(persistence_time) / 5))
             ax.xaxis.set_minor_locator(ticker.AutoMinorLocator(2))

@@ -1,14 +1,17 @@
 #!/usr/bin/python3
 
 import os.path
+import sys
 
+sys.path.append('..')
 import herd
 import samples_run
+sys.path.pop()
 
 
 def get_path_and_logging_prefix(SAT):
     path = os.path.join(samples_run._path, str(SAT))
-    logging_prefix = f'SAT{SAT}, '
+    logging_prefix = f'{SAT=}'
     return (path, logging_prefix)
 
 
@@ -27,7 +30,7 @@ def load_parameters_and_samples(SAT):
 
 
 def _run_sample(parameters, sample, tmax, path, sample_number, logging_prefix):
-    print(f'Running {logging_prefix}sample {sample_number}.')
+    print(f'Running {logging_prefix} sample {sample_number}.')
     samples_run._run_sample(parameters, sample, tmax, path,
                             sample_number, logging_prefix)
 

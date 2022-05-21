@@ -1,4 +1,8 @@
 #!/usr/bin/python3
+'''Analyze and plot the results of the simulations over the posterior
+parameter sets. This requires the file `samples.h5`, which is built by
+`samples_run.py`.'''
+
 
 from matplotlib import pyplot, ticker
 from matplotlib.backends import backend_pdf
@@ -6,50 +10,20 @@ import numpy
 import pandas
 import seaborn
 
-import h5
-import herd
 import herd.samples
+import plot_common
 import stats
 
 
-def _get_extinction(infected):
-    t = infected.index.get_level_values('time (y)')
-    time = t.max() - t.min()
-    observed = (infected.iloc[-1] == 0)
-    return {'extinction_time': time,
-            'extinction_observed': observed}
-
-
-def _load_extinction_times():
-    with h5.HDFStore('samples.h5', mode='r') as store:
-        df = []
-        for SAT in (1, 2, 3):
-            by = ['SAT', 'sample']
-            columns = ['exposed', 'infectious', 'chronic']
-            where = f'SAT={SAT}'
-            print(where)
-            extinction = {}
-            for (ix, group) in store.groupby(by, where=where,
-                                             columns=columns):
-                infected = group.sum(axis='columns')
-                extinction[ix] = _get_extinction(infected)
-            extinction = pandas.DataFrame.from_dict(extinction,
-                                                    orient='index')
-            extinction.index.names = by
-            samples = herd.samples.load(SAT=SAT)
-            samples.index = extinction.index
-            df.append(pandas.concat([extinction, samples],
-                                    axis='columns', copy=False))
-        return pandas.concat(df, axis='index', copy=False)
-
-
-def load_extinction_times():
-    try:
-        df = h5.load('plot_samples.h5')
-    except OSError:
-        df = _load_extinction_times()
-        h5.dump(df, 'plot_samples.h5')
-    return df
+def load():
+    filename = 'samples.h5'
+    extinction_time = plot_common.get_extinction_time(filename)
+    by = ['SAT']
+    grouper = extinction_time.groupby(by)
+    samples = [herd.samples.load(**dict(zip(by, vals))
+               for keys in grouper.groups.keys()]
+    samples = pandas.concat(samples, keys=grouper.groups.keys(), names=by)
+    return pandas.concat([samples, extinction_time], axis='columns')
 
 
 def _get_labels(name, rank):
@@ -67,30 +41,27 @@ def plot_times(df):
     groups = df.groupby('SAT')
     fig, ax = pyplot.subplots()
     for (SAT, group) in groups:
-        survival = stats.get_survival(group,
-                                      'extinction_time',
-                                      'extinction_observed')
-        ax.plot(survival.index, survival,
-                label=f'SAT{SAT}', drawstyle='steps-post')
-    ax.set_xlabel('time (y)')
+        survival = stats.get_survival(group, 'time', 'observed')
+        ax.plot(survival, label=f'SAT{SAT}', drawstyle='steps-post')
+    ax.set_xlabel(plot_common.t_name)
     ax.set_ylabel('Survival')
     # ax.set_yscale('log')
     # Next smaller power of 10.
     # a = numpy.ceil(numpy.log10(1 / len(df)) - 1)
     # ax.set_ylim(10 ** a, 1)
     ax.legend()
-    fig.savefig('plot_samples_times.pdf')
+    fig.savefig('samples_times.pdf')
 
 
 def plot_parameters(df, rank=True, marker='.', s=1, alpha=0.6):
-    outcome = 'extinction_time'
+    outcome = 'time'
     SATs = df.index.get_level_values('SAT').unique()
-    params = df.columns.drop([outcome, 'extinction_observed'])
+    params = df.columns.drop([outcome, 'observed'])
     (ylabel, ylabel_resid) = _get_labels(outcome, rank)
     colors = seaborn.color_palette('tab20', 20)
     # Put dark colors first, then light.
     colors = colors[0::2] + colors[1::2]
-    with backend_pdf.PdfPages('plot_samples_parameters.pdf') as pdf:
+    with backend_pdf.PdfPages('samples_parameters.pdf') as pdf:
         for SAT in SATs:
             X = df.loc[(SAT, slice(None)), params]
             X = X.dropna(axis='columns', how='all')
@@ -122,8 +93,7 @@ def plot_parameters(df, rank=True, marker='.', s=1, alpha=0.6):
                                [1, ylabel_resid, 'right']]:
                 fig.text(x, 0.5, l, size='small', rotation=90,
                          horizontalalignment=ha, verticalalignment='center')
-            fig.suptitle(f'SAT{SAT}',
-                         y=1, size='medium')
+            fig.suptitle(f'SAT{SAT}', y=1, size='medium')
             w = 0.02
             fig.tight_layout(pad=0, h_pad=0, w_pad=0,
                              rect=[w, 0, 1 - w, 0.98])
@@ -147,8 +117,10 @@ class Colors:
 
 
 param_transforms = {
-    'chronic_recovery_mean': 'chronic_duration_mean',
-    'chronic_recovery_mean': 'chronic_duration_shape',
+    'chronic_transmission_rate': 'carrier_transmission_rate',
+    'chronic_recovery_mean': 'carrier_duration_mean',
+    'chronic_recovery_shape': 'carrier_duration_shape',
+    'probability_chronic': 'probability_carrier',
     'progression_mean': 'latent_duration_mean',
     'progression_shape': 'latent_duration_shape',
     'recovery_mean': 'infectious_duration_mean',
@@ -158,43 +130,71 @@ param_transforms = {
 
 
 def plot_sensitivity(df, rank=True, errorbars=False):
-    outcome = 'extinction_time'
+    outcome = 'time'
     SATs = df.index.get_level_values('SAT').unique()
     samples = df.index.get_level_values('sample').unique()
-    params = df.columns.drop([outcome, 'extinction_observed'])
+    params = df.columns.drop([outcome, 'observed'])
     n_samples = len(samples)
     colors = Colors()
-    rc = {'xtick.labelsize': 8,
-          'ytick.labelsize': 6,
-          'axes.labelsize': 9,
-          'axes.titlesize': 10,
-          'figure.titlesize': 11}
-    with seaborn.axes_style('whitegrid'), pyplot.rc_context(rc), \
-         backend_pdf.PdfPages('plot_samples_sensitivity.pdf') as pdf:
-        fig, axes = pyplot.subplots(1, len(SATs), sharex='row')
-        for (SAT, ax) in zip(SATs, axes):
-            p = df.loc[(SAT, slice(None)), params]
-            p = p.dropna(axis='columns', how='all')
-            o = df.loc[(SAT, slice(None)), outcome]
-            if rank:
-                rho = stats.prcc(p, o)
-                xlabel = 'PRCC'
-                if errorbars:
-                    rho_CI = stats.prcc_CI(rho, n_samples)
-            else:
-                rho = stats.pcc(p, o)
-                xlabel = 'PCC'
-                if errorbars:
-                    rho_CI = stats.pcc_CI(rho, n_samples)
-            ix = rho.abs().sort_values().index
-            x = rho[ix]
-            c = [colors[z] for z in ix[::-1]][::-1]
+    width = 390 / 72.27
+    height = 0.8 * width
+    rc = plot_common.rc.copy()
+    rc['figure.figsize'] = (width, height)
+    rc['xtick.labelsize'] = rc['ytick.labelsize'] = 7
+    rc['axes.labelsize'] = 8
+    rc['axes.titlesize'] = 9
+    rho = pandas.DataFrame(index=params, columns=SATs, dtype=float)
+    if errorbars:
+        columns = pandas.MultiIndex.from_product((SATs,
+                                                  ('lower', 'upper')))
+        rho_CI = pandas.DataFrame(index=params, columns=columns,
+                                  dtype=float)
+    for SAT in SATs:
+        p = df.loc[(SAT, slice(None)), params]
+        p = p.dropna(axis='columns', how='all')
+        o = df.loc[(SAT, slice(None)), outcome]
+        if rank:
+            rho[SAT] = stats.prcc(p, o)
+            xlabel = 'PRCC'
             if errorbars:
-                rho_err = pandas.DataFrame(
-                    {'lower': rho - rho_CI['lower'],
-                     'upper': rho_CI['upper'] - rho}).T
-                xerr = rho_err[ix].values
-                kwds = dict(xerr=xerr,
+                rho_CI[SAT] = stats.prcc_CI(rho[SAT], n_samples)
+        else:
+            rho[SAT] = stats.pcc(p, o)
+            xlabel = 'PCC'
+            if errorbars:
+                rho_CI[SAT] = stats.pcc_CI(rho[SAT], n_samples)
+    rho.dropna(axis='index', how='all', inplace=True)
+    if errorbars:
+        rho_CI.dropna(axis='index', how='all', inplace=True)
+    # Sort rows on mean absolute values.
+    order = rho.abs().mean(axis='columns').sort_values().index
+    rho = rho.loc[order]
+    if errorbars:
+        rho_CI = rho_CI.loc[order]
+    xabsmax = rho.abs().max().max()
+    y = range(len(rho))
+    ylabels = [param_transforms.get(p, p)
+                               .capitalize()
+                               .replace('_', ' ')
+               for p in rho.index]
+    ncols = len(SATs)
+    with pyplot.rc_context(rc):
+        fig = pyplot.figure(constrained_layout=True)
+        gs = fig.add_gridspec(1, ncols)
+        axes = numpy.empty(ncols, dtype=object)
+        axes[0] = None  # Make sharey work for axes[0].
+        for col in range(ncols):
+            # Share the y scale.
+            sharey = axes[0]
+            axes[col] = fig.add_subplot(gs[0, col],
+                                        sharey=sharey)
+        for ((SAT, rho_SAT), ax) in zip(rho.items(), axes):
+            colors_ = [colors[z] for z in order[::-1]][::-1]
+            if errorbars:
+                rho_err = pandas.DataFrame({
+                    'lower': rho[SAT] - rho_CI[(SAT, 'lower')],
+                    'upper': rho_CI[(SAT, 'upper')] - rho[SAT]}).T
+                kwds = dict(xerr=rho_err.values,
                             error_kw=dict(ecolor='black',
                                           elinewidth=1.5,
                                           capthick=1.5,
@@ -202,30 +202,31 @@ def plot_sensitivity(df, rank=True, errorbars=False):
                                           alpha=0.6))
             else:
                 kwds = dict()
-            y = range(len(x))
-            ax.barh(y, x, height=1, left=0,
-                    align='center', color=c, edgecolor=c,
+            ax.barh(y, rho_SAT, height=1, left=0,
+                    align='center', color=colors_, edgecolor=colors_,
                     **kwds)
-            ax.xaxis.set_major_formatter(
-                ticker.StrMethodFormatter('{x:g}'))
-            # ax.xaxis.set_minor_locator(ticker.AutoMinorLocator(n=2))
-            ax.tick_params(axis='y', pad=35)
-            ax.set_yticks(y)
-            ax.set_ylim(- 0.5, len(x) - 0.5)
-            ylabels = [param_transforms.get(x, x).replace('_', '\n')
-                       for x in ix]
-            ax.set_yticklabels(ylabels, horizontalalignment='center')
             ax.set_xlabel(xlabel)
+            ax.set_xlim(- xabsmax, xabsmax)
+            ax.set_ylim(- 0.5, len(rho) - 0.5)
+            ax.xaxis.set_minor_locator(ticker.AutoMinorLocator(2))
+            ax.yaxis.set_tick_params(which='both', left=False, right=False,
+                                     pad=85)
             ax.set_title(f'SAT{SAT}')
-            ax.grid(False, axis='y', which='both')
-        seaborn.despine(fig, top=True, bottom=False, left=True, right=True)
-        fig.tight_layout()
-        pdf.savefig(fig)
+            if ax.is_first_col():
+                ax.set_yticks(y)
+                ax.set_yticklabels(ylabels, horizontalalignment='left')
+            else:
+                ax.yaxis.set_tick_params(which='both',
+                                         labelleft=False, labelright=False)
+                ax.yaxis.offsetText.set_visible(False)
+            for sp in ('top', 'left', 'right'):
+                ax.spines[sp].set_visible(False)
+        fig.savefig(f'samples_sensitivity.pdf')
 
 
 if __name__ == '__main__':
-    df = load_extinction_times()
-    plot_times(df)
+    df = load()
+    # plot_times(df)
     # plot_parameters(df)
     plot_sensitivity(df)
     pyplot.show()

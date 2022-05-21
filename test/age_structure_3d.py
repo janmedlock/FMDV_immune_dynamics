@@ -1,13 +1,15 @@
 #!/usr/bin/python3
 import sys
-sys.path.append('..')
 
 from joblib import delayed, Parallel
 import numpy
 from matplotlib import pyplot
 
+sys.path.append('..')
 from herd import Parameters
 import herd.age_structure
+sys.path.pop()
+
 
 start_times = numpy.linspace(0, 1, 12 + 1, endpoint=True)
 ages = numpy.linspace(0, 20, 301, endpoint=True)

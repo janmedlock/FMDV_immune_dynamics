@@ -14,7 +14,7 @@ class Herd(set):
     '''A herd of buffaloes, the things that can happen to them, and code to
     simulate.'''
     def __init__(self, params=None, debug=False, run_number=None, seed=None,
-                 logging_prefix=''):
+                 logging_prefix=None):
         if params is None:
             params = Parameters()
         self.params = params
@@ -24,7 +24,10 @@ class Herd(set):
             seed = run_number
         if seed is not None:
             numpy.random.seed(seed)
-        self.logging_prefix = logging_prefix
+        if logging_prefix is None:
+            self.logging_prefix = ''
+        else:
+            self.logging_prefix = logging_prefix + ', '
         self.rvs = RandomVariables(self.params)
         self.time = self.params.start_time
         self.events = HerdEvents()

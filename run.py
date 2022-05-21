@@ -44,7 +44,7 @@ def run_many(parameters, tmax, nruns, *args, **kwargs):
 
 def run(SAT, tmax, nruns, hdfstore):
     p = herd.Parameters(SAT=SAT)
-    logging_prefix = f'SAT{SAT}, '
+    logging_prefix = f'{SAT=}'
     df = run_many(p, tmax, nruns,
                   logging_prefix=logging_prefix)
     _prepend_index_levels(df, SAT=SAT)
