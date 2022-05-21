@@ -50,7 +50,7 @@ def plot_integral_over_age(p):
         ax.bar(x, val, bottom=bottom, label=immune_status)
         bottom += val
     ax.set_xticks(x)
-    ax.set_xticklabels(f'SAT {SAT}' for SAT in y.columns)
+    ax.set_xticklabels(f'SAT{SAT}' for SAT in y.columns)
     ax.set_ylabel('Proportion of population')
     (handles, labels) = ax.get_legend_handles_labels()
     ax.legend(handles[::-1], labels[::-1])

@@ -100,7 +100,7 @@ def plot_solutions(solutions, which):
     for (ax, SAT) in zip(axes, SATS):
         ax.pcolormesh(X, ages, err[SAT], cmap=cmap, norm=norm,
                       shading='nearest')
-        ax.set_ylabel(f'SAT {SAT}')
+        ax.set_ylabel(f'SAT{SAT}')
     axes[-1].set_xticks(X)
     axes[-1].set_xticklabels(immune_states.str.replace(' ', '\n'))
     fig.colorbar(matplotlib.cm.ScalarMappable(norm, cmap),

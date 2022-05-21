@@ -8,7 +8,7 @@ import samples_run
 
 def get_path_and_logging_prefix(SAT):
     path = os.path.join(samples_run._path, str(SAT))
-    logging_prefix = f'SAT {SAT}, '
+    logging_prefix = f'SAT{SAT}, '
     return (path, logging_prefix)
 
 

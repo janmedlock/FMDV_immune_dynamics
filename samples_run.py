@@ -34,7 +34,7 @@ def _run_samples_SAT(SAT, tmax, path):
     '''Run many simulations in parallel.'''
     path_SAT = os.path.join(path, str(SAT))
     os.makedirs(path_SAT, exist_ok=True)
-    logging_prefix = f'SAT {SAT}, '
+    logging_prefix = f'SAT{SAT}, '
     parameters = herd.Parameters(SAT=SAT)
     samples = herd.samples.load(SAT=SAT)
     return (delayed(_run_sample)(parameters, s, tmax, path_SAT, i,

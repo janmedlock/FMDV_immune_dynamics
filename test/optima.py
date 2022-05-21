@@ -10,7 +10,7 @@ sys.path.pop()
 
 if __name__ == '__main__':
     for SAT in (1, 2, 3):
-        print(f'SAT {SAT}')
+        print(f'SAT{SAT}')
         parameters = Parameters(SAT=SAT)
         solver = immune_status.Solver(parameters)
         P = immune_status.probability_interpolant(parameters)._probability

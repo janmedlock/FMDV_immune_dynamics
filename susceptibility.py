@@ -37,7 +37,7 @@ def plot_median(df, CI=0.5):
                     ylabel = 'Susceptibility\nof lost-immunity\nstate'
                 else:
                     ylabel = '\n\n'
-                ax.set_ylabel(f'SAT {SAT}\n{ylabel}')
+                ax.set_ylabel(f'SAT{SAT}\n{ylabel}')
         fig.suptitle('')
         fig.tight_layout()
 
@@ -50,9 +50,9 @@ def plot_survival(df):
         ax = axes[i]
         for (s, g) in group.groupby('lost_immunity_susceptibility'):
             survival = stats.get_survival(g, 'time', 'observed')
-            ax.step(survival.index, survival,
-                    where='post',
-                    label=f'lost_immunity_susceptibility {s}')
+            ax.plot(survival.index, survival,
+                    label=f'lost_immunity_susceptibility {s}',
+                    drawstype='steps-post')
 
 
 def plot_kde(df):
@@ -79,7 +79,7 @@ def plot_kde(df):
             ax.set_xlabel('extinction time (y)')
             if ax.is_first_col():
                 ylabel = 'density' if i == 1 else ''
-                ax.set_ylabel(f'SAT {SAT}\n{ylabel}')
+                ax.set_ylabel(f'SAT{SAT}\n{ylabel}')
         leg = fig.legend(loc='center left', bbox_to_anchor=(0.8, 0.5),
                          title='Susceptibility\nof lost-immunity\nstate')
         fig.tight_layout(rect=(0, 0, 0.82, 1))
@@ -144,7 +144,7 @@ def plot_kde_2d(df):
             ax.xaxis.set_minor_locator(ticker.AutoMinorLocator(2))
         if ax.is_first_col():
             ax.set_ylabel('Susceptibility\nof lost-immunity\nstate')
-            ax.annotate(f'SAT {SAT}',
+            ax.annotate(f'SAT{SAT}',
                         (-0.65, 0.5), xycoords='axes fraction',
                         rotation=90, verticalalignment='center')
     for ax in fig.axes:

@@ -1,17 +1,21 @@
 #!/usr/bin/python3
 
+import sys
 import time
 
 from matplotlib import pyplot
 
+sys.path.append('..')
 import herd
 import run
+sys.path.pop()
 
 
 def make_plot(data, show=True):
     (fig, ax) = pyplot.subplots()
     for (k, x) in data.items():
-        ax.step(x.index, x, label=k, where='post',
+        ax.plot(x, label=k,
+                drawstyle='steps-pre',
                 alpha=0.9, linewidth=1)
     ax.set_xlabel(data.index.name)
     ax.set_ylabel('number')

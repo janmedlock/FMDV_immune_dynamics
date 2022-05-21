@@ -26,7 +26,7 @@ def run_susceptibility(SAT, val, tmax, nruns, hdfstore):
     else:
         p = herd.Parameters(SAT=SAT)
         p.lost_immunity_susceptibility = val
-        logging_prefix = (', '.join((f'SAT {SAT}',
+        logging_prefix = (', '.join((f'SAT{SAT}',
                                      f'lost_immunity_susceptibility {val}'))
                           + ', ')
         df = run.run_many(p, tmax, nruns,

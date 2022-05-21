@@ -25,7 +25,7 @@ def _load_extinction_times():
         df = []
         for SAT in (1, 2, 3):
             by = ['SAT', 'sample']
-            columns=['exposed', 'infectious', 'chronic']
+            columns = ['exposed', 'infectious', 'chronic']
             where = f'SAT={SAT}'
             print(where)
             extinction = {}
@@ -70,8 +70,8 @@ def plot_times(df):
         survival = stats.get_survival(group,
                                       'extinction_time',
                                       'extinction_observed')
-        ax.step(survival.index, survival,
-                where='post', label=f'SAT {SAT}')
+        ax.plot(survival.index, survival,
+                label=f'SAT{SAT}', drawstyle='steps-post')
     ax.set_xlabel('time (y)')
     ax.set_ylabel('Survival')
     # ax.set_yscale('log')
@@ -122,7 +122,7 @@ def plot_parameters(df, rank=True, marker='.', s=1, alpha=0.6):
                                [1, ylabel_resid, 'right']]:
                 fig.text(x, 0.5, l, size='small', rotation=90,
                          horizontalalignment=ha, verticalalignment='center')
-            fig.suptitle(f'SAT {SAT}',
+            fig.suptitle(f'SAT{SAT}',
                          y=1, size='medium')
             w = 0.02
             fig.tight_layout(pad=0, h_pad=0, w_pad=0,
@@ -216,7 +216,7 @@ def plot_sensitivity(df, rank=True, errorbars=False):
                        for x in ix]
             ax.set_yticklabels(ylabels, horizontalalignment='center')
             ax.set_xlabel(xlabel)
-            ax.set_title(f'SAT {SAT}')
+            ax.set_title(f'SAT{SAT}')
             ax.grid(False, axis='y', which='both')
         seaborn.despine(fig, top=True, bottom=False, left=True, right=True)
         fig.tight_layout()
