@@ -30,8 +30,8 @@ def run_one(parameters, sample, tmax, sample_number, *args, **kwargs):
     return run.run_one(p, tmax, sample_number, *args, **kwargs)
 
 
-def _run_one_and_save(parameters, sample, tmax, sample_number, path,
-                      *args, **kwargs):
+def run_one_and_save(parameters, sample, tmax, sample_number, path,
+                     *args, **kwargs):
     '''Run one simulation.'''
     filename = os.path.join(path, f'{sample_number}.npy')
     if not os.path.exists(filename):
@@ -47,8 +47,8 @@ def _get_jobs_SAT(SAT, samples, tmax, path):
     os.makedirs(path_SAT, exist_ok=True)
     p = herd.Parameters(SAT=SAT)
     logging_prefix = f'{SAT=}'
-    return (delayed(_run_one_and_save)(p, s, tmax, n, path_SAT,
-                                       logging_prefix=logging_prefix)
+    return (delayed(run_one_and_save)(p, s, tmax, n, path_SAT,
+                                      logging_prefix=logging_prefix)
             for (n, s) in samples.iterrows())
 
 
