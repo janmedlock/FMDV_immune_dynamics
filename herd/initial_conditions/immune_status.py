@@ -5,7 +5,7 @@ from joblib import Memory
 import numpy
 import numpy.lib.recfunctions
 import pandas
-from scipy import integrate, optimize, sparse, special
+from scipy import integrate, interpolate, optimize, sparse, special
 
 from herd import (antibody_gain, antibody_loss, birth, buffalo,
                   chronic_recovery, maternal_immunity_waning,
@@ -316,7 +316,13 @@ class Solver:
         # Use `RV.pdf()` at the first age.
         pdf = numpy.hstack([RV.pdf(ages[0]),
                              - numpy.diff(RV.sf(ages)) / numpy.diff(ages)])
-        # TODO: Handle pdf[0] == infinity.
+        # Handle pdf[0] == infinity.
+        if numpy.isinf(pdf[0]):
+            # Extrapolate from the 2nd & 3rd points back to ages[0].
+            extrap = interpolate.interp1d(ages[1:3], pdf[1:3],
+                                          fill_value='extrapolate')
+            pdf[0] = extrap(ages[0])
+            print(ages[:3], pdf[:3])
         return pdf
 
     def hazard_birth_constant_time(self):

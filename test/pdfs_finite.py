@@ -16,7 +16,7 @@ sys.path.pop()
 
 
 RVS = {
-    'chronic_recovery'
+    'chronic_recovery',
     'progression',
     'recovery',
 }
