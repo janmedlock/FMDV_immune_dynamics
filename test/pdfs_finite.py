@@ -22,15 +22,15 @@ RVS = {
 }
 
 
-def test_sample(parameters, vals, sat, sample):
+def test_sample(parameters, sample, sat, n):
     p = copy.copy(parameters)
-    for (k, v) in vals.items():
+    for (k, v) in sample.items():
         setattr(p, k, v)
     for rv in RVS:
-        val = getattr(herd, rv).gen(p).pdf(0)
-        if numpy.isinf(val):
+        pdf_0 = getattr(herd, rv).gen(p).pdf(0)
+        if numpy.isinf(pdf_0):
             shape = getattr(p, f'{rv}_shape')
-            print(f'{sat=}, {sample=}, {rv=}, {shape=}')
+            print(f'{sat=}, {n=}, {rv=}, {shape=}')
             assert shape < 1
 
 
