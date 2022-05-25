@@ -315,14 +315,13 @@ class Solver:
         interval.'''
         # Use `RV.pdf()` at the first age.
         pdf = numpy.hstack([RV.pdf(ages[0]),
-                             - numpy.diff(RV.sf(ages)) / numpy.diff(ages)])
+                            - numpy.diff(RV.sf(ages)) / numpy.diff(ages)])
         # Handle pdf[0] == infinity.
         if numpy.isinf(pdf[0]):
             # Extrapolate from the 2nd & 3rd points back to ages[0].
             extrap = interpolate.interp1d(ages[1:3], pdf[1:3],
                                           fill_value='extrapolate')
             pdf[0] = extrap(ages[0])
-            print(ages[:3], pdf[:3])
         return pdf
 
     def hazard_birth_constant_time(self):
