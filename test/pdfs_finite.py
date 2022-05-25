@@ -16,9 +16,9 @@ sys.path.pop()
 
 
 RVS = {
+    'chronic_recovery'
     'progression',
     'recovery',
-    'chronic_recovery'
 }
 
 
@@ -27,8 +27,8 @@ def test_sample(parameters, sample, sat, idx):
     for (key, val) in sample.items():
         setattr(params, key, val)
     shapes = pandas.Series(dtype=float)
-    for rv in RVS:
-        name = f'{rv}_shape'
+    for rv_ in RVS:
+        name = f'{rv_}_shape'
         shapes[name] = getattr(params, name)
     is_small = (shapes < 1)
     solver = herd.initial_conditions.immune_status.Solver(params)
@@ -46,8 +46,8 @@ def test_sample(parameters, sample, sat, idx):
 def test_sat(sat):
     parameters = herd.Parameters(SAT=sat)
     samples = herd.samples.load(SAT=sat)
-    for (n, sample) in samples.iterrows():
-        test_sample(parameters, sample, sat, n)
+    for (idx, sample) in samples.iterrows():
+        test_sample(parameters, sample, sat, idx)
 
 
 if __name__ == '__main__':
