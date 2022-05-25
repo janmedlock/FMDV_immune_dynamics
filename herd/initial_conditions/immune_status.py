@@ -314,8 +314,10 @@ class Solver:
         change too quickly to capture the difference over the age
         interval.'''
         # Use `RV.pdf()` at the first age.
-        return numpy.hstack([RV.pdf(ages[0]),
+        pdf = numpy.hstack([RV.pdf(ages[0]),
                              - numpy.diff(RV.sf(ages)) / numpy.diff(ages)])
+        # TODO: Handle pdf[0] == infinity.
+        return pdf
 
     def hazard_birth_constant_time(self):
         RV_birth = birth.from_param_values(
