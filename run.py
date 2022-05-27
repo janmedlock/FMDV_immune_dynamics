@@ -32,9 +32,9 @@ def run_one(parameters, tmax, run_number, *args, **kwargs):
     return h.run(tmax)
 
 
-def run_many(parameters, tmax, nruns, *args, **kwargs):
+def run_many(parameters, tmax, nruns, *args, n_jobs=-1, **kwargs):
     '''Run many simulations in parallel.'''
-    results = Parallel(n_jobs=-1)(
+    results = Parallel(n_jobs=n_jobs)(
         delayed(run_one)(parameters, tmax, i, *args, **kwargs)
         for i in range(nruns))
     # Make 'run' the outer row index.

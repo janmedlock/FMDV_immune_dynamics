@@ -18,7 +18,8 @@ import herd.samples
 import run
 
 
-_path = 'samples'
+_path = os.path.join(os.path.dirname(__file__),
+                     'samples')
 _t_name = 'time (y)'
 
 
@@ -52,13 +53,13 @@ def _get_jobs_SAT(SAT, samples, tmax, path):
             for (n, s) in samples.iterrows())
 
 
-def run_samples(tmax):
+def run_samples(tmax, n_jobs=-1):
     samples = herd.samples.load()
     os.makedirs(_path, exist_ok=True)
     jobs = itertools.chain.from_iterable(
         _get_jobs_SAT(SAT, samples[SAT], tmax, _path)
         for SAT in run._SATs)
-    Parallel(n_jobs=-1)(jobs)
+    Parallel(n_jobs=n_jobs)(jobs)
 
 
 def _get_sample_number(filename):
