@@ -1,22 +1,19 @@
 #!/usr/bin/python3
-import sys
-sys.path.append('..')
-
 from joblib import delayed, Parallel
 from matplotlib import pyplot
 import numpy
 from scipy.integrate import quad
 
-from herd import Parameters
+from context import herd
 import herd.age_structure
 import herd.mortality
-from herd.utility import arange
+import herd.utility.arange
 
 start_times = numpy.linspace(0, 1, 4, endpoint=False)
-ages = arange(0, 25, 0.01, endpoint=True)
+ages = herd.utility.arange(0, 25, 0.01, endpoint=True)
 
 def get_age_structure(ages, start_time):
-    parameters = Parameters()
+    parameters = herd.Parameters()
     parameters.start_time = start_time
     return herd.age_structure.gen(parameters).pdf(ages)
 

@@ -1,13 +1,10 @@
 #!/usr/bin/python3
-
-import sys
-
 import matplotlib.pyplot
 import numpy
 
-sys.path.append('..')
-from herd import initial_conditions, Parameters, utility
-sys.path.pop()
+from context import herd
+import herd.initial_conditions
+import herd.utility
 
 
 def check_parameters(solver):
@@ -56,7 +53,7 @@ def plot_blocks(solver):
 
 def plot_solution(P):
     (fig, ax) = matplotlib.pyplot.subplots(constrained_layout=True)
-    ages = utility.arange(0, solver.age_max, solver.step, endpoint=True)
+    ages = herd.utility.arange(0, solver.age_max, solver.step, endpoint=True)
     ax.stackplot(ages, P.T, labels=P.columns)
     ax.set_xlabel('age (y)')
     ax.set_ylabel('probability given alive')
@@ -65,8 +62,8 @@ def plot_solution(P):
 
 
 if __name__ == '__main__':
-    parameters = Parameters(SAT=1)
-    solver = initial_conditions.immune_status.Solver(parameters)
+    parameters = herd.Parameters(SAT=1)
+    solver = herd.initial_conditions.immune_status.Solver(parameters)
     newborn_proportion_immune = 0.6
     hazard_infection = 2
     P = solver.solve_step(solver.transform((hazard_infection,

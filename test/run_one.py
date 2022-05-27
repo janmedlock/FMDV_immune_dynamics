@@ -1,14 +1,10 @@
 #!/usr/bin/python3
-
-import sys
 import time
 
 from matplotlib import pyplot
 
-sys.path.append('..')
-import herd
-import run
-sys.path.pop()
+from context import herd
+from context import run
 
 
 def make_plot(data, show=True):

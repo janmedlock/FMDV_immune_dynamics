@@ -1,28 +1,28 @@
 #!/usr/bin/python3
 
 import itertools
-import sys
 
 from matplotlib import pyplot
 import numpy
 import pandas
 from scipy import integrate
 
-sys.path.append('..')
-from herd import initial_conditions, mortality, Parameters, utility
-sys.path.pop()
+from context import herd
+import herd.initial_conditions
+import herd.mortality
+import herd.utility
 
 
 def get_params():
-    return {SAT: Parameters(SAT)
+    return {SAT: herd.Parameters(SAT)
             for SAT in (1, 2, 3)}
 
 
 def get_solutions(params):
-    ages = utility.arange(0, 20, 0.005, endpoint=True)
+    ages = herd.utility.arange(0, 20, 0.005, endpoint=True)
     p = {}
     for (SAT, params_SAT) in params.items():
-        ICs = initial_conditions.gen(params_SAT)
+        ICs = herd.initial_conditions.gen(params_SAT)
         p[SAT] = ICs.immune_status_pdf(ages)
     return pandas.concat(p, axis='columns')
 
@@ -62,7 +62,7 @@ def plot_sum_over_immune_state(p):
     ax = P.plot(alpha=0.6)
     ax.set_xlabel('age')
     ax.set_ylabel('survival')
-    survival = mortality.from_param_values().sf(ages)
+    survival = herd.mortality.from_param_values().sf(ages)
     ax.plot(ages, survival, color='black', linestyle='dashed', alpha=0.6)
     return ax
 

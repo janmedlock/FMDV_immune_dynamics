@@ -1,21 +1,17 @@
 #!/usr/bin/python3
-import sys
-
 from joblib import delayed, Parallel
 import numpy
 from matplotlib import pyplot
 
-sys.path.append('..')
-from herd import Parameters
+from context import herd
 import herd.age_structure
-sys.path.pop()
 
 
 start_times = numpy.linspace(0, 1, 12 + 1, endpoint=True)
 ages = numpy.linspace(0, 20, 301, endpoint=True)
 
 def get_age_structure(ages, start_time):
-    parameters = Parameters()
+    parameters = herd.Parameters()
     parameters.start_time = start_time
     return herd.age_structure.gen(parameters).pdf(ages)
 

@@ -1,14 +1,12 @@
 #!/usr/bin/python3
-
 import itertools
-import sys
 
 from matplotlib import pyplot
 import numpy
 
-sys.path.append('..')
-from herd import initial_conditions, Parameters, utility
-sys.path.pop()
+from context import herd
+import herd.initial_conditions
+import herd.utility
 
 
 def plot_probability_constant_birth(ICs, ages, ax):
@@ -57,9 +55,9 @@ def reorder_for_lr(items, ncol):
 
 
 def plot_ICs(SAT):
-    parameters = Parameters(SAT=SAT)
-    ICs = initial_conditions.gen(parameters)
-    ages = utility.arange(0, 20, 0.1, endpoint=True)
+    parameters = herd.Parameters(SAT=SAT)
+    ICs = herd.initial_conditions.gen(parameters)
+    ages = herd.utility.arange(0, 20, 0.1, endpoint=True)
     (fig, axes) = pyplot.subplots(4, 1, sharex=True)
     plot_fcns = (plot_probability_constant_birth,
                  plot_conditional_probability,

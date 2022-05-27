@@ -1,10 +1,6 @@
 #!/usr/bin/python3
 
-import sys
-
-sys.path.append('..')
-import h5
-sys.path.pop()
+from context import h5
 
 
 filename = '../run.h5'

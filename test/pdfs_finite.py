@@ -1,16 +1,13 @@
 #!/usr/bin/python3
 
 import copy
-import sys
 
-sys.path.append('..')
-import herd
+from context import herd
 import herd.chronic_recovery
 import herd.initial_conditions.immune_status
 import herd.progression
 import herd.recovery
 import herd.samples
-sys.path.pop()
 
 
 RVS = {

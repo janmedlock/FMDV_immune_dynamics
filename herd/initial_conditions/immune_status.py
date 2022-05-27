@@ -62,7 +62,7 @@ class BlockODE(Block):
         # Ensure that the off-diagonal entries are non-positive.
         for (v, k) in diags:
             if k != 0:
-                assert (v <= 0).all()
+                assert (v <= 0).all(), type(self)
         return sparse.diags(*zip(*diags),
                             shape=(len(self), len(self)))
 

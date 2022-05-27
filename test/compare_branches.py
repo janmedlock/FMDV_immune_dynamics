@@ -3,7 +3,6 @@
 import operator
 import pickle
 import subprocess
-import sys
 
 import matplotlib.cm
 import matplotlib.colors
@@ -11,10 +10,8 @@ import matplotlib.pyplot
 import numpy
 import pandas
 
-sys.path.append('..')
-import herd
+from context import herd
 import herd.initial_conditions.immune_status
-sys.path.pop()
 
 
 SATS = (1, 2, 3)

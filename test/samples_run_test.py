@@ -1,12 +1,8 @@
 #!/usr/bin/python3
-
 import os.path
-import sys
 
-sys.path.append('..')
-import herd
-import samples_run
-sys.path.pop()
+from context import herd
+from context import samples_run
 
 
 def get_path_and_logging_prefix(SAT):
@@ -71,6 +67,6 @@ def run_subsamples_sequential(SAT, tmax, n_subsamples, seed):
 if __name__ == '__main__':
     tmax = 10
     SAT = 1
-    run_samples_sequential(SAT, tmax)
-    # sample_number = 10919
-    # run_sample(SAT, tmax, sample_number)
+    # run_samples_sequential(SAT, tmax)
+    sample_number = 0
+    run_sample(SAT, tmax, sample_number)

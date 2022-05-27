@@ -1,17 +1,13 @@
 #!/usr/bin/python3
-
 import itertools
-import sys
 import time
 
 from matplotlib import pyplot
 import pandas
 import seaborn
 
-sys.path.append('..')
-import herd
-import run
-sys.path.pop()
+from context import herd
+from context import run
 
 
 def get_mean(data):
