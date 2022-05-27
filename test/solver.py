@@ -3,7 +3,7 @@ import matplotlib.pyplot
 import numpy
 
 from context import herd
-import herd.initial_conditions
+import herd.initial_conditions.immune_status
 import herd.utility
 
 
