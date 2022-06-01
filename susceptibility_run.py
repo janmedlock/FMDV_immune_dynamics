@@ -15,24 +15,27 @@ def _copy_run(SAT, val, nruns, hdfstore_out):
     where = f'SAT={SAT} & run<{nruns}'
     with h5.HDFStore(filename, mode='r') as hdfstore_in:
         for chunk in hdfstore_in.select(where=where, iterator=True):
-            run._insert_index_levels(chunk, 2,
-                                     lost_immunity_susceptibility=val)
+            run.insert_index_levels(chunk, 2,
+                                    lost_immunity_susceptibility=val)
             hdfstore_out.put(chunk)
 
 
-def run_susceptibility(SAT, val, tmax, nruns, hdfstore):
+def run_susceptibility(SAT, val, tmax, nruns, hdfstore,
+                       chunksize=-1, n_jobs=-1):
     if val == 1:
         _copy_run(SAT, val, nruns, hdfstore)
     else:
-        p = herd.Parameters(SAT=SAT)
-        p.lost_immunity_susceptibility = val
+        parameters = herd.Parameters(SAT=SAT)
+        parameters.lost_immunity_susceptibility = val
         logging_prefix = ', '.join((f'{SAT=}',
                                     f'lost_immunity_susceptibility={val}'))
-        df = run.run_many(p, tmax, nruns,
-                          logging_prefix=logging_prefix)
-        run._prepend_index_levels(df, SAT=SAT,
-                                  lost_immunity_susceptibility=val)
-        hdfstore.put(df)
+        chunks = run.run_many_chunked(parameters, tmax, nruns,
+                                      chunksize=chunksize, n_jobs=n_jobs,
+                                      logging_prefix=logging_prefix)
+        for dfr in chunks:
+            run.prepend_index_levels(dfr, SAT=SAT,
+                                     lost_immunity_susceptibility=val)
+            hdfstore.put(dfr)
 
 
 if __name__ == '__main__':
@@ -44,6 +47,6 @@ if __name__ == '__main__':
     _filename = _filebase + '.h5'
     with h5.HDFStore(_filename) as store:
         for susceptibility in susceptibilities:
-            for SAT in (1, 2, 3):
+            for SAT in run.SATs:
                 run_susceptibility(SAT, susceptibility, tmax, nruns, store)
         store.repack()

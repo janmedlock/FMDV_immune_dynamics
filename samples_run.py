@@ -58,7 +58,7 @@ def run_samples(tmax, n_jobs=-1):
     os.makedirs(_path, exist_ok=True)
     jobs = itertools.chain.from_iterable(
         _get_jobs_SAT(SAT, samples[SAT], tmax, _path)
-        for SAT in run._SATs)
+        for SAT in (3, 2, 1))
     Parallel(n_jobs=n_jobs)(jobs)
 
 
@@ -80,16 +80,14 @@ def combine():
                 if (SAT, sample) not in store_idx:
                     path_sample = os.path.join(path_SAT, filename)
                     recarray = numpy.load(path_sample)
-                    df = pandas.DataFrame.from_records(recarray,
-                                                       index=_t_name)
-                    run._prepend_index_levels(df,
-                                              SAT=SAT,
-                                              sample=sample)
+                    dfr = pandas.DataFrame.from_records(recarray,
+                                                        index=_t_name)
+                    run.prepend_index_levels(dfr, SAT=SAT, sample=sample)
                     print('Inserting '
                           + ', '.join((f'SAT={SAT}',
                                        f'sample={sample}'))
                           + '.')
-                    store.put(df, min_itemsize=run._min_itemsize)
+                    store.put(dfr)
                     # os.remove(path_sample)
 
 

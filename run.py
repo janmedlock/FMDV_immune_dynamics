@@ -7,23 +7,23 @@ import h5
 import herd
 
 
-_SATs = (1, 2, 3)
+SATs = (1, 2, 3)
 
 
-def _insert_index_levels(df, i, **levels):
-    df.index = pandas.MultiIndex.from_arrays(
-        [df.index.get_level_values(n) for n in df.index.names[:i]]
-        + [pandas.Index([v], name=k).repeat(len(df))
+def insert_index_levels(dfr, i, **levels):
+    dfr.index = pandas.MultiIndex.from_arrays(
+        [dfr.index.get_level_values(n) for n in dfr.index.names[:i]]
+        + [pandas.Index([v], name=k).repeat(len(dfr))
            for (k, v) in levels.items()]
-        + [df.index.get_level_values(n) for n in df.index.names[i:]])
+        + [dfr.index.get_level_values(n) for n in dfr.index.names[i:]])
 
 
-def _append_index_levels(df, **levels):
-    _insert_index_levels(df, df.index.nlevels, **levels)
+def append_index_levels(dfr, **levels):
+    insert_index_levels(dfr, dfr.index.nlevels, **levels)
 
 
-def _prepend_index_levels(df, **levels):
-    _insert_index_levels(df, 0, **levels)
+def prepend_index_levels(dfr, **levels):
+    insert_index_levels(dfr, 0, **levels)
 
 
 def run_one(parameters, tmax, run_number, *args, **kwargs):
@@ -32,23 +32,48 @@ def run_one(parameters, tmax, run_number, *args, **kwargs):
     return h.run(tmax)
 
 
+def run_many_chunked(parameters, tmax, nruns, *args,
+                     chunksize=-1, n_jobs=-1, **kwargs):
+    '''Generator to return chunks of many simulation results.'''
+    if chunksize < 1:
+        chunksize = nruns
+    starts = range(0, nruns, chunksize)
+    for start in starts:
+        end = min(start + chunksize, nruns)
+        runs = range(start, end)
+        results = Parallel(n_jobs=n_jobs)(
+            delayed(run_one)(parameters, tmax, i, *args, **kwargs)
+            for i in runs)
+        # Make 'run' the outer row index.
+        yield pandas.concat(results, keys=runs, names=['run'],
+                            copy=False)
+
+
 def run_many(parameters, tmax, nruns, *args, n_jobs=-1, **kwargs):
     '''Run many simulations in parallel.'''
-    results = Parallel(n_jobs=n_jobs)(
-        delayed(run_one)(parameters, tmax, i, *args, **kwargs)
-        for i in range(nruns))
-    # Make 'run' the outer row index.
-    return pandas.concat(results, keys=range(nruns), names=['run'],
-                         copy=False)
+    chunks = run_many_chunked(parameters, tmax, nruns, *args,
+                              n_jobs=n_jobs, **kwargs)
+    # Everything was run in one chunk.
+    results = next(chunks)
+    try:
+        next(chunks)
+    except StopIteration:
+        pass
+    else:
+        raise RuntimeError('`chunks` has length > 1!')
+    return results
 
 
-def run(SAT, tmax, nruns, hdfstore):
-    p = herd.Parameters(SAT=SAT)
+def run(SAT, tmax, nruns, hdfstore,
+        chunksize=-1, n_jobs=-1):
+    parameters = herd.Parameters(SAT=SAT)
     logging_prefix = f'{SAT=}'
-    df = run_many(p, tmax, nruns,
-                  logging_prefix=logging_prefix)
-    _prepend_index_levels(df, SAT=SAT)
-    hdfstore.put(df)
+    chunks = run_many_chunked(parameters, tmax, nruns,
+                              chunksize=chunksize, n_jobs=n_jobs,
+                              logging_prefix=logging_prefix)
+    for dfr in chunks:
+        prepend_index_levels(dfr, SAT=SAT)
+        hdfstore.put(dfr)
 
 
 if __name__ == '__main__':
@@ -57,6 +82,6 @@ if __name__ == '__main__':
 
     filename = 'run.h5'
     with h5.HDFStore(filename) as store:
-        for SAT in _SATs:
+        for SAT in SATs:
             run(SAT, tmax, nruns, store)
         store.repack()

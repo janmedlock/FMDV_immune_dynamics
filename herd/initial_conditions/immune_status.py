@@ -313,15 +313,8 @@ class Solver:
         interval in `ages`. The PDF `RV.pdf()` at each age might
         change too quickly to capture the difference over the age
         interval.'''
-        # Use `RV.pdf()` at the first age.
-        pdf = numpy.hstack([RV.pdf(ages[0]),
-                            - numpy.diff(RV.sf(ages)) / numpy.diff(ages)])
-        # Handle pdf[0] == infinity.
-        if numpy.isinf(pdf[0]):
-            # Extrapolate from the 2nd & 3rd points back to ages[0].
-            extrap = interpolate.interp1d(ages[1:3], pdf[1:3],
-                                          fill_value='extrapolate')
-            pdf[0] = extrap(ages[0])
+        # Use 0 at the first age.
+        pdf = numpy.hstack([0, - numpy.diff(RV.sf(ages)) / numpy.diff(ages)])
         return pdf
 
     def hazard_birth_constant_time(self):

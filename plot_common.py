@@ -59,7 +59,7 @@ def build_downsampled(filename_in, t_min=0, t_max=10, t_step=1/365, by=None):
         for (ix, group) in store_in.groupby(by):
             downsampled = _build_downsampled_group(group, t, t_step, by)
             levels = dict(zip(by, ix))
-            run._prepend_index_levels(downsampled, **levels)
+            run.prepend_index_levels(downsampled, **levels)
             assert numpy.all(downsampled.notnull().all())
             store_out.put(downsampled, index=False)
         store_out.create_table_index()
