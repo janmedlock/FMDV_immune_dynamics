@@ -6,7 +6,7 @@ estimates, run 1 simulation. This produces a file called
 
 import copy
 import itertools
-import os
+import pathlib
 
 from joblib import delayed, Parallel
 import numpy
@@ -18,8 +18,7 @@ import herd.samples
 import run
 
 
-_path = os.path.join(os.path.dirname(__file__),
-                     'samples')
+path_samples = pathlib.Path(__file__).parent / 'samples'
 _t_name = 'time (y)'
 
 
@@ -31,54 +30,60 @@ def run_one(parameters, sample, tmax, sample_number, *args, **kwargs):
     return run.run_one(p, tmax, sample_number, *args, **kwargs)
 
 
-def run_one_and_save(parameters, sample, tmax, sample_number, path,
-                     *args, **kwargs):
+def run_one_and_save(parameters, sample, tmax, sample_number, path_dir, *args,
+                     touch=True, **kwargs):
     '''Run one simulation.'''
-    filename = os.path.join(path, f'{sample_number}.npy')
-    if not os.path.exists(filename):
-        dfr = run_one(parameters, sample, tmax, sample_number,
+    path_sample = path_dir / f'{sample_number}.npy'
+    if not path_sample.exists():
+        if touch:
+            path_sample.touch(exist_ok=False)
+        dfr = run_one(parameters, sample, tmax, path_sample,
                       *args, **kwargs)
         # Save the data for this sample.
-        numpy.save(filename, dfr.to_records())
+        numpy.save(path_sample, dfr.to_records())
 
 
-def _get_jobs_SAT(SAT, samples, tmax, path):
+def _get_jobs_SAT(SAT, samples, tmax, path_dir, *args, **kwargs):
     '''Get jobs to run in parallel for one SAT.'''
-    path_SAT = os.path.join(path, str(SAT))
-    os.makedirs(path_SAT, exist_ok=True)
+    path_SAT = path_dir / str(SAT)
+    path_SAT.makedir(exist_ok=True)
     p = herd.Parameters(SAT=SAT)
     logging_prefix = f'{SAT=}'
-    return (delayed(run_one_and_save)(p, s, tmax, n, path_SAT,
-                                      logging_prefix=logging_prefix)
+    return (delayed(run_one_and_save)(p, s, tmax, n, path_SAT, *args,
+                                      logging_prefix=logging_prefix, **kwargs)
             for (n, s) in samples.iterrows())
 
 
-def run_samples(tmax, n_jobs=-1):
+def run_samples(tmax, *args,
+                n_jobs=-1, **kwargs):
     samples = herd.samples.load()
-    os.makedirs(_path, exist_ok=True)
+    path_samples.makedir(exist_ok=True)
     jobs = itertools.chain.from_iterable(
-        _get_jobs_SAT(SAT, samples[SAT], tmax, _path)
+        _get_jobs_SAT(SAT, samples[SAT], tmax, path_samples, *args, **kwargs)
         for SAT in (3, 2, 1))
     Parallel(n_jobs=n_jobs)(jobs)
 
 
-def _get_sample_number(filename):
-    base, _ = os.path.splitext(filename)
-    return int(base)
+def _get_SAT(path):
+    return int(path.name)
 
 
-def combine():
-    with h5.HDFStore('samples.h5', mode='a') as store:
+def _get_sample_number(path):
+    return int(path.stem)
+
+
+def combine(unlink=True):
+    path_store = pathlib.Path('samples.h5')
+    with h5.HDFStore(path_store, mode='a') as store:
         # (SAT, sample) that are already in `store`.
         store_idx = store.get_index().droplevel(_t_name).unique()
-        for SAT in map(int, sorted(os.listdir(_path))):
-            path_SAT = os.path.join(_path, str(SAT))
-            # Sort in integer order.
-            for filename in sorted(os.listdir(path_SAT),
-                                   key=_get_sample_number):
-                sample = _get_sample_number(filename)
+        paths_SAT = sorted(path_samples.iterdir(), key=_get_SAT)
+        for path_SAT in paths_SAT:
+            SAT = _get_SAT(path_SAT)
+            paths_sample = sorted(path_SAT.iterdir(), key=_get_sample_number)
+            for path_sample in paths_sample:
+                sample = _get_sample_number(path_sample)
                 if (SAT, sample) not in store_idx:
-                    path_sample = os.path.join(path_SAT, filename)
                     recarray = numpy.load(path_sample)
                     dfr = pandas.DataFrame.from_records(recarray,
                                                         index=_t_name)
@@ -88,11 +93,16 @@ def combine():
                                        f'sample={sample}'))
                           + '.')
                     store.put(dfr)
-                    # os.remove(path_sample)
+                if unlink:
+                    path_sample.unlink()
+            if unlink:
+                path_SAT.rmdir()
+        if unlink:
+            path_samples.rmdir()
 
 
 if __name__ == '__main__':
     tmax = 10
 
     run_samples(tmax)
-    # combine()
+    # combine(unlink=False)

@@ -1,22 +1,18 @@
 #!/usr/bin/python3
-import os.path
 
 from context import herd
 from context import samples_run
 
 
 def get_path_and_logging_prefix(SAT):
-    path = os.path.join(samples_run._path, str(SAT))
+    path = samples_run.path_samples / str(SAT)
     logging_prefix = f'{SAT=}'
     return (path, logging_prefix)
 
 
-def get_filename(sample_number, path):
-    return os.path.join(path, f'{sample_number}.npy')
-
-
-def needs_running(sample_number, path):
-    return not os.path.exists(get_filename(sample_number, path))
+def needs_running(sample_number, path_dir):
+    path = path_dir / f'{sample_number}.npy'
+    return not path.exists()
 
 
 def load_parameters_and_samples(SAT):

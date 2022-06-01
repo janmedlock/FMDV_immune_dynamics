@@ -2,7 +2,7 @@
 
 
 import itertools
-import os
+import pathlib
 import subprocess
 import warnings
 
@@ -14,17 +14,20 @@ def repack(path):
     '''
     Use `ptrepack` to compress the HDF file.
     '''
-    # TODO: Call from Python: something in tables.scripts.ptrepack.
-    tmp = path + '.repack'
+    if not isinstance(path, pathlib.Path):
+        path = pathlib.Path(path)
+    path_repack = path.with_suffix(path.suffix + '.repack')
     try:
         subprocess.run(['ptrepack', '--chunkshape=auto',
                         '--propindexes', '--complevel=6',
                         '--complib=blosc:zstd', '--fletcher32=1',
-                        path, tmp],
+                        path, path_repack],
                        check=True)
-    except subprocess.CalledProcessError:
-        os.remove(tmp)
-    os.rename(tmp, path)
+    except subprocess.CalledProcessError as exc:
+        path_repack.unlink()
+        raise RuntimeError('ptrepack failed!') from exc
+    else:
+        path_repack.rename(path)
 
 
 class _catch_natural_name_warnings(warnings.catch_warnings):

@@ -1,5 +1,7 @@
 #!/usr/bin/python3
 
+import pathlib
+
 from joblib import delayed, Parallel
 import pandas
 
@@ -49,7 +51,8 @@ def run_many_chunked(parameters, tmax, nruns, *args,
                             copy=False)
 
 
-def run_many(parameters, tmax, nruns, *args, n_jobs=-1, **kwargs):
+def run_many(parameters, tmax, nruns, *args,
+             n_jobs=-1, **kwargs):
     '''Run many simulations in parallel.'''
     chunks = run_many_chunked(parameters, tmax, nruns, *args,
                               n_jobs=n_jobs, **kwargs)
@@ -64,13 +67,13 @@ def run_many(parameters, tmax, nruns, *args, n_jobs=-1, **kwargs):
     return results
 
 
-def run(SAT, tmax, nruns, hdfstore,
-        chunksize=-1, n_jobs=-1):
+def run(SAT, tmax, nruns, hdfstore, *args,
+        chunksize=-1, n_jobs=-1, **kwargs):
     parameters = herd.Parameters(SAT=SAT)
     logging_prefix = f'{SAT=}'
-    chunks = run_many_chunked(parameters, tmax, nruns,
+    chunks = run_many_chunked(parameters, tmax, nruns, *args,
                               chunksize=chunksize, n_jobs=n_jobs,
-                              logging_prefix=logging_prefix)
+                              logging_prefix=logging_prefix, **kwargs)
     for dfr in chunks:
         prepend_index_levels(dfr, SAT=SAT)
         hdfstore.put(dfr)
@@ -80,8 +83,8 @@ if __name__ == '__main__':
     nruns = 1000
     tmax = 10
 
-    filename = 'run.h5'
-    with h5.HDFStore(filename) as store:
+    store_path = pathlib.Path('run.h5')
+    with h5.HDFStore(store_path) as store:
         for SAT in SATs:
             run(SAT, tmax, nruns, store)
         store.repack()

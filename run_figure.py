@@ -2,7 +2,7 @@
 '''Build a figure comparing the runs of the SATs. This requires the
 file `run.h5`, which is built by `run.py`.'''
 
-import os.path
+import pathlib
 
 from matplotlib import pyplot, ticker
 import numpy
@@ -24,10 +24,9 @@ rc['xtick.labelsize'] = rc['ytick.labelsize'] = 7
 
 
 def load():
-    path = os.path.dirname(__file__)
-    filename = os.path.join(path, 'run.h5')
-    infected = plot_common.get_infected(filename)
-    extinction_time = plot_common.get_extinction_time(filename)
+    path = pathlib.Path(__file__).parent / 'run.h5'
+    infected = plot_common.get_infected(path)
+    extinction_time = plot_common.get_extinction_time(path)
     return (infected, extinction_time)
 
 

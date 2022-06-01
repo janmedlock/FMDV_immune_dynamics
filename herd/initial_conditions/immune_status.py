@@ -1,11 +1,11 @@
-import os.path
+import pathlib
 import re
 
 from joblib import Memory
 import numpy
 import numpy.lib.recfunctions
 import pandas
-from scipy import integrate, interpolate, optimize, sparse, special
+from scipy import integrate, optimize, sparse, special
 
 from herd import (antibody_gain, antibody_loss, birth, buffalo,
                   chronic_recovery, maternal_immunity_waning,
@@ -549,7 +549,7 @@ class CacheParameters(parameters.Parameters):
 # `joblib.Memory()` so that they are only computed once.
 # Set up the cache in a subdirectory of the directory that this source
 # file is in.
-_cachedir = os.path.join(os.path.dirname(__file__), '_cache')
+_cachedir = pathlib.Path(__file__).parent / '_cache'
 _cache = Memory(_cachedir)
 
 

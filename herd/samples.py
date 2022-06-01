@@ -1,22 +1,22 @@
 '''Load sample parameter values.'''
 
-import os.path
+import pathlib
 
 import numpy
 import pandas
 
 
-_path = os.path.join(os.path.dirname(__file__), 'data')
-_filenames = {
+_path_data = pathlib.Path(__file__).parent / 'data'
+_paths = {
     'acute_transmission': 'posterior_SEIR.txt',
     'maternal_immunity_duration': 'posterior_maternal_immunity.txt',
     'chronic_transmission_rate': 'posterior_chronic_transmission_rate.txt',
     'chronic_recovery': 'posterior_chronic_recovery.txt',
     'antibody_hazards': 'posterior_antibody_hazards.csv',
 }
-# All of these files are in `_path`.
-_filenames = {k: os.path.join(_path, v)
-              for (k, v) in _filenames.items()}
+# All of these files are in `_path_data`.
+_paths = {key: _path_data / path
+          for (key, path) in _paths.items()}
 
 _SATs = pandas.RangeIndex(1, 3 + 1, name='SAT')
 _PARAMETERS_NAME = 'parameter'
@@ -24,7 +24,7 @@ _SAMPLES_NAME = 'sample'
 
 
 def _load_acute_transmission():
-    dfr = pandas.read_csv(_filenames['acute_transmission'],
+    dfr = pandas.read_csv(_paths['acute_transmission'],
                           delim_whitespace=True,
                           header=None)
     dfr.index.name = _SAMPLES_NAME
@@ -46,7 +46,7 @@ def _load_acute_transmission():
 
 def _load_maternal_immunity_duration():
     # The durations of maternal immunity, which are the same for each SAT.
-    dfr = pandas.read_csv(_filenames['maternal_immunity_duration'],
+    dfr = pandas.read_csv(_paths['maternal_immunity_duration'],
                           delim_whitespace=True,
                           header=None)
     dfr.index.name = _SAMPLES_NAME
@@ -59,7 +59,7 @@ def _load_maternal_immunity_duration():
 
 
 def _load_chronic_transmission_rate():
-    dfr = pandas.read_csv(_filenames['chronic_transmission_rate'],
+    dfr = pandas.read_csv(_paths['chronic_transmission_rate'],
                           delim_whitespace=True,
                           header=None)
     dfr.index.name = _SAMPLES_NAME
@@ -72,7 +72,7 @@ def _load_chronic_transmission_rate():
 
 
 def _load_chronic_recovery():
-    dfr = pandas.read_csv(_filenames['chronic_recovery'],
+    dfr = pandas.read_csv(_paths['chronic_recovery'],
                           delim_whitespace=True,
                           header=None)
     dfr.index.name = _SAMPLES_NAME
@@ -94,7 +94,7 @@ def _load_chronic_recovery():
 
 
 def _load_antibody_hazards():
-    dfr = pandas.read_csv(_filenames['antibody_hazards'],
+    dfr = pandas.read_csv(_paths['antibody_hazards'],
                           header=None)
     dfr.index.name = _SAMPLES_NAME
     params = pandas.Index(['antibody_gain_hazard_alpha',

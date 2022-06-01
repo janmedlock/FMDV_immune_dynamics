@@ -1,8 +1,5 @@
 '''Common plotting code.'''
 
-
-import os.path
-
 import matplotlib.collections
 import matplotlib.colors
 import matplotlib.pyplot
@@ -48,12 +45,11 @@ def _build_downsampled_group(group, t, t_step, by):
     return group.reindex(t[mask], method='ffill')
 
 
-def build_downsampled(filename_in, t_min=0, t_max=10, t_step=1/365, by=None):
+def build_downsampled(path_in, path_out,
+                      t_min=0, t_max=10, t_step=1/365, by=None):
     t = arange(t_min, t_max, t_step, endpoint=True)
-    base, ext = os.path.splitext(filename_in)
-    filename_out = base + '_downsampled' + ext
-    with h5.HDFStore(filename_in, mode='r') as store_in, \
-         h5.HDFStore(filename_out, mode='w') as store_out:
+    with (h5.HDFStore(path_in, mode='r') as store_in,
+          h5.HDFStore(path_out, mode='w') as store_out):
         if by is None:
             by = [n for n in store_in.get_index_names() if n != t_name]
         for (ix, group) in store_in.groupby(by):
@@ -66,17 +62,16 @@ def build_downsampled(filename_in, t_min=0, t_max=10, t_step=1/365, by=None):
         store_out.repack()
 
 
-def get_downsampled(filename, by=None):
-    base, ext = os.path.splitext(filename)
-    filename_ds = base + '_downsampled' + ext
-    if not os.path.exists(filename_ds):
-        build_downsampled(filename, by=by)
-    return h5.HDFStore(filename_ds, mode='r')
+def get_downsampled(path, by=None):
+    path_downsampled = path.with_stem(path.stem + '_downsampled')
+    if not path_downsampled.exists():
+        build_downsampled(path, path_downsampled, by=by)
+    return h5.HDFStore(path_downsampled, mode='r')
 
 
-def _build_infected(filename, filename_out, by=None):
-    with get_downsampled(filename, by=by) as store_in, \
-         h5.HDFStore(filename_out, mode='w') as store_out:
+def _build_infected(path, path_out, by=None):
+    with (get_downsampled(path, by=by) as store_in,
+          h5.HDFStore(path_out, mode='w') as store_out):
         for chunk in store_in.select(columns=cols_infected, iterator=True):
             infected = _get_infected(chunk)
             store_out.put(infected, index=False)
@@ -84,14 +79,11 @@ def _build_infected(filename, filename_out, by=None):
         store_out.repack()
 
 
-def get_infected(filename, by=None):
-    base, ext = os.path.splitext(filename)
-    filename_infected = base + '_infected' + ext
-    try:
-        infected = h5.load(filename_infected)
-    except OSError:
-        _build_infected(filename, filename_infected, by=by)
-        infected = h5.load(filename_infected)
+def get_infected(path, by=None):
+    path_infected = path.with_stem(path.stem + '_infected')
+    if not path_infected.exists():
+        _build_infected(path, path_infected, by=by)
+    infected = h5.load(path_infected)
     return infected
 
 
@@ -103,10 +95,10 @@ def _build_extinction_time_group(infected, tmax=10):
     return dict(time=time, observed=observed)
 
 
-def _build_extinction_time(filename, filename_out, by=None):
+def _build_extinction_time(path, path_out, by=None):
     # Only the infected columns.
     extinction = {}
-    with h5.HDFStore(filename, mode='r') as store:
+    with h5.HDFStore(path, mode='r') as store:
         if by is None:
             by = [n for n in store.get_index_names() if n != t_name]
         for (ix, group) in store.groupby(by, columns=cols_infected):
@@ -115,17 +107,14 @@ def _build_extinction_time(filename, filename_out, by=None):
     extinction = pandas.DataFrame.from_dict(extinction, orient='index')
     extinction.index.names = by
     extinction.sort_index(level=by, inplace=True)
-    h5.dump(extinction, filename_out, mode='w')
+    h5.dump(extinction, path_out, mode='w')
 
 
-def get_extinction_time(filename, by=None):
-    base, ext = os.path.splitext(filename)
-    filename_et = base + '_extinction_time' + ext
-    try:
-        extinction_time = h5.load(filename_et)
-    except OSError:
-        _build_extinction_time(filename, filename_et, by=by)
-        extinction_time = h5.load(filename_et)
+def get_extinction_time(path, by=None):
+    path_extinction_time = path.with_stem(path.stem + '_extinction_time')
+    if not path_extinction_time.exists():
+        _build_extinction_time(path, path_extinction_time, by=by)
+    extinction_time = h5.load(path_extinction_time)
     return extinction_time
 
 

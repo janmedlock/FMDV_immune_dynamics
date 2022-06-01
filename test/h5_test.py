@@ -1,15 +1,17 @@
 #!/usr/bin/python3
 
+import pathlib
+
 from context import h5
 
 
-filename = '../run.h5'
+path = pathlib.Path('../run.h5')
 by = ['SAT', 'run']
 columns = ['exposed', 'infectious', 'chronic']
 SAT = 1
 where = f'{SAT=}'
 
-with h5.HDFStore(filename, mode='r') as store:
+with h5.HDFStore(path, mode='r') as store:
     for (_, group) in store.groupby(by, columns=columns,
                                     debug=True, where=where):
         infected = group.sum(axis='columns')
