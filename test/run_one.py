@@ -24,8 +24,8 @@ def make_plot(data, show=True):
 
 if __name__ == '__main__':
     SAT = 1
-    seed = 1
     tmax = 10
+    seed = 1
     debug = False
 
     p = herd.Parameters(SAT=SAT)

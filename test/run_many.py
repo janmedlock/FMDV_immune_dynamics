@@ -51,12 +51,13 @@ def make_plots(data, show=True):
 
 if __name__ == '__main__':
     SAT = 1
-    nruns = 100
     tmax = 10
+    nruns = 100
+    n_jobs = -1
 
     p = herd.Parameters(SAT=SAT)
     t0 = time.time()
-    data = run.run_many(p, tmax, nruns)
+    data = run.run_many(p, tmax, nruns, n_jobs=n_jobs)
     t1 = time.time()
     print('Run time: {} seconds.'.format(t1 - t0))
 

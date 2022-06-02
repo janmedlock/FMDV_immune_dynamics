@@ -41,12 +41,15 @@ def run_susceptibility(SAT, val, tmax, nruns, hdfstore, *args,
 
 
 if __name__ == '__main__':
+    tmax = 10
     susceptibilities = numpy.linspace(0, 1, 11)
     nruns = 1000
-    tmax = 10
+    chunksize = 100
+    n_jobs = -1
 
     with h5.HDFStore(store_path) as store:
         for susceptibility in susceptibilities:
             for SAT in run.SATs:
-                run_susceptibility(SAT, susceptibility, tmax, nruns, store)
+                run_susceptibility(SAT, susceptibility, tmax, nruns, store,
+                                   chunksize=chunksize, n_jobs=n_jobs)
         store.repack()

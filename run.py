@@ -83,10 +83,13 @@ def run(SAT, tmax, nruns, hdfstore, *args,
 
 
 if __name__ == '__main__':
-    nruns = 1000
     tmax = 10
+    nruns = 1000
+    chunksize = 100
+    n_jobs = -1
 
     with h5.HDFStore(store_path) as store:
         for SAT in SATs:
-            run(SAT, tmax, nruns, store)
+            run(SAT, tmax, nruns, store,
+                chunksize=chunksize, n_jobs=n_jobs)
         store.repack()
