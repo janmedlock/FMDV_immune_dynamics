@@ -1,8 +1,10 @@
 '''Context for the current directory.'''
 
+import pathlib
 import sys
 
-sys.path.append('..')
+_path = pathlib.Path(__file__).parents[1]
+sys.path.append(str(_path))
 import h5
 import herd
 import run

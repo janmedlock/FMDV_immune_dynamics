@@ -5,6 +5,7 @@ from matplotlib import pyplot
 
 from context import herd
 from context import run
+from run import run_one
 
 
 def make_plot(data, show=True):
@@ -29,7 +30,7 @@ if __name__ == '__main__':
 
     p = herd.Parameters(SAT=SAT)
     t0 = time.time()
-    data = run.run_one(p, tmax, seed, debug=debug)
+    data = run_one(p, tmax, seed, debug=debug)
     t1 = time.time()
     print('Run time: {} seconds.'.format(t1 - t0))
 
