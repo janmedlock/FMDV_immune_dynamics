@@ -107,4 +107,4 @@ if __name__ == '__main__':
     n_jobs = -1
 
     run_samples(tmax, n_jobs=n_jobs)
-    # combine(unlink=False)
+    combine(unlink=True)

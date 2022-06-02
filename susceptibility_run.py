@@ -11,6 +11,8 @@ import run
 
 store_path = pathlib.Path(__file__).with_suffix('.h5')
 
+susceptibilities = numpy.linspace(0, 1, 11)
+
 
 def _copy_run(SAT, val, nruns, hdfstore_out):
     '''Copy the data from 'run.h5'.'''
@@ -42,7 +44,6 @@ def run_susceptibility(SAT, val, tmax, nruns, hdfstore, *args,
 
 if __name__ == '__main__':
     tmax = 10
-    susceptibilities = numpy.linspace(0, 1, 11)
     nruns = 1000
     chunksize = 100
     n_jobs = -1
