@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 '''For each of the 3 SATs and for each of 20,000 posterior parameter
 estimates, run 1 simulation. This produces a file called
-`samples.h5`.'''
+`samples_run.h5`.'''
 
 
 import copy
@@ -32,26 +32,26 @@ def run_one(parameters, sample, tmax, sample_number, *args, **kwargs):
     return run.run_one(p, tmax, sample_number, *args, **kwargs)
 
 
-def run_one_and_save(parameters, sample, tmax, sample_number, path_dir, *args,
+def run_one_and_save(parameters, sample, tmax, sample_number, path, *args,
                      touch=True, **kwargs):
     '''Run one simulation.'''
-    path_sample = path_dir / f'{sample_number}.npy'
-    if not path_sample.exists():
+    sample_path = path.joinpath(f'{sample_number}.npy')
+    if not sample_path.exists():
         if touch:
-            path_sample.touch(exist_ok=False)
-        dfr = run_one(parameters, sample, tmax, path_sample,
+            sample_path.touch(exist_ok=False)
+        dfr = run_one(parameters, sample, tmax, sample_number,
                       *args, **kwargs)
         # Save the data for this sample.
-        numpy.save(path_sample, dfr.to_records())
+        numpy.save(sample_path, dfr.to_records())
 
 
-def _get_jobs_SAT(SAT, samples, tmax, path_dir, *args, **kwargs):
+def _get_jobs_SAT(SAT, samples, tmax, path, *args, **kwargs):
     '''Get jobs to run in parallel for one SAT.'''
-    path_SAT = path_dir / str(SAT)
-    path_SAT.makedir(exist_ok=True)
+    SAT_path = path.joinpath(str(SAT))
+    SAT_path.mkdir(exist_ok=True)
     p = herd.Parameters(SAT=SAT)
     logging_prefix = f'{SAT=}'
-    return (delayed(run_one_and_save)(p, s, tmax, n, path_SAT, *args,
+    return (delayed(run_one_and_save)(p, s, tmax, n, SAT_path, *args,
                                       logging_prefix=logging_prefix, **kwargs)
             for (n, s) in samples.iterrows())
 
@@ -59,9 +59,9 @@ def _get_jobs_SAT(SAT, samples, tmax, path_dir, *args, **kwargs):
 def run_samples(tmax, *args,
                 n_jobs=-1, **kwargs):
     samples = herd.samples.load()
-    path_samples.makedir(exist_ok=True)
+    samples_path.mkdir(exist_ok=True)
     jobs = itertools.chain.from_iterable(
-        _get_jobs_SAT(SAT, samples[SAT], tmax, path_samples, *args, **kwargs)
+        _get_jobs_SAT(SAT, samples[SAT], tmax, samples_path, *args, **kwargs)
         for SAT in (3, 2, 1))
     Parallel(n_jobs=n_jobs)(jobs)
 
@@ -81,7 +81,7 @@ def combine(unlink=True):
         SAT_paths = sorted(samples_path.iterdir(), key=_get_SAT)
         for SAT_path in SAT_paths:
             SAT = _get_SAT(SAT_path)
-            paths_sample = sorted(SAT_path.iterdir(), key=_get_sample_number)
+            sample_paths = sorted(SAT_path.iterdir(), key=_get_sample_number)
             for sample_path in sample_paths:
                 sample = _get_sample_number(sample_path)
                 if (SAT, sample) not in store_idx:

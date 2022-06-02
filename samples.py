@@ -1,7 +1,8 @@
 #!/usr/bin/python3
 '''Analyze and plot the results of the simulations over the posterior
-parameter sets. This requires the file `samples.h5`, which is built by
+parameter sets. This requires the file `samples_run.h5`, which is built by
 `samples_run.py`.'''
+
 
 from matplotlib import pyplot, ticker
 from matplotlib.backends import backend_pdf
@@ -19,7 +20,7 @@ def load():
     extinction_time = plot_common.get_extinction_time(samples_run.store_path)
     by = ['SAT']
     grouper = extinction_time.groupby(by)
-    samples = [herd.samples.load(**dict(zip(by, vals))
+    samples = [herd.samples.load(**dict(zip(by, keys)))
                for keys in grouper.groups.keys()]
     samples = pandas.concat(samples, keys=grouper.groups.keys(), names=by)
     return pandas.concat([samples, extinction_time], axis='columns')
@@ -112,7 +113,6 @@ class Colors:
         if k not in self._colors:
             self._colors[k] = self._palette.pop(0)
         return self._colors[k]
-
 
 
 param_transforms = {
