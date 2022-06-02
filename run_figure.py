@@ -2,13 +2,12 @@
 '''Build a figure comparing the runs of the SATs. This requires the
 file `run.h5`, which is built by `run.py`.'''
 
-import pathlib
-
 from matplotlib import pyplot, ticker
 import numpy
 import seaborn
 
 import plot_common
+import run
 
 
 # Science
@@ -24,9 +23,8 @@ rc['xtick.labelsize'] = rc['ytick.labelsize'] = 7
 
 
 def load():
-    path = pathlib.Path(__file__).parent / 'run.h5'
-    infected = plot_common.get_infected(path)
-    extinction_time = plot_common.get_extinction_time(path)
+    infected = plot_common.get_infected(run.store_path)
+    extinction_time = plot_common.get_extinction_time(run.store_path)
     return (infected, extinction_time)
 
 

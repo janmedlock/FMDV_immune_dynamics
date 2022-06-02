@@ -9,11 +9,13 @@ import herd
 import run
 
 
+store_path = pathlib.Path(__file__).with_suffix('.h5')
+
+
 def _copy_run(SAT, val, nruns, hdfstore_out):
     '''Copy the data from 'run.h5'.'''
-    path_hdfstore_in = pathlib.Path('run.h5')
     where = f'SAT={SAT} & run<{nruns}'
-    with h5.HDFStore(path_hdfstore_in, mode='r') as hdfstore_in:
+    with h5.HDFStore(run.store_path, mode='r') as hdfstore_in:
         for chunk in hdfstore_in.select(where=where, iterator=True):
             run.insert_index_levels(chunk, 2,
                                     lost_immunity_susceptibility=val)
@@ -43,8 +45,7 @@ if __name__ == '__main__':
     nruns = 1000
     tmax = 10
 
-    path_store = pathlib.Path(__file__).with_suffix('.h5')
-    with h5.HDFStore(path_store) as store:
+    with h5.HDFStore(store_path) as store:
         for susceptibility in susceptibilities:
             for SAT in run.SATs:
                 run_susceptibility(SAT, susceptibility, tmax, nruns, store)

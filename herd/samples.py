@@ -6,7 +6,7 @@ import numpy
 import pandas
 
 
-_path_data = pathlib.Path(__file__).parent / 'data'
+_data_path = pathlib.Path(__file__).with_name('data')
 _paths = {
     'acute_transmission': 'posterior_SEIR.txt',
     'maternal_immunity_duration': 'posterior_maternal_immunity.txt',
@@ -14,8 +14,8 @@ _paths = {
     'chronic_recovery': 'posterior_chronic_recovery.txt',
     'antibody_hazards': 'posterior_antibody_hazards.csv',
 }
-# All of these files are in `_path_data`.
-_paths = {key: _path_data / path
+# All of these files are in `_data_path`.
+_paths = {key: _data_path.joinpath(path)
           for (key, path) in _paths.items()}
 
 _SATs = pandas.RangeIndex(1, 3 + 1, name='SAT')

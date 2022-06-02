@@ -16,7 +16,7 @@ def repack(path):
     '''
     if not isinstance(path, pathlib.Path):
         path = pathlib.Path(path)
-    path_repack = path.with_suffix(path.suffix + '.repack')
+    path_repack = path.with_stem(path.stem + '_repack')
     try:
         subprocess.run(['ptrepack', '--chunkshape=auto',
                         '--propindexes', '--complevel=6',

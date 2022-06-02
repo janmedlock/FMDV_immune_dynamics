@@ -12,6 +12,9 @@ import herd
 SATs = (1, 2, 3)
 
 
+store_path = pathlib.Path(__file__).with_suffix('.h5')
+
+
 def insert_index_levels(dfr, i, **levels):
     dfr.index = pandas.MultiIndex.from_arrays(
         [dfr.index.get_level_values(n) for n in dfr.index.names[:i]]
@@ -83,7 +86,6 @@ if __name__ == '__main__':
     nruns = 1000
     tmax = 10
 
-    store_path = pathlib.Path('run.h5')
     with h5.HDFStore(store_path) as store:
         for SAT in SATs:
             run(SAT, tmax, nruns, store)

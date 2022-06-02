@@ -549,8 +549,8 @@ class CacheParameters(parameters.Parameters):
 # `joblib.Memory()` so that they are only computed once.
 # Set up the cache in a subdirectory of the directory that this source
 # file is in.
-_cachedir = pathlib.Path(__file__).parent / '_cache'
-_cache = Memory(_cachedir)
+_cache_path = pathlib.Path(__file__).with_name('_cache')
+_cache = Memory(_cache_path)
 
 
 @_cache.cache

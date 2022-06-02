@@ -18,7 +18,9 @@ import herd.samples
 import run
 
 
-path_samples = pathlib.Path(__file__).parent / 'samples'
+store_path = pathlib.Path(__file__).with_suffix('.h5')
+samples_path = store_path.with_suffix('')
+
 _t_name = 'time (y)'
 
 
@@ -73,18 +75,17 @@ def _get_sample_number(path):
 
 
 def combine(unlink=True):
-    path_store = pathlib.Path('samples.h5')
-    with h5.HDFStore(path_store, mode='a') as store:
+    with h5.HDFStore(store_path, mode='a') as store:
         # (SAT, sample) that are already in `store`.
         store_idx = store.get_index().droplevel(_t_name).unique()
-        paths_SAT = sorted(path_samples.iterdir(), key=_get_SAT)
-        for path_SAT in paths_SAT:
-            SAT = _get_SAT(path_SAT)
-            paths_sample = sorted(path_SAT.iterdir(), key=_get_sample_number)
-            for path_sample in paths_sample:
-                sample = _get_sample_number(path_sample)
+        SAT_paths = sorted(samples_path.iterdir(), key=_get_SAT)
+        for SAT_path in SAT_paths:
+            SAT = _get_SAT(SAT_path)
+            paths_sample = sorted(SAT_path.iterdir(), key=_get_sample_number)
+            for sample_path in sample_paths:
+                sample = _get_sample_number(sample_path)
                 if (SAT, sample) not in store_idx:
-                    recarray = numpy.load(path_sample)
+                    recarray = numpy.load(sample_path)
                     dfr = pandas.DataFrame.from_records(recarray,
                                                         index=_t_name)
                     run.prepend_index_levels(dfr, SAT=SAT, sample=sample)
@@ -94,11 +95,11 @@ def combine(unlink=True):
                           + '.')
                     store.put(dfr)
                 if unlink:
-                    path_sample.unlink()
+                    sample_path.unlink()
             if unlink:
-                path_SAT.rmdir()
+                SAT_path.rmdir()
         if unlink:
-            path_samples.rmdir()
+            samples_path.rmdir()
 
 
 if __name__ == '__main__':

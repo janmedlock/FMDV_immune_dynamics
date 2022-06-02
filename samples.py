@@ -3,9 +3,6 @@
 parameter sets. This requires the file `samples.h5`, which is built by
 `samples_run.py`.'''
 
-
-import pathlib
-
 from matplotlib import pyplot, ticker
 from matplotlib.backends import backend_pdf
 import numpy
@@ -14,12 +11,12 @@ import seaborn
 
 import herd.samples
 import plot_common
+import samples_run
 import stats
 
 
 def load():
-    path = pathlib.Path('samples.h5')
-    extinction_time = plot_common.get_extinction_time(path)
+    extinction_time = plot_common.get_extinction_time(samples_run.store_path)
     by = ['SAT']
     grouper = extinction_time.groupby(by)
     samples = [herd.samples.load(**dict(zip(by, vals))
