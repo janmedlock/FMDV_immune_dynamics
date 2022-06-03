@@ -10,6 +10,11 @@ import susceptibility_run
 
 
 def cache_seed(SAT, **kwds):
+    msg = ', '.join(itertools.chain(
+        (f'{SAT=}',),
+        (f'{key}={val}' for (key, val) in kwds.items()),
+    ))
+    print(msg)
     parameters = herd.Parameters(SAT=SAT)
     for (key, val) in kwds:
         assert hasattr(parameters, key)
