@@ -16,7 +16,7 @@ def cache_seed(SAT, **kwds):
     ))
     print(msg)
     parameters = herd.Parameters(SAT=SAT)
-    for (key, val) in kwds:
+    for (key, val) in kwds.items():
         assert hasattr(parameters, key)
         setattr(parameters, key, val)
     rvs = herd.RandomVariables(parameters)
