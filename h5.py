@@ -1,6 +1,7 @@
 '''Common code to work with HDF5 files.'''
 
 
+import collections.abc
 import itertools
 import pathlib
 import subprocess
@@ -28,6 +29,36 @@ def repack(path):
         raise RuntimeError('ptrepack failed!') from exc
     else:
         path_repack.rename(path)
+
+
+def sort_index(path, level=None):
+    '''Very slow code to sort the index of an HDF5 file.'''
+    path_sorted = path.with_stem(path.stem + '_sorted')
+    with (HDFStore(path, mode='r') as store,
+          HDFStore(path_sorted) as store_sorted):
+        if level is None:
+            level = store.get_index_names()
+        elif not isinstance(level, collections.abc.Sequence):
+            try:
+                level = tuple(level)
+            except TypeError:
+                level = (level,)
+        index = pandas.MultiIndex.from_tuples((), names=level)
+        for chunk in store.get_index(iterator=True):
+            index = index.union(chunk.drop_duplicates())
+        index = index.sort_values()
+        assert index.is_monotonic_increasing
+        assert all(level.is_monotonic_increasing
+                   for level in index.levels)
+        for val in index:
+            where = ' & '.join(f'{key}={val}'
+                               for (key, val) in zip(index.names, val))
+            print(where)
+            dfr = store.select(where=where)
+            store_sorted.put(dfr, index=False)
+        store_sorted.create_table_index()
+        store_sorted.repack()
+    path_sorted.rename(path)
 
 
 class _catch_natural_name_warnings(warnings.catch_warnings):
