@@ -21,6 +21,10 @@ import run
 store_path = pathlib.Path(__file__).with_suffix('.h5')
 samples_path = store_path.with_suffix('')
 
+# Order the more interesting ones first.
+SATs = (3, 2, 1)
+assert set(SATs) == set(run.SATs)
+
 _t_name = 'time (y)'
 
 
@@ -62,7 +66,7 @@ def run_samples(tmax, *args,
     samples_path.mkdir(exist_ok=True)
     jobs = itertools.chain.from_iterable(
         _get_jobs_SAT(SAT, samples[SAT], tmax, samples_path, *args, **kwargs)
-        for SAT in (3, 2, 1))
+        for SAT in SATs)
     Parallel(n_jobs=n_jobs)(jobs)
 
 
