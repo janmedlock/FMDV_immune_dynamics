@@ -105,7 +105,7 @@ def plot_kde_2d(df):
     for (i, (SAT, group_SAT)) in enumerate(df.groupby('SAT')):
         ax = axes[i, 0]
         density = numpy.zeros((len(sigmas), len(persistence_time)))
-        proportion_observed = numpy.zeros_like(bscovs, dtype=float)
+        proportion_observed = numpy.zeros_like(sigmas, dtype=float)
         for (k, (s, g)) in enumerate(group_SAT.groupby(
                 'lost_immunity_susceptibility')):
             ser = g.time[g.observed]
@@ -132,18 +132,19 @@ def plot_kde_2d(df):
                    color=plot_common.SAT_colors[SAT],
                    clip_on=False, zorder=3)
         ax_po.autoscale(tight=True)
-        if ax.is_last_row():
+        subplotspec = ax.get_subplotspec()
+        if subplotspec.is_last_row():
             ax_po.set_xlabel('persisting 10 y')
             ax_po.xaxis.set_major_formatter(
-                plot_common.PercentFormatter())
+                ticker.PercentFormatter(xmax=1))
             ax_po.xaxis.set_minor_locator(
                 ticker.AutoMinorLocator(2))
-        if ax.is_last_row():
+        if subplotspec.is_last_row():
             ax.set_xlabel(f'extinction {plot_common.t_name}')
             ax.xaxis.set_major_locator(
                 ticker.MultipleLocator(max(persistence_time) / 5))
             ax.xaxis.set_minor_locator(ticker.AutoMinorLocator(2))
-        if ax.is_first_col():
+        if subplotspec.is_first_col():
             ax.set_ylabel('Susceptibility\nof lost-immunity\nstate')
             ax.annotate(f'SAT{SAT}',
                         (-0.65, 0.5), xycoords='axes fraction',
