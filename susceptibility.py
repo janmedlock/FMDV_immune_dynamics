@@ -7,10 +7,11 @@ import statsmodels.nonparametric.api
 
 import plot_common
 import stats
+import susceptibility_run
 
 
 def load_extinction_times():
-    return plot_common.get_extinction_time('susceptibility.h5')
+    return plot_common.get_extinction_time(susceptibility_run.store_path)
 
 
 def plot_median(df, CI=0.5):
