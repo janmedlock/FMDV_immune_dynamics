@@ -158,6 +158,8 @@ def plot_kde_2d(df):
                        color='black', linestyle='dotted', alpha=0.7)
             for sp in ('top', 'right'):
                 ax.spines[sp].set_visible(False)
+        fig.align_xlabels(axes[-1, :])
+        fig.align_ylabels(axes[:, 0])
         fig.tight_layout()
         fig.savefig('susceptibility.pdf')
         fig.savefig('susceptibility.png', dpi=300)
