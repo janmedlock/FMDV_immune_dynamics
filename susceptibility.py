@@ -93,70 +93,74 @@ def _get_cmap(color):
 
 
 def plot_kde_2d(df):
-    persistence_time_max = 5
+    rc = plot_common.rc.copy()
+    width = 183 / 25.4  # convert mm to in
+    height = 4  # in
+    rc['figure.figsize'] = (width, height)
+    # Between 5pt and 7pt.
+    rc['font.size'] = 6
+    rc['axes.titlesize'] = 9
+    rc['axes.labelsize'] = 8
+    rc['xtick.labelsize'] = rc['ytick.labelsize'] = 7
+    extinction_time_max = 10
     sigmas = df.index \
                .get_level_values('lost_immunity_susceptibility') \
                .unique() \
                .sort_values()
     sigma_baseline = 1.
-    fig, axes = pyplot.subplots(3, 1 + 1, sharex='col', sharey='row',
-                                gridspec_kw=dict(width_ratios=(1, 0.5)))
-    persistence_time = numpy.linspace(0, persistence_time_max, 301)
-    for (i, (SAT, group_SAT)) in enumerate(df.groupby('SAT')):
-        ax = axes[i, 0]
-        density = numpy.zeros((len(sigmas), len(persistence_time)))
-        proportion_observed = numpy.zeros_like(sigmas, dtype=float)
-        for (k, (s, g)) in enumerate(group_SAT.groupby(
-                'lost_immunity_susceptibility')):
-            ser = g.time[g.observed]
-            nruns = len(g)
-            proportion_observed[k] = len(ser) / nruns
-            if proportion_observed[k] > 0:
-                kde = statsmodels.nonparametric.api.KDEUnivariate(ser)
-                kde.fit(cut=0)
-                density[k] = kde.evaluate(persistence_time)
-            else:
-                density[k] = 0
-        cmap = _get_cmap(plot_common.SAT_colors[SAT])
-        # Use raw `density` for color,
-        # but plot `density * proportion_observed`.
-        norm = colors.Normalize(vmin=0, vmax=numpy.max(density))
-        ax.imshow(density * proportion_observed[:, None],
-                  cmap=cmap, norm=norm, interpolation='bilinear',
-                  extent=(min(persistence_time), max(persistence_time),
-                          min(sigmas), max(sigmas)),
-                  aspect='auto', origin='lower', clip_on=False)
-        ax.autoscale(tight=True)
-        ax_po = axes[i, -1]
-        ax_po.plot(1 - proportion_observed, sigmas,
-                   color=plot_common.SAT_colors[SAT],
-                   clip_on=False, zorder=3)
-        ax_po.autoscale(tight=True)
-        subplotspec = ax.get_subplotspec()
-        if subplotspec.is_last_row():
-            ax_po.set_xlabel('persisting 10 y')
-            ax_po.xaxis.set_major_formatter(
-                ticker.PercentFormatter(xmax=1))
-            ax_po.xaxis.set_minor_locator(
-                ticker.AutoMinorLocator(2))
-        if subplotspec.is_last_row():
-            ax.set_xlabel(f'extinction {plot_common.t_name}')
-            ax.xaxis.set_major_locator(
-                ticker.MultipleLocator(max(persistence_time) / 5))
-            ax.xaxis.set_minor_locator(ticker.AutoMinorLocator(2))
-        if subplotspec.is_first_col():
-            ax.set_ylabel('Susceptibility\nof lost-immunity\nstate')
-            ax.annotate(f'SAT{SAT}',
-                        (-0.65, 0.5), xycoords='axes fraction',
-                        rotation=90, verticalalignment='center')
-    for ax in fig.axes:
-        ax.axhline(sigma_baseline,
-                   color='black', linestyle='dotted', alpha=0.7)
-        for sp in ('top', 'right'):
-            ax.spines[sp].set_visible(False)
-    fig.tight_layout()
-    fig.savefig('susceptibility.pdf')
-    fig.savefig('susceptibility.png', dpi=300)
+    with seaborn.axes_style('whitegrid'), pyplot.rc_context(rc=rc):
+        fig, axes = pyplot.subplots(1 + 1, 3, sharex='col', sharey='row',
+                                    gridspec_kw=dict(height_ratios=(3, 1)))
+        extinction_time = numpy.linspace(0, extinction_time_max, 301)
+        for (i, (SAT, group_SAT)) in enumerate(df.groupby('SAT')):
+            ax = axes[0, i]
+            density = numpy.zeros((len(extinction_time), len(sigmas)))
+            proportion_observed = numpy.zeros_like(sigmas, dtype=float)
+            for (k, (s, g)) in enumerate(group_SAT.groupby(
+                    'lost_immunity_susceptibility')):
+                ser = g.time[g.observed]
+                nruns = len(g)
+                proportion_observed[k] = len(ser) / nruns
+                if proportion_observed[k] > 0:
+                    kde = statsmodels.nonparametric.api.KDEUnivariate(ser)
+                    kde.fit(cut=0)
+                    density[:, k] = kde.evaluate(extinction_time)
+                else:
+                    density[:, k] = 0
+            cmap = _get_cmap(plot_common.SAT_colors[SAT])
+            # Use raw `density` for color,
+            # but plot `density * proportion_observed`.
+            norm = colors.Normalize(vmin=0, vmax=numpy.max(density))
+            ax.imshow(density * proportion_observed,
+                      cmap=cmap, norm=norm, interpolation='bilinear',
+                      extent=(min(sigmas), max(sigmas),
+                              min(extinction_time), max(extinction_time)),
+                      aspect='auto', origin='lower', clip_on=False)
+            ax.autoscale(tight=True)
+            ax.set_title(f'SAT{SAT}')
+            if ax.get_subplotspec().is_first_col():
+                ax.set_ylabel(f'extinction {plot_common.t_name}')
+                ax.yaxis.set_major_locator(
+                    ticker.MultipleLocator(max(extinction_time) / 5))
+            ax_po = axes[-1, i]
+            ax_po.plot(sigmas, 1 - proportion_observed,
+                       color=plot_common.SAT_colors[SAT],
+                       clip_on=False, zorder=3)
+            ax_po.autoscale(tight=True)
+            ax_po.set_xlabel('Susceptibility\nof lost-immunity\nstate')
+            if ax_po.get_subplotspec().is_first_col():
+                ax_po.set_ylabel('persisting 10 y')
+                ax_po.set_ylim(0, 1)
+                ax_po.yaxis.set_major_formatter(
+                    ticker.PercentFormatter(xmax=1))
+        for ax in fig.axes:
+            ax.axvline(sigma_baseline,
+                       color='black', linestyle='dotted', alpha=0.7)
+            for sp in ('top', 'right'):
+                ax.spines[sp].set_visible(False)
+        fig.tight_layout()
+        fig.savefig('susceptibility.pdf')
+        fig.savefig('susceptibility.png', dpi=300)
 
 
 if __name__ == '__main__':
