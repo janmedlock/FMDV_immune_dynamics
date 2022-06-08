@@ -66,7 +66,7 @@ def plot_extinction_time(ax, extinction_time, SAT):
     e = et.time.copy()
     e[~et.observed] = numpy.nan
     color = plot_common.SAT_colors[SAT]
-    plot_common.kdeplot(e.dropna(), ax=ax, color=color, shade=True,
+    plot_common.kdeplot(e, ax=ax, color=color, shade=True,
                         clip_on=False, zorder=4)
     not_extinct = len(e[e.isnull()]) / len(e)
     if not_extinct > 0:

@@ -15,13 +15,11 @@ def load_extinction_times():
 
 
 def plot_median(df, CI=0.5):
-    row = dict(enumerate(range(3), 1))
     levels = [CI / 2, 1 - CI / 2]
     with seaborn.axes_style('darkgrid'):
-        fig, axes = pyplot.subplots(len(row), 1, sharex=True)
-        for (SAT, group) in df.groupby('SAT'):
-            i = row[SAT]
-            ax = axes[i]
+        fig, axes = pyplot.subplots(3, 1, sharex=True)
+        idx_mid = len(axes) // 2
+        for ((SAT, group), ax) in zip(df.groupby('SAT'), axes):
             by = 'lost_immunity_susceptibility'
             times = group.groupby(by).time
             median = times.median()
@@ -33,8 +31,10 @@ def plot_median(df, CI=0.5):
                              alpha=0.5)
             ax.set_xlim(left=0)
             ax.set_xlabel(f'extinction {plot_common.t_name}')
-            if ax.is_first_col():
-                if i == 1:
+            subplotspec = ax.get_subplotspec()
+            if subplotspec.is_first_col():
+                (_, _, idx, _) = subplotspec.get_geometry()
+                if idx == idx_mid:
                     ylabel = 'Susceptibility\nof lost-immunity\nstate'
                 else:
                     ylabel = '\n\n'
@@ -44,11 +44,8 @@ def plot_median(df, CI=0.5):
 
 
 def plot_survival(df):
-    row = dict(enumerate(range(3), 1))
-    fig, axes = pyplot.subplots(len(row), 1, sharex=True)
-    for (SAT, group) in df.groupby('SAT'):
-        i = row[SAT]
-        ax = axes[i]
+    fig, axes = pyplot.subplots(3, 1, sharex=True)
+    for ((SAT, group), ax) in zip(df.groupby('SAT'), axes):
         for (s, g) in group.groupby('lost_immunity_susceptibility'):
             survival = stats.get_survival(g, 'time', 'observed')
             ax.plot(survival.index, survival,
@@ -57,30 +54,21 @@ def plot_survival(df):
 
 
 def plot_kde(df):
-    row = dict(enumerate(range(3), 1))
     with seaborn.axes_style('darkgrid'):
-        fig, axes = pyplot.subplots(len(row), 1)
-        for (SAT, group) in df.groupby('SAT'):
-            i = row[SAT]
-            ax = axes[i]
+        fig, axes = pyplot.subplots(3, 1, sharex='col')
+        for ((SAT, group), ax) in zip(df.groupby('SAT'), axes):
+            subplotspec = ax.get_subplotspec()
             for (s, g) in group.groupby('lost_immunity_susceptibility'):
-                ser = g.time[g.observed]
-                proportion_observed = len(ser) / len(g)
-                if proportion_observed > 0:
-                    kde = statsmodels.nonparametric.api.KDEUnivariate(ser)
-                    kde.fit(cut=0)
-                    x = kde.support
-                    y = proportion_observed * kde.density
-                else:
-                    x, y = [], []
-                label = s if i == 0 else ''
-                ax.plot(x, y, label=label, alpha=0.7)
+                e = g.time.copy()
+                e[~g.observed] = numpy.nan
+                label = f'{s:g}' if subplotspec.is_first_row() else ''
+                plot_common.kdeplot(e, label=label, ax=ax,
+                                    shade=False, clip_on=False)
+            if subplotspec.is_last_row():
+                ax.set_xlabel(f'extinction {plot_common.t_name}')
+                ax.set_xlim(left=0)
             ax.yaxis.set_major_locator(ticker.NullLocator())
-            ax.set_xlim(left=0)
-            ax.set_xlabel(f'extinction {plot_common.t_name}')
-            if ax.is_first_col():
-                ylabel = 'density' if i == 1 else ''
-                ax.set_ylabel(f'SAT{SAT}\n{ylabel}')
+            ax.set_ylabel(f'SAT{SAT}\ndensity')
         leg = fig.legend(loc='center left', bbox_to_anchor=(0.8, 0.5),
                          title='Susceptibility\nof lost-immunity\nstate')
         fig.tight_layout(rect=(0, 0, 0.82, 1))

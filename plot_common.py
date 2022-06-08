@@ -143,14 +143,16 @@ def kdeplot(endog, ax=None, shade=False, cut=0, **kwds):
         kde.fit(cut=cut)
         x = numpy.linspace(kde.support.min(), kde.support.max(), 301)
         y = kde.evaluate(x)
-        line, = ax.plot(x, y, **kwds)
-        if shade:
-            shade_kws = dict(
-                facecolor=kwds.get('facecolor', line.get_color()),
-                alpha=kwds.get('alpha', 0.25),
-                clip_on=kwds.get('clip_on', True),
-                zorder=kwds.get('zorder', 1))
-            ax.fill_between(x, 0, y, **shade_kws)
+    else:
+        x, y = [], []
+    line, = ax.plot(x, y, **kwds)
+    if shade:
+        shade_kws = dict(
+            facecolor=kwds.get('facecolor', line.get_color()),
+            alpha=kwds.get('alpha', 0.25),
+            clip_on=kwds.get('clip_on', True),
+            zorder=kwds.get('zorder', 1))
+        ax.fill_between(x, 0, y, **shade_kws)
     return ax
 
 
