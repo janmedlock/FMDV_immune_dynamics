@@ -65,8 +65,7 @@ def run_subsamples_sequential(SAT, tmax, n_subsamples, seed, index=None):
 if __name__ == '__main__':
     tmax = 10
     SAT = 2
-    # sample_number = 1
-    # run_sample(SAT, tmax, sample_number)
-    # One of these raised an error.
-    index = [309, 326] + list(range(330, 348 + 1))
-    run_samples_sequential(SAT, tmax, index=index)
+    sample_number = 309
+    run_sample(SAT, tmax, sample_number)
+    # index = [309, 326] + list(range(330, 348 + 1))
+    # run_samples_sequential(SAT, tmax, index=index)
