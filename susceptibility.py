@@ -108,7 +108,7 @@ def plot_kde_2d(df):
                .unique() \
                .sort_values()
     sigma_baseline = 1.
-    with seaborn.axes_style('whitegrid'), pyplot.rc_context(rc=rc):
+    with pyplot.rc_context(rc=rc):
         fig, axes = pyplot.subplots(1 + 1, 3, sharex='col', sharey='row',
                                     gridspec_kw=dict(height_ratios=(3, 1)))
         extinction_time = numpy.linspace(0, extinction_time_max, 301)
