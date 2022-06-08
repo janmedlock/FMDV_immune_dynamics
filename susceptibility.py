@@ -156,6 +156,7 @@ def plot_kde_2d(df):
             ax.spines[sp].set_visible(False)
     fig.tight_layout()
     fig.savefig('susceptibility.pdf')
+    fig.savefig('susceptibility.png', dpi=300)
 
 
 if __name__ == '__main__':
