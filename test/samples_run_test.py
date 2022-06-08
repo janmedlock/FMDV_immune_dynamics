@@ -5,7 +5,7 @@ from context import samples_run
 
 
 def get_path_and_logging_prefix(SAT):
-    path = samples_run.path_samples / str(SAT)
+    path = samples_run.samples_path / str(SAT)
     logging_prefix = f'{SAT=}'
     return (path, logging_prefix)
 
