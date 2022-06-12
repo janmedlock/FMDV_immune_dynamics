@@ -108,7 +108,7 @@ def combine(unlink=True):
 
 if __name__ == '__main__':
     tmax = 10
-    n_jobs = -1
+    n_jobs = 20
 
     run_samples(tmax, n_jobs=n_jobs)
-    combine(unlink=True)
+    # combine(unlink=False)
