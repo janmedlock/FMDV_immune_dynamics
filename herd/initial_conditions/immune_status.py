@@ -359,14 +359,11 @@ class Solver:
         RVs_hazard = {
             'mortality': RVs_survival['mortality'],
             'maternal_immunity_waning': maternal_immunity_waning.gen(params),
+            'antibody_gain': antibody_gain.gen(params),
             'antibody_loss': antibody_loss.gen(params),
         }
         hazard = {k: RV.hazard(self.ages_mid)
                   for (k, RV) in RVs_hazard.items()}
-        # Hazards that are constant in age.
-        antibody_gain_RV = antibody_gain.gen(params)
-        hazard['antibody_gain'] = antibody_gain_RV.hazard(
-            antibody_gain_RV.time_min)
         hazard['infection'] = 1  # Dummy value. Set on calls to `solve_step()`.
         # Other parameters.
         self.params.hazard = self.rec_fromkwds(**hazard)
@@ -519,10 +516,7 @@ class CacheParameters(parameters.Parameters):
         # floats, so explicitly convert them so the cache doesn't
         # get duplicated keys for the float and int representation
         # of the same number, e.g. `float(0)` and `int(0)`.
-        attrs = {'antibody_gain_hazard_alpha',
-                 'antibody_gain_hazard_beta',
-                 'antibody_gain_hazard_time_max',
-                 'antibody_gain_hazard_time_min',
+        attrs = {'antibody_gain_hazard',
                  'antibody_loss_hazard',
                  'birth_peak_time_of_year',
                  'birth_seasonal_coefficient_of_variation',

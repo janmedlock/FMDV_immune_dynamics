@@ -18,14 +18,8 @@ class Parameters:
             # For the rate, not duration, leaving R to P.
             # The first day is 2014 March 05.
             date_min = Timestamp(year=2014, month=3, day=5)
-            # Convert to years, with January 1 at 0,
-            # like `start_time` below.
-            time_min = (date_min.dayofyear - 1) / 365
-            # 1247 days after `time_min`, converted to years.
-            time_max = time_min + 1247 / 365
-            self.antibody_gain_hazard_time_min = time_min
-            self.antibody_gain_hazard_time_max = time_max
-            self.start_time = self.antibody_gain_hazard_time_min
+            # Convert to years, with January 1 at 0.
+            self.start_time = (date_min.dayofyear - 1) / 365
             self.lost_immunity_susceptibility = 1
             if self.SAT == 1:
                 self.progression_shape = 1.2
@@ -42,8 +36,8 @@ class Parameters:
                 # Rate, not duration, leaving R to L.
                 self.antibody_loss_hazard = 0.0013358 * 365
                 # Rate, not duration, leaving L to R.
-                self.antibody_gain_hazard_alpha = 0.011411 * 365
-                self.antibody_gain_hazard_beta = 0.0014165 * 365
+                # TODO: Update value.
+                self.antibody_gain_hazard = 0.011411 * 365
             elif self.SAT == 2:
                 self.progression_shape = 1.6
                 self.progression_mean = 1.3 / 365
@@ -59,8 +53,8 @@ class Parameters:
                 # Rate, not duration, leaving R to L.
                 self.antibody_loss_hazard = 0.0031631 * 365
                 # Rate, not duration, leaving L to R.
-                self.antibody_gain_hazard_alpha = 0.0044599 * 365
-                self.antibody_gain_hazard_beta = 0.0054681 * 365
+                # TODO: Update value.
+                self.antibody_gain_hazard = 0.0044599 * 365
             elif self.SAT == 3:
                 self.progression_shape = 1.6
                 self.progression_mean = 2.8 / 365
@@ -76,8 +70,8 @@ class Parameters:
                 # Rate, not duration, leaving R to L.
                 self.antibody_loss_hazard = 0.0053853 * 365
                 # Rate, not duration, leaving L to R.
-                self.antibody_gain_hazard_alpha = 0.0058625 * 365
-                self.antibody_gain_hazard_beta = 0.0024883 * 365
+                # TODO: Update value.
+                self.antibody_gain_hazard = 0.0058625 * 365
             else:
                 raise ValueError(f'Unknown {SAT=}!')
 
