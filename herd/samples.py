@@ -97,8 +97,7 @@ def _load_antibody_hazards():
     dfr = pandas.read_csv(_paths['antibody_hazards'],
                           header=None)
     dfr.index.name = _SAMPLES_NAME
-    params = pandas.Index(['antibody_gain_hazard_alpha',
-                           'antibody_gain_hazard_beta',
+    params = pandas.Index(['antibody_gain_hazard',
                            'antibody_loss_hazard'],
                           name=_PARAMETERS_NAME)
     dfr.columns = pandas.MultiIndex.from_product([_SATs, params])
