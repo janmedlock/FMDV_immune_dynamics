@@ -116,7 +116,7 @@ _probability_chronic_beta_params = pandas.DataFrame(
 
 def _load_probability_chronic(size, seed=1):
     # Use a seed for reproducibility.
-    rng = numpy.random.RandomState(seed=seed)
+    rng = numpy.random.default_rng(seed=seed)
     dfr = pandas.DataFrame(numpy.column_stack(
         [rng.beta(*_probability_chronic_beta_params[SAT], size=size)
          for SAT in _SATs]))
