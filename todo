@@ -6,4 +6,4 @@
 
 * Need values of antibody-gain hazards and MCMC samples.
 
-* Remove all .h5 files, samples_run/, and figures.
+* Remove all .h5 files, samples_run/, figures, _cache dirs.
