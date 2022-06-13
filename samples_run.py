@@ -4,7 +4,6 @@ estimates, run 1 simulation. This produces a file called
 `samples_run.h5`.'''
 
 
-import copy
 import itertools
 import pathlib
 
@@ -30,10 +29,8 @@ _t_name = 'time (y)'
 
 def run_one(parameters, sample, tmax, sample_number, *args, **kwargs):
     '''Run one simulation.'''
-    p = copy.copy(parameters)
-    for (k, v) in sample.items():
-        setattr(p, k, v)
-    return run.run_one(p, tmax, sample_number, *args, **kwargs)
+    params = parameters.merge(**sample)
+    return run.run_one(params, tmax, sample_number, *args, **kwargs)
 
 
 def run_one_and_save(parameters, sample, tmax, sample_number, path, *args,

@@ -1,5 +1,6 @@
 #!/usr/bin/python3
 
+import itertools
 import pathlib
 
 from joblib import delayed, Parallel
@@ -29,6 +30,12 @@ def append_index_levels(dfr, **levels):
 
 def prepend_index_levels(dfr, **levels):
     insert_index_levels(dfr, 0, **levels)
+
+
+def seed_cache(SAT, **kwds):
+    '''Populate the cache.'''
+    parameters = herd.Parameters(SAT=SAT, **kwds)
+    herd.RandomVariables(parameters)
 
 
 def run_one(parameters, tmax, run_number, *args, **kwargs):
@@ -90,6 +97,7 @@ if __name__ == '__main__':
 
     with h5.HDFStore(store_path) as store:
         for SAT in SATs:
+            seed_cache(SAT)
             run(SAT, tmax, nruns, store,
                 chunksize=chunksize, n_jobs=n_jobs)
         store.repack()

@@ -1,7 +1,5 @@
 #!/usr/bin/python3
 
-import copy
-
 from context import herd
 import herd.chronic_recovery
 import herd.initial_conditions.immune_status
@@ -18,10 +16,8 @@ RVS = {
 
 
 def test_sample(parameters, sample, sat, idx):
-    params = copy.copy(parameters)
-    for (key, val) in sample.items():
-        setattr(params, key, val)
     print(f'{sat=}, {idx=}')
+    params = parameters.merge(**sample)
     solver = herd.initial_conditions.immune_status.Solver(params)
     # This was failing because some pdf(0) = infinity, i.e. gamma with
     # shape < 1, but it should work for all now.

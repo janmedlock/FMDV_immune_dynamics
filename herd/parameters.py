@@ -1,8 +1,10 @@
+import copy
+
 from pandas import Timestamp
 
 
 class Parameters:
-    def __init__(self, SAT=1, _set_defaults=True):
+    def __init__(self, SAT=1, _set_defaults=True, **kwds):
         'Initialize with default values.'
         self.SAT = SAT
         if _set_defaults:
@@ -80,6 +82,11 @@ class Parameters:
                 self.antibody_gain_hazard_beta = 0.0024883 * 365
             else:
                 raise ValueError(f'Unknown {SAT=}!')
+        self.set(**kwds)
+
+    def set(self, **kwds):
+        for (key, val) in kwds.items():
+            setattr(self, key, val)
 
     def __repr__(self):
         'Make instances print nicely.'
@@ -113,3 +120,11 @@ class Parameters:
                 v = int(v)
             setattr(p, k, v)
         return p
+
+    def copy(self):
+        return copy.copy(self)
+
+    def merge(self, **kwds):
+        new = self.copy()
+        new.set(**kwds)
+        return new
