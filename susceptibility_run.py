@@ -26,6 +26,13 @@ def _copy_run(SAT, susceptibility, nruns, hdfstore_out):
             hdfstore_out.put(chunk)
 
 
+def seed_cache(SAT, susceptibility):
+    run.seed_cache(
+        SAT,
+        lost_immunity_susceptibility=susceptibility
+    )
+
+
 def run_susceptibility(SAT, susceptibility, tmax, nruns, hdfstore, *args,
                        chunksize=-1, n_jobs=-1, **kwargs):
     if susceptibility == 1:
@@ -59,6 +66,7 @@ if __name__ == '__main__':
     with h5.HDFStore(store_path) as store:
         for SAT in run.SATs:
             for susceptibility in susceptibilities:
+                seed_cache(SAT, susceptibility)
                 run_susceptibility(SAT, susceptibility, tmax, nruns, store,
                                    chunksize=chunksize, n_jobs=n_jobs)
         store.repack()
