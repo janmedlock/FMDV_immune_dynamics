@@ -4,6 +4,8 @@
    in herd.initial_conditions.immune_status.Solver.solve()
    change as we vary the value of pdf[0]?
 
+* Should we use a subsample for samples_run.py instead of all 20,000?
+
 * Need values of antibody-gain hazards and MCMC samples.
 
 * Remove all .h5 files, samples_run/, figures, _cache dirs.
