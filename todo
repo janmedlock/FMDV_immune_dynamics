@@ -3,3 +3,5 @@
 ** Should we see how (hazard_infection, newborn_proportion_immune)
    in herd.initial_conditions.immune_status.Solver.solve()
    change as we vary the value of pdf[0]?
+
+* Should we use a subsample for samples_run.py instead of all 20,000?
