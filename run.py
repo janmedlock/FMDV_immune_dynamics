@@ -1,6 +1,5 @@
 #!/usr/bin/python3
 
-import itertools
 import pathlib
 
 from joblib import delayed, Parallel
@@ -97,7 +96,6 @@ if __name__ == '__main__':
 
     with h5.HDFStore(store_path) as store:
         for SAT in SATs:
-            seed_cache(SAT)
             run(SAT, tmax, nruns, store,
                 chunksize=chunksize, n_jobs=n_jobs)
         store.repack()
