@@ -36,10 +36,9 @@ class Parameters:
                 self.chronic_recovery_shape = 3.2
                 self.chronic_transmission_rate = 0.028 * 365
                 # Rate, not duration, leaving R to L.
-                self.antibody_loss_hazard = 0.0013358 * 365
+                self.antibody_loss_hazard = 0.001440770075415 * 365
                 # Rate, not duration, leaving L to R.
-                # TODO: Update value.
-                self.antibody_gain_hazard = 0.011411 * 365
+                self.antibody_gain_hazard = 0.007350989181831 * 365
             elif self.SAT == 2:
                 self.progression_shape = 1.6
                 self.progression_mean = 1.3 / 365
@@ -53,10 +52,9 @@ class Parameters:
                 self.chronic_recovery_shape = 3.2
                 self.chronic_transmission_rate = 0.003 * 365
                 # Rate, not duration, leaving R to L.
-                self.antibody_loss_hazard = 0.0031631 * 365
+                self.antibody_loss_hazard = 0.003170648923222 * 365
                 # Rate, not duration, leaving L to R.
-                # TODO: Update value.
-                self.antibody_gain_hazard = 0.0044599 * 365
+                self.antibody_gain_hazard = 0.005030729273316 * 365
             elif self.SAT == 3:
                 self.progression_shape = 1.6
                 self.progression_mean = 2.8 / 365
@@ -70,10 +68,9 @@ class Parameters:
                 self.chronic_recovery_shape = 3.2
                 self.chronic_transmission_rate = 0.012 * 365
                 # Rate, not duration, leaving R to L.
-                self.antibody_loss_hazard = 0.0053853 * 365
+                self.antibody_loss_hazard = 0.005460735526547 * 365
                 # Rate, not duration, leaving L to R.
-                # TODO: Update value.
-                self.antibody_gain_hazard = 0.0058625 * 365
+                self.antibody_gain_hazard = 0.004176835549525 * 365
             else:
                 raise ValueError(f'Unknown {SAT=}!')
         self.set(**kwds)
