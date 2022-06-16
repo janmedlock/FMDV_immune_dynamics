@@ -232,7 +232,6 @@ class AntibodyGain(Event):
 
     def sample_time(self):
         return (self.buffalo.herd.time
-                + self.buffalo.herd.rvs.antibody_gain.rvs(
-                    self.buffalo.herd.time))
+                + self.buffalo.herd.rvs.antibody_gain.rvs())
 
 events_by_immune_status['lost immunity'].add(AntibodyGain)
