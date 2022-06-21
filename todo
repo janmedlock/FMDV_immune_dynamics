@@ -4,9 +4,5 @@
    in herd.initial_conditions.immune_status.Solver.solve()
    change as we vary the value of pdf[0]?
 
-* Should we use a subsample for samples_run.py instead of all 20,000?
-
 * Compare force of infection at initial conditions between this model
   and the model in the Science paper
-
-* Need MCMC samples.
