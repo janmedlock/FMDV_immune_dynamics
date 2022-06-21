@@ -113,9 +113,7 @@ _probability_chronic_beta_params = pandas.DataFrame(
     index=['a', 'b'], columns=_SATs, copy=False)
 
 
-def _load_probability_chronic(size, seed=1):
-    # Use a seed for reproducibility.
-    rng = numpy.random.default_rng(seed=seed)
+def _load_probability_chronic(size, rng):
     dfr = pandas.DataFrame(numpy.column_stack(
         [rng.beta(*_probability_chronic_beta_params[SAT], size=size)
          for SAT in _SATs]))
@@ -126,17 +124,27 @@ def _load_probability_chronic(size, seed=1):
     return dfr
 
 
-def load(SAT=None):
+def _shuffle(dfr, rng):
+    return dfr.sample(frac=1, ignore_index=True,
+                      random_state=rng.bit_generator)
+
+
+def load(SAT=None, shuffle=True, seed=1):
     '''Load the parameter samples.'''
-    dfr = pandas.concat([_load_acute_transmission(),
-                         _load_maternal_immunity_duration(),
-                         _load_chronic_transmission_rate(),
-                         _load_chronic_recovery(),
-                         _load_antibody_hazards()],
+    rng = numpy.random.default_rng(seed=seed)
+    blocks = [_load_acute_transmission(),
+              _load_maternal_immunity_duration(),
+              _load_chronic_transmission_rate(),
+              _load_chronic_recovery(),
+              _load_antibody_hazards()]
+    if shuffle:
+        blocks = [_shuffle(block, rng)
+                  for block in blocks]
+    dfr = pandas.concat(blocks,
                         axis='columns')
     size = len(dfr)
     dfr = pandas.concat([dfr,
-                         _load_probability_chronic(size)],
+                         _load_probability_chronic(size, rng)],
                         axis='columns')
     dfr.sort_index(axis='columns', inplace=True)
     if SAT is None:

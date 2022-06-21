@@ -4,7 +4,6 @@ estimates, run 1 simulation. This produces a file called
 `samples_run.h5`.'''
 
 
-import itertools
 import pathlib
 
 from joblib import delayed, Parallel
@@ -20,11 +19,15 @@ import run
 store_path = pathlib.Path(__file__).with_suffix('.h5')
 samples_path = store_path.with_suffix('')
 
-# Order the more interesting ones first.
-SATs = (3, 2, 1)
-assert set(SATs) == set(run.SATs)
-
 _t_name = 'time (y)'
+
+
+def _SAT_path(SAT):
+    return samples_path.joinpath(str(SAT))
+
+
+def _sample_path(SAT, sample_number):
+    return _SAT_path(SAT).joinpath(f'{sample_number}.npy')
 
 
 def run_one(parameters, sample, tmax, sample_number, *args, **kwargs):
@@ -35,35 +38,33 @@ def run_one(parameters, sample, tmax, sample_number, *args, **kwargs):
 
 def run_one_and_save(parameters, sample, tmax, sample_number, path, *args,
                      touch=True, **kwargs):
-    '''Run one simulation.'''
-    sample_path = path.joinpath(f'{sample_number}.npy')
-    if not sample_path.exists():
+    '''Run one simulation and save the output.'''
+    if not path.exists():
         if touch:
-            sample_path.touch(exist_ok=False)
+            path.touch(exist_ok=False)
         dfr = run_one(parameters, sample, tmax, sample_number,
                       *args, **kwargs)
         # Save the data for this sample.
-        numpy.save(sample_path, dfr.to_records())
-
-
-def _get_jobs_SAT(SAT, samples, tmax, path, *args, **kwargs):
-    '''Get jobs to run in parallel for one SAT.'''
-    SAT_path = path.joinpath(str(SAT))
-    SAT_path.mkdir(exist_ok=True)
-    p = herd.Parameters(SAT=SAT)
-    logging_prefix = f'{SAT=}'
-    return (delayed(run_one_and_save)(p, s, tmax, n, SAT_path, *args,
-                                      logging_prefix=logging_prefix, **kwargs)
-            for (n, s) in samples.iterrows())
+        numpy.save(path, dfr.to_records())
 
 
 def run_samples(tmax, *args,
                 n_jobs=-1, **kwargs):
     samples = herd.samples.load()
+    parameters = {SAT: herd.Parameters(SAT=SAT)
+                  for SAT in run.SATs}
     samples_path.mkdir(exist_ok=True)
-    jobs = itertools.chain.from_iterable(
-        _get_jobs_SAT(SAT, samples[SAT], tmax, samples_path, *args, **kwargs)
-        for SAT in SATs)
+    for SAT in run.SATs:
+        _SAT_path(SAT).mkdir(exist_ok=True)
+    # For each sample, iterate over the SATs,
+    # i.e. SAT changes fastest.
+    jobs = (delayed(run_one_and_save)(parameters[SAT], sample[SAT], tmax,
+                                      sample_number,
+                                      _sample_path(SAT, sample_number),
+                                      *args, logging_prefix=f'{SAT=}',
+                                      **kwargs)
+            for (sample_number, sample) in samples.iterrows()
+            for SAT in run.SATs)
     Parallel(n_jobs=n_jobs)(jobs)
 
 
