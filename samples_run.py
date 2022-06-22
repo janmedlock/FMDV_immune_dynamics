@@ -22,12 +22,12 @@ samples_path = store_path.with_suffix('')
 _t_name = 'time (y)'
 
 
-def _SAT_path(SAT):
+def SAT_path(SAT):
     return samples_path.joinpath(str(SAT))
 
 
-def _sample_path(SAT, sample_number):
-    return _SAT_path(SAT).joinpath(f'{sample_number}.npy')
+def sample_path(SAT, sample_number):
+    return SAT_path(SAT).joinpath(f'{sample_number}.npy')
 
 
 def run_one(parameters, sample, tmax, sample_number, *args, **kwargs):
@@ -55,12 +55,12 @@ def run_samples(tmax, *args,
                   for SAT in run.SATs}
     samples_path.mkdir(exist_ok=True)
     for SAT in run.SATs:
-        _SAT_path(SAT).mkdir(exist_ok=True)
+        SAT_path(SAT).mkdir(exist_ok=True)
     # For each sample, iterate over the SATs,
     # i.e. SAT changes fastest.
     jobs = (delayed(run_one_and_save)(parameters[SAT], sample[SAT], tmax,
                                       sample_number,
-                                      _sample_path(SAT, sample_number),
+                                      sample_path(SAT, sample_number),
                                       *args, logging_prefix=f'{SAT=}',
                                       **kwargs)
             for (sample_number, sample) in samples.iterrows()
@@ -80,14 +80,15 @@ def combine(unlink=True):
     with h5.HDFStore(store_path, mode='a') as store:
         # (SAT, sample) that are already in `store`.
         store_idx = store.get_index().droplevel(_t_name).unique()
-        SAT_paths = sorted(samples_path.iterdir(), key=_get_SAT)
-        for SAT_path in SAT_paths:
-            SAT = _get_SAT(SAT_path)
-            sample_paths = sorted(SAT_path.iterdir(), key=_get_sample_number)
-            for sample_path in sample_paths:
-                sample = _get_sample_number(sample_path)
+        paths_SAT = sorted(samples_path.iterdir(), key=_get_SAT)
+        for path_SAT in paths_SAT:
+            SAT = _get_SAT(path_SAT)
+            paths_sample = sorted(path_SAT.iterdir(), key=_get_sample_number)
+            for path_sample in paths_sample:
+                sample = _get_sample_number(path_sample)
                 if (SAT, sample) not in store_idx:
-                    recarray = numpy.load(sample_path)
+                    assert path_sample.stat().st_size > 0
+                    recarray = numpy.load(path_sample)
                     dfr = pandas.DataFrame.from_records(recarray,
                                                         index=_t_name)
                     run.prepend_index_levels(dfr, SAT=SAT, sample=sample)
@@ -97,9 +98,9 @@ def combine(unlink=True):
                           + '.')
                     store.put(dfr)
                 if unlink:
-                    sample_path.unlink()
+                    path_sample.unlink()
             if unlink:
-                SAT_path.rmdir()
+                path_SAT.rmdir()
         if unlink:
             samples_path.rmdir()
 
