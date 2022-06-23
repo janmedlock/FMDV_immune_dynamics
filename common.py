@@ -10,7 +10,6 @@ import statsmodels.nonparametric.api
 
 import h5
 from herd.utility import arange
-import run
 
 
 # Science
@@ -23,9 +22,27 @@ rc['font.sans-serif'] = 'DejaVu Sans'
 # Separate panels in multi-part figures should be labelled with 8
 # pt bold, upright (not italic) a, b, c...
 
+SATs = (1, 2, 3)
 
 t_name = 'time (y)'
+
 cols_infected = ['exposed', 'infectious', 'chronic']
+
+
+def insert_index_levels(dfr, i, **levels):
+    dfr.index = pandas.MultiIndex.from_arrays(
+        [dfr.index.get_level_values(n) for n in dfr.index.names[:i]]
+        + [pandas.Index([v], name=k).repeat(len(dfr))
+           for (k, v) in levels.items()]
+        + [dfr.index.get_level_values(n) for n in dfr.index.names[i:]])
+
+
+def append_index_levels(dfr, **levels):
+    insert_index_levels(dfr, dfr.index.nlevels, **levels)
+
+
+def prepend_index_levels(dfr, **levels):
+    insert_index_levels(dfr, 0, **levels)
 
 
 def _get_infected(dfr):
@@ -55,7 +72,7 @@ def build_downsampled(path_in, path_out,
         for (ix, group) in store_in.groupby(by):
             downsampled = _build_downsampled_group(group, t, t_step, by)
             levels = dict(zip(by, ix))
-            run.prepend_index_levels(downsampled, **levels)
+            prepend_index_levels(downsampled, **levels)
             assert numpy.all(downsampled.notnull().all())
             store_out.put(downsampled, index=False)
         store_out.create_table_index()

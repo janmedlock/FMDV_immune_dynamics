@@ -1,4 +1,5 @@
 #!/usr/bin/python3
+
 import itertools
 import time
 
@@ -6,8 +7,8 @@ from matplotlib import pyplot
 import pandas
 import seaborn
 
+from context import baseline
 from context import herd
-from context import run
 
 
 def get_mean(data):
@@ -57,7 +58,7 @@ if __name__ == '__main__':
 
     p = herd.Parameters(SAT=SAT)
     t0 = time.time()
-    data = run.run_many(p, tmax, nruns, n_jobs=n_jobs)
+    data = baseline.run_many(p, tmax, nruns, n_jobs=n_jobs)
     t1 = time.time()
     print('Run time: {} seconds.'.format(t1 - t0))
 

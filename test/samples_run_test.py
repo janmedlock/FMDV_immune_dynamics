@@ -1,11 +1,11 @@
 #!/usr/bin/python3
 
 from context import herd
-from context import samples_run
+from context import samples
 
 
 def needs_running(SAT, sample_number):
-    path = samples_run.sample_path(SAT, sample_number)
+    path = samples.sample_path(SAT, sample_number)
     return not path.exists()
 
 
@@ -18,12 +18,12 @@ def load_parameters_and_samples(SAT, index=None):
 
 
 def _run_sample(SAT, parameters, sample, sample_number, tmax):
-    path = samples_run.sample_path(SAT, sample_number)
+    path = samples.sample_path(SAT, sample_number)
     logging_prefix = f'{SAT=}'
     print(f'Running {logging_prefix} sample {sample_number}.')
-    samples_run.run_one_and_save(parameters, sample, tmax,
-                                 sample_number, path,
-                                 logging_prefix=logging_prefix)
+    samples.run_one_and_save(parameters, sample, tmax,
+                             sample_number, path,
+                             logging_prefix=logging_prefix)
 
 
 def run_sample(SAT, sample_number, tmax):

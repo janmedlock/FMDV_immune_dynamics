@@ -5,8 +5,9 @@ import sys
 
 _path = pathlib.Path(__file__).parents[1]
 sys.path.append(str(_path))
+import baseline
+import common
 import h5
 import herd
-import run
-import samples_run
+import samples
 sys.path.pop()

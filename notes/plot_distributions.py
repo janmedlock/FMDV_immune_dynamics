@@ -1,4 +1,5 @@
 #!/usr/bin/python3
+
 import numpy
 from matplotlib import lines, pyplot, ticker
 import seaborn
@@ -6,14 +7,14 @@ import seaborn
 import sys
 sys.path.append('..')
 from herd import Parameters, RandomVariables
-import plot_common
+import common
 sys.path.pop()
 
 
 # The of order these determines the order of the legend.
 SATs = ('all', 1, 2, 3)
 
-colors = {SAT: 'black' if (SAT == 'all') else plot_common.SAT_colors[SAT]
+colors = {SAT: 'black' if (SAT == 'all') else common.SAT_colors[SAT]
           for SAT in SATs}
 labels = {SAT: 'All' if (SAT == 'all') else f'SAT{SAT}'
           for SAT in SATs}

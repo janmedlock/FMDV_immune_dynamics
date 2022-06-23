@@ -1,17 +1,17 @@
 #!/usr/bin/python3
 '''Build a figure comparing the runs of the SATs. This requires the
-file `run.h5`, which is built by `run.py`.'''
+file `baseline.h5`, which is built by `baseline_run.py`.'''
 
 from matplotlib import pyplot, ticker
 import numpy
 import seaborn
 
-import plot_common
-import run
+import baseline
+import common
 
 
 # Science
-rc = plot_common.rc.copy()
+rc = common.rc.copy()
 width = 183 / 25.4  # convert mm to in
 height = 3  # in
 rc['figure.figsize'] = (width, height)
@@ -23,8 +23,8 @@ rc['xtick.labelsize'] = rc['ytick.labelsize'] = 7
 
 
 def load():
-    infected = plot_common.get_infected(run.store_path)
-    extinction_time = plot_common.get_extinction_time(run.store_path)
+    infected = common.get_infected(baseline.store_path)
+    extinction_time = common.get_extinction_time(baseline.store_path)
     return (infected, extinction_time)
 
 
@@ -36,7 +36,7 @@ def plot_infected(ax, infected, SAT, draft=False):
         i = i.iloc[:, :100]
     # Start time at 0.
     t = i.index - i.index.min()
-    ax.plot(t, i, color=plot_common.SAT_colors[SAT],
+    ax.plot(t, i, color=common.SAT_colors[SAT],
             alpha=0.15, linewidth=0.5,
             drawstyle='steps-pre', clip_on=False, zorder=4)
     # `i.fillna(0)` gives mean including those that
@@ -65,9 +65,9 @@ def plot_extinction_time(ax, extinction_time, SAT):
     et = extinction_time.loc[SAT]
     e = et.time.copy()
     e[~et.observed] = numpy.nan
-    color = plot_common.SAT_colors[SAT]
-    plot_common.kdeplot(e, ax=ax, color=color, shade=True,
-                        clip_on=False, zorder=4)
+    color = common.SAT_colors[SAT]
+    common.kdeplot(e, ax=ax, color=color, shade=True,
+                   clip_on=False, zorder=4)
     not_extinct = len(e[e.isnull()]) / len(e)
     if not_extinct > 0:
         (ne_min, p_min) = (0.6, 0.3)
@@ -86,7 +86,7 @@ def plot_extinction_time(ax, extinction_time, SAT):
     ax.yaxis.set_major_locator(ticker.NullLocator())
     # Shared x-axes between SATs.
     if ax.get_subplotspec().is_last_row():
-        ax.set_xlabel(plot_common.t_name.capitalize())
+        ax.set_xlabel(common.t_name.capitalize())
     else:
         ax.xaxis.set_tick_params(which='both',
                                  labelbottom=False, labeltop=False)
@@ -129,7 +129,7 @@ def plot(infected, extinction_time, draft=False):
             plot_infected(axes[row_inf, col], infected, SAT,
                           draft=draft)
             plot_extinction_time(axes[row_ext, col], extinction_time, SAT)
-        t_max = infected.index.get_level_values(plot_common.t_name).max()
+        t_max = infected.index.get_level_values(common.t_name).max()
         # I get weird results if I set these limits individually.
         for (col, SAT) in enumerate(SATs):
             for row in (row_inf, row_ext):
@@ -145,8 +145,8 @@ def plot(infected, extinction_time, draft=False):
         # than aligning all axes.
         fig.align_xlabels(axes[-1, :])
         fig.align_ylabels(axes[[row_inf, row_ext], 0])
-        fig.savefig('run_figure.pdf')
-        fig.savefig('run_figure.png', dpi=300)
+        fig.savefig('baseline.pdf')
+        fig.savefig('baseline.png', dpi=300)
 
 
 if __name__ == '__main__':

@@ -7,6 +7,7 @@ import sys
 sys.path.append('..')
 from herd import Parameters
 from herd import birth
+sys.path.pop()
 
 
 tau = 1 / 4

@@ -1,34 +1,16 @@
-#!/usr/bin/python3
+'''Common code for the running and plotting the baseline parameter
+values.'''
 
 import pathlib
 
 from joblib import delayed, Parallel
 import pandas
 
-import h5
+import common
 import herd
 
 
-SATs = (1, 2, 3)
-
-
 store_path = pathlib.Path(__file__).with_suffix('.h5')
-
-
-def insert_index_levels(dfr, i, **levels):
-    dfr.index = pandas.MultiIndex.from_arrays(
-        [dfr.index.get_level_values(n) for n in dfr.index.names[:i]]
-        + [pandas.Index([v], name=k).repeat(len(dfr))
-           for (k, v) in levels.items()]
-        + [dfr.index.get_level_values(n) for n in dfr.index.names[i:]])
-
-
-def append_index_levels(dfr, **levels):
-    insert_index_levels(dfr, dfr.index.nlevels, **levels)
-
-
-def prepend_index_levels(dfr, **levels):
-    insert_index_levels(dfr, 0, **levels)
 
 
 def seed_cache(parameters):
@@ -84,18 +66,5 @@ def run(SAT, tmax, nruns, hdfstore, *args,
                               chunksize=chunksize, n_jobs=n_jobs,
                               logging_prefix=logging_prefix, **kwargs)
     for dfr in chunks:
-        prepend_index_levels(dfr, SAT=SAT)
+        common.prepend_index_levels(dfr, SAT=SAT)
         hdfstore.put(dfr)
-
-
-if __name__ == '__main__':
-    tmax = 10
-    nruns = 1000
-    chunksize = 100
-    n_jobs = -1
-
-    with h5.HDFStore(store_path) as store:
-        for SAT in SATs:
-            run(SAT, tmax, nruns, store,
-                chunksize=chunksize, n_jobs=n_jobs)
-        store.repack()
