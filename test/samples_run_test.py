@@ -11,10 +11,10 @@ def needs_running(SAT, sample_number):
 
 def load_parameters_and_samples(SAT, index=None):
     parameters = herd.Parameters(SAT=SAT)
-    samples = herd.samples.load(SAT=SAT)
+    samples_ = herd.samples.load(SAT=SAT)
     if index is not None:
-        samples = samples.loc[index]
-    return (parameters, samples)
+        samples_ = samples_.loc[index]
+    return (parameters, samples_)
 
 
 def _run_sample(SAT, parameters, sample, sample_number, tmax):
@@ -34,29 +34,34 @@ def run_sample(SAT, sample_number, tmax):
     _run_sample(SAT, parameters, sample, sample_number, tmax)
 
 
-def _run_samples_sequential(SAT, parameters, samples, tmax):
-    for (sample_number, sample) in samples.iterrows():
+def _run_samples_sequential(SAT, parameters, samples_, tmax):
+    for (sample_number, sample) in samples_.iterrows():
         if needs_running(SAT, sample_number):
             _run_sample(SAT, parameters, sample, sample_number, tmax)
 
 
 def run_samples_sequential(SAT, tmax, index=None):
     '''Find the `sample_number` that breaks the runs.'''
-    (parameters, samples) = load_parameters_and_samples(SAT, index=index)
-    _run_samples_sequential(SAT, parameters, samples, tmax)
+    (parameters, samples_) = load_parameters_and_samples(SAT, index=index)
+    _run_samples_sequential(SAT, parameters, samples_, tmax)
 
 
 def run_subsamples_sequential(SAT, tmax, n_subsamples, seed, index=None):
     '''Run a subsample.'''
-    (parameters, samples) = load_parameters_and_samples(SAT, index=index)
-    subsamples = samples.sample(n_subsamples, random_state=seed).sort_index()
+    (parameters, samples_) = load_parameters_and_samples(SAT, index=index)
+    subsamples = samples_.sample(n_subsamples, random_state=seed).sort_index()
     _run_samples_sequential(SAT, parameters, subsamples, tmax)
 
 
 if __name__ == '__main__':
     tmax = 10
-    SAT = 2
-    sample_number = 309
-    run_sample(SAT, sample_number, tmax)
-    # index = [309, 326] + list(range(330, 348 + 1))
-    # run_samples_sequential(SAT, tmax, index=index)
+    # SAT = 2
+    # sample_number = 309
+    # run_sample(SAT, sample_number, tmax)
+    sample_numbers_by_SAT = {
+        1: (407, 412, 425, 428, 429),
+        2: (383, 393, 395, 422, 428),
+        3: (376, 388, 398, 401, 402, 409, 414, 417, 419, 427, 428),
+    }
+    for (SAT, sample_numbers) in sample_numbers_by_SAT.items():
+        run_samples_sequential(SAT, tmax, index=sample_numbers)
