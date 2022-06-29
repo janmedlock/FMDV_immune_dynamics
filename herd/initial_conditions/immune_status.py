@@ -1,3 +1,4 @@
+import abc
 import pathlib
 import re
 
@@ -13,7 +14,7 @@ from herd import (antibody_gain, antibody_loss, birth, buffalo,
                   utility)
 
 
-class Block:
+class Block(metaclass=abc.ABCMeta):
     '''Get a block row A_X of A and block b_X of b.'''
 
     def __init__(self, params):
@@ -33,6 +34,12 @@ class Block:
         self.b_X = sparse.csr_matrix(([initial_value], ([0], [0])),
                                      shape=(len(self), 1))
 
+    @abc.abstractmethod
+    def set_b_X(self):
+        '''Make a sparse n × 1 matrix of the right-hand sides.'''
+        # This should call `self._set_b_X(initial_value)`.
+        raise NotImplementedError
+
     def _is_set_A_XY(self, attr):
         '''Check if `attr` is 'set_A_XY' for some Y.'''
         return (re.match(f'set_A_{self.X}([A-Z])$', attr) is not None)
@@ -48,7 +55,7 @@ class Block:
         '''Do nothing unless overridden.'''
 
 
-class BlockODE(Block):
+class BlockODE(Block, metaclass=abc.ABCMeta):
     '''A `Block()` for a variable governed by an ODE.'''
     def __len__(self):
         return self.params.length_ODE
@@ -89,7 +96,7 @@ class BlockODE(Block):
         return A_XY
 
 
-class BlockPDE(Block):
+class BlockPDE(Block, metaclass=abc.ABCMeta):
     '''A `Block()` for a variable governed by a PDE.'''
     def __len__(self):
         return self.params.length_PDE
@@ -446,9 +453,10 @@ class Solver:
         for block in self.blocks.values():
             block.update()
 
-    def solve_step(self, y):
+    def solve_step(self, y_curr):
+        x_curr = self.transform_inverse(y_curr)
         (self.params.hazard.infection,
-         self.params.newborn_proportion_immune) = self.transform_inverse(y)
+         self.params.newborn_proportion_immune) = x_curr
         self.update_blocks()
         A = self.get_A()
         b = self.get_b()
@@ -476,7 +484,6 @@ class Solver:
         # over age.
         P_total = P.apply(integrate.trapz,
                           args=(self.ages, ))
-        # Compute the hazard of infection from the solution.
         return (self.params.transmission_rate * P_total['infectious']
                 + self.params.chronic_transmission_rate * P_total['chronic'])
 
@@ -492,12 +499,14 @@ class Solver:
         return (births_total[list(buffalo.Buffalo.has_antibodies)].sum()
                 / births_total.sum())
 
-    def solve_objective(self, y):
+    def solve_objective(self, y_curr):
         '''This is called by `optimize.fixed_point()` to find the equilibrium
         `hazard_infection` and `newborn_proportion_immune`.'''
-        P = self.solve_step(y)
-        return self.transform((self.get_hazard_infection(P),
-                               self.get_newborn_proportion_immune(P)))
+        P = self.solve_step(y_curr)
+        x_next = (self.get_hazard_infection(P),
+                  self.get_newborn_proportion_immune(P))
+        y_next = self.transform(x_next)
+        return y_next
 
     def solve(self):
         x_guess = (100, 0.9)

@@ -1,10 +1,11 @@
 #!/usr/bin/python3
-from context import herd
+
+from context import common, herd
 from herd.initial_conditions import immune_status
 
 
 if __name__ == '__main__':
-    for SAT in (1, 2, 3):
+    for SAT in common.SATs:
         print(f'SAT{SAT}')
         parameters = herd.Parameters(SAT=SAT)
         solver = immune_status.Solver(parameters)

@@ -10,11 +10,10 @@ import matplotlib.pyplot
 import numpy
 import pandas
 
-from context import herd
+from context import common, herd
 import herd.initial_conditions.immune_status
 
 
-SATS = (1, 2, 3)
 BRANCHES = ('unconditional', 'conditional')
 
 
@@ -61,7 +60,7 @@ def get_branch():
 def build():
     branch = get_branch()
     solution = {SAT: Solution(branch, SAT)
-                for SAT in SATS}
+                for SAT in common.SATs}
     with open(f'solution_{branch}.pkl', 'wb') as fd:
         pickle.dump(solution, fd, protocol=-1)
     return solution
@@ -78,7 +77,7 @@ def load():
 def plot_solutions(solutions, which):
     get_P = operator.attrgetter(f'P_{which}')
     P = {branch: pandas.concat({SAT: get_P(solutions[branch][SAT])
-                                for SAT in SATS},
+                                for SAT in common.SATs},
                                axis='columns')
          for branch in BRANCHES}
     # Error between the solutions from the two solvers.
@@ -91,10 +90,10 @@ def plot_solutions(solutions, which):
     # colormap at 0.
     absmax = err.abs().max().max()
     norm = matplotlib.colors.Normalize(-absmax, absmax)
-    (fig, axes) = matplotlib.pyplot.subplots(len(SATS),
+    (fig, axes) = matplotlib.pyplot.subplots(len(common.SATs),
                                              sharex=True,
                                              constrained_layout=True)
-    for (ax, SAT) in zip(axes, SATS):
+    for (ax, SAT) in zip(axes, common.SATs):
         ax.pcolormesh(X, ages, err[SAT], cmap=cmap, norm=norm,
                       shading='nearest')
         ax.set_ylabel(f'SAT{SAT}')
@@ -108,7 +107,7 @@ def check_solutions(solutions):
     '''Compare the solutions from the two solver branches.'''
     # Some of the tests below only work with two branches.
     assert len(BRANCHES) == 2
-    for SAT in SATS:
+    for SAT in common.SATs:
         # Check that the solutions from the two branches agree, in
         # both unconditional and conditional form.
         for which in BRANCHES:
