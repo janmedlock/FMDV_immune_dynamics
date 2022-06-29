@@ -18,14 +18,16 @@ def seed_cache(parameters):
     herd.RandomVariables(parameters)
 
 
-def run_one(parameters, tmax, run_number, *args, **kwargs):
+def run_one(parameters, run_number, *args, tmax=None, **kwargs):
     '''Run one simulation.'''
-    h = herd.Herd(parameters, run_number=run_number, *args, **kwargs)
-    return h.run(tmax)
+    if tmax is None:
+        tmax = common.TMAX
+    herd_ = herd.Herd(parameters, run_number=run_number, *args, **kwargs)
+    return herd_.run(tmax)
 
 
-def run_many_chunked(parameters, tmax, nruns, *args,
-                     chunksize=-1, n_jobs=-1, **kwargs):
+def run_many_chunked(parameters, nruns, *args,
+                     chunksize=100, n_jobs=-1, **kwargs):
     '''Generator to return chunks of many simulation results.'''
     if chunksize < 1:
         chunksize = nruns
@@ -35,18 +37,16 @@ def run_many_chunked(parameters, tmax, nruns, *args,
         end = min(start + chunksize, nruns)
         runs = range(start, end)
         results = Parallel(n_jobs=n_jobs)(
-            delayed(run_one)(parameters, tmax, i, *args, **kwargs)
+            delayed(run_one)(parameters, i, *args, **kwargs)
             for i in runs)
         # Make 'run' the outer row index.
         yield pandas.concat(results, keys=runs, names=['run'],
                             copy=False)
 
 
-def run_many(parameters, tmax, nruns, *args,
-             n_jobs=-1, **kwargs):
+def run_many(parameters, nruns, *args, **kwargs):
     '''Run many simulations in parallel.'''
-    chunks = run_many_chunked(parameters, tmax, nruns, *args,
-                              n_jobs=n_jobs, **kwargs)
+    chunks = run_many_chunked(parameters, nruns, *args, **kwargs)
     # Everything was run in one chunk.
     results = next(chunks)
     try:
@@ -58,12 +58,10 @@ def run_many(parameters, tmax, nruns, *args,
     return results
 
 
-def run(SAT, tmax, nruns, hdfstore, *args,
-        chunksize=-1, n_jobs=-1, **kwargs):
+def run(SAT, nruns, hdfstore, *args, **kwargs):
     parameters = herd.Parameters(SAT=SAT)
     logging_prefix = f'{SAT=}'
-    chunks = run_many_chunked(parameters, tmax, nruns, *args,
-                              chunksize=chunksize, n_jobs=n_jobs,
+    chunks = run_many_chunked(parameters, nruns, *args,
                               logging_prefix=logging_prefix, **kwargs)
     for dfr in chunks:
         common.prepend_index_levels(dfr, SAT=SAT)

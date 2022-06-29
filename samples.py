@@ -25,26 +25,25 @@ def sample_path(SAT, sample_number):
     return SAT_path(SAT).joinpath(f'{sample_number}.npy')
 
 
-def run_one(parameters, sample, tmax, sample_number, *args, **kwargs):
+def run_one(parameters, sample, sample_number, *args, **kwargs):
     '''Run one simulation.'''
     params = parameters.merge(**sample)
-    return baseline.run_one(params, tmax, sample_number, *args, **kwargs)
+    return baseline.run_one(params, sample_number, *args, **kwargs)
 
 
-def run_one_and_save(parameters, sample, tmax, sample_number, path, *args,
+def run_one_and_save(parameters, sample, sample_number, path, *args,
                      touch=True, **kwargs):
     '''Run one simulation and save the output.'''
     if not path.exists():
         if touch:
             path.touch(exist_ok=False)
-        dfr = run_one(parameters, sample, tmax, sample_number,
+        dfr = run_one(parameters, sample, sample_number,
                       *args, **kwargs)
         # Save the data for this sample.
         numpy.save(path, dfr.to_records())
 
 
-def run(tmax, *args,
-        n_jobs=-1, **kwargs):
+def run(*args, n_jobs=-1, **kwargs):
     samples = herd.samples.load()
     parameters = {SAT: herd.Parameters(SAT=SAT)
                   for SAT in common.SATs}
@@ -53,7 +52,7 @@ def run(tmax, *args,
         SAT_path(SAT).mkdir(exist_ok=True)
     # For each sample, iterate over the SATs,
     # i.e. SAT changes fastest.
-    jobs = (delayed(run_one_and_save)(parameters[SAT], sample[SAT], tmax,
+    jobs = (delayed(run_one_and_save)(parameters[SAT], sample[SAT],
                                       sample_number,
                                       sample_path(SAT, sample_number),
                                       *args, logging_prefix=f'{SAT=}',

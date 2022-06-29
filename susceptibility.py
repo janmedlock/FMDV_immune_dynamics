@@ -28,8 +28,7 @@ def _copy_run(SAT, susceptibility, nruns, hdfstore_out):
             hdfstore_out.put(chunk)
 
 
-def run(SAT, susceptibility, tmax, nruns, hdfstore, *args,
-        chunksize=-1, n_jobs=-1, **kwargs):
+def run(SAT, susceptibility, nruns, hdfstore, *args, **kwargs):
     if susceptibility == 1:
         _copy_run(SAT, susceptibility, nruns, hdfstore)
     else:
@@ -41,8 +40,7 @@ def run(SAT, susceptibility, tmax, nruns, hdfstore, *args,
             f'{SAT=}',
             f'lost_immunity_susceptibility={susceptibility}'
         ))
-        chunks = baseline.run_many_chunked(parameters, tmax, nruns, *args,
-                                           chunksize=chunksize, n_jobs=n_jobs,
+        chunks = baseline.run_many_chunked(parameters, nruns, *args,
                                            logging_prefix=logging_prefix,
                                            **kwargs)
         for dfr in chunks:

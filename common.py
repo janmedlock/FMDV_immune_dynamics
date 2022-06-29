@@ -24,6 +24,8 @@ rc['font.sans-serif'] = 'DejaVu Sans'
 
 SATs = (1, 2, 3)
 
+TMAX = 10
+
 t_name = 'time (y)'
 
 cols_infected = ['exposed', 'infectious', 'chronic']
@@ -104,11 +106,11 @@ def get_infected(path, by=None):
     return infected
 
 
-def _build_extinction_time_group(infected, tmax=10):
+def _build_extinction_time_group(infected):
     t = infected.index.get_level_values(t_name)
     time = t.max() - t.min()
     observed = (infected.iloc[-1] == 0)
-    assert observed or (time == tmax)
+    assert observed or (time == TMAX)
     return dict(time=time, observed=observed)
 
 

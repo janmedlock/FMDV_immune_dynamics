@@ -7,8 +7,7 @@ import samples
 
 
 if __name__ == '__main__':
-    tmax = 10
-    n_jobs = 20
+    N_JOBS = 20
 
-    samples.run(tmax, n_jobs=n_jobs)
+    samples.run(n_jobs=N_JOBS)
     # samples.combine(unlink=False)
