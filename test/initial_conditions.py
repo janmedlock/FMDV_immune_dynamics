@@ -1,4 +1,5 @@
 #!/usr/bin/python3
+
 import itertools
 
 from matplotlib import pyplot
