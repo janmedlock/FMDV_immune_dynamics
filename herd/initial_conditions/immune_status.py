@@ -493,7 +493,7 @@ class Solver:
                 / births_total.sum())
 
     def solve_objective(self, y):
-        '''This is called by `optimize.root_scalar()` to find the equilibrium
+        '''This is called by `optimize.fixed_point()` to find the equilibrium
         `hazard_infection` and `newborn_proportion_immune`.'''
         P = self.solve_step(y)
         return self.transform((self.get_hazard_infection(P),
