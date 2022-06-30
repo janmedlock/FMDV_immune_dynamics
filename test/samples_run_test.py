@@ -55,13 +55,11 @@ def run_subsamples_sequential(SAT, n_subsamples, seed, index=None):
 
 
 if __name__ == '__main__':
-    # SAT = 2
-    # sample_number = 309
-    # run_sample(SAT, sample_number)
-    sample_numbers_by_SAT = {
-        1: [407, 412, 425, 428, 429],
-        2: [383, 393, 395, 422, 428],
-        3: [376, 388, 398, 401, 402, 409, 414, 417, 419, 427, 428],
+    # SAT_sample_numbers = {
+    #     3: [376, 402],
+    # }
+    SAT_sample_numbers = {
+        3: [414, 417, 419, 427, 428],
     }
-    for (SAT, sample_numbers) in sample_numbers_by_SAT.items():
+    for (SAT, sample_numbers) in SAT_sample_numbers.items():
         run_samples_sequential(SAT, sample_numbers)
