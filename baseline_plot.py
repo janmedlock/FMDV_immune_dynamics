@@ -96,7 +96,7 @@ def plot_extinction_time(ax, extinction_time, SAT):
         ax.set_ylabel('Extinction\ntime')
 
 
-def plot(infected, extinction_time, draft=False):
+def plot(infected, extinction_time, draft=False, save=True):
     SATs = infected.index.get_level_values('SAT').unique()
     nrows = 2
     ncols = len(SATs)
@@ -145,12 +145,15 @@ def plot(infected, extinction_time, draft=False):
         # than aligning all axes.
         fig.align_xlabels(axes[-1, :])
         fig.align_ylabels(axes[[row_inf, row_ext], 0])
-        fig.savefig('baseline.pdf')
-        fig.savefig('baseline.png', dpi=300)
+        if save:
+            fig.savefig(baseline.store_path.with_suffix('.pdf'))
+            fig.savefig(baseline.store_path.with_suffix('.png'),
+                        dpi=300)
+        return fig
 
 
 if __name__ == '__main__':
-    draft = False
-    infected, extinction_time = load()
-    plot(infected, extinction_time, draft=draft)
+    DRAFT = False
+    (infected, extinction_time) = load()
+    plot(infected, extinction_time, draft=DRAFT)
     pyplot.show()

@@ -83,7 +83,7 @@ def _get_cmap(color):
                                                     ['white', color])
 
 
-def plot_kde_2d(df):
+def plot_kde_2d(df, save=True):
     rc = common.rc.copy()
     width = 183 / 25.4  # convert mm to in
     height = 4  # in
@@ -152,8 +152,11 @@ def plot_kde_2d(df):
         fig.align_xlabels(axes[-1, :])
         fig.align_ylabels(axes[:, 0])
         fig.tight_layout()
-        fig.savefig('susceptibility.pdf')
-        fig.savefig('susceptibility.png', dpi=300)
+        if save:
+            fig.savefig(susceptibility.store_path.with_suffix('.pdf'))
+            fig.savefig(susceptibility.store_path.with_suffix('.png'),
+                        dpi=300)
+        return fig
 
 
 if __name__ == '__main__':

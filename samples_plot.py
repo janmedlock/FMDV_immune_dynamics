@@ -220,7 +220,7 @@ def plot_sensitivity(df, rank=True, errorbars=False):
                 ax.yaxis.offsetText.set_visible(False)
             for sp in ('top', 'left', 'right'):
                 ax.spines[sp].set_visible(False)
-        fig.savefig(f'samples_sensitivity.pdf')
+        fig.savefig('samples_sensitivity.pdf')
 
 
 if __name__ == '__main__':
