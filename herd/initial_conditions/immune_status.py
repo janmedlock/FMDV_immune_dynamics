@@ -298,7 +298,8 @@ class Solver:
 
     age_max = 20
 
-    def __init__(self, params):
+    def __init__(self, params, debug=False):
+        self.debug = debug
         self.ages = utility.arange(0, self.age_max, self.step,
                                    endpoint=True)
         assert len(self.ages) > 1
@@ -457,6 +458,9 @@ class Solver:
         x_curr = self.transform_inverse(y_curr)
         (self.params.hazard.infection,
          self.params.newborn_proportion_immune) = x_curr
+        if self.debug:
+            msg = 'hazard_infection={:g}, newborn_proportion_immune={:g}'
+            print(msg.format(*x_curr))
         self.update_blocks()
         A = self.get_A()
         b = self.get_b()
