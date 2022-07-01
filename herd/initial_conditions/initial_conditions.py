@@ -1,3 +1,5 @@
+'''Initial conditions.'''
+
 from scipy.stats import multinomial
 
 from herd import age_structure
@@ -13,7 +15,7 @@ class gen:
         self.parameters = parameters
         # Reuse these in case we call pdf() or rvs() repeatedly.
         self.immune_status_pdf = (
-            immune_status.probability_interpolant(self.parameters))
+            immune_status.probability.interpolant(self.parameters))
         self.ages = age_structure.gen(self.parameters)
 
     def immune_status_conditional_pdf(self, ages):

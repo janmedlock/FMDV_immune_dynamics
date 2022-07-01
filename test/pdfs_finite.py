@@ -1,24 +1,14 @@
 #!/usr/bin/python3
 
-from context import herd
-import herd.chronic_recovery
-import herd.initial_conditions.immune_status
-import herd.progression
-import herd.recovery
+from context import common, herd
+from herd.initial_conditions.immune_status import _solver
 import herd.samples
-
-
-RVS = {
-    'chronic_recovery',
-    'progression',
-    'recovery',
-}
 
 
 def test_sample(parameters, sample, sat, idx):
     print(f'{sat=}, {idx=}')
     params = parameters.merge(**sample)
-    solver = herd.initial_conditions.immune_status.Solver(params)
+    solver = _solver.Solver(params)
     # This was failing because some pdf(0) = infinity, i.e. gamma with
     # shape < 1, but it should work for all now.
     solver.get_A()
@@ -32,5 +22,5 @@ def test_sat(sat):
 
 
 if __name__ == '__main__':
-    for sat in (1, 2, 3):
+    for sat in common.SATs:
         test_sat(sat)

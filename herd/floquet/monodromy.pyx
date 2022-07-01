@@ -90,23 +90,43 @@ cdef class CacheParameters:
     only has the parameters needed by `Solver()`
     so that it can be efficiently cached.'''
     cdef:
-        double birth_normalized_peak_time_of_year
         double birth_seasonal_coefficient_of_variation
+        double birth_normalized_peak_time_of_year
         double female_probability_at_birth
 
     # Don't use `__cinit__()` because these need to be pickled.
     def __init__(CacheParameters self,
                  object params):
+        self.birth_seasonal_coefficient_of_variation = (
+            params.birth_seasonal_coefficient_of_variation)
         # Normalize `params.birth_peak_time_of_year` by making
         # it relative to `params.start_time` and then modulo
         # `period` so that it is in [0, period).
         self.birth_normalized_peak_time_of_year = (
             (params.birth_peak_time_of_year - params.start_time)
             % periods.get_period())
-        self.birth_seasonal_coefficient_of_variation = (
-            params.birth_seasonal_coefficient_of_variation)
         self.female_probability_at_birth = (
             params.female_probability_at_birth)
+
+    def __repr__(CacheParameters self):
+        'Make instances print nicely.'
+        cdef:
+            str clsname, k
+            dict paramsdict
+            object paramreprs
+        clsname = '{}.{}'.format(self.__class__.__module__,
+                                 self.__class__.__name__)
+        paramsdict = {
+            'birth_seasonal_coefficient_of_variation':
+            self.birth_seasonal_coefficient_of_variation,
+            'birth_normalized_peak_time_of_year':
+            self.birth_normalized_peak_time_of_year,
+            'female_probability_at_birth':
+            self.female_probability_at_birth,
+        }
+        paramreprs = ('{!r}: {!r}'.format(k, paramsdict[k])
+                      for k in sorted(paramsdict.keys()))
+        return '<{}: {{{}}}>'.format(clsname, ', '.join(paramreprs))
 
 
 # The fundamental solution at time t_n is 2 dimensional.
@@ -175,14 +195,14 @@ cdef class Solver:
                   const double step,
                   const double age_max):
         cdef:
-            object mortalityRV
+            object mortality_rv
         self.params = solver_params
         self.ages = utility.arange(0, age_max, step, endpoint=True)
         # The memoryview will be convenient...
         self._ages = self.ages
         self._t = utility.arange(0, periods.get_period(), step, endpoint=True)
-        mortalityRV = mortality.from_param_values()
-        self._init_crank_nicolson(step, mortalityRV)
+        mortality_rv = mortality.from_param_values()
+        self._init_crank_nicolson(step, mortality_rv)
         self._init_births(step)
 
     @classmethod
@@ -270,7 +290,7 @@ cdef class Solver:
     @cython.wraparound(True)
     cdef inline bint _init_crank_nicolson(Solver self,
                                           const double step,
-                                          object mortalityRV) except False:
+                                          object mortality_rv) except False:
         '''The Crank–Nicolson method is
         (u_i^n - u_{i - 1}^{n - 1}) / dt
         = - d_{i - 1 / 2} * (u_i^n + u_{i - 1}^{n - 1}) / 2,
@@ -291,11 +311,11 @@ cdef class Solver:
         M = sparse.lil_matrix((self._ages.shape[0], self._ages.shape[0]))
         # Midpoints between adjacent ages.
         ages_mid = (self.ages[1:] + self.ages[:-1]) / 2
-        k = mortalityRV.hazard(ages_mid) * step / 2
+        k = mortality_rv.hazard(ages_mid) * step / 2
         # Set the first subdiagonal.
         M.setdiag((1 - k) / (1 + k), -1)
         # Keep the last age group from ageing out.
-        k_last = mortalityRV.hazard(self.ages[-1]) * step / 2
+        k_last = mortality_rv.hazard(self.ages[-1]) * step / 2
         M[-1, -1] = (1 - k_last) / (1 + k_last)
         self._M_crank_nicolson = _CSR_Matrix(M)
         return True
@@ -327,12 +347,14 @@ cdef class Solver:
         '''The core of the solver, iterating over `self._t`.'''
         cdef:
             ssize_t n
-        if self._t.shape[0] == 0: return None
-        ## n = 0 ##
+        if self._t.shape[0] == 0:
+            return None
+        # n = 0 #
         n = 0
         self._set_initial_condition(self._t[n], solution, birth_rate, temp)
-        if self._t.shape[0] == 1: return solution.get(0)
-        ## n = 1, 2, ... ##
+        if self._t.shape[0] == 1:
+            return solution.get(0)
+        # n = 1, 2, ... #
         # Looping over `self._t[1:]` requires the GIL.
         for n in range(1, self._t.shape[0]):
             solution.update()
@@ -345,17 +367,21 @@ cdef class Solver:
         '''Find the monodromy matrix Phi(T), where T is the period.'''
         cdef:
             _Solution solution
-            object birthRV
+            object birth_rv
             numpy.ndarray temp
+            double start_time
         # The fundamental solution is an `n_ages` x `n_ages` matrix.
         # One matrix for the current time step, plus one for each
         # order of the solver.
         solution = _Solution(self._order,
                              (self._ages.shape[0], self._ages.shape[0]))
         # Set up birth rate.
-        birthRV = birth.from_param_values(
-            self.params.birth_normalized_peak_time_of_year,
+        start_time = 0
+        birth_rv = birth.from_param_values(
             self.params.birth_seasonal_coefficient_of_variation,
+            self.params.birth_normalized_peak_time_of_year,
+            start_time,
+            self.params.female_probability_at_birth,
             _scaling=birth_scaling)
         temp = numpy.empty(self._ages.shape[0])
-        return numpy.asarray(self._iterate(solution, birthRV.hazard, temp))
+        return numpy.asarray(self._iterate(solution, birth_rv.hazard, temp))

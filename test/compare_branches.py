@@ -11,7 +11,7 @@ import numpy
 import pandas
 
 from context import common, herd
-import herd.initial_conditions.immune_status
+from herd.initial_conditions.immune_status import _solver
 
 
 BRANCHES = ('unconditional', 'conditional')
@@ -21,9 +21,8 @@ class Solution:
     def __init__(self, branch, SAT):
         self.branch = branch
         self.SAT = SAT
-        solver = herd.initial_conditions.immune_status.Solver(
-            herd.Parameters(SAT=self.SAT))
-        P = self.solve(solver)
+        parameters = herd.Parameters(SAT=self.SAT)
+        P = _solver.solve(parameters)
         if branch == 'unconditional':
             self.P_conditional = P.divide(P.sum(axis='columns'),
                                           axis='index')
@@ -31,6 +30,7 @@ class Solution:
             self.P_conditional = P
         else:
             raise ValueError(f'Unknown {branch=}!')
+        solver = _solver.Solver(parameters)
         self.P_unconditional = self.P_conditional.multiply(
             solver.params.survival.mortality,
             axis='index')

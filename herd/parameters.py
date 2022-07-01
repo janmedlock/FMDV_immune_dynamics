@@ -82,8 +82,8 @@ class Parameters:
     def __repr__(self):
         'Make instances print nicely.'
         clsname = '{}.{}'.format(self.__module__, self.__class__.__name__)
-        paramreprs = ['{!r}: {!r}'.format(k, self.__dict__[k])
-                      for k in sorted(self.__dict__.keys())]
+        paramreprs = ('{!r}: {!r}'.format(k, self.__dict__[k])
+                      for k in sorted(self.__dict__.keys()))
         return '<{}: {{{}}}>'.format(clsname, ', '.join(paramreprs))
 
     @classmethod

@@ -1,10 +1,10 @@
 #!/usr/bin/python3
+
 import matplotlib.pyplot
 import numpy
 
 from context import herd
-import herd.initial_conditions.immune_status
-import herd.utility
+from herd.initial_conditions.immune_status import _blocks, _solver
 
 
 def check_parameters(solver):
@@ -42,33 +42,32 @@ def plot_blocks(solver):
                 blocks[j, k] = 1
             else:
                 blocks[j, k] = -1
-    (fig, ax) = matplotlib.pyplot.subplots(constrained_layout=True)
-    ax.matshow(blocks, cmap='PiYG')
-    vars_ = solver.vars_ODE + solver.vars_PDE
-    ax.set_xticks(range(len(vars_)))
-    ax.set_yticks(range(len(vars_)))
-    ax.set_xticklabels(vars_)
-    ax.set_yticklabels(vars_)
+    (fig, axes) = matplotlib.pyplot.subplots(constrained_layout=True)
+    axes.matshow(blocks, cmap='PiYG')
+    vars_ = _blocks.vars_ode + _blocks.vars_pde
+    axes.set_xticks(range(len(vars_)))
+    axes.set_yticks(range(len(vars_)))
+    axes.set_xticklabels(vars_)
+    axes.set_yticklabels(vars_)
 
 
-def plot_solution(P):
-    (fig, ax) = matplotlib.pyplot.subplots(constrained_layout=True)
-    ages = herd.utility.arange(0, solver.age_max, solver.step, endpoint=True)
-    ax.stackplot(ages, P.T, labels=P.columns)
-    ax.set_xlabel('age (y)')
-    ax.set_ylabel('probability given alive')
-    ax.legend()
-    return ax
+def plot_solution(prob):
+    (fig, axes) = matplotlib.pyplot.subplots(constrained_layout=True)
+    axes.stackplot(prob.index, prob.T, labels=prob.columns)
+    axes.set_xlabel('age (y)')
+    axes.set_ylabel('probability')
+    axes.legend()
+    return axes
 
 
 if __name__ == '__main__':
     parameters = herd.Parameters(SAT=1)
-    solver = herd.initial_conditions.immune_status.Solver(parameters)
-    newborn_proportion_immune = 0.6
-    hazard_infection = 2
-    P = solver.solve_step(solver.transform((hazard_infection,
-                                            newborn_proportion_immune)))
+    solver = _solver.Solver(parameters)
+    HAZARD_INFECTION = 2
+    NEWBORN_PROPORTION_IMMUNE = 0.6
+    prob = solver.solve_step(solver.transform((HAZARD_INFECTION,
+                                               NEWBORN_PROPORTION_IMMUNE)))
     check_parameters(solver)
     plot_blocks(solver)
-    plot_solution(P)
+    plot_solution(prob)
     matplotlib.pyplot.show()

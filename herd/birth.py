@@ -33,7 +33,7 @@ def get_gap_size_from_seasonal_coefficient_of_variation(c_v):
 
 
 class gen(RV):
-    def __init__(self, parameters, _scaling=None, *args, **kwargs):
+    def __init__(self, parameters, *args, _scaling=None, **kwargs):
         self.peak_time_of_year = parameters.birth_peak_time_of_year
         self.seasonal_coefficient_of_variation = (
             parameters.birth_seasonal_coefficient_of_variation)
@@ -182,18 +182,37 @@ class gen(RV):
 
 class _BirthParams:
     '''Dummy parameters for the birth random variable.'''
-    def __init__(self, birth_peak_time_of_year,
-                 birth_seasonal_coefficient_of_variation):
-        self.birth_peak_time_of_year = birth_peak_time_of_year
+    def __init__(self, birth_seasonal_coefficient_of_variation,
+                 birth_peak_time_of_year, start_time,
+                 female_probability_at_birth):
         self.birth_seasonal_coefficient_of_variation \
             = birth_seasonal_coefficient_of_variation
+        self.birth_peak_time_of_year = birth_peak_time_of_year
+        self.start_time = start_time
+        self.female_probability_at_birth = female_probability_at_birth
 
 
-def from_param_values(birth_peak_time_of_year,
-                      birth_seasonal_coefficient_of_variation,
+def from_param_values(birth_seasonal_coefficient_of_variation,
+                      birth_peak_time_of_year, start_time,
+                      female_probability_at_birth,
                       *args, **kwargs):
-    '''Build a `gen()` instance from parameter values
-    instead of a `Parameters()` object.'''
-    parameters = _BirthParams(birth_peak_time_of_year,
-                              birth_seasonal_coefficient_of_variation)
+    '''Build a `gen()` instance from parameter values instead of a
+    `Parameters()` object.'''
+    parameters = _BirthParams(birth_seasonal_coefficient_of_variation,
+                              birth_peak_time_of_year, start_time,
+                              female_probability_at_birth)
     return gen(parameters, *args, **kwargs)
+
+
+def hazard_constant_time(female_probability_at_birth, age,
+                         *args, out=None, **kwargs):
+    '''The hazard without seasonal variation.'''
+    birth_seasonal_coefficient_of_variation = 0
+    # The value of these parameters don't matter when the seasonal
+    # variation is 0.
+    birth_peak_time_of_year = start_time = time = 0
+    rndvr = from_param_values(birth_seasonal_coefficient_of_variation,
+                              birth_peak_time_of_year, start_time,
+                              female_probability_at_birth,
+                              *args, **kwargs)
+    return rndvr.hazard(time, age, out=out)
