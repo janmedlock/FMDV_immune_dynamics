@@ -16,7 +16,7 @@ import herd.floquet
 
 
 def find_stable_age_structure(parameters, fast=False):
-    solver_parameters = herd.floquet.monodromy.CacheParameters(parameters)
+    cache_parameters = herd.floquet._CacheParameters(parameters)
     # Temporarily monkeypatch non-caching version of
     # `_find_dominant_eigen` into place to force recomputation.
     _find_dominant_eigen = herd.floquet._find_dominant_eigen
@@ -26,13 +26,13 @@ def find_stable_age_structure(parameters, fast=False):
         if fast:
             birth_scaling = 0.9378975738425385
             r, v, ages = herd.floquet._find_dominant_eigen(
-                birth_scaling, solver_parameters,
+                birth_scaling, cache_parameters,
                 herd.floquet._step_default,
                 herd.floquet._age_max_default)
         else:
             # Force a recomputation of the birth scaling.
             birth_scaling = herd.floquet._find_birth_scaling.func(
-                solver_parameters,
+                cache_parameters,
                 herd.floquet._step_default,
                 herd.floquet._age_max_default)
         t1, p1 = perf_counter(), process_time()
