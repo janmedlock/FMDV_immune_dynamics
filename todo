@@ -4,4 +4,4 @@
    in herd.initial_conditions.immune_status.Solver.solve()
    change as we vary the value of pdf[0]?
 
-* Compare susceptibility_0 to old model
+* Compare susceptibility_null to old model
