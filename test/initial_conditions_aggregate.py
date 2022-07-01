@@ -37,7 +37,7 @@ def integrate_over_age(X):
 
 
 def sum_over_immune_state(X):
-    return X.sum(axis='columns', level=0)
+    return X.groupby(axis='columns', level=0).sum()
 
 
 def plot_integral_over_age(p):
