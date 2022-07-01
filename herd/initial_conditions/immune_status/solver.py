@@ -12,7 +12,7 @@ from herd import (antibody_gain, antibody_loss, birth, buffalo,
                   chronic_recovery, maternal_immunity_waning,
                   mortality, parameters, progression, recovery,
                   utility)
-from . import _blocks
+from . import blocks
 
 
 def _rec_fromkwds(**kwds):
@@ -24,7 +24,7 @@ def _rec_fromkwds(**kwds):
 
 class _Params:
     '''Dummy object to pass parameters from `Solver()` to
-    `_blocks._Block()`s.'''
+    `blocks._Block()`s.'''
     def __init__(self, params, ages, ages_mid, step, length_ode, length_pde):
         self.step = step
         self.length_ode = length_ode
@@ -111,7 +111,7 @@ class Solver:
         if not _skip_blocks:
             self.blocks = {
                 Block.X: Block(self.params)
-                for Block in _blocks.Blocks
+                for Block in blocks.Blocks
             }
 
     def update_blocks(self):
@@ -126,7 +126,7 @@ class Solver:
             return rows
         else:
             # `vars_ode` first, then `vars_pde`.
-            vars_ = _blocks.vars_ode + _blocks.vars_pde
+            vars_ = blocks.vars_ode + blocks.vars_pde
             return [cls.stack(rows.get(k))
                     for k in vars_]
 
@@ -140,9 +140,9 @@ class Solver:
     def unstack(self, Pp):
         '''Unstack the P_X and p_X vectors.'''
         # `vars_ode` are first, then `vars_pde`.
-        split = len(_blocks.vars_ode) * self.length_ode
-        P = self._unstack_and_label(Pp[:split], _blocks.vars_ode)
-        p = self._unstack_and_label(Pp[split:], _blocks.vars_pde)
+        split = len(blocks.vars_ode) * self.length_ode
+        P = self._unstack_and_label(Pp[:split], blocks.vars_ode)
+        p = self._unstack_and_label(Pp[split:], blocks.vars_pde)
         return (P, p)
 
     def stack_sparse(self, rows, format='csr'):
@@ -193,10 +193,10 @@ class Solver:
             (P, p_integrated),
             asrecarray=True, flatten=True)
         P = pandas.DataFrame(P, index=pandas.Index(self.ages, name='age'))
-        P.rename(columns=_blocks.NAMES, inplace=True)
+        P.rename(columns=blocks.NAMES, inplace=True)
         # Order columns.
         P.set_axis(pandas.CategoricalIndex(P.columns,
-                                           _blocks.NAMES.values(),
+                                           blocks.NAMES.values(),
                                            ordered=True),
                    axis='columns', inplace=True)
         P.sort_index(axis='columns', inplace=True)

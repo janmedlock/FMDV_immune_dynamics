@@ -2,15 +2,15 @@
 
 import numpy
 
-from . import _solver
+from . import solver
 
 
 class Interpolant:
-    '''The solution from `_solver.solve()`, that then gets interpolated to
+    '''The solution from `solver.solve()`, that then gets interpolated to
     different ages as needed.'''
 
     def __init__(self, params):
-        self._probability = _solver.solve(params)
+        self._probability = solver.solve(params)
 
     def __call__(self, age):
         # Interpolate `self._probability` to `age`.

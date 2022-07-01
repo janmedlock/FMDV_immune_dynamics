@@ -11,7 +11,7 @@ import numpy
 import pandas
 
 from context import common, herd
-from herd.initial_conditions.immune_status import _solver
+from herd.initial_conditions.immune_status import solver
 
 
 BRANCHES = ('unconditional', 'conditional')
@@ -22,7 +22,7 @@ class Solution:
         self.branch = branch
         self.SAT = SAT
         parameters = herd.Parameters(SAT=self.SAT)
-        P = _solver.solve(parameters)
+        P = solver.solve(parameters)
         if branch == 'unconditional':
             self.P_conditional = P.divide(P.sum(axis='columns'),
                                           axis='index')
@@ -30,18 +30,17 @@ class Solution:
             self.P_conditional = P
         else:
             raise ValueError(f'Unknown {branch=}!')
-        solver = _solver.Solver(parameters)
+        slvr = solver.Solver(parameters, _skip_blocks=True)
         self.P_unconditional = self.P_conditional.multiply(
-            solver.params.survival.mortality,
+            slvr.params.survival.mortality,
             axis='index')
-        self.hazard_infection = solver.get_hazard_infection(P)
-        self.newborn_proportion_immune = (
-            solver.get_newborn_proportion_immune(P))
+        self.hazard_infection = slvr.get_hazard_infection(P)
+        self.newborn_proportion_immune = slvr.get_newborn_proportion_immune(P)
 
-    def solve(self, solver,
+    def solve(self, slvr,
               hazard_infection=10, newborn_proportion_immune=0.8):
-        return solver.solve_step(solver.transform((hazard_infection,
-                                                   newborn_proportion_immune)))
+        return slvr.solve_step(slvr.transform((hazard_infection,
+                                               newborn_proportion_immune)))
 
 
 def get_branch():

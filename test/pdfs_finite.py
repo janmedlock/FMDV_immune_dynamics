@@ -1,17 +1,17 @@
 #!/usr/bin/python3
 
 from context import common, herd
-from herd.initial_conditions.immune_status import _solver
+from herd.initial_conditions.immune_status import solver
 import herd.samples
 
 
 def test_sample(parameters, sample, sat, idx):
     print(f'{sat=}, {idx=}')
     params = parameters.merge(**sample)
-    solver = _solver.Solver(params)
+    slvr = solver.Solver(params)
     # This was failing because some pdf(0) = infinity, i.e. gamma with
     # shape < 1, but it should work for all now.
-    solver.get_A()
+    slvr.get_A()
 
 
 def test_sat(sat):

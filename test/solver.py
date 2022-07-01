@@ -4,29 +4,29 @@ import matplotlib.pyplot
 import numpy
 
 from context import herd
-from herd.initial_conditions.immune_status import _blocks, _solver
+from herd.initial_conditions.immune_status import blocks, solver
 
 
-def check_parameters(solver):
+def check_parameters(slvr):
     '''Ensure the solver parameters correctly set the matrix and vector
     elements.'''
-    solver.update_blocks()
-    A = solver.get_A()
-    b = solver.get_b()
-    n = len(solver.ages)
+    slvr.update_blocks()
+    A = slvr.get_A()
+    b = slvr.get_b()
+    n = len(slvr.ages)
     assert numpy.isclose(b[0, 0],
-                         solver.params.newborn_proportion_immune)
+                         slvr.params.newborn_proportion_immune)
     assert numpy.isclose(b[n, 0],
-                         1 - solver.params.newborn_proportion_immune)
+                         1 - slvr.params.newborn_proportion_immune)
     assert numpy.allclose(A[n + 1, n + 1],
-                          (1 + ((solver.params.hazard.mortality[0]
-                                 + solver.params.hazard.infection)
-                                * solver.step / 2)))
+                          (1 + ((slvr.params.hazard.mortality[0]
+                                 + slvr.params.hazard.infection)
+                                * slvr.step / 2)))
 
 
-def plot_blocks(solver):
-    A = solver.get_A()
-    n = len(solver.ages)
+def plot_blocks(slvr):
+    A = slvr.get_A()
+    n = len(slvr.ages)
     m = int(A.shape[0] / n)
     assert A.shape[0] == m * n
     blocks = numpy.empty((m, m), dtype=int)
@@ -44,7 +44,7 @@ def plot_blocks(solver):
                 blocks[j, k] = -1
     (fig, axes) = matplotlib.pyplot.subplots(constrained_layout=True)
     axes.matshow(blocks, cmap='PiYG')
-    vars_ = _blocks.vars_ode + _blocks.vars_pde
+    vars_ = blocks.vars_ode + blocks.vars_pde
     axes.set_xticks(range(len(vars_)))
     axes.set_yticks(range(len(vars_)))
     axes.set_xticklabels(vars_)
@@ -62,12 +62,12 @@ def plot_solution(prob):
 
 if __name__ == '__main__':
     parameters = herd.Parameters(SAT=1)
-    solver = _solver.Solver(parameters)
+    slvr = solver.Solver(parameters)
     HAZARD_INFECTION = 2
     NEWBORN_PROPORTION_IMMUNE = 0.6
-    prob = solver.solve_step(solver.transform((HAZARD_INFECTION,
-                                               NEWBORN_PROPORTION_IMMUNE)))
-    check_parameters(solver)
-    plot_blocks(solver)
+    prob = slvr.solve_step(slvr.transform((HAZARD_INFECTION,
+                                           NEWBORN_PROPORTION_IMMUNE)))
+    check_parameters(slvr)
+    plot_blocks(slvr)
     plot_solution(prob)
     matplotlib.pyplot.show()
