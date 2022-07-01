@@ -73,15 +73,13 @@ class gen(RV):
         return self.ppf(U)
 
 
-class _MortalityParams:
+class _Parameters:
     '''Dummy parameters for the mortality random variable.'''
     def __init__(self):
         # There are no parameters.
         pass
 
 
-def from_param_values():
-    '''Build a `gen()` instance from parameter values
-    instead of a `Parameters()` object.'''
-    parameters = _MortalityParams()
-    return gen(parameters)
+def sf(age):
+    '''The survival function.'''
+    return gen(_Parameters()).sf(age)

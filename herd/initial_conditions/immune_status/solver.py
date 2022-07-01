@@ -64,7 +64,7 @@ class _Params:
         self.chronic_transmission_rate = params.chronic_transmission_rate
         self.lost_immunity_susceptibility = params.lost_immunity_susceptibility
         # The birth hazard is needed at `ages`, not `ages_mid`.
-        self.hazard_birth = self._hazard_birth_constant_time(ages)
+        self.hazard_birth = self._hazard_birth(ages)
         # Dummy value. Set on calls to `Solver.solve_step()`.
         self.newborn_proportion_immune = 1
 
@@ -80,8 +80,8 @@ class _Params:
         )
         return pdf
 
-    def _hazard_birth_constant_time(self, ages):
-        hazard = birth.hazard_constant_time(
+    def _hazard_birth(self, ages):
+        hazard = birth.hazard_no_seasonality(
             self.female_probability_at_birth, ages)
         # Scale so that the population growth rate is 0.
         hazard /= integrate.trapz(hazard * self.survival.mortality,
@@ -248,7 +248,7 @@ class Solver:
 # cache in a subdirectory of the directory that this source file is
 # in.
 _cache_path = pathlib.Path(__file__).with_name('_cache')
-_cache = joblib.Memory(_cache_path)
+_cache = joblib.Memory(_cache_path, verbose=1)
 
 
 @_cache.cache(ignore=['debug'])

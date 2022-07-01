@@ -22,14 +22,13 @@ with Parallel(n_jobs=1) as parallel:
     age_structures = parallel(delayed(get_age_structure)(ages, start_time)
                               for start_time in start_times)
 
-mortality_sf = herd.mortality.from_param_values().sf
-mortality_sf_scale, _ = quad(mortality_sf, ages[0], ages[-1])
+mortality_sf_scale, _ = quad(herd.mortality.sf, ages[0], ages[-1])
 
 fig, ax = pyplot.subplots()
 for (start_time, age_structure) in zip(start_times, age_structures):
     ax.plot(ages, age_structure, label='{:g} months'.format(12 * start_time),
             alpha=0.7)
-ax.plot(ages, mortality_sf(ages) / mortality_sf_scale,
+ax.plot(ages, herd.mortality.sf(ages) / mortality_sf_scale,
         label='scaled mortality survival',
         color='black', linestyle='dotted')
 ax.set_xlabel('age (y)')

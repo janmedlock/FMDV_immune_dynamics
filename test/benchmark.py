@@ -56,9 +56,8 @@ def plot(ages, stable_age_structure):
     which = (ages <= age_max)
     ax.plot(ages[which], stable_age_structure[which],
             label='stable age structure')
-    mortality_sf = herd.mortality.from_param_values().sf
-    mortality_sf_scale, _ = quad(mortality_sf, ages[0], ages[-1])
-    ax.plot(ages[which], mortality_sf(ages[which]) / mortality_sf_scale,
+    mortality_sf_scale, _ = quad(herd.mortality.sf, ages[0], ages[-1])
+    ax.plot(ages[which], herd.mortality.sf(ages[which]) / mortality_sf_scale,
             label='scaled mortality survival',
             color='black', linestyle='dotted')
     ax.set_xlabel('age (y)')

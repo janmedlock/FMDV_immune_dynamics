@@ -15,20 +15,12 @@ the identity matrix.  The fundamental solution requires solving the
 matrix-valued version of the orignal PDE.
 
 Here, the matrix-valued PDE is solved using the Crank–Nicolson method
-on characteristics, following the work of Fabio Milner.
-
-So that the cache keys only depend on the relevant parts of
-`herd.parameters.Parameters()` and so that the setup can be reused in
-`_find_birth_scaling()`, the solver is called in 3 steps:
->>> solver_parameters = monodromy.CacheParameters(parameters)
->>> solver = monodromy.Solver(solver_parameters, step, age_max)
->>> PhiT = solver.solve(birth_scaling)
-where `parameters` is a `herd.parameters.Parameters()` instance.'''
+on characteristics, following the work of Fabio Milner.'''
 
 import numpy
 from scipy import sparse
 
-from herd import birth, mortality, parameters, periods, utility
+from herd import birth, mortality, periods, utility
 
 
 class _CSR_Matrix(sparse.csr_matrix):
@@ -45,27 +37,6 @@ class _CSR_Matrix(sparse.csr_matrix):
         sparse._sparsetools.csr_matvecs(n_row, n_col, n_vecs,
                                         self.indptr, self.indices, self.data,
                                         B.ravel(), C.ravel())
-
-
-class CacheParameters(parameters.Parameters):
-    '''Build a `herd.parameters.Parameters()`-like object that
-    only has the parameters needed by `Solver()`
-    so that it can be efficiently cached.'''
-    def __init__(self, params):
-        # Generally, the values of these parameters should be
-        # floats, so explicitly convert them so the cache doesn't
-        # get duplicated keys for the float and int representation
-        # of the same number, e.g. `float(0)` and `int(0)`.
-        self.birth_seasonal_coefficient_of_variation = float(
-            params.birth_seasonal_coefficient_of_variation)
-        # Normalize `params.birth_peak_time_of_year` by making
-        # it relative to `params.start_time` and then modulo
-        # `period` so that it is in [0, period).
-        self.birth_normalized_peak_time_of_year = float(
-            (params.birth_peak_time_of_year - params.start_time)
-            % periods.get_period())
-        self.female_probability_at_birth = float(
-            params.female_probability_at_birth)
 
 
 class _Solution:
@@ -106,20 +77,15 @@ class Solver:
     # depends on the solution at t_{n - 1}.
     _order = 1
 
-    def __init__(self, solver_params, step, age_max):
-        self.params = solver_params
+    def __init__(self, params, step, age_max):
+        self.params = params
         self.ages = utility.arange(0, age_max, step, endpoint=True)
-        self._t = utility.arange(0, periods.get_period(), step, endpoint=True)
-        mortality_rv = mortality.from_param_values()
+        t_start = self.params.start_time
+        t_end = t_start + periods.get_period()
+        self._t = utility.arange(t_start, t_end, step, endpoint=True)
+        mortality_rv = mortality.gen(self.params)
         self._init_crank_nicolson(step, mortality_rv)
         self._init_births(step)
-
-    @classmethod
-    def from_parameters(cls, params, step, age_max):
-        '''Build a `Solver()` instance using `herd.parameters.Parameters()`
-        directly.'''
-        solver_params = CacheParameters(params)
-        return cls(solver_params, step, age_max)
 
     def _set_initial_condition(self, t_n, solution, birth_rate, temp):
         '''The initial condition for the fundamental solution is the
@@ -211,12 +177,6 @@ class Solver:
         solution = _Solution(self._order,
                              (self.ages.shape[0], self.ages.shape[0]))
         # Set up birth rate.
-        start_time = 0
-        birth_rv = birth.from_param_values(
-            self.params.birth_seasonal_coefficient_of_variation,
-            self.params.birth_normalized_peak_time_of_year,
-            start_time,
-            self.params.female_probability_at_birth,
-            _scaling=birth_scaling)
+        birth_rv = birth.gen(self.params, _scaling=birth_scaling)
         temp = numpy.empty(self.ages.shape[0])
         return self._iterate(solution, birth_rv.hazard, temp)

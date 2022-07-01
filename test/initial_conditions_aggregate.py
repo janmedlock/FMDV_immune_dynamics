@@ -62,7 +62,7 @@ def plot_sum_over_immune_state(p):
     ax = P.plot(alpha=0.6)
     ax.set_xlabel('age')
     ax.set_ylabel('survival')
-    survival = herd.mortality.from_param_values().sf(ages)
+    survival = herd.mortality.sf(ages)
     ax.plot(ages, survival, color='black', linestyle='dashed', alpha=0.6)
     return ax
 
