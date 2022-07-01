@@ -24,7 +24,7 @@ fig, ax = pyplot.subplots()
 im = ax.imshow(age_structures,
                extent=(ages[0], ages[-1], start_times[0], start_times[-1]),
                cmap='viridis', interpolation='bilinear',
-               origin='bottom', aspect='auto')
+               origin='lower', aspect='auto')
 ax.set_xlabel('age (y)')
 ax.set_ylabel('start time (y)')
 fig.colorbar(im, label='density (y$^{-1}$)')

@@ -7,7 +7,7 @@ from scipy.integrate import quad
 from context import herd
 import herd.age_structure
 import herd.mortality
-import herd.utility.arange
+import herd.utility
 
 start_times = numpy.linspace(0, 1, 4, endpoint=False)
 ages = herd.utility.arange(0, 25, 0.01, endpoint=True)

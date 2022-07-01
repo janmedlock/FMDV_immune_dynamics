@@ -12,33 +12,33 @@ subprocess.run(['make'], cwd='../herd/floquet', check=True)
 from context import herd
 import herd.age_structure
 import herd.mortality
-import herd.floquet
+import herd.floquet.floquet
 
 
 def find_stable_age_structure(parameters, fast=False):
-    cache_parameters = herd.floquet._CacheParameters(parameters)
+    cache_parameters = herd.floquet.floquet._CacheParameters(parameters)
     # Temporarily monkeypatch non-caching version of
     # `_find_dominant_eigen` into place to force recomputation.
-    _find_dominant_eigen = herd.floquet._find_dominant_eigen
-    herd.floquet._find_dominant_eigen = _find_dominant_eigen.func
+    _find_dominant_eigen = herd.floquet.floquet._find_dominant_eigen
+    herd.floquet.floquet._find_dominant_eigen = _find_dominant_eigen.func
     try:
         t0, p0 = perf_counter(), process_time()
         if fast:
             birth_scaling = 0.9378975738425385
-            r, v, ages = herd.floquet._find_dominant_eigen(
+            r, v, ages = herd.floquet.floquet._find_dominant_eigen(
                 birth_scaling, cache_parameters,
-                herd.floquet._step_default,
-                herd.floquet._age_max_default)
+                herd.floquet.floquet._step_default,
+                herd.floquet.floquet._age_max_default)
         else:
             # Force a recomputation of the birth scaling.
-            birth_scaling = herd.floquet._find_birth_scaling.func(
+            birth_scaling = herd.floquet.floquet._find_birth_scaling.func(
                 cache_parameters,
-                herd.floquet._step_default,
-                herd.floquet._age_max_default)
+                herd.floquet.floquet._step_default,
+                herd.floquet.floquet._age_max_default)
         t1, p1 = perf_counter(), process_time()
     finally:
         # Restore caching version of `_find_dominant_eigen`.
-        herd.floquet._find_dominant_eigen = _find_dominant_eigen
+        herd.floquet.floquet._find_dominant_eigen = _find_dominant_eigen
     print('{} benchmark took {:g} s clock, {:g} s CPU'.format(
         'Fast' if fast else 'Slow', t1 - t0, p1 - p0))
     if fast:

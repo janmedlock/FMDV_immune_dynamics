@@ -5,7 +5,7 @@ import itertools
 from matplotlib import pyplot
 import numpy
 
-from context import herd
+from context import common, herd
 import herd.initial_conditions
 import herd.utility
 
@@ -66,7 +66,7 @@ def plot_ICs(SAT):
                  plot_samples)
     for (ax, plot_fcn) in zip(axes, plot_fcns):
         plot_fcn(ICs, ages, ax)
-    axes[-1].set_xlabel('age')
+    axes[-1].set_xlabel('age (y)')
     for ax in axes:
         ax.margins(0)
     fig.align_ylabels()
@@ -80,6 +80,6 @@ def plot_ICs(SAT):
 
 
 if __name__ == '__main__':
-    for SAT in (1, 2, 3):
+    for SAT in common.SATs:
         plot_ICs(SAT)
     pyplot.show()

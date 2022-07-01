@@ -16,4 +16,4 @@ with h5.HDFStore(baseline.store_path, mode='r') as store:
         observed = (infected.iloc[-1] == 0)
         t = group.index.get_level_values(common.t_name)
         time = t.max() - t.min()
-        assert observed or (time == 10)
+        assert observed or (time == common.TMAX)

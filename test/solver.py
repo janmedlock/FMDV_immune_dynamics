@@ -55,7 +55,7 @@ def plot_solution(prob):
     (fig, axes) = matplotlib.pyplot.subplots(constrained_layout=True)
     axes.stackplot(prob.index, prob.T, labels=prob.columns)
     axes.set_xlabel('age (y)')
-    axes.set_ylabel('probability')
+    axes.set_ylabel('constant-birth\ndensity')
     axes.legend()
     return axes
 

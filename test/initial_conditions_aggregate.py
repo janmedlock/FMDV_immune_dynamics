@@ -60,7 +60,7 @@ def plot_sum_over_immune_state(p):
     ages = p.index
     P = sum_over_immune_state(p)
     ax = P.plot(alpha=0.6)
-    ax.set_xlabel('age')
+    ax.set_xlabel('age (y)')
     ax.set_ylabel('survival')
     survival = herd.mortality.sf(ages)
     ax.plot(ages, survival, color='black', linestyle='dashed', alpha=0.6)
@@ -84,7 +84,7 @@ def plot_probability_constant_birth(p):
         collection = ax.stackplot(ages, group.T, labels=p.columns)
         ax.set_ylabel(f'SAT{SAT}\nconstant-birth\ndensity')
         ax.margins(0)
-    axes[-1].set_xlabel('age')
+    axes[-1].set_xlabel('age (y)')
     fig.tight_layout(rect=(0, 0.1, 1, 1))
     immune_statuses = p.columns.levels[1]
     nrow = 2
@@ -109,7 +109,7 @@ def plot_conditional_probability(p):
         collection = ax.stackplot(ages, Y.T, labels=p.columns)
         ax.set_ylabel(f'SAT{SAT}\nprobability\ngiven alive')
         ax.margins(0)
-    axes[-1].set_xlabel('age')
+    axes[-1].set_xlabel('age (y)')
     fig.tight_layout(rect=(0, 0.1, 1, 1))
     immune_statuses = p.columns.levels[1]
     nrow = 2
