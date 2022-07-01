@@ -29,7 +29,7 @@ def plot_blocks(slvr):
     n = len(slvr.ages)
     m = int(A.shape[0] / n)
     assert A.shape[0] == m * n
-    blocks = numpy.empty((m, m), dtype=int)
+    blcks = numpy.empty((m, m), dtype=int)
     for j in range(m):
         J = slice(j * n, (j + 1) * n)
         for k in range(m):
@@ -37,13 +37,13 @@ def plot_blocks(slvr):
             B = A[J, K]
             b_nonzero = B[B.nonzero()]
             if b_nonzero.shape[1] == 0:
-                blocks[j, k] = 0
+                blcks[j, k] = 0
             elif (b_nonzero > 0).any():
-                blocks[j, k] = 1
+                blcks[j, k] = 1
             else:
-                blocks[j, k] = -1
+                blcks[j, k] = -1
     (fig, axes) = matplotlib.pyplot.subplots(constrained_layout=True)
-    axes.matshow(blocks, cmap='PiYG')
+    axes.matshow(blcks, cmap='PiYG')
     vars_ = blocks.vars_ode + blocks.vars_pde
     axes.set_xticks(range(len(vars_)))
     axes.set_yticks(range(len(vars_)))
