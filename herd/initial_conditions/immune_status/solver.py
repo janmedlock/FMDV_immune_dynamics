@@ -65,7 +65,7 @@ class _Params:
         self.lost_immunity_susceptibility = params.lost_immunity_susceptibility
         # The birth hazard is needed at `ages`, not `ages_mid`.
         self.hazard_birth = self._hazard_birth_constant_time(ages)
-        # Dummy value. Set on calls to `_Solver.solve_step()`.
+        # Dummy value. Set on calls to `Solver.solve_step()`.
         self.newborn_proportion_immune = 1
 
     @staticmethod
@@ -293,11 +293,11 @@ def solve(params, debug=False):
     return _solve(_CacheParameters(params), debug)
 
 
-def get_optimizer(params):
+def get_optimizer(params, debug=False):
     '''Get the optimizer from Solver().'''
     # Get the solution `prob` from the cache.
-    prob = solve(params)
-    solver = Solver(params, _skip_blocks=True)
+    prob = solve(params, debug=debug)
+    solver = Solver(params, debug=debug, _skip_blocks=True)
     return dict(
         hazard_infection=solver.get_hazard_infection(prob),
         newborn_proportion_immune=solver.get_newborn_proportion_immune(prob),

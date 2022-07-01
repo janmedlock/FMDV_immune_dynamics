@@ -11,11 +11,12 @@ class gen:
     and that the hazard of infection is constant in time,
     not periodic as it is with a periodic birth pulse.'''
 
-    def __init__(self, parameters):
+    def __init__(self, parameters, debug=False):
         self.parameters = parameters
         # Reuse these in case we call pdf() or rvs() repeatedly.
         self.immune_status_pdf = (
-            immune_status.probability.interpolant(self.parameters))
+            immune_status.probability.Interpolant(self.parameters,
+                                                  debug=debug))
         self.ages = age_structure.gen(self.parameters)
 
     def immune_status_conditional_pdf(self, ages):

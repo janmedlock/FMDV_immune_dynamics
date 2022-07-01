@@ -9,8 +9,8 @@ class Interpolant:
     '''The solution from `solver.solve()`, that then gets interpolated to
     different ages as needed.'''
 
-    def __init__(self, params):
-        self._probability = solver.solve(params)
+    def __init__(self, params, debug=False):
+        self._probability = solver.solve(params, debug=debug)
 
     def __call__(self, age):
         # Interpolate `self._probability` to `age`.
@@ -25,6 +25,6 @@ class Interpolant:
         return prob
 
 
-def probability(params, age):
+def probability(params, age, debug=False):
     '''The probability of being in each immune status at age `a`.'''
-    return Interpolant(params)(age)
+    return Interpolant(params, debug=debug)(age)

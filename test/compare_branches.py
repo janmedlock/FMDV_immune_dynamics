@@ -18,11 +18,11 @@ BRANCHES = ('unconditional', 'conditional')
 
 
 class Solution:
-    def __init__(self, branch, SAT):
+    def __init__(self, branch, SAT, debug=False):
         self.branch = branch
         self.SAT = SAT
         parameters = herd.Parameters(SAT=self.SAT)
-        P = solver.solve(parameters)
+        P = solver.solve(parameters, debug=debug)
         if branch == 'unconditional':
             self.P_conditional = P.divide(P.sum(axis='columns'),
                                           axis='index')
@@ -30,7 +30,7 @@ class Solution:
             self.P_conditional = P
         else:
             raise ValueError(f'Unknown {branch=}!')
-        slvr = solver.Solver(parameters, _skip_blocks=True)
+        slvr = solver.Solver(parameters, debug=debug, _skip_blocks=True)
         self.P_unconditional = self.P_conditional.multiply(
             slvr.params.survival.mortality,
             axis='index')
@@ -56,9 +56,9 @@ def get_branch():
         raise ValueError(f'Unknown {branch=}!')
 
 
-def build():
+def build(debug=False):
     branch = get_branch()
-    solution = {SAT: Solution(branch, SAT)
+    solution = {SAT: Solution(branch, SAT, debug=debug)
                 for SAT in common.SATs}
     with open(f'solution_{branch}.pkl', 'wb') as fd:
         pickle.dump(solution, fd, protocol=-1)
