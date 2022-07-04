@@ -1,6 +1,7 @@
 '''Common code for running and plotting the parameter samples.'''
 
 import pathlib
+import warnings
 
 from joblib import delayed, Parallel
 import numpy
@@ -37,10 +38,14 @@ def run_one_and_save(parameters, sample, sample_number, path, *args,
     if not path.exists():
         if touch:
             path.touch(exist_ok=False)
-        dfr = run_one(parameters, sample, sample_number,
-                      *args, **kwargs)
-        # Save the data for this sample.
-        numpy.save(path, dfr.to_records())
+        try:
+            dfr = run_one(parameters, sample, sample_number,
+                          *args, **kwargs)
+        except AssertionError as err:
+            warnings.warn(err)
+        else:
+            # Save the data for this sample.
+            numpy.save(path, dfr.to_records())
 
 
 def run(*args, n_jobs=-1, **kwargs):
