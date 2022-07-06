@@ -10,5 +10,3 @@
 ** Should we see how (hazard_infection, newborn_proportion_immune) in
    herd.initial_conditions.immune_status.Solver.solve() change as we
    vary the value of pdf[0]?
-
-
