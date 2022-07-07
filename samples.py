@@ -42,7 +42,7 @@ def run_one_and_save(parameters, sample, sample_number, path, *args,
             dfr = run_one(parameters, sample, sample_number,
                           *args, **kwargs)
         except AssertionError as err:
-            warnings.warn(err)
+            warnings.warn(UserWarning(err))
         else:
             # Save the data for this sample.
             numpy.save(path, dfr.to_records())
