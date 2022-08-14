@@ -56,7 +56,7 @@ def run_subsamples_sequential(SAT, n_subsamples, seed, index=None):
 
 if __name__ == '__main__':
     SAT_sample_numbers = {
-        3: [376, 402],
+        3: [402, ],
     }
     for (SAT, sample_numbers) in SAT_sample_numbers.items():
         run_samples_sequential(SAT, sample_numbers)

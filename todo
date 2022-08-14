@@ -1,7 +1,6 @@
 * Investigate samples that break
   `herd.initial_conditions.immune_state.solve()`
-** Will the solution be non-negative if we just remove the failing
-   assertion?
+** Should we just clip them to be non-negative?
 
 * Compare susceptibility_null to old model
 

@@ -200,8 +200,6 @@ class Solver:
                                            ordered=True),
                    axis='columns', inplace=True)
         P.sort_index(axis='columns', inplace=True)
-        assert ((P >= 0) | numpy.isclose(P, 0)).all(axis=None)
-        P.clip(lower=0, inplace=True)
         return P
 
     def get_hazard_infection(self, P):
@@ -210,8 +208,11 @@ class Solver:
         # over age.
         P_total = P.apply(integrate.trapz,
                           args=(self.ages, ))
-        return (self.params.transmission_rate * P_total['infectious']
-                + self.params.chronic_transmission_rate * P_total['chronic'])
+        haz = (self.params.transmission_rate * P_total['infectious']
+               + self.params.chronic_transmission_rate * P_total['chronic'])
+        assert (haz >= 0) | numpy.isclose(haz, 0)
+        haz = numpy.clip(haz, 0, None)
+        return haz
 
     def get_newborn_proportion_immune(self, P):
         '''Compute the proportions of newborns who have maternal immunity from
@@ -222,8 +223,11 @@ class Solver:
         # The birth rate from moms in each immune status.
         births_total = births.apply(integrate.trapz,
                                     args=(self.ages, ))
-        return (births_total[list(buffalo.Buffalo.has_antibodies)].sum()
-                / births_total.sum())
+        imm = (births_total[list(buffalo.Buffalo.has_antibodies)].sum()
+               / births_total.sum())
+        assert (imm >= 0) | numpy.isclose(imm, 0)
+        imm = numpy.clip(imm, 0, None)
+        return imm
 
     def solve_objective(self, y_curr):
         '''This is called by `optimize.fixed_point()` to find the equilibrium
@@ -240,6 +244,8 @@ class Solver:
         y_sol = optimize.fixed_point(self.solve_objective,
                                      self.transform(x_guess))
         P = self.solve_step(y_sol)
+        assert ((P >= 0) | numpy.isclose(P, 0)).all(axis=None)
+        P.clip(lower=0, inplace=True)
         return P
 
 

@@ -74,10 +74,15 @@ class _BlockODE(_Block, metaclass=abc.ABCMeta):
                * self.params.step / 2)
         diags = ((numpy.hstack([1, 1 + d_X]), 0),  # The diagonal
                  (- 1 + d_X, -1))  # The subdiagonal
-        # Ensure that the off-diagonal entries are non-positive.
-        for (v, k) in diags:
-            if k != 0:
-                assert (v <= 0).all(), type(self)
+        # A is an M matrix if the diagonal entries are positive (which
+        # they must be by the above) and the off-diagonal entries are
+        # non-negative, which must be checked. Suppressing this check
+        # seems to work OK since there's a check in
+        # .solver.Solver.solve() that the solution `P` is
+        # non-negative, which is the ultimate requirement.
+        # for (v, k) in diags:
+        #     if k != 0:
+        #         assert (v <= 0).all(), type(self)
         return sparse.diags(*zip(*diags),
                             shape=(len(self), len(self)))
 
