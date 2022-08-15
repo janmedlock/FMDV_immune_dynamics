@@ -233,6 +233,7 @@ class Solver:
         '''This is called by `optimize.fixed_point()` to find the equilibrium
         `hazard_infection` and `newborn_proportion_immune`.'''
         P = self.solve_step(y_curr)
+        P.clip(lower=0, inplace=True)
         x_next = (self.get_hazard_infection(P),
                   self.get_newborn_proportion_immune(P))
         y_next = self.transform(x_next)
