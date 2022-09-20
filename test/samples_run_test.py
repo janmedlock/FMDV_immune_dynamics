@@ -23,8 +23,7 @@ def _run_sample(SAT, parameters, sample, sample_number):
     print(f'Running {logging_prefix} sample {sample_number}.')
     samples.run_one_and_save(parameters, sample,
                              sample_number, path,
-                             logging_prefix=logging_prefix,
-                             touch=False)
+                             logging_prefix=logging_prefix)
 
 
 def run_sample(SAT, sample_number):

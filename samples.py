@@ -33,15 +33,14 @@ def run_one(parameters, sample, sample_number, *args, **kwargs):
 
 
 def run_one_and_save(parameters, sample, sample_number, path, *args,
-                     touch=True, **kwargs):
+                     **kwargs):
     '''Run one simulation and save the output.'''
     if not path.exists():
-        if touch:
-            path.touch(exist_ok=False)
         try:
             dfr = run_one(parameters, sample, sample_number,
                           *args, **kwargs)
         except AssertionError as err:
+            path.touch(exist_ok=False)
             warnings.warn(UserWarning(err))
         else:
             # Save the data for this sample.
@@ -86,16 +85,23 @@ def combine(unlink=True):
             for path_sample in paths_sample:
                 sample = _get_sample_number(path_sample)
                 if (SAT, sample) not in store_idx:
-                    assert path_sample.stat().st_size > 0
-                    recarray = numpy.load(path_sample)
-                    dfr = pandas.DataFrame.from_records(recarray,
-                                                        index=common.t_name)
-                    common.prepend_index_levels(dfr, SAT=SAT, sample=sample)
-                    print('Inserting '
-                          + ', '.join((f'SAT={SAT}',
-                                       f'sample={sample}'))
-                          + '.')
-                    store.put(dfr)
+                    if path_sample.stat().st_size > 0:
+                        recarray = numpy.load(path_sample)
+                        dfr = pandas.DataFrame.from_records(
+                            recarray,
+                            index=common.t_name)
+                        common.prepend_index_levels(dfr, SAT=SAT,
+                                                    sample=sample)
+                        print('Inserting '
+                              + ', '.join((f'SAT={SAT}',
+                                           f'sample={sample}'))
+                              + '.')
+                        store.put(dfr)
+                    else:
+                        print('Empty '
+                              + ', '.join((f'SAT={SAT}',
+                                           f'sample={sample}'))
+                              + '.')
                 if unlink:
                     path_sample.unlink()
             if unlink:
