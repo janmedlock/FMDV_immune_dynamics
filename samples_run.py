@@ -7,7 +7,7 @@ import samples
 
 
 if __name__ == '__main__':
-    N_JOBS = 20
+    N_JOBS = -1
 
     samples.run(n_jobs=N_JOBS)
     # samples.combine(unlink=False)
