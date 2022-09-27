@@ -300,9 +300,20 @@ def solve(params, debug=False):
     return _solve(_CacheParameters(params), debug)
 
 
-def get_optimizer(params, debug=False):
+def _solve_check_call_in_cache(params):
+    '''Check if the solution for `params` is in the cache.'''
+    # The value of `debug` is ignored by the cache.
+    return _solve.check_call_in_cache(_CacheParameters(params),
+                                      debug=False)
+
+
+def get_optimizer(params, cached_only=False, debug=False):
     '''Get the optimizer from Solver().'''
-    # Get the solution `prob` from the cache.
+    if cached_only and not _solve_check_call_in_cache(params):
+        return dict(
+            hazard_infection=None,
+            newborn_proportion_immune=None,
+        )
     prob = solve(params, debug=debug)
     solver = Solver(params, debug=debug, _skip_blocks=True)
     return dict(
