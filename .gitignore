@@ -20,3 +20,4 @@ _cache/
 .ipynb_checkpoints/
 /herd/floquet/monodromy*.so
 /samples/
+/ics.pkl
