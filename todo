@@ -1,8 +1,6 @@
-* Investigate the 26 samples that break
+* Investigate samples that break
   `herd.initial_conditions.immune_state.solve()`
 ** Should we just clip them to be non-negative?
-** Integrate new code for initial guesses
-*** Run!
 
 * Compare susceptibility_null to old model
 

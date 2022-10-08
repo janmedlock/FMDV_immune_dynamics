@@ -239,10 +239,9 @@ class Solver:
         y_next = self.transform(x_next)
         return y_next
 
-    def solve(self, x_guess=None):
+    def solve(self):
         '''Find the solution.'''
-        if x_guess is None:
-            x_guess = (100, 0.9)
+        x_guess = (100, 0.9)
         y_sol = optimize.fixed_point(self.solve_objective,
                                      self.transform(x_guess))
         P = self.solve_step(y_sol)
@@ -259,9 +258,9 @@ _cache_path = pathlib.Path(__file__).with_name('_cache')
 _cache = joblib.Memory(_cache_path, verbose=1)
 
 
-@_cache.cache(ignore=['debug', 'x_guess'])
-def _solve(params, debug, x_guess):
-    return Solver(params, debug=debug).solve(x_guess=x_guess)
+@_cache.cache(ignore=['debug'])
+def _solve(params, debug):
+    return Solver(params, debug=debug).solve()
 
 
 class _CacheParameters(parameters.Parameters):
@@ -296,26 +295,26 @@ class _CacheParameters(parameters.Parameters):
             setattr(self, attr, float(getattr(params, attr)))
 
 
-def solve(params, debug=False, x_guess=None):
+def solve(params, debug=False):
     '''Find the solution.'''
-    return _solve(_CacheParameters(params), debug, x_guess)
+    return _solve(_CacheParameters(params), debug)
 
 
-def in_cache(params, debug=False, x_guess=None):
+def in_cache(params):
     '''Check if the solution for `params` is in the cache.'''
+    # The value of `debug` is ignored by the cache.
     return _solve.check_call_in_cache(_CacheParameters(params),
-                                      debug=debug,
-                                      x_guess=x_guess)
+                                      debug=False)
 
 
-def get_optimizer(params, cached_only=False, debug=False, x_guess=None):
+def get_optimizer(params, cached_only=False, debug=False):
     '''Get the optimizer from Solver().'''
     if cached_only and not in_cache(params):
         return dict(
             hazard_infection=None,
             newborn_proportion_immune=None,
         )
-    prob = solve(params, debug=debug, x_guess=x_guess)
+    prob = solve(params, debug=debug)
     solver = Solver(params, debug=debug, _skip_blocks=True)
     return dict(
         hazard_infection=solver.get_hazard_infection(prob),
