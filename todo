@@ -1,4 +1,4 @@
-* Investigate samples that break
+* Investigate the 26 samples that break
   `herd.initial_conditions.immune_state.solve()`
 ** Should we just clip them to be non-negative?
 
