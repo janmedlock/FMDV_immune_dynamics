@@ -20,10 +20,13 @@ def load():
     extinction_time = common.get_extinction_time(samples.store_path)
     by = ['SAT']
     grouper = extinction_time.groupby(by)
-    samples = [herd.samples.load(**dict(zip(by, keys)))
-               for keys in grouper.groups.keys()]
-    samples = pandas.concat(samples, keys=grouper.groups.keys(), names=by)
-    return pandas.concat([samples, extinction_time], axis='columns')
+    samples_ = [herd.samples.load(**dict(zip(by, keys)))
+                for keys in grouper.groups.keys()]
+    samples_ = pandas.concat(samples_,
+                             keys=grouper.groups.keys(),
+                             names=by)
+    return pandas.concat([samples_, extinction_time],
+                         axis='columns')
 
 
 def _get_labels(name, rank):
@@ -131,9 +134,9 @@ param_transforms = {
 def plot_sensitivity(df, rank=True, errorbars=False):
     outcome = 'time'
     SATs = df.index.get_level_values('SAT').unique()
-    samples = df.index.get_level_values('sample').unique()
+    samples_ = df.index.get_level_values('sample').unique()
     params = df.columns.drop([outcome, 'observed'])
-    n_samples = len(samples)
+    n_samples = len(samples_)
     colors = Colors()
     width = 390 / 72.27
     height = 0.8 * width
