@@ -18,15 +18,19 @@ import stats
 
 def load():
     extinction_time = common.get_extinction_time(samples.store_path)
-    by = ['SAT']
-    grouper = extinction_time.groupby(by)
-    samples_ = [herd.samples.load(**dict(zip(by, keys)))
-                for keys in grouper.groups.keys()]
-    samples_ = pandas.concat(samples_,
-                             keys=grouper.groups.keys(),
-                             names=by)
-    return pandas.concat([samples_, extinction_time],
-                         axis='columns')
+    idx_lvls = extinction_time.index.names
+    # Load samples and make the rows and columns match
+    # `extinction_time`.
+    samples_ = herd.samples.load() \
+                           .rename_axis(index=idx_lvls.difference(['SAT'])) \
+                           .stack('SAT') \
+                           .reorder_levels(idx_lvls, axis='index')
+    # Merge, using `how='inner'` to drop samples where the simulations
+    # did not run.
+    return samples_.merge(extinction_time,
+                          on=idx_lvls,
+                          how='inner',
+                          sort=True)
 
 
 def _get_labels(name, rank):
@@ -40,35 +44,35 @@ def _get_labels(name, rank):
     return (label, label_resid)
 
 
-def plot_times(df):
-    groups = df.groupby('SAT')
-    fig, ax = pyplot.subplots()
-    for (SAT, group) in groups:
+def plot_times(dfr):
+    grouper = dfr.groupby('SAT')
+    (fig, ax) = pyplot.subplots()
+    for (SAT, group) in grouper:
         survival = stats.get_survival(group, 'time', 'observed')
         ax.plot(survival, label=f'SAT{SAT}', drawstyle='steps-post')
     ax.set_xlabel(common.t_name)
     ax.set_ylabel('Survival')
     # ax.set_yscale('log')
     # Next smaller power of 10.
-    # a = numpy.ceil(numpy.log10(1 / len(df)) - 1)
+    # a = numpy.ceil(numpy.log10(1 / len(dfr)) - 1)
     # ax.set_ylim(10 ** a, 1)
     ax.legend()
     fig.savefig('samples_times.pdf')
 
 
-def plot_parameters(df, rank=True, marker='.', s=1, alpha=0.6):
+def plot_parameters(dfr, rank=True, marker='.', s=1, alpha=0.6):
     outcome = 'time'
-    SATs = df.index.get_level_values('SAT').unique()
-    params = df.columns.drop([outcome, 'observed'])
+    SATs = dfr.index.get_level_values('SAT').unique()
+    params = dfr.columns.drop([outcome, 'observed'])
     (ylabel, ylabel_resid) = _get_labels(outcome, rank)
     colors = seaborn.color_palette('tab20', 20)
     # Put dark colors first, then light.
     colors = colors[0::2] + colors[1::2]
     with backend_pdf.PdfPages('samples_parameters.pdf') as pdf:
         for SAT in SATs:
-            X = df.loc[(SAT, slice(None)), params]
+            X = dfr.loc[(SAT, slice(None)), params]
             X = X.dropna(axis='columns', how='all')
-            y = df.loc[(SAT, slice(None)), outcome]
+            y = dfr.loc[(SAT, slice(None)), outcome]
             if rank:
                 X = (X.rank() - 1) / (len(X) - 1)
                 y = (y.rank() - 1) / (len(y) - 1)
@@ -131,11 +135,11 @@ param_transforms = {
 }
 
 
-def plot_sensitivity(df, rank=True, errorbars=False):
+def plot_sensitivity(dfr, rank=True, errorbars=False):
     outcome = 'time'
-    SATs = df.index.get_level_values('SAT').unique()
-    samples_ = df.index.get_level_values('sample').unique()
-    params = df.columns.drop([outcome, 'observed'])
+    SATs = dfr.index.get_level_values('SAT').unique()
+    samples_ = dfr.index.get_level_values('sample').unique()
+    params = dfr.columns.drop([outcome, 'observed'])
     n_samples = len(samples_)
     colors = Colors()
     width = 390 / 72.27
@@ -152,9 +156,9 @@ def plot_sensitivity(df, rank=True, errorbars=False):
         rho_CI = pandas.DataFrame(index=params, columns=columns,
                                   dtype=float)
     for SAT in SATs:
-        p = df.loc[(SAT, slice(None)), params]
+        p = dfr.loc[(SAT, slice(None)), params]
         p = p.dropna(axis='columns', how='all')
-        o = df.loc[(SAT, slice(None)), outcome]
+        o = dfr.loc[(SAT, slice(None)), outcome]
         if rank:
             rho[SAT] = stats.prcc(p, o)
             xlabel = 'PRCC'
@@ -168,8 +172,12 @@ def plot_sensitivity(df, rank=True, errorbars=False):
     rho.dropna(axis='index', how='all', inplace=True)
     if errorbars:
         rho_CI.dropna(axis='index', how='all', inplace=True)
-    # Sort rows on mean absolute values.
-    order = rho.abs().mean(axis='columns').sort_values().index
+    # Sort the rows of rho by their mean absolute value across the
+    # SATs.
+    order = rho.abs() \
+               .mean(axis='columns') \
+               .sort_values() \
+               .index
     rho = rho.loc[order]
     if errorbars:
         rho_CI = rho_CI.loc[order]
@@ -214,7 +222,7 @@ def plot_sensitivity(df, rank=True, errorbars=False):
             ax.yaxis.set_tick_params(which='both', left=False, right=False,
                                      pad=85)
             ax.set_title(f'SAT{SAT}')
-            if ax.is_first_col():
+            if ax.get_subplotspec().is_first_col():
                 ax.set_yticks(y)
                 ax.set_yticklabels(ylabels, horizontalalignment='left')
             else:
@@ -227,8 +235,8 @@ def plot_sensitivity(df, rank=True, errorbars=False):
 
 
 if __name__ == '__main__':
-    df = load()
-    # plot_times(df)
-    # plot_parameters(df)
-    plot_sensitivity(df)
+    dfr = load()
+    # plot_times(dfr)
+    # plot_parameters(dfr)
+    plot_sensitivity(dfr)
     pyplot.show()
