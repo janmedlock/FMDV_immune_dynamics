@@ -2,7 +2,6 @@
 '''Use the cached initial conditions to predict missing values.'''
 
 import pathlib
-import warnings
 
 import joblib
 import numpy
