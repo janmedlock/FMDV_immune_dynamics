@@ -77,7 +77,10 @@ def _get_sample_number(path):
 def combine(unlink=True):
     with h5.HDFStore(store_path, mode='a') as store:
         # (SAT, sample) that are already in `store`.
-        store_idx = store.get_index().droplevel(common.t_name).unique()
+        try:
+            store_idx = store.get_index().droplevel(common.t_name).unique()
+        except KeyError:
+            store_idx = set()
         paths_SAT = sorted(samples_path.iterdir(), key=_get_SAT)
         for path_SAT in paths_SAT:
             SAT = _get_SAT(path_SAT)
