@@ -1,5 +1,4 @@
-'''Common code for running and plotting with varying susceptibility of
-the lost-immunity class.'''
+'''Common code for running and plotting with varying population size.'''
 
 import pathlib
 
@@ -9,13 +8,17 @@ import baseline
 import common
 import h5
 import herd
+from herd.utility import arange
 
 
 store_path = pathlib.Path(__file__).with_suffix('.h5')
 
-default = herd.Parameters().lost_immunity_susceptibility
+default = herd.Parameters().population_size
 
-susceptibilities = numpy.linspace(0, 1, 11)
+population_sizes = numpy.hstack((
+    arange(100, 900, 100, endpoint=True),
+    arange(1000, 5000, 1000, endpoint=True)
+))
 
 
 def _copy_runs(hdfstore_out, nruns, SAT, **kwds):
@@ -28,13 +31,13 @@ def _copy_runs(hdfstore_out, nruns, SAT, **kwds):
             hdfstore_out.put(chunk)
 
 
-def run(SAT, lost_immunity_susceptibility, nruns, hdfstore,
+def run(SAT, population_size, nruns, hdfstore,
         *args, **kwargs):
     parameters_kwds = dict(
         SAT=SAT,
-        lost_immunity_susceptibility=lost_immunity_susceptibility,
+        population_size=population_size,
     )
-    if lost_immunity_susceptibility == default:
+    if population_size == default:
         _copy_runs(hdfstore, nruns, **parameters_kwds)
     else:
         parameters = herd.Parameters(**parameters_kwds)
