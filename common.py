@@ -47,6 +47,11 @@ def prepend_index_levels(dfr, **levels):
     insert_index_levels(dfr, 0, **levels)
 
 
+def get_logging_prefix(**kwds):
+    return ', '.join(f'{key}={val}'
+                     for (key, val) in kwds.items())
+
+
 def _get_infected(dfr):
     return dfr[cols_infected].sum(axis='columns').rename('infected')
 
