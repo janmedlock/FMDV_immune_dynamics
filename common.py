@@ -72,7 +72,8 @@ def _build_downsampled(path_in, path_out,
     with h5.HDFStore(path_out, mode='w') as store_out:
         with h5.HDFStore(path_in, mode='r') as store_in:
             if by is None:
-                by = [n for n in store_in.get_index_names() if n != t_name]
+                by = store_in.get_index_names() \
+                             .difference({t_name})
             grouper = store_in.groupby(by)
             for (ix, group) in grouper:
                 downsampled = _build_downsampled_group(group, t, t_step, by)
@@ -127,7 +128,8 @@ def _get_extinction_time_one(dfr):
 
 def get_extinction_time(store, by=None, **kwds):
     if by is None:
-        by = [n for n in store.get_index_names() if n != t_name]
+        by = store.get_index_names() \
+                  .difference({t_name})
     grouper = store.groupby(by, columns=cols_infected, **kwds)
     extinction_time = {ix: _get_extinction_time_one(group)
                        for (ix, group) in grouper}
