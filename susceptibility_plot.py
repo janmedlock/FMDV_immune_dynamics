@@ -14,7 +14,7 @@ import susceptibility
 
 
 def load_extinction_times():
-    return common.get_extinction_time(susceptibility.store_path)
+    return common.load_extinction_time(susceptibility.store_path)
 
 
 def plot_median(df, CI=0.5):

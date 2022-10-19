@@ -23,8 +23,8 @@ rc['xtick.labelsize'] = rc['ytick.labelsize'] = 7
 
 
 def load():
-    infected = common.get_infected(baseline.store_path)
-    extinction_time = common.get_extinction_time(baseline.store_path)
+    infected = common.load_infected(baseline.store_path)
+    extinction_time = common.load_extinction_time(baseline.store_path)
     return (infected, extinction_time)
 
 

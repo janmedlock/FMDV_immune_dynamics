@@ -52,10 +52,6 @@ def get_logging_prefix(**kwds):
                      for (key, val) in kwds.items())
 
 
-def _get_infected(dfr):
-    return dfr[cols_infected].sum(axis='columns').rename('infected')
-
-
 def _build_downsampled_group(group, t, t_step, by):
     # Only keep time index.
     group = group.reset_index(by, drop=True)
@@ -69,8 +65,8 @@ def _build_downsampled_group(group, t, t_step, by):
     return group.reindex(t[mask], method='ffill')
 
 
-def build_downsampled(path_in, path_out,
-                      t_min=0, t_max=10, t_step=1/365, by=None):
+def _build_downsampled(path_in, path_out,
+                       t_min=0, t_max=TMAX, t_step=1/365, by=None):
     t = arange(t_min, t_max, t_step, endpoint=True)
     with (h5.HDFStore(path_in, mode='r') as store_in,
           h5.HDFStore(path_out, mode='w') as store_out):
@@ -86,24 +82,31 @@ def build_downsampled(path_in, path_out,
         store_out.repack()
 
 
-def get_downsampled(path, by=None):
+def load_downsampled(path, by=None):
     path_downsampled = path.with_stem(path.stem + '_downsampled')
     if not path_downsampled.exists():
-        build_downsampled(path, path_downsampled, by=by)
+        _build_downsampled(path, path_downsampled, by=by)
     return h5.HDFStore(path_downsampled, mode='r')
 
 
+def get_infected(dfr):
+    return dfr[cols_infected].sum(axis='columns') \
+                             .rename('infected')
+
+
 def _build_infected(path, path_out, by=None):
-    with (get_downsampled(path, by=by) as store_in,
+    with (load_downsampled(path, by=by) as store_in,
           h5.HDFStore(path_out, mode='w') as store_out):
-        for chunk in store_in.select(columns=cols_infected, iterator=True):
-            infected = _get_infected(chunk)
+        chunker = store_in.select(columns=cols_infected,
+                                  iterator=True)
+        for chunk in chunker:
+            infected = get_infected(chunk)
             store_out.put(infected, index=False)
         store_out.create_table_index()
         store_out.repack()
 
 
-def get_infected(path, by=None):
+def load_infected(path, by=None):
     path_infected = path.with_stem(path.stem + '_infected')
     if not path_infected.exists():
         _build_infected(path, path_infected, by=by)
@@ -111,7 +114,8 @@ def get_infected(path, by=None):
     return infected
 
 
-def _build_extinction_time_group(infected):
+def get_extinction_time(dfr):
+    infected = get_infected(dfr)
     t = infected.index.get_level_values(t_name)
     time = t.max() - t.min()
     observed = (infected.iloc[-1] == 0)
@@ -120,21 +124,20 @@ def _build_extinction_time_group(infected):
 
 
 def _build_extinction_time(path, path_out, by=None):
-    # Only the infected columns.
     extinction = {}
     with h5.HDFStore(path, mode='r') as store:
         if by is None:
             by = [n for n in store.get_index_names() if n != t_name]
-        for (ix, group) in store.groupby(by, columns=cols_infected):
-            infected = _get_infected(group)
-            extinction[ix] = _build_extinction_time_group(infected)
+        grouper = store.groupby(by, columns=cols_infected)
+        for (ix, group) in grouper:
+            extinction[ix] = get_extinction_time(group)
     extinction = pandas.DataFrame.from_dict(extinction, orient='index')
     extinction.index.names = by
     extinction.sort_index(level=by, inplace=True)
     h5.dump(extinction, path_out, mode='w')
 
 
-def get_extinction_time(path, by=None):
+def load_extinction_time(path, by=None):
     path_extinction_time = path.with_stem(path.stem + '_extinction_time')
     if not path_extinction_time.exists():
         _build_extinction_time(path, path_extinction_time, by=by)

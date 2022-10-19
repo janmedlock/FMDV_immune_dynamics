@@ -27,9 +27,9 @@ def _build():
 def load():
     if not susceptibility_null.store_path.exists():
         _build()
-    infected = common.get_infected(
+    infected = common.load_infected(
         susceptibility_null.store_path)
-    extinction_time = common.get_extinction_time(
+    extinction_time = common.load_extinction_time(
         susceptibility_null.store_path)
     return (infected, extinction_time)
 

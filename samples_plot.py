@@ -17,7 +17,7 @@ import stats
 
 
 def load():
-    extinction_time = common.get_extinction_time(samples.store_path)
+    extinction_time = common.load_extinction_time(samples.store_path)
     idx_lvls = extinction_time.index.names
     # Load samples and make the rows and columns match
     # `extinction_time`.
