@@ -52,13 +52,24 @@ def sort_index(path, level=None):
                    for level in index.levels)
         for val in index:
             where = ' & '.join(f'{key}={val}'
-                               for (key, val) in zip(index.names, val))
+                               for (key, val) in zip(index.names,
+                                                     _as_sequence(val)))
             print(where)
             dfr = store.select(where=where)
             store_sorted.put(dfr, index=False)
         store_sorted.create_table_index()
         store_sorted.repack()
     path_sorted.rename(path)
+
+
+def _as_sequence(val):
+    '''If `val` is not a non-string sequence, wrap it in a 1-element
+    list, otherwise just return `val`.'''
+    if (isinstance(val, collections.abc.Sequence)
+        and not isinstance(val, str)):
+        return val
+    # Use a list because `pandas` indexing works better with lists.
+    return [val]
 
 
 class _catch_natural_name_warnings(warnings.catch_warnings):
@@ -145,6 +156,7 @@ class HDFStore(pandas.HDFStore):
         # does not align with groups defined by `.groupby(by)`, so
         # we carry the last group from one chunk over to beginning of
         # the next chunk.
+        by = _as_sequence(by)
         chunk_iterator = iter(self.select(*args, key=key,
                                           iterator=True, **kwargs))
         carryover = None
@@ -169,7 +181,8 @@ class HDFStore(pandas.HDFStore):
             # the next chunk.
             stop = n_groups if is_last_chunk else (n_groups - 1)
             for (idx, group) in itertools.islice(group_iterator, stop):
-                print(', '.join(f'{k}={v}' for k, v in zip(by, idx)))
+                print(', '.join(f'{k}={v}'
+                                for (k, v) in zip(by, _as_sequence(idx))))
                 yield (idx, group)
             if is_last_chunk:
                 if debug:
