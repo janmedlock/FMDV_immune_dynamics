@@ -13,7 +13,7 @@ import stats
 import population_size
 
 
-def load_extinction_times():
+def load_extinction_time():
     return common.load_extinction_time(population_size.store_path)
 
 
@@ -159,7 +159,7 @@ def plot_kde_2d(df, save=True):
 
 
 if __name__ == '__main__':
-    df = load_extinction_times()
+    df = load_extinction_time()
     # plot_median(df)
     # plot_survival(df)
     # plot_kde(df)

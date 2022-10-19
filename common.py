@@ -66,26 +66,28 @@ def _build_downsampled_group(group, t, t_step, by):
 
 
 def _build_downsampled(path_in, path_out,
-                       t_min=0, t_max=TMAX, t_step=1/365, by=None):
+                       t_min=0, t_max=TMAX, t_step=1/365,
+                       by=None):
     t = arange(t_min, t_max, t_step, endpoint=True)
-    with (h5.HDFStore(path_in, mode='r') as store_in,
-          h5.HDFStore(path_out, mode='w') as store_out):
-        if by is None:
-            by = [n for n in store_in.get_index_names() if n != t_name]
-        for (ix, group) in store_in.groupby(by):
-            downsampled = _build_downsampled_group(group, t, t_step, by)
-            levels = dict(zip(by, ix))
-            prepend_index_levels(downsampled, **levels)
-            assert numpy.all(downsampled.notnull().all())
-            store_out.put(downsampled, index=False)
+    with h5.HDFStore(path_out, mode='w') as store_out:
+        with h5.HDFStore(path_in, mode='r') as store_in:
+            if by is None:
+                by = [n for n in store_in.get_index_names() if n != t_name]
+            grouper = store_in.groupby(by)
+            for (ix, group) in grouper:
+                downsampled = _build_downsampled_group(group, t, t_step, by)
+                levels = dict(zip(by, ix))
+                prepend_index_levels(downsampled, **levels)
+                assert numpy.all(downsampled.notnull().all())
+                store_out.put(downsampled, index=False)
         store_out.create_table_index()
         store_out.repack()
 
 
-def load_downsampled(path, by=None):
+def load_downsampled(path):
     path_downsampled = path.with_stem(path.stem + '_downsampled')
     if not path_downsampled.exists():
-        _build_downsampled(path, path_downsampled, by=by)
+        _build_downsampled(path, path_downsampled)
     return h5.HDFStore(path_downsampled, mode='r')
 
 
@@ -94,27 +96,27 @@ def get_infected(dfr):
                              .rename('infected')
 
 
-def _build_infected(path, path_out, by=None):
-    with (load_downsampled(path, by=by) as store_in,
-          h5.HDFStore(path_out, mode='w') as store_out):
-        chunker = store_in.select(columns=cols_infected,
-                                  iterator=True)
-        for chunk in chunker:
-            infected = get_infected(chunk)
-            store_out.put(infected, index=False)
+def _build_infected(path, path_out):
+    with h5.HDFStore(path_out, mode='w') as store_out:
+        with load_downsampled(path) as store_in:
+            chunker = store_in.select(columns=cols_infected,
+                                      iterator=True)
+            for chunk in chunker:
+                infected = get_infected(chunk)
+                store_out.put(infected, index=False)
         store_out.create_table_index()
         store_out.repack()
 
 
-def load_infected(path, by=None):
+def load_infected(path):
     path_infected = path.with_stem(path.stem + '_infected')
     if not path_infected.exists():
-        _build_infected(path, path_infected, by=by)
+        _build_infected(path, path_infected)
     infected = h5.load(path_infected)
     return infected
 
 
-def get_extinction_time(dfr):
+def _get_extinction_time_one(dfr):
     infected = get_infected(dfr)
     t = infected.index.get_level_values(t_name)
     time = t.max() - t.min()
@@ -123,24 +125,29 @@ def get_extinction_time(dfr):
     return dict(time=time, observed=observed)
 
 
-def _build_extinction_time(path, path_out, by=None):
-    extinction = {}
+def get_extinction_time(store, by=None, **kwds):
+    if by is None:
+        by = [n for n in store.get_index_names() if n != t_name]
+    grouper = store.groupby(by, columns=cols_infected, **kwds)
+    extinction_time = {ix: _get_extinction_time_one(group)
+                       for (ix, group) in grouper}
+    extinction_time = pandas.DataFrame.from_dict(extinction_time,
+                                                 orient='index') \
+                                      .rename_axis(by, axis='index') \
+                                      .sort_index(level=by)
+    return extinction_time
+
+
+def _build_extinction_time(path, path_out):
     with h5.HDFStore(path, mode='r') as store:
-        if by is None:
-            by = [n for n in store.get_index_names() if n != t_name]
-        grouper = store.groupby(by, columns=cols_infected)
-        for (ix, group) in grouper:
-            extinction[ix] = get_extinction_time(group)
-    extinction = pandas.DataFrame.from_dict(extinction, orient='index')
-    extinction.index.names = by
-    extinction.sort_index(level=by, inplace=True)
-    h5.dump(extinction, path_out, mode='w')
+        extinction_time = get_extinction_time(store)
+    h5.dump(extinction_time, path_out, mode='w')
 
 
-def load_extinction_time(path, by=None):
+def load_extinction_time(path):
     path_extinction_time = path.with_stem(path.stem + '_extinction_time')
     if not path_extinction_time.exists():
-        _build_extinction_time(path, path_extinction_time, by=by)
+        _build_extinction_time(path, path_extinction_time)
     extinction_time = h5.load(path_extinction_time)
     return extinction_time
 
