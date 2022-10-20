@@ -52,6 +52,18 @@ def get_logging_prefix(**kwds):
                      for (key, val) in kwds.items())
 
 
+def _path_stem_append(path, postfix):
+    return path.with_stem(path.stem + f'_{postfix}')
+
+
+def _get_by(store, by):
+    if by is None:
+        # All the index levels except `t_name`.
+        by = store.get_index_names() \
+                  .difference({t_name})
+    return by
+
+
 def _build_downsampled_group(group, t, t_step, by):
     # Only keep time index.
     group = group.reset_index(by, drop=True)
@@ -71,9 +83,7 @@ def _build_downsampled(path_in, path_out,
     t = arange(t_min, t_max, t_step, endpoint=True)
     with h5.HDFStore(path_out, mode='w') as store_out:
         with h5.HDFStore(path_in, mode='r') as store_in:
-            if by is None:
-                by = store_in.get_index_names() \
-                             .difference({t_name})
+            by = _get_by(store_in, by)
             grouper = store_in.groupby(by)
             for (ix, group) in grouper:
                 downsampled = _build_downsampled_group(group, t, t_step, by)
@@ -85,8 +95,12 @@ def _build_downsampled(path_in, path_out,
         store_out.repack()
 
 
+def get_path_downsampled(path):
+    return _path_stem_append(path, 'downsampled')
+
+
 def load_downsampled(path):
-    path_downsampled = path.with_stem(path.stem + '_downsampled')
+    path_downsampled = get_path_downsampled(path)
     if not path_downsampled.exists():
         _build_downsampled(path, path_downsampled)
     return h5.HDFStore(path_downsampled, mode='r')
@@ -109,8 +123,12 @@ def _build_infected(path, path_out):
         store_out.repack()
 
 
+def get_path_infected(path):
+    return _path_stem_append(path, 'infected')
+
+
 def load_infected(path):
-    path_infected = path.with_stem(path.stem + '_infected')
+    path_infected = get_path_infected(path)
     if not path_infected.exists():
         _build_infected(path, path_infected)
     infected = h5.load(path_infected)
@@ -127,9 +145,7 @@ def _get_extinction_time_one(dfr):
 
 
 def get_extinction_time(store, by=None, **kwds):
-    if by is None:
-        by = store.get_index_names() \
-                  .difference({t_name})
+    by = _get_by(store, by)
     grouper = store.groupby(by, columns=cols_infected, **kwds)
     extinction_time = {ix: _get_extinction_time_one(group)
                        for (ix, group) in grouper}
@@ -146,8 +162,12 @@ def _build_extinction_time(path, path_out):
     h5.dump(extinction_time, path_out, mode='w')
 
 
+def get_path_extinction_time(path):
+    return _path_stem_append(path, 'extinction_time')
+
+
 def load_extinction_time(path):
-    path_extinction_time = path.with_stem(path.stem + '_extinction_time')
+    path_extinction_time = get_path_extinction_time(path)
     if not path_extinction_time.exists():
         _build_extinction_time(path, path_extinction_time)
     extinction_time = h5.load(path_extinction_time)
