@@ -35,16 +35,26 @@ def _run_over_population_sizes(SAT, susceptibility, nruns,
     # Ignoring sampling error, persistence is an increasing function
     # of population size, so if persistence is 100% for some
     # population size, it will also be 100% for all larger population
-    # sizes. Thus, we end this loop if persistence reaches 100%.
+    # sizes. Thus, we won't run simulations for larger population
+    # sizes once we have found a population size with 100%
+    # persistence. But if we have some already run simulations for
+    # larger population sizes from the 1-parameter sensitivity runs of
+    # population size and susceptibility, do add those to the
+    # output. If `copy_only` is `True`, new simulations are not run,
+    # but the 1-parameter sensitivity runs are still copied.
+    copy_only = False
     for population_size in psas.population_sizes:
-        psas.run(SAT, susceptibility, population_size, nruns, store)
-        persistence = _get_persistence(SAT, susceptibility, population_size,
-                                       store, store_extinction_time)
-        print(
-            f'{SAT=}, {susceptibility=}, {population_size=}: {persistence=}'
-        )
-        if persistence == 1.:
-            break
+        stored = psas.run(SAT, susceptibility, population_size,
+                          nruns, store, copy_only)
+        # Calculate `persistence` if data was added to `store`.
+        if stored:
+            persistence = _get_persistence(SAT, susceptibility,
+                                           population_size,
+                                           store, store_extinction_time)
+            print(f'{SAT=}, {susceptibility=}, {population_size=}'
+                  f': {persistence=}')
+            if persistence == 1.:
+                copy_only = True
 
 
 def run(nruns):

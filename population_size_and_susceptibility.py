@@ -16,6 +16,14 @@ from susceptibility import susceptibilities
 store_path = pathlib.Path(__file__).with_suffix('.h5')
 
 
+def _is_default_susceptibility(lost_immunity_susceptibility):
+    return (lost_immunity_susceptibility == susceptibility.default)
+
+
+def _is_default_population_size(population_size):
+    return (population_size == population_size_.default)
+
+
 def _copy_runs_population_size(hdfstore_out, nruns, SAT,
                                population_size, **kwds):
     '''Copy the data from 'population_size.h5'.'''
@@ -41,17 +49,19 @@ def _copy_runs_susceptibility(hdfstore_out, nruns, SAT,
 
 
 def run(SAT, lost_immunity_susceptibility, population_size, nruns, hdfstore,
-        *args, **kwargs):
+        copy_only, *args, **kwargs):
     parameters_kwds = dict(
         SAT=SAT,
         lost_immunity_susceptibility=lost_immunity_susceptibility,
         population_size=population_size
     )
-    if lost_immunity_susceptibility == susceptibility.default:
+    if _is_default_susceptibility(lost_immunity_susceptibility):
         _copy_runs_population_size(hdfstore, nruns, **parameters_kwds)
-    elif population_size == population_size_.default:
+        stored = True
+    elif _is_default_population_size(population_size):
         _copy_runs_susceptibility(hdfstore, nruns, **parameters_kwds)
-    else:
+        stored = True
+    elif not copy_only:
         parameters = herd.Parameters(**parameters_kwds)
         logging_prefix = common.get_logging_prefix(**parameters_kwds)
         chunks = baseline.run_many_chunked(parameters, nruns, *args,
@@ -60,3 +70,7 @@ def run(SAT, lost_immunity_susceptibility, population_size, nruns, hdfstore,
         for dfr in chunks:
             common.prepend_index_levels(dfr, **parameters_kwds)
             hdfstore.put(dfr)
+        stored = True
+    else:
+        stored = False
+    return stored
