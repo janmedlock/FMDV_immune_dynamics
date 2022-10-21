@@ -29,7 +29,8 @@ def _get_persistence(SAT, lost_immunity_susceptibility, population_size,
 
 
 def _run_over_population_sizes(SAT, susceptibility, nruns,
-                               store, store_extinction_time):
+                               store, store_extinction_time,
+                               *args, **kwds):
     '''For the given SAT and susceptibility, run simulations with
     varying population size.'''
     # Ignoring sampling error, persistence is an increasing function
@@ -45,7 +46,7 @@ def _run_over_population_sizes(SAT, susceptibility, nruns,
     copy_only = False
     for population_size in psas.population_sizes:
         stored = psas.run(SAT, susceptibility, population_size,
-                          nruns, store, copy_only)
+                          nruns, store, copy_only, *args, **kwds)
         # Calculate `persistence` if data was added to `store`.
         if stored:
             persistence = _get_persistence(SAT, susceptibility,
@@ -57,9 +58,9 @@ def _run_over_population_sizes(SAT, susceptibility, nruns,
                 copy_only = True
 
 
-def run(nruns):
+def run(nruns, *args, **kwds):
     '''Run the simulations for the sensitivity analysis.'''
-    # The logic in the innre loop `_run_over_population_sizes()`
+    # The logic in the inner loop `_run_over_population_sizes()`
     # requires that the population sizes be monotone increasing.
     assert _is_monotone_increasing(psas.population_sizes)
     # Extinction time is computed in the inner loop
@@ -72,7 +73,8 @@ def run(nruns):
         for SAT in common.SATs:
             for susceptibility in psas.susceptibilities:
                 _run_over_population_sizes(SAT, susceptibility, nruns,
-                                           store, store_extinction_time)
+                                           store, store_extinction_time,
+                                           *args, **kwds)
         store.repack()
         store_extinction_time.repack()
 
