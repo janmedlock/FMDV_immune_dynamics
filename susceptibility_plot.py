@@ -53,7 +53,7 @@ def plot_survival(df):
             survival = stats.get_survival(g, 'time', 'observed')
             ax.plot(survival.index, survival,
                     label=f'lost_immunity_susceptibility {s}',
-                    drawstype='steps-post')
+                    drawstyle='steps-post')
 
 
 def plot_kde(df):
@@ -98,7 +98,6 @@ def plot_kde_2d(df, save=True):
                .get_level_values('lost_immunity_susceptibility') \
                .unique() \
                .sort_values()
-    sigma_baseline = 1.
     with pyplot.rc_context(rc=rc):
         fig, axes = pyplot.subplots(1 + 1, 3, sharex='col', sharey='row',
                                     gridspec_kw=dict(height_ratios=(3, 1)))
@@ -145,7 +144,7 @@ def plot_kde_2d(df, save=True):
                 ax_po.yaxis.set_major_formatter(
                     ticker.PercentFormatter(xmax=1))
         for ax in fig.axes:
-            ax.axvline(sigma_baseline,
+            ax.axvline(susceptibility.default,
                        color='black', linestyle='dotted', alpha=0.7)
             for sp in ('top', 'right'):
                 ax.spines[sp].set_visible(False)

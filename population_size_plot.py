@@ -34,6 +34,7 @@ def plot_median(df, CI=0.5):
                              alpha=0.5)
             ax.set_xlim(left=0)
             ax.set_xlabel(f'extinction {common.t_name}')
+            ax.set_yscale('log')
             subplotspec = ax.get_subplotspec()
             if subplotspec.is_first_col():
                 (_, _, idx, _) = subplotspec.get_geometry()
@@ -53,7 +54,7 @@ def plot_survival(df):
             survival = stats.get_survival(g, 'time', 'observed')
             ax.plot(survival.index, survival,
                     label=f'population_size {popsize}',
-                    drawstype='steps-post')
+                    drawstyle='steps-post')
 
 
 def plot_kde(df):
@@ -94,19 +95,18 @@ def plot_kde_2d(df, save=True):
     rc['axes.labelsize'] = 8
     rc['xtick.labelsize'] = rc['ytick.labelsize'] = 7
     extinction_time_max = 10
-    sigmas = df.index \
-               .get_level_values('population_size') \
-               .unique() \
-               .sort_values()
-    sigma_baseline = 1.
+    popsizes = df.index \
+                 .get_level_values('population_size') \
+                 .unique() \
+                 .sort_values()
     with pyplot.rc_context(rc=rc):
         fig, axes = pyplot.subplots(1 + 1, 3, sharex='col', sharey='row',
                                     gridspec_kw=dict(height_ratios=(3, 1)))
         extinction_time = numpy.linspace(0, extinction_time_max, 301)
         for (i, (SAT, group_SAT)) in enumerate(df.groupby('SAT')):
             ax = axes[0, i]
-            density = numpy.zeros((len(extinction_time), len(sigmas)))
-            proportion_observed = numpy.zeros_like(sigmas, dtype=float)
+            density = numpy.zeros((len(extinction_time), len(popsizes)))
+            proportion_observed = numpy.zeros_like(popsizes, dtype=float)
             for (k, (p, g)) in enumerate(group_SAT.groupby('population_size')):
                 ser = g.time[g.observed]
                 nruns = len(g)
@@ -123,20 +123,22 @@ def plot_kde_2d(df, save=True):
             norm = colors.Normalize(vmin=0, vmax=numpy.max(density))
             ax.imshow(density * proportion_observed,
                       cmap=cmap, norm=norm, interpolation='bilinear',
-                      extent=(min(sigmas), max(sigmas),
+                      extent=(min(popsizes), max(popsizes),
                               min(extinction_time), max(extinction_time)),
                       aspect='auto', origin='lower', clip_on=False)
-            ax.autoscale(tight=True)
+            ax.set_xscale('log')
+            ax.set_xlim(min(popsizes), max(popsizes))
             ax.set_title(f'SAT{SAT}')
             if ax.get_subplotspec().is_first_col():
                 ax.set_ylabel(f'extinction {common.t_name}')
                 ax.yaxis.set_major_locator(
                     ticker.MultipleLocator(max(extinction_time) / 5))
             ax_po = axes[-1, i]
-            ax_po.plot(sigmas, 1 - proportion_observed,
+            ax_po.plot(popsizes, 1 - proportion_observed,
                        color=common.SAT_colors[SAT],
                        clip_on=False, zorder=3)
-            ax_po.autoscale(tight=True)
+            ax_po.set_xscale('log')
+            ax_po.set_xlim(min(popsizes), max(popsizes))
             ax_po.set_xlabel('Population\nsize')
             if ax_po.get_subplotspec().is_first_col():
                 ax_po.set_ylabel('persisting 10 y')
@@ -144,7 +146,7 @@ def plot_kde_2d(df, save=True):
                 ax_po.yaxis.set_major_formatter(
                     ticker.PercentFormatter(xmax=1))
         for ax in fig.axes:
-            ax.axvline(sigma_baseline,
+            ax.axvline(population_size.default,
                        color='black', linestyle='dotted', alpha=0.7)
             for sp in ('top', 'right'):
                 ax.spines[sp].set_visible(False)
