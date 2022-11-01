@@ -1,9 +1,7 @@
 '''Common plotting code.'''
 
 import matplotlib.collections
-import matplotlib.colors
 import matplotlib.pyplot
-import matplotlib.ticker
 import numpy
 import pandas
 import statsmodels.nonparametric.api
@@ -218,9 +216,3 @@ SAT_colors = {
     2: '#ef3b2c',
     3: '#807dba'
 }
-
-
-def get_cmap_SAT(SAT):
-    '''White to `SAT_colors[SAT]`.'''
-    return matplotlib.colors.LinearSegmentedColormap.from_list(
-        'name', ['white', SAT_colors[SAT]])
