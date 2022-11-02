@@ -1,9 +1,12 @@
 '''Common plotting code.'''
 
+import os
+
 import matplotlib.collections
 import matplotlib.pyplot
 import numpy
 import pandas
+import psutil
 import statsmodels.nonparametric.api
 
 import h5
@@ -27,6 +30,14 @@ TMAX = 10
 t_name = 'time (y)'
 
 cols_infected = ['exposed', 'infectious', 'chronic']
+
+
+def nice_self():
+    '''Set to minimum CPU and IO prioirities.'''
+    pid = os.getpid()
+    proc = psutil.Process(pid)
+    proc.nice(19)
+    proc.ionice(psutil.IOPRIO_CLASS_BE, 7)
 
 
 def insert_index_levels(dfr, i, **levels):

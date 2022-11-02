@@ -82,4 +82,5 @@ def run(nruns, *args, **kwds):
 if __name__ == '__main__':
     NRUNS = 1000
 
+    common.nice_self()
     run(NRUNS)

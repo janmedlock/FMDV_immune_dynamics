@@ -10,6 +10,7 @@ import population_size
 if __name__ == '__main__':
     NRUNS = 1000
 
+    common.nice_self()
     with h5.HDFStore(population_size.store_path) as store:
         for SAT in common.SATs:
             for popsize in population_size.population_sizes:

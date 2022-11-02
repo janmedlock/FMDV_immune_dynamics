@@ -3,11 +3,13 @@
 estimates, run 1 simulation. This produces a file called
 `samples.h5`.'''
 
+import common
 import samples
 
 
 if __name__ == '__main__':
     N_JOBS = -1
 
+    common.nice_self()
     samples.run(n_jobs=N_JOBS)
     samples.combine(unlink=True)
