@@ -13,6 +13,6 @@ if __name__ == '__main__':
     common.nice_self()
     with h5.HDFStore(population_size.store_path) as store:
         for SAT in common.SATs:
-            for popsize in population_size.population_sizes:
+            for popsize in population_size.values:
                 population_size.run(SAT, popsize, NRUNS, store)
         store.repack()

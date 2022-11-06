@@ -8,9 +8,7 @@ import common
 import h5
 import herd
 import population_size as population_size_
-from population_size import population_sizes
 import susceptibility
-from susceptibility import susceptibilities
 
 
 store_path = pathlib.Path(__file__).with_suffix('.h5')

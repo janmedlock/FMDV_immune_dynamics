@@ -9,16 +9,10 @@ import population_size
 import sensitivity
 
 
-sens = sensitivity.Sensitivity(population_size,
-                               'population_size',
-                               'Population\nsize',
-                               log=True)
-
-
 if __name__ == '__main__':
-    df = sens.load_extinction_time()
-    # sens.plot_median(df)
-    # sens.plot_survival(df)
-    # sens.plot_kde(df)
-    sens.plot_kde_2d(df)
+    df = sensitivity.load_extinction_time(population_size)
+    # sensitivity.plot_median(population_size, df)
+    # sensitivity.plot_survival(population_size, df)
+    # sensitivity.plot_kde(population_size, df)
+    sensitivity.plot_kde_2d(population_size, df)
     matplotlib.pyplot.show()

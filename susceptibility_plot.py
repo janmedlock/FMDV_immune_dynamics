@@ -5,20 +5,14 @@ susceptibility of the lost-immunity class. This requires the file
 
 import matplotlib.pyplot
 
-import susceptibility
 import sensitivity
-
-
-sens = sensitivity.Sensitivity(susceptibility,
-                               'lost_immunity_susceptibility',
-                               'Susceptibility\nof lost-immunity\nstate',
-                               log=False)
+import susceptibility
 
 
 if __name__ == '__main__':
-    df = sens.load_extinction_time()
-    # sens.plot_median(df)
-    # sens.plot_survival(df)
-    # sens.plot_kde(df)
-    sens.plot_kde_2d(df)
+    df = sensitivity.load_extinction_time(susceptibility)
+    # sensitivity.plot_median(susceptibility, df)
+    # sensitivity.plot_survival(susceptibility, df)
+    # sensitivity.plot_kde(susceptibility, df)
+    sensitivity.plot_kde_2d(susceptibility, df)
     matplotlib.pyplot.show()

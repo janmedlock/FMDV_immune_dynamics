@@ -11,11 +11,17 @@ import h5
 import herd
 
 
+var = 'lost_immunity_susceptibility'
+
+label = 'Susceptibility\nof lost-immunity\nstate'
+
+log = False
+
+values = numpy.linspace(0, 1, 11)
+
+default = getattr(herd.Parameters(), var)
+
 store_path = pathlib.Path(__file__).with_suffix('.h5')
-
-default = herd.Parameters().lost_immunity_susceptibility
-
-susceptibilities = numpy.linspace(0, 1, 11)
 
 
 def _copy_runs(hdfstore_out, nruns, SAT, **kwds):

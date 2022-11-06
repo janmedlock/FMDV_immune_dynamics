@@ -7,7 +7,9 @@ import numpy
 
 import common
 import h5
-import population_size_and_susceptibility as psas
+import population_size as population_size_
+import population_size_and_susceptibility
+import susceptibility
 
 
 def _is_monotone_increasing(arr):
@@ -26,7 +28,7 @@ def _get_persistence(SAT, lost_immunity_susceptibility, population_size,
     return common.get_persistence(extinction_time)
 
 
-def _run_over_population_sizes(SAT, susceptibility, nruns,
+def _run_over_population_sizes(SAT, lost_immunity_susceptibility, nruns,
                                store, store_extinction_time,
                                *args, **kwds):
     '''For the given SAT and susceptibility, run simulations with
@@ -42,16 +44,18 @@ def _run_over_population_sizes(SAT, susceptibility, nruns,
     # output. If `copy_only` is `True`, new simulations are not run,
     # but the 1-parameter sensitivity runs are still copied.
     copy_only = False
-    for population_size in psas.population_sizes:
-        stored = psas.run(SAT, susceptibility, population_size,
-                          nruns, store, copy_only, *args, **kwds)
+    for population_size in population_size_.values:
+        stored = population_size_and_susceptibility.run(
+            SAT, lost_immunity_susceptibility, population_size,
+            nruns, store, copy_only, *args, **kwds)
         # Calculate `persistence` if data was added to `store`.
         if stored:
-            persistence = _get_persistence(SAT, susceptibility,
-                                           population_size,
+            persistence = _get_persistence(SAT, suscept, population_size,
                                            store, store_extinction_time)
-            print(f'{SAT=}, {susceptibility=}, {population_size=}'
-                  f': {persistence=}')
+            print(', '.join((f'{SAT=}',
+                             f'{lost_immunity_susceptibility=}',
+                             f'{population_size=}'))
+                  + f': {persistence=}')
             if persistence == 1.:
                 copy_only = True
 
@@ -60,17 +64,18 @@ def run(nruns, *args, **kwds):
     '''Run the simulations for the sensitivity analysis.'''
     # The logic in the inner loop `_run_over_population_sizes()`
     # requires that the population sizes be monotone increasing.
-    assert _is_monotone_increasing(psas.population_sizes)
+    assert _is_monotone_increasing(population_size_.values)
     # Extinction time is computed in the inner loop
     # `_run_over_population_sizes()` and stored to avoid having to
     # compute it again later for plotting.
+    store_path = population_size_and_susceptibility.store_path
     store_extinction_time_path = common.get_path_extinction_time(
-        psas.store_path)
-    with (h5.HDFStore(psas.store_path) as store,
+        population_size_and_susceptibility.store_path)
+    with (h5.HDFStore(store_path) as store,
           h5.HDFStore(store_extinction_time_path) as store_extinction_time):
         for SAT in common.SATs:
-            for susceptibility in psas.susceptibilities:
-                _run_over_population_sizes(SAT, susceptibility, nruns,
+            for suscept in susceptibility.values:
+                _run_over_population_sizes(SAT, suscept, nruns,
                                            store, store_extinction_time,
                                            *args, **kwds)
         store.repack()

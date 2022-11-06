@@ -4,23 +4,34 @@ import matplotlib.pyplot
 import numpy
 
 import common
-import population_size_and_susceptibility as psas
-import population_size_plot
-import susceptibility_plot
+import population_size
+import population_size_and_susceptibility
 import sensitivity
+import susceptibility
 
 
 def load_extinction_time():
-    return common.load_extinction_time(psas.store_path)
+    return common.load_extinction_time(
+        population_size_and_susceptibility.store_path)
 
 
 
 def get_persistence(dfr):
     grouper = dfr.groupby(['SAT',
-                           'lost_immunity_susceptibility',
-                           'population_size'])
+                           susceptibility.var,
+                           population_size.var])
     return grouper.apply(common.get_persistence)
 
+
+
+def fill_missing_persistence(dfr):
+    isnull = dfr.isnull()
+    # Fill missing values with values to their left in the same row.
+    # This should fill the missing values with 1's.
+    dfr.fillna(method='ffill', axis='columns', inplace=True)
+    # Check that the filled values are all 1.
+    assert all(numpy.allclose(dfr.loc[row, row_mask], 1)
+               for (row, row_mask) in isnull.iterrows())
 
 
 def plot_persistence(dfr):
@@ -42,11 +53,9 @@ def plot_persistence(dfr):
                                                  layout='constrained')
         axes = numpy.atleast_1d(axes)
         for ((SAT, group), ax) in zip(grouper, axes):
-            # Move population_size to columns.
+            # Move population_size from an index level to columns.
             arr = group.unstack()
-            # Fill missing values with values to their left.
-            # This will fill the missing values with 100%'s.
-            arr.fillna(method='ffill', axis='columns', inplace=True)
+            fill_missing_persistence(arr)
             x = arr.columns
             y = arr.index.droplevel('SAT')
             cmap = sensitivity.get_cmap(SAT)
@@ -55,13 +64,13 @@ def plot_persistence(dfr):
                           shading='gouraud')
             ax.set_title(f'SAT{SAT}')
             ax.set_xscale('log')
-            ax.set_xlim(min(psas.population_sizes),
-                        max(psas.population_sizes))
-            ax.set_xlabel(population_size_plot.sens.label)
+            ax.set_xlim(min(population_size.values),
+                        max(population_size.values))
+            ax.set_xlabel(population_size.label)
             if ax.get_subplotspec().is_first_col():
-                ax.set_ylim(min(psas.susceptibilities),
-                            max(psas.susceptibilities))
-                ax.set_ylabel(susceptibility_plot.sens.label)
+                ax.set_ylim(min(susceptibility.values),
+                            max(susceptibility.values))
+                ax.set_ylabel(susceptibility.label)
         fig.align_xlabels(axes)
 
 

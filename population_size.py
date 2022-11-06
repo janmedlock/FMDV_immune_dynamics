@@ -11,14 +11,20 @@ import herd
 from herd.utility import arange
 
 
-store_path = pathlib.Path(__file__).with_suffix('.h5')
+var = 'population_size'
 
-default = herd.Parameters().population_size
+label = 'Population\nsize'
 
-population_sizes = numpy.hstack((
+log = True
+
+values = numpy.hstack((
     arange(100, 900, 100, endpoint=True),
     arange(1000, 5000, 1000, endpoint=True)
 ))
+
+default = getattr(herd.Parameters(), var)
+
+store_path = pathlib.Path(__file__).with_suffix('.h5')
 
 
 def _copy_runs(hdfstore_out, nruns, SAT, **kwds):
