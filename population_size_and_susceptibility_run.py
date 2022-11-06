@@ -23,9 +23,7 @@ def _get_persistence(SAT, lost_immunity_susceptibility, population_size,
                         f'{population_size=}'))
     extinction_time = common.get_extinction_time(store, where=where)
     store_extinction_time.put(extinction_time)
-    persisted = ~extinction_time.observed
-    persistence = sum(persisted) / len(persisted)
-    return persistence
+    return common.get_persistence(extinction_time)
 
 
 def _run_over_population_sizes(SAT, susceptibility, nruns,

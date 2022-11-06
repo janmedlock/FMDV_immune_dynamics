@@ -183,6 +183,11 @@ def load_extinction_time(path):
     return extinction_time
 
 
+def get_persistence(extinction_time):
+    persisted = ~extinction_time.observed
+    return sum(persisted) / len(extinction_time)
+
+
 def set_violins_linewidth(ax, lw):
     for col in ax.collections:
         if isinstance(col, matplotlib.collections.PolyCollection):

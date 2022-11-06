@@ -22,9 +22,12 @@ def get_proportion_observed(dfr, by_var):
 
 
 def _get_density_one(grp, time):
-    if not grp.observed.any():
-        return numpy.zeros_like(time)
     ser = grp.time[grp.observed]
+    # If all of `grp.observed` are `False`, the density is 0.
+    # If all but one of `grp.observed` are `False`, the method below
+    # returns NaNs.
+    if len(ser) <= 1:
+        return numpy.zeros_like(time)
     kde = statsmodels.nonparametric.api.KDEUnivariate(ser)
     kde.fit(cut=0)
     return kde.evaluate(time)
@@ -143,15 +146,15 @@ class Sensitivity:
                                       extinction_time)
                 ax = axes_col[0]
                 cmap = get_cmap(SAT)
+                extent=(min(vals), max(vals),
+                        min(extinction_time), max(extinction_time)),
                 # Use `density` to set the color range.
-                norm = matplotlib.colors.Normalize(vmin=0,
-                                                   vmax=density.max().max())
+                vmax = density.max().max()
                 # Plot `density * proportion_observed`.
-                ax.imshow(density.T * proportion_observed,
-                          cmap=cmap, norm=norm, interpolation='bilinear',
-                          extent=(min(vals), max(vals),
-                                  min(extinction_time), max(extinction_time)),
-                          aspect='auto', origin='lower', clip_on=False)
+                arr = density.T * proportion_observed
+                ax.pcolormesh(arr.columns, arr.index, arr,
+                              cmap=cmap, vmin=0, vmax=vmax,
+                              shading='gouraud')
                 if self.log:
                     ax.set_xscale('log')
                 ax.set_xlim(min(vals), max(vals))
