@@ -20,13 +20,11 @@ with Parallel(n_jobs=1) as parallel:
     age_structures = parallel(delayed(get_age_structure)(ages, start_time)
                               for start_time in start_times)
 
-fig, ax = pyplot.subplots()
-im = ax.imshow(age_structures,
-               extent=(ages[0], ages[-1], start_times[0], start_times[-1]),
-               cmap='viridis', interpolation='bilinear',
-               origin='lower', aspect='auto')
+(fig, ax) = pyplot.subplots()
+pcm = ax.pcolormesh(ages, start_times, age_structures,
+                    cmap='viridis', shading='gouraud')
 ax.set_xlabel('age (y)')
 ax.set_ylabel('start time (y)')
-fig.colorbar(im, label='density (y$^{-1}$)')
+fig.colorbar(pcm, label='density (y$^{-1}$)')
 fig.tight_layout()
 pyplot.show()
