@@ -3,6 +3,8 @@ size and susceptibility of the lost-immunity class.'''
 
 import pathlib
 
+import numpy
+
 import baseline
 import common
 import h5
@@ -12,6 +14,10 @@ import susceptibility
 
 
 store_path = pathlib.Path(__file__).with_suffix('.h5')
+
+
+def is_monotone_increasing(arr):
+    return (numpy.diff(arr) > 0).all()
 
 
 def _is_default_susceptibility(lost_immunity_susceptibility):

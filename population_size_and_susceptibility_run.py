@@ -3,17 +3,11 @@
 susceptibility. This produces a file called
 `population_size_and_susceptibility.h5`.'''
 
-import numpy
-
 import common
 import h5
 import population_size as population_size_
 import population_size_and_susceptibility
 import susceptibility
-
-
-def _is_monotone_increasing(arr):
-    return (numpy.diff(arr) > 0).all()
 
 
 def _get_persistence(SAT, lost_immunity_susceptibility, population_size,
@@ -64,7 +58,8 @@ def run(nruns, *args, **kwds):
     '''Run the simulations for the sensitivity analysis.'''
     # The logic in the inner loop `_run_over_population_sizes()`
     # requires that the population sizes be monotone increasing.
-    assert _is_monotone_increasing(population_size_.values)
+    assert population_size_and_susceptibility.is_monotone_increasing(
+        population_size_.values)
     # Extinction time is computed in the inner loop
     # `_run_over_population_sizes()` and stored to avoid having to
     # compute it again later for plotting.

@@ -25,13 +25,15 @@ def get_persistence(dfr):
 
 
 def fill_missing_persistence(dfr):
-    isnull = dfr.isnull()
-    # Fill missing values with values to their left in the same row.
-    # This should fill the missing values with 1's.
-    dfr.fillna(method='ffill', axis='columns', inplace=True)
-    # Check that the filled values are all 1.
-    assert all(numpy.allclose(dfr.loc[row, row_mask], 1)
-               for (row, row_mask) in isnull.iterrows())
+    assert population_size_and_susceptibility.is_monotone_increasing(
+        dfr.columns)
+    # Starting from the left, where there is a missing value, if the
+    # value in the previous column is 1, set the current value to 1.
+    # Skip the first column since it has no previous column.
+    for (col_prev, col_curr) in zip(dfr.columns[:-1], dfr.columns[1:]):
+        to_update = (dfr[col_curr].isnull()
+                     & (dfr[col_prev] == 1))
+        dfr.loc[to_update, col_curr] = 1
 
 
 def plot_persistence(dfr):
@@ -51,7 +53,6 @@ def plot_persistence(dfr):
         (fig, axes) = matplotlib.pyplot.subplots(1, ncols,
                                                  sharey='row',
                                                  layout='constrained')
-        axes = numpy.atleast_1d(axes)
         for ((SAT, group), ax) in zip(grouper, axes):
             # Move population_size from an index level to columns.
             arr = group.unstack()
