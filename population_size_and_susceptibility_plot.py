@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 
 import matplotlib.pyplot
+import matplotlib.ticker
 import numpy
 
 import common
@@ -8,6 +9,14 @@ import population_size
 import population_size_and_susceptibility
 import sensitivity
 import susceptibility
+
+
+population_size_label = population_size.label.replace('\n', ' ')
+
+susceptibility_label = susceptibility.label.replace('\n', ' ') \
+                                           .replace('of ', 'of\n')
+
+persistence_label = f'Proportion persisting {common.TMAX} y'
 
 
 def load_extinction_time():
@@ -50,29 +59,38 @@ def plot_persistence(dfr):
         persistence = get_persistence(dfr)
         grouper = persistence.groupby('SAT')
         ncols = len(grouper)
-        (fig, axes) = matplotlib.pyplot.subplots(1, ncols,
-                                                 sharey='row',
-                                                 layout='constrained')
-        for ((SAT, group), ax) in zip(grouper, axes):
+        (fig, axes) = matplotlib.pyplot.subplots(
+            2, ncols,
+            sharey='row', layout='constrained',
+            gridspec_kw=dict(hspace=0.15,
+                             height_ratios=(10, 1)))
+        for ((SAT, group), (ax, ax_cbar)) in zip(grouper, axes.T):
             # Move population_size from an index level to columns.
             arr = group.unstack()
             fill_missing_persistence(arr)
             x = arr.columns
             y = arr.index.droplevel('SAT')
             cmap = sensitivity.get_cmap(SAT)
-            ax.pcolormesh(x, y, arr,
-                          cmap=cmap, vmin=0, vmax=1,
-                          shading='gouraud')
+            img = ax.pcolormesh(x, y, arr,
+                                cmap=cmap, vmin=0, vmax=1,
+                                shading='gouraud')
             ax.set_title(f'SAT{SAT}')
             ax.set_xscale('log')
             ax.set_xlim(min(population_size.values),
                         max(population_size.values))
-            ax.set_xlabel(population_size.label)
+            ax.set_xlabel(population_size_label)
+            ax.xaxis.set_major_formatter(matplotlib.ticker.LogFormatter())
             if ax.get_subplotspec().is_first_col():
                 ax.set_ylim(min(susceptibility.values),
                             max(susceptibility.values))
-                ax.set_ylabel(susceptibility.label)
-        fig.align_xlabels(axes)
+                ax.set_ylabel(susceptibility_label)
+            cbar = fig.colorbar(
+                img,
+                cax=ax_cbar,
+                orientation='horizontal',
+                label=persistence_label,
+                format=matplotlib.ticker.PercentFormatter(xmax=1))
+        fig.align_xlabels()
 
 
 if __name__ == '__main__':

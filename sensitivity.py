@@ -167,6 +167,8 @@ def plot_kde_2d(module, df, save=True):
                        clip_on=False, zorder=3)
             if module.log:
                 ax_po.set_xscale('log')
+                ax_po.xaxis.set_major_formatter(
+                    matplotlib.ticker.LogFormatter())
             ax_po.set_xlim(min(vals), max(vals))
             ax_po.set_xlabel(module.label)
             if ax_po.get_subplotspec().is_first_col():
