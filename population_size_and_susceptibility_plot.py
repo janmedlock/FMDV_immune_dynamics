@@ -24,7 +24,6 @@ def load_extinction_time():
         population_size_and_susceptibility.store_path)
 
 
-
 def get_persistence(dfr):
     grouper = dfr.groupby(['SAT',
                            susceptibility.var,
