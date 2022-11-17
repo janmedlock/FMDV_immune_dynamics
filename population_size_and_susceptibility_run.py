@@ -44,7 +44,8 @@ def _run_over_population_sizes(SAT, lost_immunity_susceptibility, nruns,
             nruns, store, copy_only, *args, **kwds)
         # Calculate `persistence` if data was added to `store`.
         if stored:
-            persistence = _get_persistence(SAT, suscept, population_size,
+            persistence = _get_persistence(SAT, lost_immunity_susceptibility,
+                                           population_size,
                                            store, store_extinction_time)
             print(', '.join((f'{SAT=}',
                              f'{lost_immunity_susceptibility=}',
