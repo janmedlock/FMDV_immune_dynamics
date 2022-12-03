@@ -73,12 +73,20 @@ def plot_persistence(dfr):
             img = ax.pcolormesh(x, y, arr,
                                 cmap=cmap, vmin=0, vmax=1,
                                 shading='gouraud')
+            ax.axvline(population_size.default,
+                       color='black', linestyle='dotted', alpha=0.7,
+                       clip_on=False)
+            ax.axhline(susceptibility.default,
+                       color='black', linestyle='dotted', alpha=0.7,
+                       clip_on=False)
             ax.set_title(f'SAT{SAT}')
             ax.set_xscale('log')
             ax.set_xlim(min(population_size.values),
                         max(population_size.values))
             ax.set_xlabel(population_size_label)
             ax.xaxis.set_major_formatter(matplotlib.ticker.LogFormatter())
+            for sp in ('top', 'right'):
+                ax.spines[sp].set_visible(False)
             if ax.get_subplotspec().is_first_col():
                 ax.set_ylim(min(susceptibility.values),
                             max(susceptibility.values))
