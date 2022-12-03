@@ -34,12 +34,12 @@ cols_infected = ['exposed', 'infectious', 'chronic']
 
 
 def is_increasing(arr, strict=False, axis=-1):
-    '''Check whether `arr` is increasing.'''
+    '''Check whether `arr` is increasing along `axis`.'''
     if strict:
         test = numpy.greater
     else:
         test = numpy.greater_equal
-    return test(numpy.diff(arr, axis=axis), 0).all()
+    return test(numpy.diff(arr, axis=axis), 0).all(axis=axis)
 
 
 def nice_self():
