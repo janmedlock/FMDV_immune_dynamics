@@ -58,9 +58,8 @@ def _run_over_population_sizes(SAT, lost_immunity_susceptibility, nruns,
 def run(nruns, *args, **kwds):
     '''Run the simulations for the sensitivity analysis.'''
     # The logic in the inner loop `_run_over_population_sizes()`
-    # requires that the population sizes be monotone increasing.
-    assert population_size_and_susceptibility.is_monotone_increasing(
-        population_size_.values)
+    # requires that the population sizes be strictly increasing.
+    assert common.is_increasing(population_size_.values, strict=True)
     # Extinction time is computed in the inner loop
     # `_run_over_population_sizes()` and stored to avoid having to
     # compute it again later for plotting.

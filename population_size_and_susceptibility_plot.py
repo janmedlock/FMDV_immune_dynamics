@@ -2,7 +2,6 @@
 
 import matplotlib.pyplot
 import matplotlib.ticker
-import numpy
 
 import common
 import population_size
@@ -33,8 +32,7 @@ def get_persistence(dfr):
 
 
 def fill_missing_persistence(dfr):
-    assert population_size_and_susceptibility.is_monotone_increasing(
-        dfr.columns)
+    assert common.is_increasing(dfr.columns, strict=True)
     # Starting from the left, where there is a missing value, if the
     # value in the previous column is 1, set the current value to 1.
     # Skip the first column since it has no previous column.

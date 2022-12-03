@@ -32,6 +32,15 @@ t_name = 'time (y)'
 cols_infected = ['exposed', 'infectious', 'chronic']
 
 
+def is_increasing(arr, strict=False, axis=-1):
+    '''Check whether `arr` is increasing.'''
+    if strict:
+        test = numpy.greater
+    else:
+        test = numpy.greater_equal
+    return test(numpy.diff(arr, axis=axis), 0).all()
+
+
 def nice_self():
     '''Set to minimum CPU and IO prioirities.'''
     pid = os.getpid()
