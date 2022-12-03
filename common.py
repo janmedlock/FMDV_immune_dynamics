@@ -3,6 +3,7 @@
 import os
 
 import matplotlib.collections
+import matplotlib.colors
 import matplotlib.pyplot
 import numpy
 import pandas
@@ -241,3 +242,9 @@ SAT_colors = {
     2: '#ef3b2c',
     3: '#807dba'
 }
+
+
+def get_cmap_SAT(SAT):
+    '''White to `SAT_colors[SAT]`.'''
+    return matplotlib.colors.LinearSegmentedColormap.from_list(
+        'name', ['white', SAT_colors[SAT]])

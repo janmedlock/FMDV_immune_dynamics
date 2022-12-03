@@ -1,6 +1,5 @@
 '''Analyze and plot the results of simulations varying a parameter.'''
 
-import matplotlib.colors
 import matplotlib.pyplot
 import matplotlib.ticker
 import numpy
@@ -41,12 +40,6 @@ def get_density(dfr, by_var, time):
     return pandas.DataFrame(ser.to_list(),
                             index=ser.index,
                             columns=time)
-
-
-def get_cmap(SAT):
-    '''White to `SAT_colors[SAT]`.'''
-    return matplotlib.colors.LinearSegmentedColormap.from_list(
-        'name', ['white', common.SAT_colors[SAT]])
 
 
 def load_extinction_time(module):
@@ -142,7 +135,7 @@ def plot_kde_2d(module, df, save=True):
             density = get_density(group_SAT, module.var,
                                   extinction_time)
             ax = axes_col[0]
-            cmap = get_cmap(SAT)
+            cmap = common.get_cmap_SAT(SAT)
             extent=(min(vals), max(vals),
                     min(extinction_time), max(extinction_time)),
             # Use `density` to set the color range.

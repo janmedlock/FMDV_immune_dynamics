@@ -6,7 +6,6 @@ import matplotlib.ticker
 import common
 import population_size
 import population_size_and_susceptibility
-import sensitivity
 import susceptibility
 
 
@@ -67,7 +66,7 @@ def plot_persistence(dfr):
             fill_missing_persistence(arr)
             x = arr.columns
             y = arr.index.droplevel('SAT')
-            cmap = sensitivity.get_cmap(SAT)
+            cmap = common.get_cmap_SAT(SAT)
             img = ax.pcolormesh(x, y, arr,
                                 cmap=cmap, vmin=0, vmax=1,
                                 shading='gouraud')
