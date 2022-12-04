@@ -41,7 +41,7 @@ def fill_missing_persistence(dfr):
         dfr.loc[to_update, col_curr] = 1
 
 
-def plot_persistence(dfr):
+def plot_persistence(dfr, save=True):
     rc = common.rc.copy()
     width = 183 / 25.4  # convert mm to in
     height = 4  # in
@@ -95,6 +95,11 @@ def plot_persistence(dfr):
                 label=persistence_label,
                 format=matplotlib.ticker.PercentFormatter(xmax=1))
         fig.align_xlabels()
+        if save:
+            store_path = population_size_and_susceptibility.store_path
+            fig.savefig(store_path.with_suffix('.pdf'))
+            fig.savefig(store_path.with_suffix('.png'), dpi=300)
+        return fig
 
 
 if __name__ == '__main__':
