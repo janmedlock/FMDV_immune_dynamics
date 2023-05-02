@@ -52,7 +52,7 @@ def repack(path, complib=_COMPLIB, complevel=_COMPLEVEL,
         path_repack.rename(path)
 
 
-def sort_index(path, level=None):
+def sort_index(path, level=None, **kwargs):
     '''Very slow code to sort the index of an HDF5 file.'''
     path_sorted = path.with_stem(path.stem + '_sorted')
     with (HDFStore(path, mode='r') as store,
@@ -79,7 +79,7 @@ def sort_index(path, level=None):
             dfr = store.select(where=where)
             store_sorted.put(dfr, index=False)
         store_sorted.create_table_index()
-        store_sorted.repack()
+        store_sorted.repack(**kwargs)
     path_sorted.rename(path)
 
 
