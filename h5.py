@@ -4,6 +4,7 @@
 import collections.abc
 import itertools
 import pathlib
+import shutil
 import subprocess
 import warnings
 
@@ -11,22 +12,42 @@ import pandas
 import tables
 
 
-def repack(path):
+# Defaults
+_COMPLIB = 'blosc:zstd'
+_COMPLEVEL = 6
+_FLETCHER32 = True
+
+
+def repack(path, complib=_COMPLIB, complevel=_COMPLEVEL,
+           fletcher32=_FLETCHER32, chunkshape='auto'):
     '''
     Use `ptrepack` to compress the HDF file.
     '''
+    ptrepack = shutil.which('ptrepack')
+    if ptrepack is None:
+        warnings.warn('ptrepack missing!')
+        return
     if not isinstance(path, pathlib.Path):
         path = pathlib.Path(path)
     path_repack = path.with_stem(path.stem + '_repack')
+    cmd = [
+        ptrepack,
+        f'--complib={complib}',
+        f'--complevel={complevel}',
+        f'--fletcher32={fletcher32:d}',  # Converted to integer.
+        f'--chunkshape={chunkshape}',
+        '--propindexes',
+        path,
+        path_repack
+    ]
     try:
-        subprocess.run(['ptrepack', '--chunkshape=auto',
-                        '--propindexes', '--complevel=6',
-                        '--complib=blosc:zstd', '--fletcher32=1',
-                        path, path_repack],
-                       check=True)
-    except subprocess.CalledProcessError as exc:
-        path_repack.unlink()
-        raise RuntimeError('ptrepack failed!') from exc
+        subprocess.run(cmd, check=True)
+    except subprocess.CalledProcessError:
+        try:
+            path_repack.unlink()
+        except FileNotFoundError:
+            pass
+        warnings.warn('ptrepack failed!')
     else:
         path_repack.rename(path)
 
@@ -87,11 +108,11 @@ class HDFStore(pandas.HDFStore):
     pandas.HDFStore() with improved defaults.
     '''
     def __init__(self, path, key='df',
-                 complevel=6, complib='blosc:zstd', fletcher32=True,
-                 **kwargs):
+                 complib=_COMPLIB, complevel=_COMPLEVEL,
+                 fletcher32=_FLETCHER32, **kwargs):
         self.key = key
-        super().__init__(path, complevel=complevel,
-                         complib=complib, fletcher32=fletcher32, **kwargs)
+        super().__init__(path, complib=complib, complevel=complevel,
+                         fletcher32=fletcher32, **kwargs)
 
     def get(self, key=None):
         if key is None:
@@ -197,9 +218,13 @@ class HDFStore(pandas.HDFStore):
                 # Carry the last group over to the next chunk.
                 (idx, carryover) = next(group_iterator)
 
-    def repack(self):
+    def repack(self, **kwargs):
         self.close()
-        repack(self._path)
+        defaults = dict(complib=self._complib,
+                        complevel=self._complevel,
+                        fletcher32=self._fletcher32)
+        kwargs = defaults | kwargs
+        repack(self._path, **kwargs)
 
 
 def load(path, *args, **kwargs):
