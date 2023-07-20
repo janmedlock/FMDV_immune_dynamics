@@ -22,9 +22,9 @@ rc['axes.labelsize'] = 8
 rc['xtick.labelsize'] = rc['ytick.labelsize'] = 7
 
 
-def load():
-    infected = common.load_infected(baseline.store_path)
-    extinction_time = common.load_extinction_time(baseline.store_path)
+def load(_module=baseline):
+    infected = common.load_infected(_module.store_path)
+    extinction_time = common.load_extinction_time(_module.store_path)
     return (infected, extinction_time)
 
 
@@ -96,7 +96,8 @@ def plot_extinction_time(ax, extinction_time, SAT):
         ax.set_ylabel('Extinction\ntime')
 
 
-def plot(infected, extinction_time, draft=False, save=True):
+def plot(infected, extinction_time,
+         draft=False, save=True, _module=baseline):
     SATs = infected.index.get_level_values('SAT').unique()
     nrows = 2
     ncols = len(SATs)
@@ -146,8 +147,8 @@ def plot(infected, extinction_time, draft=False, save=True):
         fig.align_xlabels(axes[-1, :])
         fig.align_ylabels(axes[[row_inf, row_ext], 0])
         if save:
-            fig.savefig(baseline.store_path.with_suffix('.pdf'))
-            fig.savefig(baseline.store_path.with_suffix('.png'),
+            fig.savefig(_module.store_path.with_suffix('.pdf'))
+            fig.savefig(_module.store_path.with_suffix('.png'),
                         dpi=300)
         return fig
 
