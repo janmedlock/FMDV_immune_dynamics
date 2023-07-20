@@ -195,11 +195,11 @@ class Solver:
         P = pandas.DataFrame(P, index=pandas.Index(self.ages, name='age'))
         P.rename(columns=blocks.NAMES, inplace=True)
         # Order columns.
-        P.set_axis(pandas.CategoricalIndex(P.columns,
-                                           blocks.NAMES.values(),
-                                           ordered=True),
-                   axis='columns', inplace=True)
-        P.sort_index(axis='columns', inplace=True)
+        cols = pandas.CategoricalIndex(P.columns,
+                                       blocks.NAMES.values(),
+                                       ordered=True)
+        P = P.set_axis(cols, axis='columns') \
+             .sort_index(axis='columns')
         return P
 
     def get_hazard_infection(self, P):
