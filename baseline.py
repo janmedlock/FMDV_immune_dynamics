@@ -58,8 +58,10 @@ def run_many(parameters, nruns, *args, **kwargs):
     return results
 
 
-def run(SAT, nruns, hdfstore, *args, **kwargs):
-    parameters = herd.Parameters(SAT=SAT)
+def run(SAT, nruns, hdfstore, _parameters=None, *args, **kwargs):
+    if _parameters is None:
+        _parameters = {}
+    parameters = herd.Parameters(SAT=SAT, **_parameters)
     logging_prefix = f'{SAT=}'
     chunks = run_many_chunked(parameters, nruns, *args,
                               logging_prefix=logging_prefix, **kwargs)
