@@ -76,7 +76,8 @@ def plot_persistence(dfs, save=True):
                         matplotlib.ticker.PercentFormatter(xmax=1)
                     )
                 ax.axvline(module.default,
-                           color='black', linestyle='dotted', alpha=0.7)
+                           color='black', linestyle='dotted', alpha=0.7,
+                           clip_on=False)
                 for sp in ('top', 'right'):
                     ax.spines[sp].set_visible(False)
         fig.align_xlabels(axes[-1, :])
