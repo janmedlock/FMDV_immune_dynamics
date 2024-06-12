@@ -95,7 +95,6 @@ def plot_persistence(dfr, save=True):
                                   colors='black', linewidths=1)
             pct_fmt = lambda x: f'{100*x:g}%'
             contour_fontsize = matplotlib.pyplot.rcParams['xtick.labelsize']
-            print(contour_fontsize)
             contours.clabel(inline=True,
                             fmt=pct_fmt,
                             fontsize=contour_fontsize)
