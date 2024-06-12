@@ -1,6 +1,8 @@
 #!/usr/bin/python3
 
+import matplotlib.colors
 import matplotlib.pyplot
+import matplotlib.scale
 import matplotlib.ticker
 
 import common
@@ -41,6 +43,19 @@ def fill_missing_persistence(dfr):
         dfr.loc[to_update, col_curr] = 1
 
 
+_LogitNorm = matplotlib.colors.make_norm_from_scale(
+    matplotlib.scale.LogitScale
+)(
+    matplotlib.colors.Normalize
+)
+_LogitNorm.__name__ = _LogitNorm.__qualname__ = 'LogitNorm'
+_LogitNorm.__doc__ = 'Logit norm.'
+
+
+def prepend_to_text(s, text):
+    text.set_text(s + text.get_text())
+
+
 def plot_persistence(dfr, save=True):
     rc = common.rc.copy()
     width = 183 / 25.4  # convert mm to in
@@ -67,9 +82,23 @@ def plot_persistence(dfr, save=True):
             x = arr.columns
             y = arr.index.droplevel('SAT')
             cmap = common.get_cmap_SAT(SAT)
+            epsilon = 0.01
+            vmin = 0 + epsilon
+            vmax = 1 - epsilon
+            norm = _LogitNorm(vmin=vmin, vmax=vmax, clip=True)
             img = ax.pcolormesh(x, y, arr,
-                                cmap=cmap, vmin=0, vmax=1,
+                                cmap=cmap, norm=norm,
                                 shading='gouraud')
+            contour_levels = [0.01, 0.5, 0.99]
+            contours = ax.contour(x, y, arr, contour_levels,
+                                  algorithm='threaded',
+                                  colors='black', linewidths=1)
+            pct_fmt = lambda x: f'{100*x:g}%'
+            contour_fontsize = matplotlib.pyplot.rcParams['xtick.labelsize']
+            print(contour_fontsize)
+            contours.clabel(inline=True,
+                            fmt=pct_fmt,
+                            fontsize=contour_fontsize)
             ax.axvline(population_size.default,
                        color='black', linestyle='dotted', alpha=0.7,
                        clip_on=False)
@@ -94,6 +123,11 @@ def plot_persistence(dfr, save=True):
                 orientation='horizontal',
                 label=persistence_label,
                 format=matplotlib.ticker.PercentFormatter(xmax=1))
+            ax_cbar.tick_params(which='minor', labelbottom=False)
+            cticklabels = ax_cbar.get_xticklabels()
+            prepend_to_text('≤', cticklabels[0])
+            prepend_to_text('≥', cticklabels[-1])
+            ax_cbar.set_xticks(ax_cbar.get_xticks(), cticklabels)
         fig.align_xlabels()
         if save:
             store_path = population_size_and_susceptibility.store_path
