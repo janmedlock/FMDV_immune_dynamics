@@ -66,6 +66,7 @@ def plot_persistence(dfr, save=True):
     rc['axes.titlesize'] = 9
     rc['axes.labelsize'] = 8
     rc['xtick.labelsize'] = rc['ytick.labelsize'] = 7
+    contour_levels = [0.01, 0.5, 0.99]
     with matplotlib.pyplot.rc_context(rc=rc):
         persistence = get_persistence(dfr)
         grouper = persistence.groupby('SAT')
@@ -73,8 +74,9 @@ def plot_persistence(dfr, save=True):
         (fig, axes) = matplotlib.pyplot.subplots(
             2, ncols,
             sharey='row', layout='constrained',
-            gridspec_kw=dict(hspace=0.15,
-                             height_ratios=(10, 1)))
+            gridspec_kw={'hspace': 0.15,
+                         'height_ratios': (10, 1)},
+        )
         for ((SAT, group), (ax, ax_cbar)) in zip(grouper, axes.T):
             # Move population_size from an index level to columns.
             arr = group.unstack()
@@ -89,7 +91,6 @@ def plot_persistence(dfr, save=True):
             img = ax.pcolormesh(x, y, arr,
                                 cmap=cmap, norm=norm,
                                 shading='gouraud')
-            contour_levels = [0.01, 0.5, 0.99]
             contours = ax.contour(x, y, arr, contour_levels,
                                   algorithm='threaded',
                                   colors='black', linewidths=1)
@@ -116,12 +117,11 @@ def plot_persistence(dfr, save=True):
                 ax.set_ylim(min(susceptibility.values),
                             max(susceptibility.values))
                 ax.set_ylabel(susceptibility_label)
-            cbar = fig.colorbar(
-                img,
-                cax=ax_cbar,
-                orientation='horizontal',
-                label=persistence_label,
-                format=matplotlib.ticker.PercentFormatter(xmax=1))
+            fig.colorbar(img,
+                         cax=ax_cbar,
+                         orientation='horizontal',
+                         label=persistence_label,
+                         format=matplotlib.ticker.PercentFormatter(xmax=1))
             ax_cbar.tick_params(which='minor', labelbottom=False)
             cticklabels = ax_cbar.get_xticklabels()
             prepend_to_text('≤', cticklabels[0])
