@@ -58,7 +58,7 @@ cdef class _CSR_Matrix:
 
     cdef inline bint matvecs(_CSR_Matrix self,
                              const double[:, ::1] B,
-                             double[:, ::1] C) nogil except False:
+                             double[:, ::1] C) except False nogil:
         '''Compute the matrix multiplication `C += A @ B`, where
         `A` is a `_CSR_Matrix()`, and
         `B` & `C` are `numpy.ndarray()`s.'''
@@ -118,7 +118,7 @@ cdef class _Solution:
         j = (i + self._front) % self._array.shape[0]
         return self._array[j]
 
-    cdef inline bint update(_Solution self) nogil except False:
+    cdef inline bint update(_Solution self) except False nogil:
         '''Move the entries forward one position,
         wrapping the last entry to the front.'''
         # Decrement `_front` by 1 and wrap around if it's negative.
@@ -161,7 +161,7 @@ cdef class Solver:
                                             _Solution solution,
                                             object birth_rate,
                                             numpy.ndarray temp) \
-                                           nogil except False:
+                                           except False nogil:
         '''The initial condition for the fundamental solution is the
         identity matrix.'''
         cdef:
@@ -176,7 +176,7 @@ cdef class Solver:
 
     @cython.wraparound(True)
     cdef inline bint _init_births(Solver self,
-                                  const double step) nogil except False:
+                                  const double step) except False nogil:
         '''The trapezoid rule for the birth integral for i = 0,
         u_0^n = \sum_j (b_j^n u_j^n + b_{j + 1}^n u_{j + 1}^n) * da / 2.
         This can be written as
@@ -200,7 +200,7 @@ cdef class Solver:
                                   const double t_n,
                                   _Solution solution,
                                   object birth_rate,
-                                  numpy.ndarray temp) nogil except False:
+                                  numpy.ndarray temp) except False nogil:
         '''Calculate the birth integral
         B(t) = \int_0^{inf} b(t, a) U(t, a) da
         using the composite trapezoid rule,
@@ -267,7 +267,7 @@ cdef class Solver:
                                           _Solution solution,
                                           object birth_rate,
                                           numpy.ndarray temp) \
-                                         nogil except False:
+                                         except False nogil:
         '''Do a Crank–Nicolson step.'''
         cdef:
             _Solution_n solution0, solution1

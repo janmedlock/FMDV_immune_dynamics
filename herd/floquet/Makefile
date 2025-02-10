@@ -4,16 +4,18 @@ NAME := monodromy
 SO := $(shell python3-config --extension-suffix)
 MODULE := $(NAME)$(SO)
 
-CFLAGS := $(shell python3-config --cflags)
+CFLAGS += $(shell python3-config --cflags)
+CFLAGS += $(shell pkg-config numpy --cflags)
 CFLAGS += -fPIC
 
-LDFLAGS := $(shell python3-config --ldflags)
-LDFLAGS += -shared
-
-LDLIBS := $(shell python3-config --libs)
+LDLIBS += $(shell python3-config --libs)
+LDLIBS += $(shell pkg-config numpy --libs)
 LDLIBS += -lblas
 
-CPPFLAGS := -DNPY_NO_DEPRECATED_API=NPY_1_7_API_VERSION
+LDFLAGS += $(shell python3-config --ldflags)
+LDFLAGS += -shared
+
+CPPFLAGS += -DNPY_NO_DEPRECATED_API=NPY_1_7_API_VERSION
 
 
 default: $(MODULE)
