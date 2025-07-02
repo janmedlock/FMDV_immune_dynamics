@@ -30,7 +30,7 @@ def get_solutions(params):
 def integrate_over_age(X):
     '''Integrate over age for each SAT & immune status.'''
     ages = X.index
-    v = X.apply(integrate.trapz, args=(ages, ))
+    v = X.apply(integrate.trapezoid, args=(ages, ))
     if isinstance(v.index, pandas.MultiIndex):
         v = v.unstack(0)
     return v

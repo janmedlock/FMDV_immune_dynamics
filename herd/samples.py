@@ -25,7 +25,7 @@ _SAMPLES_NAME = 'sample'
 
 def _load_acute_transmission():
     dfr = pandas.read_csv(_paths['acute_transmission'],
-                          delim_whitespace=True,
+                          sep='\s+',
                           header=None)
     dfr.index.name = _SAMPLES_NAME
     params = pandas.Index(['progression_shape', 'progression_mean',
@@ -47,7 +47,7 @@ def _load_acute_transmission():
 def _load_maternal_immunity_duration():
     # The durations of maternal immunity, which are the same for each SAT.
     dfr = pandas.read_csv(_paths['maternal_immunity_duration'],
-                          delim_whitespace=True,
+                          sep='\s+',
                           header=None)
     dfr.index.name = _SAMPLES_NAME
     dfr.columns = pandas.Index(['maternal_immunity_duration_shape',
@@ -60,7 +60,7 @@ def _load_maternal_immunity_duration():
 
 def _load_chronic_transmission_rate():
     dfr = pandas.read_csv(_paths['chronic_transmission_rate'],
-                          delim_whitespace=True,
+                          sep='\s+',
                           header=None)
     dfr.index.name = _SAMPLES_NAME
     params = pandas.Index(['chronic_transmission_rate'],
@@ -73,7 +73,7 @@ def _load_chronic_transmission_rate():
 
 def _load_chronic_recovery():
     dfr = pandas.read_csv(_paths['chronic_recovery'],
-                          delim_whitespace=True,
+                          sep='\s+',
                           header=None)
     dfr.index.name = _SAMPLES_NAME
     # The columns are the all-SAT shape and the mean for each SAT.

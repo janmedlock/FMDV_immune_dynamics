@@ -84,8 +84,8 @@ class _Params:
         hazard = birth.hazard_no_seasonality(
             self.female_probability_at_birth, ages)
         # Scale so that the population growth rate is 0.
-        hazard /= integrate.trapz(hazard * self.survival.mortality,
-                                  ages)
+        hazard /= integrate.trapezoid(hazard * self.survival.mortality,
+                                      ages)
         hazard *= self.female_probability_at_birth
         return hazard
 
@@ -206,7 +206,7 @@ class Solver:
         '''Compute the hazard of infection from the solution `P`.'''
         # The probability of being in each immune status integrated
         # over age.
-        P_total = P.apply(integrate.trapz,
+        P_total = P.apply(integrate.trapezoid,
                           args=(self.ages, ))
         haz = (self.params.transmission_rate * P_total['infectious']
                + self.params.chronic_transmission_rate * P_total['chronic'])
@@ -221,7 +221,7 @@ class Solver:
         births = P.mul(self.params.hazard_birth,
                        axis='index')
         # The birth rate from moms in each immune status.
-        births_total = births.apply(integrate.trapz,
+        births_total = births.apply(integrate.trapezoid,
                                     args=(self.ages, ))
         imm = (births_total[list(buffalo.Buffalo.has_antibodies)].sum()
                / births_total.sum())

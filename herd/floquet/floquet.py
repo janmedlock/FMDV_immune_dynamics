@@ -2,7 +2,7 @@ import pathlib
 
 from joblib import Memory
 import numpy
-from scipy.integrate import trapz
+from scipy.integrate import trapezoid
 from scipy.optimize import brentq
 
 from herd import parameters, periods
@@ -15,7 +15,7 @@ _age_max_default = 35
 
 def _normalize_to_density(v, ages):
     '''Normalize `v` in place so that its integral over ages is 1.'''
-    v /= trapz(v, ages)
+    v /= trapezoid(v, ages)
 
 
 # Some of the functions below are very slow, so the values are cached
