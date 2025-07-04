@@ -1,12 +1,13 @@
 #!/usr/bin/python3
-
-import itertools
+'''Plot the model initial condititions. This is similar to
+`initial_conditions.py`, but uses more explicit calculations.'''
 
 from matplotlib import pyplot
 import numpy
 import pandas
-from scipy import integrate
+import scipy
 
+from context import common
 from context import herd
 import herd.initial_conditions
 import herd.mortality
@@ -14,8 +15,10 @@ import herd.utility
 
 
 def get_params():
-    return {SAT: herd.Parameters(SAT)
-            for SAT in (1, 2, 3)}
+    return {
+        SAT: herd.Parameters(SAT)
+        for SAT in common.SATs
+    }
 
 
 def get_solutions(params):
@@ -30,14 +33,14 @@ def get_solutions(params):
 def integrate_over_age(X):
     '''Integrate over age for each SAT & immune status.'''
     ages = X.index
-    v = X.apply(integrate.trapezoid, args=(ages, ))
+    v = X.apply(scipy.integrate.trapezoid, args=(ages, ))
     if isinstance(v.index, pandas.MultiIndex):
         v = v.unstack(0)
     return v
 
 
 def sum_over_immune_state(X):
-    return X.groupby(axis='columns', level=0).sum()
+    return X.groupby(level=0).sum()
 
 
 def plot_integral_over_age(p):
@@ -58,7 +61,7 @@ def plot_integral_over_age(p):
 
 def plot_sum_over_immune_state(p):
     ages = p.index
-    P = sum_over_immune_state(p)
+    P = sum_over_immune_state(p.T).T
     ax = P.plot(alpha=0.6)
     ax.set_xlabel('age (y)')
     ax.set_ylabel('survival')
@@ -67,21 +70,17 @@ def plot_sum_over_immune_state(p):
     return ax
 
 
-def reorder_for_lr(items, ncol):
-    return itertools.chain(*[items[i::ncol] for i in range(ncol)])
-
-
 def plot_probability_constant_birth(p):
     '''With the assumption of constant-time birth hazard,
     plot probability of being in each class vs. age,
     *not* conditioned on being alive.'''
     ages = p.index
     # Group by SAT
-    grouper = p.groupby(axis='columns', level=0)
+    grouper = p.T.groupby(level=0)
     (fig, axes) = pyplot.subplots(len(grouper),
                                   sharex=True)
     for (ax, (SAT, group)) in zip(axes, grouper):
-        collection = ax.stackplot(ages, group.T, labels=p.columns)
+        collection = ax.stackplot(ages, group, labels=p.columns)
         ax.set_ylabel(f'SAT{SAT}\nconstant-birth\ndensity')
         ax.margins(0)
     axes[-1].set_xlabel('age (y)')
@@ -89,9 +88,8 @@ def plot_probability_constant_birth(p):
     immune_statuses = p.columns.levels[1]
     nrow = 2
     ncol = (len(immune_statuses) + nrow - 1) // nrow
-    fig.legend(reorder_for_lr(collection, ncol),
-               reorder_for_lr(immune_statuses, ncol),
-               ncol=ncol, loc='lower center')
+    common.legend_multicolumn(fig, collection, immune_statuses, ncol,
+                              loc='lower center')
     return fig
 
 
@@ -100,13 +98,13 @@ def plot_conditional_probability(p):
     conditioned on being alive.'''
     ages = p.index
     # Group by SAT
-    grouper = p.groupby(axis='columns', level=0)
+    grouper = p.T.groupby(level=0)
     (fig, axes) = pyplot.subplots(len(grouper),
                                   sharex=True)
     for (ax, (SAT, group)) in zip(axes, grouper):
         Y = group.divide(sum_over_immune_state(group),
-                         axis='columns', level=0)
-        collection = ax.stackplot(ages, Y.T, labels=p.columns)
+                         level=0)
+        collection = ax.stackplot(ages, Y, labels=p.columns)
         ax.set_ylabel(f'SAT{SAT}\nprobability\ngiven alive')
         ax.margins(0)
     axes[-1].set_xlabel('age (y)')
@@ -114,9 +112,8 @@ def plot_conditional_probability(p):
     immune_statuses = p.columns.levels[1]
     nrow = 2
     ncol = (len(immune_statuses) + nrow - 1) // nrow
-    fig.legend(reorder_for_lr(collection, ncol),
-               reorder_for_lr(immune_statuses, ncol),
-               ncol=ncol, loc='lower center')
+    common.legend_multicolumn(fig, collection, immune_statuses, ncol,
+                              loc='lower center')
     return fig
 
 

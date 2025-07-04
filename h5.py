@@ -1,6 +1,5 @@
 '''Common code to work with HDF5 files.'''
 
-
 import collections.abc
 import itertools
 import pathlib

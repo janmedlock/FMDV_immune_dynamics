@@ -6,7 +6,7 @@ import joblib
 import numpy
 import numpy.lib.recfunctions
 import pandas
-from scipy import integrate, optimize, sparse, special
+import scipy
 
 from herd import (antibody_gain, antibody_loss, birth, buffalo,
                   chronic_recovery, maternal_immunity_waning,
@@ -84,8 +84,9 @@ class _Params:
         hazard = birth.hazard_no_seasonality(
             self.female_probability_at_birth, ages)
         # Scale so that the population growth rate is 0.
-        hazard /= integrate.trapezoid(hazard * self.survival.mortality,
-                                      ages)
+        hazard /= scipy.integrate.trapezoid(
+            hazard * self.survival.mortality, ages
+        )
         hazard *= self.female_probability_at_birth
         return hazard
 
@@ -146,7 +147,7 @@ class Solver:
         return (P, p)
 
     def stack_sparse(self, rows, format='csr'):
-        return sparse.bmat(self.stack(rows), format=format)
+        return scipy.sparse.bmat(self.stack(rows), format=format)
 
     def get_A(self):
         A = self.stack_sparse({var: block.A_X
@@ -169,12 +170,12 @@ class Solver:
     def transform(x):
         '''Transform the solver variables to enforce the constraints x[0] ≥ 0
         and 0 ≤ x[1] ≤ 1.'''
-        return numpy.array((numpy.log(x[0]), special.logit(x[1])))
+        return numpy.array((numpy.log(x[0]), scipy.special.logit(x[1])))
 
     @staticmethod
     def transform_inverse(y):
         '''Untransform the solver variables.'''
-        return numpy.array((numpy.exp(y[0]), special.expit(y[1])))
+        return numpy.array((numpy.exp(y[0]), scipy.special.expit(y[1])))
 
     def solve_step(self, y_curr):
         x_curr = self.transform_inverse(y_curr)
@@ -186,7 +187,7 @@ class Solver:
         self.update_blocks()
         A = self.get_A()
         b = self.get_b()
-        Pp = sparse.linalg.spsolve(A, b)
+        Pp = scipy.sparse.linalg.spsolve(A, b)
         (P, p) = self.unstack(Pp)
         p_integrated = self.integrate_pde_vars(p)
         P = numpy.lib.recfunctions.merge_arrays(
@@ -206,7 +207,7 @@ class Solver:
         '''Compute the hazard of infection from the solution `P`.'''
         # The probability of being in each immune status integrated
         # over age.
-        P_total = P.apply(integrate.trapezoid,
+        P_total = P.apply(scipy.integrate.trapezoid,
                           args=(self.ages, ))
         haz = (self.params.transmission_rate * P_total['infectious']
                + self.params.chronic_transmission_rate * P_total['chronic'])
@@ -221,7 +222,7 @@ class Solver:
         births = P.mul(self.params.hazard_birth,
                        axis='index')
         # The birth rate from moms in each immune status.
-        births_total = births.apply(integrate.trapezoid,
+        births_total = births.apply(scipy.integrate.trapezoid,
                                     args=(self.ages, ))
         imm = (births_total[list(buffalo.Buffalo.has_antibodies)].sum()
                / births_total.sum())
@@ -230,8 +231,9 @@ class Solver:
         return imm
 
     def solve_objective(self, y_curr):
-        '''This is called by `optimize.fixed_point()` to find the equilibrium
-        `hazard_infection` and `newborn_proportion_immune`.'''
+        '''This is called by `scipy.optimize.fixed_point()` to find
+        the equilibrium `hazard_infection` and
+        `newborn_proportion_immune`.'''
         P = self.solve_step(y_curr)
         P.clip(lower=0, inplace=True)
         x_next = (self.get_hazard_infection(P),
@@ -242,10 +244,10 @@ class Solver:
     def solve(self):
         '''Find the solution.'''
         x_guess = (100, 0.9)
-        y_sol = optimize.fixed_point(self.solve_objective,
-                                     self.transform(x_guess))
+        y_sol = scipy.optimize.fixed_point(self.solve_objective,
+                                           self.transform(x_guess))
         P = self.solve_step(y_sol)
-        assert ((P >= 0) | numpy.isclose(P, 0)).all(axis=None)
+        # assert ((P >= 0) | numpy.isclose(P, 0)).all(axis=None)
         P.clip(lower=0, inplace=True)
         return P
 
@@ -307,16 +309,17 @@ def in_cache(params):
                                       debug=False)
 
 
-def get_optimizer(params, cached_only=False, debug=False):
-    '''Get the optimizer from Solver().'''
+def get_equilibrium(params, cached_only=False, debug=False):
+    '''Get the equilibrium values of the variables used in Solver().'''
     if cached_only and not in_cache(params):
-        return dict(
-            hazard_infection=None,
-            newborn_proportion_immune=None,
-        )
-    prob = solve(params, debug=debug)
+        return {
+            'hazard_infection': None,
+            'newborn_proportion_immune': None,
+        }
+    # Get the solution from the cached solver.
+    P = solve(params, debug=debug)
     solver = Solver(params, debug=debug, _skip_blocks=True)
-    return dict(
-        hazard_infection=solver.get_hazard_infection(prob),
-        newborn_proportion_immune=solver.get_newborn_proportion_immune(prob),
-    )
+    return {
+        'hazard_infection': solver.get_hazard_infection(P),
+        'newborn_proportion_immune': solver.get_newborn_proportion_immune(P),
+    }

@@ -1,4 +1,5 @@
-'''Analyze and plot the results of simulations varying a parameter.'''
+'''Common code for analyzing and plotting the results of simulations
+varying parameters.'''
 
 import matplotlib.pyplot
 import matplotlib.ticker

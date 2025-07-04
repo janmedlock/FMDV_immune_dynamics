@@ -1,12 +1,8 @@
 #!/usr/bin/python3
+'''Make sample runs sequentially.'''
 
 from context import herd
 from context import samples
-
-
-def needs_running(SAT, sample_number):
-    path = samples.sample_path(SAT, sample_number)
-    return not path.exists()
 
 
 def load_parameters_and_samples(SAT, index=None):
@@ -18,17 +14,14 @@ def load_parameters_and_samples(SAT, index=None):
 
 
 def _run_sample(SAT, parameters, sample, sample_number):
-    path = samples.sample_path(SAT, sample_number)
     logging_prefix = f'{SAT=}'
     print(f'Running {logging_prefix} sample {sample_number}.')
-    samples.run_one_and_save(parameters, sample,
-                             sample_number, path,
-                             logging_prefix=logging_prefix)
+    samples.run_one(parameters, sample, sample_number,
+                    logging_prefix=logging_prefix)
 
 
 def run_sample(SAT, sample_number):
     '''Run one `sample_number` for testing.'''
-    assert needs_running(SAT, sample_number)
     (parameters, sample) = load_parameters_and_samples(SAT,
                                                        index=sample_number)
     _run_sample(SAT, parameters, sample, sample_number)
@@ -36,8 +29,7 @@ def run_sample(SAT, sample_number):
 
 def _run_samples_sequential(SAT, parameters, samples_):
     for (sample_number, sample) in samples_.iterrows():
-        if needs_running(SAT, sample_number):
-            _run_sample(SAT, parameters, sample, sample_number)
+        _run_sample(SAT, parameters, sample, sample_number)
 
 
 def run_samples_sequential(SAT, index=None):

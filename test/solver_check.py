@@ -1,5 +1,10 @@
 #!/usr/bin/python3
+'''Check the consistency of the solver for the initial conditions,
+plots block structure of the solver matrix, and plots a solution.'''
 
+import matplotlib
+import matplotlib.colors
+import matplotlib.patches
 import matplotlib.pyplot
 import numpy
 
@@ -8,8 +13,8 @@ from herd.initial_conditions.immune_status import blocks, solver
 
 
 def check_parameters(slvr):
-    '''Ensure the solver parameters correctly set the matrix and vector
-    elements.'''
+    '''Ensure the solver parameters correctly set the matrix and
+    vector elements.'''
     slvr.update_blocks()
     A = slvr.get_A()
     b = slvr.get_b()
@@ -43,12 +48,31 @@ def plot_blocks(slvr):
             else:
                 blcks[j, k] = -1
     (fig, axes) = matplotlib.pyplot.subplots(constrained_layout=True)
-    axes.matshow(blcks, cmap='PiYG')
+    cmap = matplotlib.colormaps['PiYG']
+    norm = matplotlib.colors.Normalize(-1, 1)
+    axes.matshow(blcks, cmap=cmap, norm=norm)
     vars_ = blocks.vars_ode + blocks.vars_pde
     axes.set_xticks(range(len(vars_)))
     axes.set_yticks(range(len(vars_)))
     axes.set_xticklabels(vars_)
     axes.set_yticklabels(vars_)
+    axes.legend(
+        handles=(
+            matplotlib.patches.Patch(
+                color=cmap(norm(1)),
+                label='Some $b_{jk} > 0$'
+            ),
+            matplotlib.patches.Patch(
+                color=cmap(norm(-1)),
+                label=r'Some $b_{jk} < 0$ and all $b_{jk} \leq 0$'
+            ),
+            matplotlib.patches.Patch(
+                color=cmap(norm(0)),
+                label='All $b_{jk} = 0$'
+            ),
+        ),
+    )
+    return axes
 
 
 def plot_solution(prob):

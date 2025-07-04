@@ -1,4 +1,3 @@
-#!/usr/bin/python3
 '''Common code for simulations with 0 susceptibility of the
 lost-immunity class.'''
 

@@ -1,4 +1,8 @@
 #!/usr/bin/python3
+'''Analyze and plot the results of varying both the population size
+and the susceptibility of the lost-immunity state. This requires the
+file `population_size_and_susceptibility.h5`, which is built by
+`population_size_and_susceptibility_run.py`.'''
 
 import matplotlib.colors
 import matplotlib.pyplot
@@ -29,7 +33,6 @@ def get_persistence(dfr):
                            susceptibility.var,
                            population_size.var])
     return grouper.apply(common.get_persistence)
-
 
 
 def fill_missing_persistence(dfr):

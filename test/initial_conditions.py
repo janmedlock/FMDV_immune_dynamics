@@ -1,11 +1,11 @@
 #!/usr/bin/python3
-
-import itertools
+'''Plot the model initial condititions.'''
 
 from matplotlib import pyplot
 import numpy
 
-from context import common, herd
+from context import common
+from context import herd
 import herd.initial_conditions
 import herd.utility
 
@@ -51,10 +51,6 @@ def plot_samples(ICs, ages, ax):
     ax.set_ylabel('count in\nsample')
 
 
-def reorder_for_lr(items, ncol):
-    return itertools.chain(*[items[i::ncol] for i in range(ncol)])
-
-
 def plot_ICs(SAT):
     parameters = herd.Parameters(SAT=SAT)
     ICs = herd.initial_conditions.gen(parameters)
@@ -74,9 +70,8 @@ def plot_ICs(SAT):
     (handles, labels) = axes[0].get_legend_handles_labels()
     nrow = 2
     ncol = (len(labels) + nrow - 1) // nrow
-    fig.legend(reorder_for_lr(handles, ncol),
-               reorder_for_lr(labels, ncol),
-               ncol=ncol, loc='lower center')
+    common.legend_multicolumn(fig, handles, labels, ncol,
+                              loc='lower center')
 
 
 if __name__ == '__main__':

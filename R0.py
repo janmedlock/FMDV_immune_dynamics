@@ -1,17 +1,18 @@
 #!/usr/bin/python3
-#
-# Assumptions:
-# * Constant population size, particulraly no seasonal births.
-# * All susceptible, so drop M.
-# * Mortality is negligible, so S->E->I is equivalent to S->I,
-#   among other simplifications.
-# * Transmission rates for both acute and chronic scales so that R_0 is
-#   independent of population size.
+'''Calculate the basic reproduction number, R_0, for each SAT and each
+parameter posterior sample.'''
 
 import herd.samples
 
 
 def calculate(SAT, alpha=0.05):
+    # Assumptions:
+    # * Constant population size, particulraly no seasonal births.
+    # * All susceptible, so drop M.
+    # * Mortality is negligible, so S->E->I is equivalent to S->I,
+    #   among other simplifications.
+    # * Transmission rates for both acute and chronic scales so that R_0 is
+    #   independent of population size.
     s = herd.samples.load(SAT=SAT)
     R0 = (s.recovery_mean * s.transmission_rate
           + s.probability_chronic * s.chronic_recovery_mean)

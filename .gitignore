@@ -1,3 +1,6 @@
+/README.html
+/todo.org
+/samples/
 .auto/
 *.aux
 *.bbl
@@ -18,4 +21,3 @@ flycheck_*
 __pycache__/
 _cache/
 .ipynb_checkpoints/
-/samples/

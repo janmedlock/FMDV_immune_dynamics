@@ -1,0 +1,53 @@
+\ProvidesFile{authoryear-clean.bbx}
+
+\RequireBibliographyStyle{authoryear-comp}
+\RequirePackage{xpatch}
+\RequirePackage{csquotes}
+
+% All authors are last-first.
+\DeclareNameAlias{sortname}{family-given}
+
+% No quotes for article titles
+\DeclareFieldFormat[article,incollection,unpublished]{title}{#1}
+
+% Theses like book titles
+\DeclareFieldFormat[thesis]{title}{\mkbibemph{#1}}
+
+% Remove "In: " for journal articles
+\xpatchbibdriver{article}{\usebibmacro{in:}}{}{}{}
+
+% Colon, not comma, before pages
+\renewcommand*{\bibpagespunct}{\addcolon\space}
+
+% No "p." or "pp."
+\DeclareFieldFormat{pages}{#1}
+
+% No commas between lastname and initials.
+\renewcommand*{\revsdnamepunct}{}
+
+% No "and" before final name.
+\DeclareDelimFormat[bib,biblist]{finalnamedelim}{\addcomma\space}
+
+% Period between author list and year.
+\DeclareDelimFormat[bib,biblist]{namelabeldelim}{\addperiod\space}
+\DeclareDelimFormat[bib,biblist]{nameyeardelim}{\addperiod\space}
+
+% "volume(number)" instead of "volume.number".
+\xpatchbibmacro{volume+number+eid}
+{\setunit*{\adddot}\printfield{number}}
+{{\iffieldundef{number}{}{\printtext[parens]{\printfield{number}}}}}{}{}
+
+\ExecuteBibliographyOptions{labeldateparts=true,
+			    sorting=nyt,
+			    pagetracker=true,
+			    mergedate=compact,
+			    giveninits=true,
+			    terseinits=true,
+			    date=year,
+			    dashed=false,
+			    maxbibnames=100}
+
+% Remove parentheses around date. This comes after executing the
+% 'mergedate' option because that sets the macro to one of a few
+% alternatives.
+\xpatchbibmacro{date+extradate}{[parens]}{}{}{}
