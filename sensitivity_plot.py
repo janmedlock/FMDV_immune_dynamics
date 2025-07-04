@@ -6,6 +6,7 @@ population size and susceptibility.  This requires the files
 import pathlib
 
 import matplotlib.pyplot
+import numpy
 
 import common
 import population_size
@@ -23,7 +24,7 @@ def load():
     ]
 
 
-def plot_persistence(dfs, save=True):
+def plot_persistence(dfs, save=True, show=True):
     rc = common.rc.copy()
     width = 183 / 25.4  # convert mm to in
     height = 4  # in
@@ -56,11 +57,6 @@ def plot_persistence(dfs, save=True):
                 ax.plot(1 - proportion_observed,
                         color=common.SAT_colors[SAT],
                         clip_on=False, zorder=3)
-                if module.log:
-                    ax.set_xscale('log')
-                    ax.xaxis.set_major_formatter(
-                        matplotlib.ticker.LogFormatter()
-                    )
                 subplotspec = ax.get_subplotspec()
                 if subplotspec.is_last_row():
                     ax.set_xlim(min(vals), max(vals))
@@ -76,6 +72,31 @@ def plot_persistence(dfs, save=True):
                     ax.yaxis.set_major_formatter(
                         matplotlib.ticker.PercentFormatter(xmax=1)
                     )
+                if module.log:
+                    ax.set_xscale('log')
+                    ax.xaxis.set_major_formatter(
+                        matplotlib.ticker.LogFormatter()
+                    )
+                    # Add the tick label at the maximum x.
+                    # Add all of the minor-tick labels.
+                    ax.xaxis.set_minor_formatter(
+                        matplotlib.ticker.LogFormatter(
+                            minor_thresholds=(numpy.inf, numpy.inf)
+                        )
+                    )
+                    # Make all but the one at the max not visible.
+                    (_, x_max) = ax.xaxis.get_data_interval()
+                    for label in ax.xaxis.get_minorticklabels():
+                        (x, _) = label.get_position()
+                        if x < x_max:
+                            label.set_visible(False)
+                    # Align the minor-tick labels with the major-tick labels.
+                    x_minor_pad = (
+                        matplotlib.pyplot.rcParams['xtick.major.pad']
+                        + matplotlib.pyplot.rcParams['xtick.major.size']
+                        - matplotlib.pyplot.rcParams['xtick.minor.size']
+                    )
+                    ax.tick_params(axis='x', which='minor', pad=x_minor_pad)
                 ax.axvline(module.default,
                            color='black', linestyle='dotted', alpha=0.7,
                            clip_on=False)
@@ -88,10 +109,11 @@ def plot_persistence(dfs, save=True):
             fig.savefig(filepath.with_suffix('.pdf'))
             fig.savefig(filepath.with_suffix('.png'),
                         dpi=300)
+        if show:
+            matplotlib.pyplot.show()
         return fig
 
 
 if __name__ == '__main__':
     dfs = load()
     plot_persistence(dfs)
-    matplotlib.pyplot.show()
