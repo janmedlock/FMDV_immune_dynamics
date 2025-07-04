@@ -1,0 +1,13 @@
+\ProvidesFile{authoryear-clean.cbx}
+
+\RequireCitationStyle{authoryear-comp}
+
+% No "and" before the final name.
+\DeclareDelimFormat[parencite]{finalnamedelim}{\addcomma\space}
+% No "and" before the final name if there are more than 2.
+% \DeclareDelimFormat[parencite]{finalnamedelim}{%
+% \ifnumgreater{\value{liststop}}{2}{\addcomma}{\addspace\bibstring{and}}%
+% \space%
+% }
+
+\ExecuteBibliographyOptions{uniquename=init}

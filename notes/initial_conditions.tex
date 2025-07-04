@@ -1,21 +1,37 @@
-\documentclass[12pt]{article}
+\documentclass{article}
 
-\title{Initial conditions}
-\author{Jan Medlock et al.}
-
-\usepackage{microtype}
-\usepackage{tikz}
+\usepackage[T1]{fontenc}
+\usepackage{textcomp}
+\usepackage[american]{babel}
+\usepackage[utf8]{inputenc}
+\usepackage[babel=true]{microtype}
+\usepackage{geometry}
+\usepackage{lmodern}
+\usepackage{datetime2}
 \usepackage{amsmath}
+\usepackage{units}
+\usepackage{multirow}
+\usepackage{csquotes}
+\usepackage{tikz}
+\usepackage[style=authoryear-clean]{biblatex}
+\usepackage[hidelinks]{hyperref}
+
 \renewcommand{\vec}[1]{\mathbf{#1}}
 \newcommand{\mat}[1]{\mathbf{#1}}
 \DeclareMathOperator{\Prob}{Prob}
 \newcommand{\md}{\mathrm{d}}
-\usepackage{hyperref}
-\hypersetup{breaklinks}
-\hypersetup{pdfborder=0 0 0}
-\usepackage{natbib}
-\usepackage{hypernat}
 
+\addbibresource{initial_conditions.bib}
+
+\title{Initial conditions}
+\author{
+  Jan Medlock \and Ricardo Noé Gerardo Reyes Grimaldo
+  \and Erin Gorisch \and Brianna Beechler \and Peter Buss
+  \and Bryan Charleston \and Brian Dugovich \and Simon Gubbins
+  \and Anna Jolles \and Nick Juleff \and Lin-Mari de Klerk-Lorist
+  \and Francois Maree \and Eva Perez-Martin \and O.L.~van Schalkwyk
+  \and Katherine Scott \and Fuquan Zhang
+}
 
 \begin{document}
 
@@ -28,12 +44,12 @@ We simplified the larger problem by using
 \item the birth hazard that is constant in time, and
 \item the hazard for antibody gain that is constant in time.
 \end{itemize}
-We found the equilibrium of this problem by iteratively solving for
-the fixed point of the hazard of infection, $h_{\text{infection}}$,
-and the fraction of newborns with maternal immunity,
-$\phi_{\text{maternal immunity}}$. With given values of
+We found the endemic equilibrium of this problem by iteratively
+solving for the fixed point of the hazard of infection,
+$h_{\text{infection}}$, and the fraction of newborns with maternal
+immunity, $\phi_{\text{maternal immunity}}$. With given values of
 $h_{\text{infection}}$ and $\phi_{\text{maternal immunity}}$, we
-solved a linear-algebra problem for the equilibrium
+solved a linear-algebra problem for the endemic equilibrium
 probability densities as a function of model compartment, age, and
 duration in the current compartment
 (\autoref{model_diagram}), i.e.
@@ -74,6 +90,7 @@ the equilibrium densities $P_X(a)$ were found at this fixed point.
 For $a > 0$ and $0 < r \leq a$, the equilibrium probability densities
 satisfy
 \begin{subequations}
+  \label{model}
   \begin{align}
     P_{\mathrm{M}}(0)
     &= \phi_{\text{maternal immunity}},
@@ -121,23 +138,23 @@ satisfy
     p_{\mathrm{C}}(0, 0) &= 0,
     \\
     p_{\mathrm{C}}(a, 0)
-    &= p_{\text{chronicity}}
+    &= p_{\text{carrier}}
       \int_0^a h_{\text{recovery}}(r) p_{\mathrm{I}}(a, r) \md r,
     \\
     \left(\frac{\partial}{\partial a}
     + \frac{\partial}{\partial r}\right)
     p_{\mathrm{C}}
-    &= - \left[h_{\text{chronic recovery}}(r) + h_{\text{death}}(a)\right]
+    &= - \left[h_{\text{carrier recovery}}(r) + h_{\text{death}}(a)\right]
       p_{\mathrm{C}}(a, r),
     \displaybreak[0]\\
     P_{\mathrm{R}}(0) &= 0,
     \\
     \begin{split}
       \frac{\md P_{\mathrm{R}}}{\md a} &=
-      \left(1 - p_{\text{chronicity}}\right)
+      \left(1 - p_{\text{carrier}}\right)
       \int_0^a h_{\text{recovery}}(r) p_{\mathrm{I}}(a, r) \md r
       \\ & \quad {}
-      + \int_0^a h_{\text{chronic recovery}}(r) p_{\mathrm{C}}(a, r) \md r
+      + \int_0^a h_{\text{carrier recovery}}(r) p_{\mathrm{C}}(a, r) \md r
       \\ & \quad {}
       + h_{\text{antibody gain}} P_{\mathrm{L}}(a)
       \\ & \quad {}
@@ -174,7 +191,7 @@ The infection hazard is
   h_{\text{infection}} =
   \int_0^{+\infty}
   \beta_{\text{infectious}} P_{\mathrm{I}}(a)
-  + \beta_{\text{chronic}} P_{\mathrm{C}}(a)
+  + \beta_{\text{carrier}} P_{\mathrm{C}}(a)
   \md a
 \end{equation}
 and the proportion of births that have maternal immunity is
@@ -199,7 +216,9 @@ where
 
 \subsection{Analysis}
 
-Integrating the PDEs along the characteristics $r = a - a_0$ gives
+Integrating the PDEs for $p_{\mathrm{E}}$, $p_{\mathrm{I}}$, and
+$p_{\mathrm{C}}$ in model \eqref{model} along the characteristics
+$r = a - a_0$ gives
 \begin{subequations}
   \begin{align}
     P_{\mathrm{M}}(0)
@@ -249,7 +268,7 @@ Integrating the PDEs along the characteristics $r = a - a_0$ gives
     p_{\mathrm{C}}(0, 0) &= 0,
     \\
     p_{\mathrm{C}}(a, 0)
-    &= p_{\text{chronicity}}
+    &= p_{\text{carrier}}
       \int_0^a
       p_{\text{recovery}}(r)
       \frac{S_{\text{death}}(a)}{S_{\text{death}}(a - r)}
@@ -257,7 +276,7 @@ Integrating the PDEs along the characteristics $r = a - a_0$ gives
       \md r,
     \\
     p_{\mathrm{C}}(a, r)
-    &= S_{\text{chronic recovery}}(r)
+    &= S_{\text{carrier recovery}}(r)
       \frac{S_{\text{death}}(a)}{S_{\text{death}}(a - r)}
       p_{\mathrm{C}}(a - r, 0),
     \displaybreak[0]\\
@@ -265,7 +284,7 @@ Integrating the PDEs along the characteristics $r = a - a_0$ gives
     \\
     \begin{split}
       \frac{\md P_{\mathrm{R}}}{\md a} &=
-      \left(1 - p_{\text{chronicity}}\right)
+      \left(1 - p_{\text{carrier}}\right)
       \int_0^a
       p_{\text{recovery}}(r)
       \frac{S_{\text{death}}(a)}{S_{\text{death}}(a - r)}
@@ -273,7 +292,7 @@ Integrating the PDEs along the characteristics $r = a - a_0$ gives
       \md r
       \\ & \quad {}
       + \int_0^a
-      p_{\text{chronic recovery}}(r)
+      p_{\text{carrier recovery}}(r)
       \frac{S_{\text{death}}(a)}{S_{\text{death}}(a - r)}
       p_{\mathrm{C}}(a - r, 0)
       \md r
@@ -318,7 +337,7 @@ Using
     \displaybreak[0]\\
     P_{\mathrm{C}}(a)
     &= \int_0^a
-      S_{\text{chronic recovery}}(a - a_0)
+      S_{\text{carrier recovery}}(a - a_0)
       \frac{S_{\text{death}}(a)}{S_{\text{death}}(a_0)}
       p_{\mathrm{C}}(a_0, 0)
       \md a_0,
@@ -361,7 +380,7 @@ gives
     \displaybreak[0]\\
     \begin{split}
       \frac{\md P_{\mathrm{C}}}{\md a}
-      &= p_{\text{chronicity}}
+      &= p_{\text{carrier}}
       \int_0^a
       p_{\text{recovery}}(r)
       \frac{S_{\text{death}}(a)}{S_{\text{death}}(a - r)}
@@ -369,7 +388,7 @@ gives
       \md r
       \\ & \quad {}
       - \int_0^a
-      p_{\text{chronic recovery}}(r)
+      p_{\text{carrier recovery}}(r)
       \frac{S_{\text{death}}(a)}{S_{\text{death}}(a - r)}
       p_{\mathrm{C}}(a - r, 0)
       \md r
@@ -419,15 +438,15 @@ so that the population size is constant, i.e.~zero growth rate.
 
 \section{Numerical method}
 
-To compute the probability densities, we used the Crank--Nicolson
-method on characteristics and the composite trapezoid rule for the
-integrals \citep{milner_1992}.  Given the age step $\Delta a$,
-for $i \in \{0, 1, 2, \ldots, I - 1\}$ and
+To solve the system \eqref{model} for the probability densities, we
+used the Crank--Nicolson method on characteristics and the composite
+trapezoid rule for the integrals \autocite{milner_1992}.  Given the
+age step $\Delta a$, for $i \in \{0, 1, 2, \ldots, I - 1\}$ and
 $j \in \{0, 1, 2, \ldots, i\}$, let $a^i = i \Delta a$, $r^j = j
 \Delta a$, $P_X^i \approx P_X(a^i)$, and
 $p_X^i \approx p_X(a^i, 0)$.
 For each $i \in \{1, 2, \ldots, I - 1\}$, using the
-Crank--Nicolson method on characteristics gives
+Crank--Nicolson method on characteristics is
 \begin{subequations}
   \label{eq:numerical_method}
   \begin{align}
@@ -477,7 +496,7 @@ Crank--Nicolson method on characteristics gives
     p_{\mathrm{C}}^0 &= 0,
     \\
     p_{\mathrm{C}}^i
-    &= p_{\text{chronicity}}
+    &= p_{\text{carrier}}
       \sum_{j = 0}^i
       p_{\text{recovery}}(r^j)
       \frac{S_{\text{death}}(a^i)}{S_{\text{death}}(a^{i - j})}
@@ -488,7 +507,7 @@ Crank--Nicolson method on characteristics gives
     \\
     \begin{split}
       \frac{P_{\mathrm{R}}^i - P_{\mathrm{R}}^{i - 1}}{\Delta a}
-      &= \left(1 - p_{\text{chronicity}}\right)
+      &= \left(1 - p_{\text{carrier}}\right)
       \sum_{j = 0}^i
       p_{\text{recovery}}(r^j)
       \frac{S_{\text{death}}(a^i)}{S_{\text{death}}(a^{i - j})}
@@ -496,7 +515,7 @@ Crank--Nicolson method on characteristics gives
       \Delta a
       \\ & \quad {}
       + \sum_{j = 0}^i
-      p_{\text{chronic recovery}}(r^j)
+      p_{\text{carrier recovery}}(r^j)
       \frac{S_{\text{death}}(a^i)}{S_{\text{death}}(a^{i - j})}
       p_{\mathrm{C}}^{i - j}
       \Delta a
@@ -546,7 +565,7 @@ with
     \displaybreak[0]\\
     P_{\mathrm{C}}^i
     &= \sum_{j = 0}^i
-      S_{\text{chronic recovery}}(r^j)
+      S_{\text{carrier recovery}}(r^j)
       \frac{S_{\text{death}}(a^i)}{S_{\text{death}}(a^{i - j})}
       p_{\mathrm{C}}^{i - j}
       \Delta a.
@@ -555,16 +574,18 @@ with
 
 The infection hazard is
 \begin{equation}
+  \label{hazard_of_infection}
   h_{\text{infection}}
   = \sum_{i = 0}^{I - 1} N
   \left(
     \beta_{\text{infectious}} P_{\mathrm{I}}^i
-    + \beta_{\text{chronic}} P_{\mathrm{C}}^i
+    + \beta_{\text{carrier}} P_{\mathrm{C}}^i
   \right)
   \Delta a,
 \end{equation}
 and the proportion of births that have maternal immunity is
 \begin{equation}
+  \label{births_maternal_immunity}
   \phi_{\text{maternal immunity}}
   = \frac{
     \sum_{i = 0}^{I - 1}
@@ -655,7 +676,7 @@ Numerical scheme \eqref{eq:numerical_method} can be written as
     p_{\mathrm{C}}^0 &= 0,
     \\
     - \sum_{j = 0}^i
-    p_{\text{chronicity}} p_{\text{recovery}}(r^{i - j})
+    p_{\text{carrier}} p_{\text{recovery}}(r^{i - j})
     \frac{S_{\text{death}}(a^i)}{S_{\text{death}}(a^j)}
     \Delta a
     p_{\mathrm{I}}^j
@@ -666,14 +687,14 @@ Numerical scheme \eqref{eq:numerical_method} can be written as
     \\
     \begin{split}
       - \sum_{j = 0}^i
-      \left(1 - p_{\text{chronicity}}\right)
+      \left(1 - p_{\text{carrier}}\right)
       p_{\text{recovery}}(r^{i - j})
       \frac{S_{\text{death}}(a^i)}{S_{\text{death}}(a^j)}
       \Delta a^2
       p_{\mathrm{I}}^j
       \\ {}
       - \sum_{j = 0}^i
-      p_{\text{chronic recovery}}(r^{i - j})
+      p_{\text{carrier recovery}}(r^{i - j})
       \frac{S_{\text{death}}(a^i)}{S_{\text{death}}(a^j)}
       \Delta a^2
       p_{\mathrm{C}}^j
@@ -729,6 +750,7 @@ for $i \in \{1, 2, \ldots, I - 1\}$.
 
 Define the vectors
 \begin{equation}
+  \label{x_subvectors}
   \vec{x}_X =
   \begin{cases}
     \begin{pmatrix}
@@ -754,6 +776,7 @@ Define the vectors
 \end{equation}
 and let $\vec{x}$ be the $\vec{x}_X$'s stacked into a single vector,
 \begin{equation}
+  \label{x_vector}
   \vec{x} =
   \begin{pmatrix}
     \vec{x}_{\mathrm{M}}\\
@@ -924,17 +947,17 @@ where
     \Delta a,
     \displaybreak[0]\\
     \bar{f}_{\mathrm{CI}}^{i, j} &=
-    p_{\text{chronicity}} p_{\text{recovery}}(r^{i - j})
+    p_{\text{carrier}} p_{\text{recovery}}(r^{i - j})
     \frac{S_{\text{death}}(a^i)}{S_{\text{death}}(a^j)}
     \Delta a,
     \displaybreak[0]\\
     \bar{f}_{\mathrm{RI}}^{i, j} &=
-    (1 - p_{\text{chronicity}}) p_{\text{recovery}}(r^{i - j})
+    (1 - p_{\text{carrier}}) p_{\text{recovery}}(r^{i - j})
     \frac{S_{\text{death}}(a^i)}{S_{\text{death}}(a^j)}
     \Delta a^2,
     \displaybreak[0]\\
     \bar{f}_{\mathrm{RC}}^{i, j} &=
-    p_{\text{chronic recovery}}(r^{i - j})
+    p_{\text{carrier recovery}}(r^{i - j})
     \frac{S_{\text{death}}(a^i)}{S_{\text{death}}(a^j)}
     \Delta a^2.
   \end{align}
@@ -984,23 +1007,32 @@ The numerical scheme is then finding the vector $\vec{x}$ that solves
   \mat{A} \vec{x} = \vec{b}.
 \end{equation}
 
-The diagonal entries of $\mat{A}$ are positive.
-The off-diagonal entries of $\mat{A}$ are non-positive if
-\begin{equation}
-  d_X^i \leq 1,
-\end{equation}
-for $X \in \{\mathrm{M}, \mathrm{S}, \mathrm{R}, \mathrm{L}\}$ and
-$i \in \{1, 2, \ldots, I - 1\}$.
-Under these conditions, the entries of $\vec{x}$ are non-negative.
 
-\textbf{TODO: M matrix blah blah blah...}
+\subsection{Endemic equilibrium}
 
-\textbf{TODO: Describe iterative scheme for finding
-  $h_{\text{infection}}$ and $\phi_{\text{maternal immunity}}$.}
+In our implementation of the Crank--Nicolson method on
+characteristics, the matrix $\mat{A}$
+depends on the hazard of infection, $h_{\text{infection}}$,
+while the vector $\vec{b}$
+depends on the fraction of newborns with maternal immunity,
+$\phi_{\text{maternal immunity}}$.
+We used a fixed-point solver, \verb|scipy.optimize.fixed_point()|
+\autocite{scipy}, to find the values of $h_{\text{infection}}$
+and $\phi_{\text{maternal immunity}}$ at the endemic equilibrium.
+For trial values of $h_{\text{infection}}$ and
+$\phi_{\text{maternal immunity}}$, we used our implementation of the
+Crank--Nicolson method on characteristics to find the vector of state
+probabilities $\vec{x}$ and then from those state probabilities, we
+calculated the resulting new values of $h_{\text{infection}}$ from
+\eqref{hazard_of_infection} and $\phi_{\text{maternal immunity}}$ from
+\eqref{births_maternal_immunity}. The fixed-point solver then found
+the values of $h_{\text{infection}}$ and
+$\phi_{\text{maternal immunity}}$ at the endemic equilibrium and from
+those we used the Crank--Nicolson solver to find the state
+probabilities at the endemic equilibrium.
 
 
-\bibliography{journal_abbreviations,math_epi}
-\bibliographystyle{jpmbib}
+\printbibliography
 
 
 \end{document}

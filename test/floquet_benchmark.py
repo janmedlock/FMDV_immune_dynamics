@@ -1,4 +1,6 @@
 #!/usr/bin/python3
+'''Time the Floquet solver.'''
+
 import subprocess
 from time import perf_counter, process_time
 

@@ -1,6 +1,10 @@
 #!/usr/bin/python3
+'''Ensure that for each posterior parameter sample, all of the
+evaluations in the model code of the probability density functions are
+finite.'''
 
-from context import common, herd
+from context import common
+from context import herd
 from herd.initial_conditions.immune_status import solver
 import herd.samples
 

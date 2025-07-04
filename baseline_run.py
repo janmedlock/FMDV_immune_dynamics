@@ -1,6 +1,6 @@
 #!/usr/bin/python3
-'''Run simulations with the baseline parameter values.'''
-
+'''Run simulations with the baseline parameter values. This produces a
+file called `baseline.h5`.'''
 
 import baseline
 import common

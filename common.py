@@ -1,5 +1,6 @@
 '''Common plotting code.'''
 
+import itertools
 import os
 
 import matplotlib.collections
@@ -248,3 +249,16 @@ def get_cmap_SAT(SAT):
     '''White to `SAT_colors[SAT]`.'''
     return matplotlib.colors.LinearSegmentedColormap.from_list(
         'name', ['white', SAT_colors[SAT]])
+
+
+def legend_multicolumn(fig, handles, labels, ncol, loc='upper right'):
+    '''Make a multicolumn legend.'''
+    def reorder(items, ncol):
+        return list(
+            itertools.chain.from_iterable(
+                items[i::ncol] for i in range(ncol)
+            )
+        )
+    return fig.legend(reorder(handles, ncol),
+                      reorder(labels, ncol),
+                      ncol=ncol, loc=loc)

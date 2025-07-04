@@ -1,4 +1,5 @@
 #!/usr/bin/python3
+'''Run one simulation.'''
 
 import time
 

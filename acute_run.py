@@ -1,6 +1,6 @@
 #!/usr/bin/python3
-'''Run simulations with no chronic infections.'''
-
+'''Run simulations with no chronic infections. This produces a
+file called `acute.h5`.'''
 
 import acute
 import common

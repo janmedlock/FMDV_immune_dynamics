@@ -8,9 +8,10 @@ from herd.immune_statuses import immune_statuses
 
 
 # Events that can happen to each immune status.
-# TODO: Build this with metaclass magic.
-events_by_immune_status = {immune_status: set()
-                           for immune_status in immune_statuses}
+events_by_immune_status = {
+    immune_status: set()
+    for immune_status in immune_statuses
+}
 
 
 class Event(ABC):

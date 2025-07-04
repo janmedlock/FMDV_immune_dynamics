@@ -1,4 +1,5 @@
 #!/usr/bin/python3
+'''Run many simulations.'''
 
 import itertools
 import time
