@@ -610,7 +610,9 @@ and $N$ is the population size.
 Numerical scheme \eqref{eq:numerical_method} can be written as
 \begin{subequations}
   \begin{align}
-    P_{\mathrm{M}}^0 &= \phi_{\text{maternal immunity}},
+    P_{\mathrm{M}}^0
+    - \phi_{\text{maternal immunity}}
+    &= 0,
     \displaybreak[0]\\
     \begin{split}
       - \left\{1
@@ -627,7 +629,9 @@ Numerical scheme \eqref{eq:numerical_method} can be written as
       &= 0,
     \end{split}
     \displaybreak[0]\\
-    P_{\mathrm{S}}^0 &= 1 - \phi_{\text{maternal immunity}},
+    P_{\mathrm{S}}^0
+    - \left(1 - \phi_{\text{maternal immunity}}\right)
+    &= 0,
     \displaybreak[0]\\
     \begin{split}
       - h_{\text{waning}}(a^{i - 1 / 2}) \frac{\Delta a}{2}
@@ -750,46 +754,46 @@ for $i \in \{1, 2, \ldots, I - 1\}$.
 
 Define the vectors
 \begin{equation}
-  \label{x_subvectors}
-  \vec{x}_X =
-  \begin{cases}
-    \begin{pmatrix}
-      P_X^0\\
-      P_X^1\\
-      \vdots\\
-      P_X^{I - 1}
-    \end{pmatrix}
-    &
-    \text{for $X \in
-      \left\{\mathrm{M}, \mathrm{S}, \mathrm{R}, \mathrm{L}\right\}$},
-    \\[4em]
-    \begin{pmatrix}
-      p_X^0\\
-      p_X^1\\
-      \vdots\\
-      p_X^{I - 1}
-    \end{pmatrix}
-    &
-    \text{for $X \in
-      \left\{\mathrm{E}, \mathrm{I}, \mathrm{C}\right\}$},
-  \end{cases}
-\end{equation}
-and let $\vec{x}$ be the $\vec{x}_X$'s stacked into a single vector,
-\begin{equation}
-  \label{x_vector}
-  \vec{x} =
+  \vec{P}_X =
   \begin{pmatrix}
-    \vec{x}_{\mathrm{M}}\\
-    \vec{x}_{\mathrm{S}}\\
-    \vec{x}_{\mathrm{E}}\\
-    \vec{x}_{\mathrm{I}}\\
-    \vec{x}_{\mathrm{C}}\\
-    \vec{x}_{\mathrm{R}}\\
-    \vec{x}_{\mathrm{L}}
+    P_X^0\\
+    P_X^1\\
+    \vdots\\
+    P_X^{I - 1}
+  \end{pmatrix}
+  \qquad
+  \text{for $X \in
+    \left\{\mathrm{M}, \mathrm{S}, \mathrm{R}, \mathrm{L}\right\}$},
+\end{equation}
+and
+\begin{equation}
+  \vec{p}_Y =
+  \begin{pmatrix}
+    p_Y^0\\
+    p_Y^1\\
+    \vdots\\
+    p_Y^{I - 1}
+  \end{pmatrix}
+  \qquad
+  \text{for $Y \in
+    \left\{\mathrm{E}, \mathrm{I}, \mathrm{C}\right\}$}.
+\end{equation}
+Let $\vec{v}$ be the $\vec{P}_X$'s and $\vec{p}_Y$'s stacked into a
+single vector of length $7 I$,
+\begin{equation}
+  \vec{v} =
+  \begin{pmatrix}
+    \vec{P}_{\mathrm{M}}\\
+    \vec{P}_{\mathrm{S}}\\
+    \vec{p}_{\mathrm{E}}\\
+    \vec{p}_{\mathrm{I}}\\
+    \vec{p}_{\mathrm{C}}\\
+    \vec{P}_{\mathrm{R}}\\
+    \vec{P}_{\mathrm{L}}
   \end{pmatrix}.
 \end{equation}
 
-Define the block diagonal matrix
+Define the $7 I \times 7 I$ block diagonal matrix
 \begin{align}
   \mat{D} &=
   \begin{bmatrix}
@@ -815,7 +819,7 @@ Define the block diagonal matrix
     \mat{0} & \mat{0} & \mat{D}_{\mathrm{L}}
   \end{bmatrix},
 \end{align}
-with blocks
+with $I \times I$ blocks
 \begin{subequations}
   \begin{align}
     \mat{D}_X &=
@@ -831,7 +835,8 @@ with blocks
       0 & \hdots & 0 & - 1 + d_X^{I - 1} & 1 + d_X^{I - 1}
     \end{bmatrix},
     \\
-    \bar{\mat{D}}_X &=
+    \bar{\mat{D}}_Y &=
+    \mat{I}_{I \times I} =
     \begin{bmatrix}
       1 & 0 & \hdots & 0 \\
       0 & 1 & \ddots & \vdots \\
@@ -867,7 +872,7 @@ where
 \end{subequations}
 for $i \in \{1, 2, \ldots, I - 1\}$.
 
-Define the influx matrix
+Define the $7 I \times 7 I$ influx matrix
 \begin{equation}
   \mat{F} =
   \begin{bmatrix}
@@ -893,33 +898,33 @@ Define the influx matrix
     \mat{0} & \mat{F}_{\mathrm{LR}} & \mat{0}
   \end{bmatrix},
 \end{equation}
-with blocks
+with $I \times I$ blocks
 \begin{subequations}
   \begin{align}
-    \mat{F}_{XY} &=
+    \mat{F}_{ZX} &=
     \begin{bmatrix}
       0 & 0 & 0 & \hdots & 0
       \\
-      f_{XY}^1 & f_{XY}^1 & 0 & \hdots & 0
+      f_{ZX}^1 & f_{ZX}^1 & 0 & \hdots & 0
       \\
-      0 & f_{XY}^2 & f_{XY}^2 & \ddots & \vdots
+      0 & f_{ZX}^2 & f_{ZX}^2 & \ddots & \vdots
       \\
       \vdots & \ddots & \ddots & \ddots & 0
       \\
-      0 & \hdots & 0 & f_{XY}^{I - 1} &
-      f_{XY}^{I - 1}
+      0 & \hdots & 0 & f_{ZX}^{I - 1} &
+      f_{ZX}^{I - 1}
     \end{bmatrix},
     \displaybreak[0]\\
-    \bar{\mat{F}}_{XY} &=
+    \bar{\mat{F}}_{ZY} &=
     \begin{bmatrix}
       0 & 0 & \hdots & 0
       \\
-      \bar{f}_{XY}^{1, 0} & \bar{f}_{XY}^{1, 1} & \ddots & \vdots
+      \bar{f}_{ZY}^{1, 0} & \bar{f}_{ZY}^{1, 1} & \ddots & \vdots
       \\
       \vdots & \vdots & \ddots & 0
       \\
-      \bar{f}_{XY}^{I - 1, 0} & \bar{f}_{XY}^{I - 1, 1} & \hdots &
-      \bar{f}_{XY}^{I - 1, I - 1}
+      \bar{f}_{ZY}^{I - 1, 0} & \bar{f}_{ZY}^{I - 1, 1} & \hdots &
+      \bar{f}_{ZY}^{I - 1, I - 1}
     \end{bmatrix},
   \end{align}
 \end{subequations}
@@ -963,7 +968,7 @@ where
   \end{align}
 \end{subequations}
 
-Define the vector
+Define the vector of length $7 I$
 \begin{equation}
   \vec{b} =
   \begin{pmatrix}
@@ -976,7 +981,7 @@ Define the vector
     \vec{0}
   \end{pmatrix},
 \end{equation}
-with
+with the blocks of length $I$
 \begin{subequations}
   \begin{align}
     \vec{b}_{\mathrm{M}} &=
@@ -1002,9 +1007,9 @@ Define the matrix
   \mat{A} =
   \mat{D} - \mat{F}.
 \end{equation}
-The numerical scheme is then finding the vector $\vec{x}$ that solves
+The numerical scheme is then finding the vector $\vec{v}$ that solves
 \begin{equation}
-  \mat{A} \vec{x} = \vec{b}.
+  \mat{A} \vec{v} = \vec{b}.
 \end{equation}
 
 
@@ -1022,7 +1027,7 @@ and $\phi_{\text{maternal immunity}}$ at the endemic equilibrium.
 For trial values of $h_{\text{infection}}$ and
 $\phi_{\text{maternal immunity}}$, we used our implementation of the
 Crank--Nicolson method on characteristics to find the vector of state
-probabilities $\vec{x}$ and then from those state probabilities, we
+probabilities $\vec{v}$ and then from those state probabilities, we
 calculated the resulting new values of $h_{\text{infection}}$ from
 \eqref{hazard_of_infection} and $\phi_{\text{maternal immunity}}$ from
 \eqref{births_maternal_immunity}. The fixed-point solver then found
