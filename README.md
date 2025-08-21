@@ -1,4 +1,4 @@
-# FMDV immune_dynamics
+# FMDV immune dynamics
 
 ## A transmission model of foot-and-model-disease viruses in African buffalo with temporary loss of immunity
 
