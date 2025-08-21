@@ -16,6 +16,12 @@ import samples
 import stats
 
 
+parameter_name_replacements = {
+    'antibody_gain_hazard': 'antibody_gain_rate',
+    'antibody_loss_hazard': 'antibody_loss_rate',
+}
+
+
 def load():
     extinction_time = common.load_extinction_time(samples.store_path)
     idx_lvls = extinction_time.index.names
@@ -23,8 +29,9 @@ def load():
     # `extinction_time`.
     samples_ = herd.samples.load() \
                            .rename_axis(index=idx_lvls.difference(['SAT'])) \
-                           .stack('SAT') \
-                           .reorder_levels(idx_lvls, axis='index')
+                           .stack('SAT', future_stack=True) \
+                           .reorder_levels(idx_lvls, axis='index') \
+                           .rename(parameter_name_replacements, axis='columns')
     # Merge, using `how='inner'` to drop samples where the simulations
     # did not run.
     return samples_.merge(extinction_time,
