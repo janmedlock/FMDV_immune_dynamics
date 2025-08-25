@@ -1,4 +1,7 @@
-\begin{tikzpicture}[compartment/.style = {rectangle, draw}, font=\fontsize{5pt}{6}\selectfont]
+\begin{tikzpicture}[
+  compartment/.style={rectangle, draw},
+  font=\fontsize{5pt}{6}\selectfont,
+]
   % Compartments.
   \node at (0, 1.5) [compartment, align=center, name=MaternalImmunity] {Maternal\\immunity};
   \node at (2.5, 1.5) [compartment, name=Susceptible] {Susceptible};
@@ -89,5 +92,5 @@
 
 %%% Local Variables:
 %%% mode: latex
-%%% TeX-master: "diagram_horizontal_standalone"
+%%% TeX-master: "diagram_standalone"
 %%% End:
