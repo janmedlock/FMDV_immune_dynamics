@@ -2,12 +2,13 @@
 
 \RequireCitationStyle{authoryear-comp}
 
-% No "and" before the final name.
-\DeclareDelimFormat[parencite]{finalnamedelim}{\addcomma\space}
-% No "and" before the final name if there are more than 2.
-% \DeclareDelimFormat[parencite]{finalnamedelim}{%
-% \ifnumgreater{\value{liststop}}{2}{\addcomma}{\addspace\bibstring{and}}%
-% \space%
-% }
+% "&" before the final name, with a preceeding comma if there are more than 2.
+\DeclareDelimFormat[parencite]{finalnamedelim}{
+    \ifnumgreater{\value{liststop}}{2}{\addcomma}{}
+    \addspace\&\addspace
+}
 
-\ExecuteBibliographyOptions{uniquename=init}
+\ExecuteBibliographyOptions{
+    maxcitenames=2,
+    uniquename=init,
+}

@@ -37,15 +37,17 @@
 {\setunit*{\adddot}\printfield{number}}
 {{\iffieldundef{number}{}{\printtext[parens]{\printfield{number}}}}}{}{}
 
-\ExecuteBibliographyOptions{labeldateparts=true,
-			    sorting=nyt,
-			    pagetracker=true,
-			    mergedate=compact,
-			    giveninits=true,
-			    terseinits=true,
-			    date=year,
-			    dashed=false,
-			    maxbibnames=100}
+\ExecuteBibliographyOptions{
+    maxbibnames=100,
+    labeldateparts=true,
+    sorting=nyt,
+    pagetracker=true,
+    mergedate=compact,
+    giveninits=true,
+    terseinits=true,
+    date=year,
+    dashed=false,
+}
 
 % Remove parentheses around date. This comes after executing the
 % 'mergedate' option because that sets the macro to one of a few
