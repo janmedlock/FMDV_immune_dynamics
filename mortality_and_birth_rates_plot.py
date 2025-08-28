@@ -38,6 +38,10 @@ class Base(metaclass=abc.ABCMeta):
 
     @property
     @abc.abstractmethod
+    def x_minor_ndivs(self): pass
+
+    @property
+    @abc.abstractmethod
     def y_major_multiple(self): pass
 
     @classmethod
@@ -46,7 +50,7 @@ class Base(metaclass=abc.ABCMeta):
 
     rvs = herd.RandomVariables()
     n_points = 1001
-    minor_ndivs = 2
+    y_minor_ndivs = 2
 
     @classmethod
     def plot(cls, axes, **kwds):
@@ -64,7 +68,9 @@ class Base(metaclass=abc.ABCMeta):
                 )
             )
             axis.set_minor_locator(
-                matplotlib.ticker.AutoMinorLocator(cls.minor_ndivs)
+                matplotlib.ticker.AutoMinorLocator(
+                    getattr(cls, f'{which}_minor_ndivs')
+                )
             )
 
 
@@ -73,6 +79,7 @@ class Mortality(Base):
     y_label = r'Mortality rate (year$^{-1}$)'
     x_lim = [0, 20]
     x_major_multiple = 4
+    x_minor_ndivs = 4
     y_major_multiple = 0.2
 
     @classmethod
@@ -86,6 +93,7 @@ class Birth(Base):
     y_label = r'Birth rate (year$^{-1}$)'
     x_lim = [0, 2]
     x_major_multiple = 1
+    x_minor_ndivs = 2
     y_major_multiple = 1
 
     @classmethod

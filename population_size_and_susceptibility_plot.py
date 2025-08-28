@@ -114,6 +114,12 @@ def plot_persistence(dfr, save=True):
                 ax.set_ylim(min(susceptibility.values),
                             max(susceptibility.values))
                 ax.set_ylabel(susceptibility_label)
+                ax.yaxis.set_major_locator(
+                    matplotlib.ticker.MultipleLocator(0.2)
+                )
+                ax.yaxis.set_minor_locator(
+                    matplotlib.ticker.AutoMinorLocator(2)
+                )
             fig.colorbar(img,
                          cax=ax_cbar,
                          orientation='horizontal',

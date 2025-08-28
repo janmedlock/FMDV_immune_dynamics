@@ -79,7 +79,7 @@ def plot_extinction_time(ax, extinction_time, SAT):
     ax.yaxis.set_major_locator(ticker.NullLocator())
     # Shared x-axes between SATs.
     if ax.get_subplotspec().is_last_row():
-        ax.set_xlabel(common.t_name.capitalize())
+        ax.set_xlabel(common.t_label)
     else:
         ax.xaxis.set_tick_params(which='both',
                                  labelbottom=False, labeltop=False)
@@ -131,6 +131,8 @@ def plot(infected, extinction_time,
                 ax.set_xlim(left=0, right=t_max)
                 ax.set_ylim(bottom=0)
                 ax.xaxis.set_major_locator(ticker.MultipleLocator(2))
+                ax.xaxis.set_minor_locator(ticker.AutoMinorLocator(2))
+                ax.grid(axis='x', which='minor', visible=True)
                 if row == row_inf:
                     ax.yaxis.set_major_locator(ticker.MultipleLocator(100))
         seaborn.despine(fig=fig, top=True,

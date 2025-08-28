@@ -28,7 +28,7 @@ rc_text_small = {
     'xtick.labelsize': _TICK_LABELSIZE,
     'ytick.labelsize': _TICK_LABELSIZE,
     'axes.labelsize': 9,
-    'axes.titlesize': 10,
+    'axes.titlesize': 11,
 }
 
 _mm_to_inch = astropy.units.mm.to(astropy.units.imperial.inch)
@@ -45,6 +45,7 @@ SATs = (1, 2, 3)
 TMAX = 10
 
 t_name = 'time (y)'
+t_label = 'Time (year)'
 
 cols_infected = ['exposed', 'infectious', 'chronic']
 
@@ -266,7 +267,7 @@ def get_cmap_SAT(SAT):
         'name', ['white', SAT_colors[SAT]])
 
 
-def legend_multicolumn(fig, handles, labels, ncol, loc='upper right'):
+def legend_multicolumn(obj, handles, labels, ncol, **kwds):
     '''Make a multicolumn legend.'''
     def reorder(items, ncol):
         return list(
@@ -274,6 +275,6 @@ def legend_multicolumn(fig, handles, labels, ncol, loc='upper right'):
                 items[i::ncol] for i in range(ncol)
             )
         )
-    return fig.legend(reorder(handles, ncol),
+    return obj.legend(reorder(handles, ncol),
                       reorder(labels, ncol),
-                      ncol=ncol, loc=loc)
+                      ncol=ncol, **kwds)

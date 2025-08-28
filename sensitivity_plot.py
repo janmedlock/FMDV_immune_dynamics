@@ -16,7 +16,6 @@ import susceptibility
 
 rc = common.rc | common.rc_text_small | {
     'figure.figsize': (common.WIDTH_MAXIMUM['double_column'], 4),
-    'axes.titlesize': 11,
 }
 
 
@@ -68,6 +67,12 @@ def plot_persistence(dfs, save=True, show=True):
                     ax.yaxis.set_major_formatter(
                         matplotlib.ticker.PercentFormatter(xmax=1)
                     )
+                    ax.yaxis.set_major_locator(
+                        matplotlib.ticker.MultipleLocator(0.2)
+                    )
+                    ax.yaxis.set_minor_locator(
+                        matplotlib.ticker.AutoMinorLocator(2)
+                    )
                 if module.log:
                     ax.set_xscale('log')
                     ax.xaxis.set_major_formatter(
@@ -93,6 +98,13 @@ def plot_persistence(dfs, save=True, show=True):
                         - matplotlib.pyplot.rcParams['xtick.minor.size']
                     )
                     ax.tick_params(axis='x', which='minor', pad=x_minor_pad)
+                else:
+                    ax.xaxis.set_major_locator(
+                        matplotlib.ticker.MultipleLocator(0.2)
+                    )
+                    ax.xaxis.set_minor_locator(
+                        matplotlib.ticker.AutoMinorLocator(2)
+                    )
                 ax.axvline(module.default,
                            color='black', linestyle='dotted', alpha=0.7,
                            clip_on=False)
