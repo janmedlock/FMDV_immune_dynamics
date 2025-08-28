@@ -12,8 +12,16 @@ import matplotlib.ticker
 import common
 import population_size
 import population_size_and_susceptibility
+import supplemental_materials
 import susceptibility
 
+
+rc = common.rc | supplemental_materials.rc | common.rc_text_small | {
+    'figure.figsize': (supplemental_materials.WIDTH_MAXIMUM, 2.8),
+    'pcolor.shading': 'gouraud',
+    'contour.algorithm': 'threaded',
+    'contour.linewidth': 1,
+}
 
 population_size_label = population_size.label.replace('\n', ' ')
 
@@ -60,15 +68,6 @@ def prepend_to_text(s, text):
 
 
 def plot_persistence(dfr, save=True):
-    rc = common.rc.copy()
-    width = 183 / 25.4  # convert mm to in
-    height = 4  # in
-    rc['figure.figsize'] = (width, height)
-    # Between 5pt and 7pt.
-    rc['font.size'] = 6
-    rc['axes.titlesize'] = 9
-    rc['axes.labelsize'] = 8
-    rc['xtick.labelsize'] = rc['ytick.labelsize'] = 7
     contour_levels = [0.01, 0.5, 0.99]
     with matplotlib.pyplot.rc_context(rc=rc):
         persistence = get_persistence(dfr)
@@ -76,9 +75,9 @@ def plot_persistence(dfr, save=True):
         ncols = len(grouper)
         (fig, axes) = matplotlib.pyplot.subplots(
             2, ncols,
-            sharey='row', layout='constrained',
-            gridspec_kw={'hspace': 0.15,
-                         'height_ratios': (10, 1)},
+            sharey='row',
+            gridspec_kw={'height_ratios': (10, 1),
+                         'hspace': 0.15},
         )
         for ((SAT, group), (ax, ax_cbar)) in zip(grouper, axes.T):
             # Move population_size from an index level to columns.
@@ -92,15 +91,12 @@ def plot_persistence(dfr, save=True):
             vmax = 1 - epsilon
             norm = _LogitNorm(vmin=vmin, vmax=vmax, clip=True)
             img = ax.pcolormesh(x, y, arr,
-                                cmap=cmap, norm=norm,
-                                shading='gouraud')
+                                cmap=cmap, norm=norm)
             contours = ax.contour(x, y, arr, contour_levels,
-                                  algorithm='threaded',
-                                  colors='black', linewidths=1)
-            pct_fmt = lambda x: f'{100*x:g}%'
+                                  colors='black')
             contour_fontsize = matplotlib.pyplot.rcParams['xtick.labelsize']
             contours.clabel(inline=True,
-                            fmt=pct_fmt,
+                            fmt=lambda x: f'{100*x:g}%',
                             fontsize=contour_fontsize)
             ax.axvline(population_size.default,
                        color='black', linestyle='dotted', alpha=0.7,
@@ -134,7 +130,6 @@ def plot_persistence(dfr, save=True):
         if save:
             store_path = population_size_and_susceptibility.store_path
             fig.savefig(store_path.with_suffix('.pdf'))
-            fig.savefig(store_path.with_suffix('.png'), dpi=300)
         return fig
 
 

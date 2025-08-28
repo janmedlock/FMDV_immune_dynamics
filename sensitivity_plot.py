@@ -14,6 +14,12 @@ import sensitivity
 import susceptibility
 
 
+rc = common.rc | common.rc_text_small | {
+    'figure.figsize': (common.WIDTH_MAXIMUM['double_column'], 4),
+    'axes.titlesize': 11,
+}
+
+
 MODULES = (population_size, susceptibility)
 
 
@@ -25,15 +31,6 @@ def load():
 
 
 def plot_persistence(dfs, save=True, show=True):
-    rc = common.rc.copy()
-    width = 183 / 25.4  # convert mm to in
-    height = 4  # in
-    rc['figure.figsize'] = (width, height)
-    # Between 5pt and 7pt.
-    rc['font.size'] = 6
-    rc['axes.titlesize'] = 11
-    rc['axes.labelsize'] = 8
-    rc['xtick.labelsize'] = rc['ytick.labelsize'] = 7
     with matplotlib.pyplot.rc_context(rc=rc):
         fig = None
         ncols = len(dfs)
@@ -44,7 +41,6 @@ def plot_persistence(dfs, save=True, show=True):
                 (fig, axes) = matplotlib.pyplot.subplots(
                     nrows, ncols,
                     sharex='col', sharey='row',
-                    layout='constrained'
                 )
             vals = df.index \
                      .get_level_values(module.var) \
@@ -105,10 +101,12 @@ def plot_persistence(dfs, save=True, show=True):
         fig.align_xlabels(axes[-1, :])
         fig.align_ylabels(axes[:, 0])
         if save:
-            filepath = pathlib.Path(__file__)
-            fig.savefig(filepath.with_suffix('.pdf'))
-            fig.savefig(filepath.with_suffix('.png'),
-                        dpi=300)
+            source_path = pathlib.Path(__file__)
+            output_path_stem = source_path.with_name(
+                source_path.name.replace('_plot.py', '')
+            )
+            fig.savefig(output_path_stem.with_suffix('.eps'))
+            fig.savefig(output_path_stem.with_suffix('.png'), dpi=300)
         if show:
             matplotlib.pyplot.show()
         return fig

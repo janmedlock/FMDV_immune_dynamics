@@ -10,16 +10,9 @@ import baseline
 import common
 
 
-# Science
-rc = common.rc.copy()
-width = 183 / 25.4  # convert mm to in
-height = 3  # in
-rc['figure.figsize'] = (width, height)
-# Between 5pt and 7pt.
-rc['font.size'] = 6
-rc['axes.titlesize'] = 9
-rc['axes.labelsize'] = 8
-rc['xtick.labelsize'] = rc['ytick.labelsize'] = 7
+rc = common.rc | common.rc_text_small | {
+    'figure.figsize': (common.WIDTH_MAXIMUM['double_column'], 3),
+}
 
 
 def load(_module=baseline):
@@ -105,7 +98,7 @@ def plot(infected, extinction_time,
     row_inf = 0
     row_ext = 1
     with seaborn.axes_style('whitegrid'), pyplot.rc_context(rc=rc):
-        fig = pyplot.figure(layout='constrained')
+        fig = pyplot.figure()
         gs = fig.add_gridspec(nrows, ncols,
                               height_ratios=height_ratios,
                               wspace=0.1, hspace=0.1)
@@ -147,9 +140,8 @@ def plot(infected, extinction_time,
         fig.align_xlabels(axes[-1, :])
         fig.align_ylabels(axes[[row_inf, row_ext], 0])
         if save:
-            fig.savefig(_module.store_path.with_suffix('.pdf'))
-            fig.savefig(_module.store_path.with_suffix('.png'),
-                        dpi=300)
+            fig.savefig(_module.store_path.with_suffix('.eps'))
+            fig.savefig(_module.store_path.with_suffix('.png'), dpi=300)
         return fig
 
 

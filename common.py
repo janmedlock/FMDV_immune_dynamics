@@ -3,6 +3,7 @@
 import itertools
 import os
 
+import astropy.units
 import matplotlib.collections
 import matplotlib.colors
 import matplotlib.pyplot
@@ -15,15 +16,29 @@ import h5
 from herd.utility import arange
 
 
-# Science
-rc = {}
-# Widths: 89mm, 183mm, 120mm, 136mm.
-# Sans-serif, preferably Helvetica or Arial.
-rc['font.family'] = 'sans-serif'
-rc['font.sans-serif'] = 'DejaVu Sans'
-# Fonts between 5pt and 7pt.
-# Separate panels in multi-part figures should be labelled with 8
-# pt bold, upright (not italic) a, b, c...
+rc = {
+    'font.family': 'serif',
+    'font.serif': 'Liberation Serif',
+    'figure.constrained_layout.use': True,
+}
+
+_TICK_LABELSIZE = 7
+rc_text_small = {
+    'axes.titlesize': 9,
+    'axes.labelsize': 8,
+    'xtick.labelsize': _TICK_LABELSIZE,
+    'ytick.labelsize': _TICK_LABELSIZE,
+    'font.size': 6,
+}
+
+_mm_to_inch = astropy.units.mm.to(astropy.units.imperial.inch)
+
+WIDTH_MAXIMUM = {
+    'single_column': 84 * _mm_to_inch,
+    'double_column': 175 * _mm_to_inch,
+}
+
+HEIGHT_MAXIMUM = 250 * _mm_to_inch
 
 SATs = (1, 2, 3)
 
