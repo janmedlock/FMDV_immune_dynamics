@@ -63,7 +63,7 @@ def plot_persistence(dfs, save=True, show=True):
                                 fontsize=rc['axes.titlesize'],
                                 rotation='vertical',
                                 verticalalignment='center')
-                    ax.set_ylabel('persisting 10 y')
+                    ax.set_ylabel('Persisting 10 y')
                     ax.set_ylim(0, 1)
                     ax.yaxis.set_major_formatter(
                         matplotlib.ticker.PercentFormatter(xmax=1)

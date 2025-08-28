@@ -69,8 +69,8 @@ class Base(metaclass=abc.ABCMeta):
 
 
 class Mortality(Base):
-    x_label = 'age (year)'
-    y_label = r'mortality rate (year$^{-1}$)'
+    x_label = 'Age (year)'
+    y_label = r'Mortality rate (year$^{-1}$)'
     x_lim = [0, 20]
     x_major_multiple = 4
     y_major_multiple = 0.2
@@ -82,8 +82,8 @@ class Mortality(Base):
 
 
 class Birth(Base):
-    x_label = 'time (year)'
-    y_label = r'birth rate (year$^{-1}$)'
+    x_label = 'Time (year)'
+    y_label = r'Birth rate (year$^{-1}$)'
     x_lim = [0, 2]
     x_major_multiple = 1
     y_major_multiple = 1
