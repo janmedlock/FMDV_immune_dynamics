@@ -6,7 +6,6 @@
 *.bbl
 *.bcf
 *.blg
-*.eps
 *.fdb_latexmk
 *.fls
 *.log
