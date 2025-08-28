@@ -18,17 +18,17 @@ from herd.utility import arange
 
 rc = {
     'font.family': 'serif',
-    'font.serif': 'Liberation Serif',
+    'font.serif': 'Liberation Serif',  # Substitute for 'Times New Roman'
     'figure.constrained_layout.use': True,
 }
 
-_TICK_LABELSIZE = 7
+_TICK_LABELSIZE = 8
 rc_text_small = {
-    'axes.titlesize': 9,
-    'axes.labelsize': 8,
+    'font.size': 7.5,  # Minimium for Proc B.
     'xtick.labelsize': _TICK_LABELSIZE,
     'ytick.labelsize': _TICK_LABELSIZE,
-    'font.size': 6,
+    'axes.labelsize': 9,
+    'axes.titlesize': 10,
 }
 
 _mm_to_inch = astropy.units.mm.to(astropy.units.imperial.inch)

@@ -94,10 +94,8 @@ def plot_persistence(dfr, save=True):
                                 cmap=cmap, norm=norm)
             contours = ax.contour(x, y, arr, contour_levels,
                                   colors='black')
-            contour_fontsize = matplotlib.pyplot.rcParams['xtick.labelsize']
             contours.clabel(inline=True,
-                            fmt=lambda x: f'{100*x:g}%',
-                            fontsize=contour_fontsize)
+                            fmt=lambda x: f'{100*x:g}%')
             ax.axvline(population_size.default,
                        color='black', linestyle='dotted', alpha=0.7,
                        clip_on=False)

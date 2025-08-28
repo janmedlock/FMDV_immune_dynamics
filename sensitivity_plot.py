@@ -59,7 +59,7 @@ def plot_persistence(dfs, save=True, show=True):
                     ax.set_xlabel(module.label.replace('\n', ' '))
                 if subplotspec.is_first_col():
                     ax.annotate(f'SAT{SAT}',
-                                (-0.25, 0.5), xycoords='axes fraction',
+                                (-0.275, 0.5), xycoords='axes fraction',
                                 fontsize=rc['axes.titlesize'],
                                 rotation='vertical',
                                 verticalalignment='center')

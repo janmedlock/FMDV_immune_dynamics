@@ -3,6 +3,7 @@
 
 rc = {
     'font.family': 'serif',
+    # Substitute for 'Computer Modern Roman'
     'font.serif': 'Latin Modern Math',
 }
 
