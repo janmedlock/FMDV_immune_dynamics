@@ -65,11 +65,7 @@ def plot_SATs(data, save=True):
             plot_one(ax, SAT, group)
         seaborn.despine(fig)
         if save:
-            source_path = pathlib.Path(__file__)
-            output_path_stem = source_path.with_name(
-                source_path.name.replace('_plot.py', '')
-            )
-            fig.savefig(output_path_stem.with_suffix('.pdf'))
+            fig.savefig(sample_simulation.store_path.with_suffix('.pdf'))
     return fig
 
 
