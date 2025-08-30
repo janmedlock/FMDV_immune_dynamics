@@ -8,6 +8,7 @@ import matplotlib.colors
 import matplotlib.pyplot
 import matplotlib.scale
 import matplotlib.ticker
+import seaborn
 
 import common
 import population_size
@@ -17,7 +18,7 @@ import susceptibility
 
 
 rc = common.rc | supplemental_materials.rc | common.rc_text_small | {
-    'figure.figsize': (supplemental_materials.WIDTH_MAXIMUM, 2.8),
+    'figure.figsize': (3.5, 6.5),
     'pcolor.shading': 'gouraud',
     'contour.algorithm': 'threaded',
     'contour.linewidth': 1,
@@ -72,14 +73,12 @@ def plot_persistence(dfr, save=True):
     with matplotlib.pyplot.rc_context(rc=rc):
         persistence = get_persistence(dfr)
         grouper = persistence.groupby('SAT')
-        ncols = len(grouper)
+        nrows = len(grouper)
         (fig, axes) = matplotlib.pyplot.subplots(
-            2, ncols,
-            sharey='row',
-            gridspec_kw={'height_ratios': (10, 1),
-                         'hspace': 0.15},
+            nrows=nrows,
+            sharex='col',
         )
-        for ((SAT, group), (ax, ax_cbar)) in zip(grouper, axes.T):
+        for ((SAT, group), ax) in zip(grouper, axes):
             # Move population_size from an index level to columns.
             arr = group.unstack()
             fill_missing_persistence(arr)
@@ -102,17 +101,21 @@ def plot_persistence(dfr, save=True):
             ax.axhline(susceptibility.default,
                        color='black', linestyle='dotted', alpha=0.7,
                        clip_on=False)
-            ax.set_title(f'SAT{SAT}')
-            ax.set_xscale('log')
-            ax.set_xlim(min(population_size.values),
-                        max(population_size.values))
-            ax.set_xlabel(population_size_label)
-            ax.xaxis.set_major_formatter(matplotlib.ticker.LogFormatter())
-            for sp in ('top', 'right'):
-                ax.spines[sp].set_visible(False)
+            ax.annotate(f'SAT{SAT}',
+                        (-0.4, 0.5), xycoords='axes fraction',
+                        fontsize=rc['axes.titlesize'],
+                        rotation='vertical',
+                        verticalalignment='center')
+            seaborn.despine(ax=ax)
+            ax.margins(0)
+            subplotspec = ax.get_subplotspec()
+            if subplotspec.is_last_row():
+                ax.set_xscale('log')
+                ax.set_xlabel(population_size_label)
+                ax.xaxis.set_major_formatter(
+                    matplotlib.ticker.LogFormatter()
+                )
             if ax.get_subplotspec().is_first_col():
-                ax.set_ylim(min(susceptibility.values),
-                            max(susceptibility.values))
                 ax.set_ylabel(susceptibility_label)
                 ax.yaxis.set_major_locator(
                     matplotlib.ticker.MultipleLocator(0.2)
@@ -120,17 +123,24 @@ def plot_persistence(dfr, save=True):
                 ax.yaxis.set_minor_locator(
                     matplotlib.ticker.AutoMinorLocator(2)
                 )
-            fig.colorbar(img,
-                         cax=ax_cbar,
-                         orientation='horizontal',
-                         label=persistence_label,
-                         format=matplotlib.ticker.PercentFormatter(xmax=1))
-            ax_cbar.tick_params(which='minor', labelbottom=False)
-            cticklabels = ax_cbar.get_xticklabels()
-            prepend_to_text('≤', cticklabels[0])
-            prepend_to_text('≥', cticklabels[-1])
-            ax_cbar.set_xticks(ax_cbar.get_xticks(), cticklabels)
-        fig.align_xlabels()
+            cbar = fig.colorbar(
+                img,
+                ax=ax,
+                location='right',
+                label=persistence_label,
+                format=matplotlib.ticker.PercentFormatter(xmax=1),
+            )
+            cbar.outline.set_edgecolor(None)
+            cbar.ax.spines['right'].set_visible(True)
+            cbar.minorformatter = matplotlib.ticker.NullFormatter()
+            cticklabels = cbar.long_axis.get_ticklabels()
+            prepend_to_text('≤ ', cticklabels[0])
+            prepend_to_text('≥ ', cticklabels[-1])
+            cbar.set_ticks(
+                cbar.get_ticks(), labels=cticklabels
+            )
+            cbar.long_axis.labelpad = 0
+        fig.align_ylabels()
         if save:
             store_path = population_size_and_susceptibility.store_path
             fig.savefig(store_path.with_suffix('.pdf'))
