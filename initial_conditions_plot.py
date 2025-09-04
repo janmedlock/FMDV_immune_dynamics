@@ -21,40 +21,50 @@ rc = common.rc | supplemental_materials.rc | common.rc_text_small | {
 }
 
 
-def plot_probability_constant_birth(ICs, ages, ax):
-    '''With the assumption of constant-time birth hazard,
-    plot probability of being in each class vs. age,
-    *not* conditioned on being alive.'''
+def plot_age_density(ICs, ages, ax):
+    '''Plot the density of the stable age distribution.'''
+    p = ICs.ages.pdf(ages)
+    ax.plot(ages, p, color='black')
+    if ax.get_subplotspec().is_first_col():
+        ax.set_ylabel('Age density (year$^{-1}$)')
+        ax.set_ylim(bottom=0)
+        ax.yaxis.set_major_locator(
+            matplotlib.ticker.MultipleLocator(0.1)
+        )
+
+
+def plot_status_probability_unconditional(ICs, ages, ax):
+    '''Plot probability of being in each status *not* conditioned on
+    being alive vs. age.'''
     p = ICs.immune_status_pdf(ages)
     ax.stackplot(ages, p.T, labels=p.columns.str.capitalize())
     if ax.get_subplotspec().is_first_col():
-        ax.set_ylabel('Constant-birth\ndensity')
+        ax.set_ylabel('Status probability')
         ax.set_ylim(0, 1)
         ax.yaxis.set_major_locator(
             matplotlib.ticker.MultipleLocator(0.2)
         )
 
 
-def plot_conditional_probability(ICs, ages, ax):
-    '''Plot probability of being in each class vs. age,
-    conditioned on being alive.'''
+def plot_status_probability(ICs, ages, ax):
+    '''Plot the probability of being in each status conditioned on
+    being alive vs. age.'''
     p = ICs.immune_status_conditional_pdf(ages)
     ax.stackplot(ages, p.T, labels=p.columns.str.capitalize())
     if ax.get_subplotspec().is_first_col():
-        ax.set_ylabel('Probability\ngiven alive')
+        ax.set_ylabel('Status probability')
         ax.set_ylim(0, 1)
         ax.yaxis.set_major_locator(
             matplotlib.ticker.MultipleLocator(0.2)
         )
 
 
-def plot_probability(ICs, ages, ax):
-    '''Plot probability of being in each class vs. age,
-    *not* conditioned on being alive.'''
+def plot_joint_density(ICs, ages, ax):
+    '''Plot the joint density.'''
     p = ICs.pdf(ages)
     ax.stackplot(ages, p.T, labels=p.columns.str.capitalize())
     if ax.get_subplotspec().is_first_col():
-        ax.set_ylabel('Density')
+        ax.set_ylabel('Joint density (year$^{-1}$)')
         ax.set_ylim(bottom=0)
         ax.yaxis.set_major_locator(
             matplotlib.ticker.MultipleLocator(0.1)
@@ -62,9 +72,9 @@ def plot_probability(ICs, ages, ax):
 
 
 plot_fcns = (
-    plot_probability_constant_birth,
-    plot_conditional_probability,
-    plot_probability,
+    plot_age_density,
+    plot_status_probability,
+    plot_joint_density,
 )
 
 
@@ -127,7 +137,7 @@ def plot_SATs(save=True):
         for (col, SAT) in enumerate(common.SATs):
             plot_SAT(axes[:, col], SAT, ages)
         fig.align_ylabels()
-        (handles, labels) = axes[0, 0].get_legend_handles_labels()
+        (handles, labels) = axes[1, 0].get_legend_handles_labels()
         nrow = 2
         ncol = math.ceil(len(handles) / nrow)
         common.legend_multicolumn(fig, handles, labels, ncol,
