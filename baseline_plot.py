@@ -12,6 +12,7 @@ import common
 
 rc = common.rc | common.rc_text_small | {
     'figure.figsize': (common.WIDTH_MAXIMUM['double_column'], 3),
+    'axes.spines.top': False,
 }
 
 
@@ -135,8 +136,6 @@ def plot(infected, extinction_time,
                 ax.grid(axis='x', which='minor', visible=True)
                 if row == row_inf:
                     ax.yaxis.set_major_locator(ticker.MultipleLocator(100))
-        seaborn.despine(fig=fig, top=True,
-                        right=False, bottom=False, left=False)
         # For some reason, aligning the rows and columns works better
         # than aligning all axes.
         fig.align_xlabels(axes[-1, :])

@@ -16,6 +16,8 @@ import supplemental_materials
 
 rc = common.rc | supplemental_materials.rc | {
     'figure.figsize': (supplemental_materials.WIDTH_MAXIMUM, 4),
+    'axes.spines.right': False,
+    'axes.spines.top': False,
 }
 
 
@@ -105,13 +107,12 @@ class Birth(Base):
 def plot_rates(save=True):
     '''Plot the rates.'''
     rates = Base.__subclasses__()
-    with matplotlib.pyplot.rc_context(rc=rc):
+    with seaborn.axes_style('ticks'), matplotlib.pyplot.rc_context(rc=rc):
         (fig, axes) = matplotlib.pyplot.subplots(len(rates))
         colors = (f'C{i}' for i in range(len(rates)))
         for (rate, ax, color) in zip(rates, axes, colors):
-            rate.plot(ax, color=color)
+            rate.plot(ax, color=color, zorder=3)
         fig.align_labels()
-        seaborn.despine(fig)
         if save:
             source_path = pathlib.Path(__file__)
             output_path_stem = source_path.with_name(

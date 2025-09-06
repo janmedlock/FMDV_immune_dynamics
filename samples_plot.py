@@ -220,7 +220,7 @@ def plot_sensitivity(dfr, rank=True, errorbars=False):
             else:
                 kwds = dict()
             ax.barh(y, rho_SAT, height=1, left=0,
-                    align='center', color=colors_, edgecolor=colors_,
+                    align='center', color=colors_, edgecolor='face',
                     **kwds)
             ax.set_xlabel(xlabel)
             ax.set_xlim(- xabsmax, xabsmax)

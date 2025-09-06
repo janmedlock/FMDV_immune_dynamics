@@ -18,13 +18,14 @@ import supplemental_materials
 
 rc = common.rc | supplemental_materials.rc | common.rc_text_small | {
     'figure.figsize': (supplemental_materials.WIDTH_MAXIMUM, 6),
+    'axes.spines.top': False,
 }
 
 
 def plot_age_density(ICs, ages, ax):
     '''Plot the density of the stable age distribution.'''
     p = ICs.ages.pdf(ages)
-    ax.plot(ages, p, color='black')
+    ax.plot(ages, p, color='black', linewidth=1, zorder=3)
     if ax.get_subplotspec().is_first_col():
         ax.set_ylabel('Age density (year$^{-1}$)')
         ax.set_ylim(bottom=0)
@@ -37,7 +38,7 @@ def plot_status_probability_unconditional(ICs, ages, ax):
     '''Plot probability of being in each status *not* conditioned on
     being alive vs. age.'''
     p = ICs.immune_status_pdf(ages)
-    ax.stackplot(ages, p.T, labels=p.columns.str.capitalize())
+    ax.stackplot(ages, p.T, labels=p.columns.str.capitalize(), zorder=3)
     if ax.get_subplotspec().is_first_col():
         ax.set_ylabel('Status probability')
         ax.set_ylim(0, 1)
@@ -50,7 +51,7 @@ def plot_status_probability(ICs, ages, ax):
     '''Plot the probability of being in each status conditioned on
     being alive vs. age.'''
     p = ICs.immune_status_conditional_pdf(ages)
-    ax.stackplot(ages, p.T, labels=p.columns.str.capitalize())
+    ax.stackplot(ages, p.T, labels=p.columns.str.capitalize(), zorder=3)
     if ax.get_subplotspec().is_first_col():
         ax.set_ylabel('Status probability')
         ax.set_ylim(0, 1)
@@ -62,7 +63,7 @@ def plot_status_probability(ICs, ages, ax):
 def plot_joint_density(ICs, ages, ax):
     '''Plot the joint density.'''
     p = ICs.pdf(ages)
-    ax.stackplot(ages, p.T, labels=p.columns.str.capitalize())
+    ax.stackplot(ages, p.T, labels=p.columns.str.capitalize(), zorder=3)
     if ax.get_subplotspec().is_first_col():
         ax.set_ylabel('Joint density (year$^{-1}$)')
         ax.set_ylim(bottom=0)
@@ -115,7 +116,7 @@ def plot_SAT(axes, SAT, ages):
 
 
 def plot_SATs(save=True):
-    ages = herd.utility.arange(0, 20, 0.1, endpoint=True)
+    ages = herd.utility.arange(0, 20, 0.025, endpoint=True)
     with seaborn.axes_style('whitegrid'), matplotlib.rc_context(rc=rc):
         fig = matplotlib.pyplot.figure()
         nrows = len(plot_fcns)
@@ -143,7 +144,6 @@ def plot_SATs(save=True):
         common.legend_multicolumn(fig, handles, labels, ncol,
                                   loc='lower right',
                                   bbox_to_anchor=(0.95, 0))
-        seaborn.despine(fig)
     if save:
         source_path = pathlib.Path(__file__)
         output_path_stem = source_path.with_name(

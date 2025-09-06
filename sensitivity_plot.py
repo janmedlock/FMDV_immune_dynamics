@@ -7,6 +7,7 @@ import pathlib
 
 import matplotlib.pyplot
 import numpy
+import seaborn
 
 import common
 import population_size
@@ -30,7 +31,7 @@ def load():
 
 
 def plot_persistence(dfs, save=True, show=True):
-    with matplotlib.pyplot.rc_context(rc=rc):
+    with seaborn.axes_style('ticks'), matplotlib.pyplot.rc_context(rc=rc):
         fig = None
         ncols = len(dfs)
         for (col, (df, module)) in enumerate(zip(dfs, MODULES)):

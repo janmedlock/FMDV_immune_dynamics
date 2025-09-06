@@ -22,6 +22,8 @@ rc = common.rc | supplemental_materials.rc | common.rc_text_small | {
     'pcolor.shading': 'gouraud',
     'contour.algorithm': 'threaded',
     'contour.linewidth': 1,
+    'axes.spines.right': False,
+    'axes.spines.top': False,
 }
 
 population_size_label = population_size.label.replace('\n', ' ')
@@ -70,7 +72,7 @@ def prepend_to_text(s, text):
 
 def plot_persistence(dfr, save=True):
     contour_levels = [0.01, 0.5, 0.99]
-    with matplotlib.pyplot.rc_context(rc=rc):
+    with seaborn.axes_style('ticks'), matplotlib.pyplot.rc_context(rc=rc):
         persistence = get_persistence(dfr)
         grouper = persistence.groupby('SAT')
         nrows = len(grouper)
@@ -106,7 +108,6 @@ def plot_persistence(dfr, save=True):
                         fontsize=rc['axes.titlesize'],
                         rotation='vertical',
                         verticalalignment='center')
-            seaborn.despine(ax=ax)
             ax.margins(0)
             subplotspec = ax.get_subplotspec()
             if subplotspec.is_last_row():
@@ -130,7 +131,7 @@ def plot_persistence(dfr, save=True):
                 label=persistence_label,
                 format=matplotlib.ticker.PercentFormatter(xmax=1),
             )
-            cbar.outline.set_edgecolor(None)
+            cbar.outline.set_edgecolor('none')
             cbar.ax.spines['right'].set_visible(True)
             cbar.minorformatter = matplotlib.ticker.NullFormatter()
             cticklabels = cbar.long_axis.get_ticklabels()

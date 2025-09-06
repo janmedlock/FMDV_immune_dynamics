@@ -2,7 +2,6 @@
 '''Plot one simulation for each SAT.'''
 
 import math
-import pathlib
 
 import matplotlib.pyplot
 import matplotlib.ticker
@@ -16,6 +15,7 @@ import supplemental_materials
 
 rc = common.rc | supplemental_materials.rc | common.rc_text_small | {
     'figure.figsize': (supplemental_materials.WIDTH_MAXIMUM, 7),
+    'axes.spines.top': False,
 }
 
 
@@ -29,7 +29,7 @@ def plot_one(ax, SAT, group):
     for (name, ser) in group.items():
         ax.plot(t, ser, label=name.capitalize(),
                 drawstyle='steps-pre',
-                alpha=0.9, linewidth=1)
+                alpha=0.9, linewidth=1, zorder=3)
     ax.annotate(f'SAT{SAT}',
                 (-0.1625, 0.5), xycoords='axes fraction',
                 fontsize=rc['axes.titlesize'],
@@ -63,7 +63,6 @@ def plot_SATs(data, save=True):
         )
         for (ax, (SAT, group)) in zip(axes, grouper):
             plot_one(ax, SAT, group)
-        seaborn.despine(fig)
         if save:
             fig.savefig(sample_simulation.store_path.with_suffix('.pdf'))
     return fig
