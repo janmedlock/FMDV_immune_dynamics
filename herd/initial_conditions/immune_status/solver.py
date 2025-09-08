@@ -209,8 +209,11 @@ class Solver:
         # over age.
         P_total = P.apply(scipy.integrate.trapezoid,
                           args=(self.ages, ))
-        haz = (self.params.transmission_rate * P_total['infectious']
-               + self.params.chronic_transmission_rate * P_total['chronic'])
+        haz = (
+            (self.params.transmission_rate * P_total['infectious']
+             + self.params.chronic_transmission_rate * P_total['chronic'])
+            / P_total.sum()
+        )
         assert (haz >= 0) | numpy.isclose(haz, 0)
         haz = numpy.clip(haz, 0, None)
         return haz
