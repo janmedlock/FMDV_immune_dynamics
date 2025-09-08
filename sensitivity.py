@@ -12,6 +12,11 @@ import common
 import stats
 
 
+rc = common.rc | common.rc_text_small | {
+    'figure.figsize': (common.WIDTH_MAXIMUM['double_column'], 4),
+}
+
+
 def _get_proportion_observed_one(grp):
     return sum(grp.observed) / len(grp)
 
@@ -109,21 +114,12 @@ def plot_kde(module, df):
 
 
 def plot_kde_2d(module, df, save=True):
-    rc = common.rc.copy()
-    width = 183 / 25.4  # convert mm to in
-    height = 4  # in
-    rc['figure.figsize'] = (width, height)
-    # Between 5pt and 7pt.
-    rc['font.size'] = 6
-    rc['axes.titlesize'] = 9
-    rc['axes.labelsize'] = 8
-    rc['xtick.labelsize'] = rc['ytick.labelsize'] = 7
     vals = df.index \
              .get_level_values(module.var) \
              .unique() \
              .sort_values()
     extinction_time = numpy.linspace(0, common.TMAX, 301)
-    with matplotlib.pyplot.rc_context(rc=rc):
+    with seaborn.axes_style('ticks'), matplotlib.pyplot.rc_context(rc=rc):
         grouper_SAT = df.groupby('SAT')
         ncols = len(grouper_SAT)
         (fig, axes) = matplotlib.pyplot.subplots(
@@ -179,7 +175,6 @@ def plot_kde_2d(module, df, save=True):
         fig.align_ylabels(axes[:, 0])
         fig.tight_layout()
         if save:
-            fig.savefig(module.store_path.with_suffix('.pdf'))
-            fig.savefig(module.store_path.with_suffix('.png'),
-                        dpi=300)
+            for suffix in ('.pdf', '.png'):
+                fig.savefig(module.store_path.with_suffix(suffix))
         return fig

@@ -37,9 +37,8 @@ def plot(infected, extinction_time, draft=False, save=True):
     fig = baseline_plot.plot(infected, extinction_time,
                              draft=draft, save=False)
     if save:
-        fig.savefig(susceptibility_null.store_path.with_suffix('.pdf'))
-        fig.savefig(susceptibility_null.store_path.with_suffix('.png'),
-                    dpi=300)
+        for suffix in ('.pdf', '.png'):
+            fig.savefig(susceptibility_null.store_path.with_suffix(suffix))
     return fig
 
 

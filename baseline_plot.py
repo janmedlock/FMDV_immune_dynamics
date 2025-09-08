@@ -141,8 +141,8 @@ def plot(infected, extinction_time,
         fig.align_xlabels(axes[-1, :])
         fig.align_ylabels(axes[[row_inf, row_ext], 0])
         if save:
-            fig.savefig(_module.store_path.with_suffix('.pdf'))
-            fig.savefig(_module.store_path.with_suffix('.png'), dpi=300)
+            for suffix in ('.pdf', '.png'):
+                fig.savefig(_module.store_path.with_suffix(suffix))
         return fig
 
 

@@ -118,8 +118,8 @@ def plot_persistence(dfs, save=True, show=True):
             output_path_stem = source_path.with_name(
                 source_path.name.replace('_plot.py', '')
             )
-            fig.savefig(output_path_stem.with_suffix('.pdf'))
-            fig.savefig(output_path_stem.with_suffix('.png'), dpi=300)
+            for suffix in ('.pdf', '.png'):
+                fig.savefig(output_path_stem.with_suffix(suffix))
         if show:
             matplotlib.pyplot.show()
         return fig

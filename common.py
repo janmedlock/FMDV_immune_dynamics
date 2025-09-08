@@ -20,6 +20,7 @@ rc = {
     'font.family': 'serif',
     'font.serif': 'Liberation Serif',  # Substitute for 'Times New Roman'
     'figure.constrained_layout.use': True,
+    'figure.dpi': 300,
 }
 
 _TICK_LABELSIZE = 8
