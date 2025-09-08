@@ -65,13 +65,13 @@ def plot_extinction_time(ax, extinction_time, SAT):
     not_extinct = len(e[e.isnull()]) / len(e)
     if not_extinct > 0:
         (ne_min, p_min) = (0.6, 0.3)
-        (ne_max, p_max) = (1, 1)
+        (ne_max, p_max) = (1, 0.5)
         pad = ((p_max - p_min) / (ne_max - ne_min) * (not_extinct - ne_min)
                + p_min)
         bbox = dict(boxstyle=f'rarrow, pad={pad}',
-                    facecolor=color, linewidth=0)
+                    facecolor=color, alpha=0.7, linewidth=0)
         ax.annotate('{:g}%'.format(not_extinct * 100),
-                    (0.92, 0.8), xycoords='axes fraction',
+                    (0.94, 0.89), xycoords='axes fraction',
                     bbox=bbox, color='white',
                     verticalalignment='bottom',
                     horizontalalignment='right',
