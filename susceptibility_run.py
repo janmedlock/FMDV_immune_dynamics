@@ -16,3 +16,4 @@ if __name__ == '__main__':
             for suscept in susceptibility.values:
                 susceptibility.run(SAT, suscept, NRUNS, store)
         store.repack()
+    common.set_read_only(susceptibility.store_path)

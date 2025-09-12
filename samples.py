@@ -111,3 +111,4 @@ def combine(unlink=True):
                 path_SAT.rmdir()
         if unlink:
             samples_path.rmdir()
+    common.set_read_only(store_path)

@@ -17,6 +17,7 @@ def run_SATs(seed):
         data[SAT] = baseline.run_one(p, seed)
     data = pandas.concat(data, names=['SAT'])
     h5.dump(data, sample_simulation.store_path)
+    common.set_read_only(sample_simulation.store_path)
     return data
 
 

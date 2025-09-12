@@ -16,3 +16,4 @@ if __name__ == '__main__':
             for popsize in population_size.values:
                 population_size.run(SAT, popsize, NRUNS, store)
         store.repack()
+    common.set_read_only(population_size.store_path)

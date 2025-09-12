@@ -75,6 +75,7 @@ def run(nruns, *args, **kwds):
                                            *args, **kwds)
         store.repack()
         store_extinction_time.repack()
+    common.set_read_only(store_path)
 
 
 if __name__ == '__main__':

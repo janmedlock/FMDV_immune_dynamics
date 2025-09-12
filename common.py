@@ -2,6 +2,7 @@
 
 import itertools
 import os
+import stat
 
 import astropy.units
 import matplotlib.collections
@@ -87,6 +88,13 @@ def prepend_index_levels(dfr, **levels):
 def get_logging_prefix(**kwds):
     return ', '.join(f'{key}={val}'
                      for (key, val) in kwds.items())
+
+
+def set_read_only(path):
+    '''Set `path` as read only.'''
+    return path.chmod(
+        stat.S_IRUSR | stat.S_IRGRP | stat.S_IROTH
+    )
 
 
 def _path_stem_append(path, postfix):

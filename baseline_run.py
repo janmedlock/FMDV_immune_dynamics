@@ -15,3 +15,4 @@ if __name__ == '__main__':
         for SAT in common.SATs:
             baseline.run(SAT, NRUNS, store)
         store.repack()
+    common.set_read_only(baseline.store_path)
