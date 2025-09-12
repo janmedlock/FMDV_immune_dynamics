@@ -7,7 +7,7 @@ import baseline
 import common
 import h5
 import herd
-import sample_simulation
+import simulation
 
 
 def run_SATs(seed):
@@ -16,10 +16,10 @@ def run_SATs(seed):
         p = herd.Parameters(SAT=SAT)
         data[SAT] = baseline.run_one(p, seed)
     data = pandas.concat(data, names=['SAT'])
-    h5.dump(data, sample_simulation.store_path)
-    common.set_read_only(sample_simulation.store_path)
+    h5.dump(data, simulation.store_path)
+    common.set_read_only(simulation.store_path)
     return data
 
 
 if __name__ == '__main__':
-    data = run_SATs(sample_simulation.SEED)
+    data = run_SATs(simulation.SEED)

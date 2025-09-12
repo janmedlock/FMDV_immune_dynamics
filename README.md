@@ -23,6 +23,10 @@ transmission in African buffalo for our paper
 > disease in African buffalo.
 > *In preparation*.
 
+This code extends a
+[previous version](https://github.com/janmedlock/FMDV/tree/master)
+to include temporary loss and recovery of immunity.
+
 The scripts and model code are written in Python, using many
 third-party libraries.  Most notably:
 [Python](https://www.python.org/),
@@ -34,9 +38,10 @@ third-party libraries.  Most notably:
 [matplotlib](https://matplotlib.org/),
 & [Seaborn](https://seaborn.pydata.org/).
 
-This code extends a
-[previous version](https://github.com/janmedlock/FMDV/tree/master)
-to include temporary loss and recovery of immunity.
+[PDM](https://pdm-project.org/) can use the included
+[pyproject.toml](pyproject.toml) and [pdm.lock](pdm.lock) to generate
+a virtual environment with the Python and library versions that we
+used to write and run the code.
 
 ### Main simulation code
 
@@ -52,7 +57,11 @@ implementation in [Cython](https://cython.org/) of
 ### Simulation scripts
 
 The scripts ending in `_run.py` run the model simulations.
-**Each of these takes many cpu-days to run.**
+**Most of these takes many cpu-days to run.**
+
+* [simulation_run.py](simulation_run.py), for each of the 3 SATs, runs
+  one simulation using the baseline parameter values. It produces a
+  file called `simulation.h5`.
 
 * [baseline_run.py](baseline_run.py), for each of the 3 SATs, runs
   1,000 simulations using the baseline parameter values. It produces a
@@ -97,6 +106,16 @@ require having run the simulation scripts above.
   parameter posterior samples, and reports the median and 95% credible
   interval.
 
+* [mortality_and_birth_rates_plot.py](mortality_and_birth_rates_plot.py)
+  plots the mortality and birth rates.
+
+* [initial_conditions_plot.py](initial_conditions_plot.py) plots the
+  simulation initial conditions.
+
+* [simulation_plot.py](simulation_plot.py) plots the single simulation
+  for each serotype with the baseline parameter values. This requires
+  the file `simulation.h5`.
+
 * [baseline_plot.py](baseline_plot.py) analyzes and plots the results
   of the simulations with the baseline parameter values. This requires
   the file `baseline.h5`.
@@ -134,16 +153,63 @@ require having run the simulation scripts above.
   PRCC sensitivity of extinction time to the model parameters. This
   requires the file `samples.h5`.
 
-### Other files in the base directory
+### Other Python files in the base directory
 
 In the base directory, besides the scripts for simulation, analysis,
-and plotting, there are helper Python modules for those scripts. For
-example, [baseline.py](baseline.py) has common code used by
-`baseline_run.py` and `baseline_plot.py`.
+and plotting, there are helper Python modules for those scripts.
 
-There are also a few metadata files: this [README.md](README.md), a
-[Makefile](Makefile) to convert `README.md` to HTML, and the
-[LICENSE](LICENSE).
+* [common.py](common.py) contains common functions and other
+  definitions, many of which are for plotting.
+
+	* [supplemental_materials.py](supplemental_materials.py) has a few
+      definitions for plotting used in making the publication
+      supplemental materials.
+
+* [h5.py](h5.py) implements reading and writing the HDF5 files used for
+  storing simulation output.
+
+* [stats.py](stats.py) implements statistics, largely for sensitivity
+  using the partial rank correlation coefficient used in
+  [samples_plot.py](samples_plot.py).
+
+* [sensitivity.py](sensitivity.py) has common plotting code used by
+  [population_size_plot.py](population_size_plot.py),
+  [susceptibility_plot.py](susceptibility_plot.py), and
+  [sensitivity_plot.py](sensitivity_plot.py).
+
+* [simulation.py](simulation.py) has common code used by
+  [simulation_run.py](simulation_run.py) and
+  [simulation_plot.py](simulation_plot.py).
+
+* [baseline.py](baseline.py) has common code used by
+  [baseline_run.py](baseline_run.py) and
+  [baseline_plot.py](baseline_plot.py).
+
+* [acute.py](acute.py) has common code used by
+  [acute_run.py](acute_run.py) and
+  [acute_plot.py](acute_plot.py).
+
+* [population_size.py](population_size.py) has common code used by
+  [population_size_run.py](population_size_run.py) and
+  [population_size_plot.py](population_size_plot.py).
+
+* [susceptibility.py](susceptibility.py) has common code used by
+  [susceptibility_run.py](susceptibility_run.py) and
+  [susceptibility_plot.py](susceptibility_plot.py).
+
+	* [susceptibility_null.py](susceptibility_null.py) has common code
+      used by [susceptibility_null_run.py](susceptibility_null_run.py)
+      and [susceptibility_null_plot.py](susceptibility_null_plot.py).
+
+* [population_size_and_susceptibility.py](population_size_and_susceptibility.py)
+  has common code used by
+  [population_size_and_susceptibility_run.py](population_size_and_susceptibility_run.py)
+  and
+  [population_size_and_susceptibility_plot.py](population_size_and_susceptibility_plot.py).
+
+* [samples.py](samples.py) has common code used by
+  [samples_run.py](samples_run.py) and
+  [samples_plot.py](samples_plot.py).
 
 ### Test scripts
 
@@ -174,7 +240,7 @@ the test scripts to import from [herd](herd).
 * [initial_conditions_aggregate.py](test/initial_conditions_aggregate.py)
   plots the initial conditions, similar to
   [initial_conditions.py](test/initial_conditions.py), but using
-  more explicit calculations.
+  more-explicit calculations.
 
 * [endemic_equilibrium.py](test/endemic_equilibrium.py) shows the
   hazard of infection and the proportion of newborns immune at the
@@ -197,13 +263,16 @@ the test scripts to import from [herd](herd).
   examines the force of infection for random samples of initial
   conditions.
 
-### Notes
+### Metadata files in the base directory
 
-The [notes](notes) directory contains notes on the model initial
-conditions and files used
+* [pyproject.toml](pyproject.toml) describes the project, including
+  the versions of libraries used directly.
 
-* [initial_conditions.tex](notes/initial_conditions.tex) is a LaTeX
-  file with notes on the solver used for the model initial conditions.
+	* [pdm.lock](pdm.lock) describes the versions of all libraries
+      used, including those used indirectly.
 
-The remaining files in this directory are used by LaTeX to compile the
-notes on the initial conditions.
+* [LICENSE](LICENSE).
+
+* [README.md](README.md), i.e. this file.
+
+  * [Makefile](Makefile) to convert `README.md` to HTML.

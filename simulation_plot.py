@@ -9,7 +9,7 @@ import seaborn
 
 import common
 import h5
-import sample_simulation
+import simulation
 import supplemental_materials
 
 
@@ -20,7 +20,7 @@ rc = common.rc | supplemental_materials.rc | common.rc_text_small | {
 
 
 def load():
-    return h5.load(sample_simulation.store_path)
+    return h5.load(simulation.store_path)
 
 
 def plot_one(ax, SAT, group):
@@ -64,7 +64,7 @@ def plot_SATs(data, save=True):
         for (ax, (SAT, group)) in zip(axes, grouper):
             plot_one(ax, SAT, group)
         if save:
-            fig.savefig(sample_simulation.store_path.with_suffix('.pdf'))
+            fig.savefig(simulation.store_path.with_suffix('.pdf'))
     return fig
 
 

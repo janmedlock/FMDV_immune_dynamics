@@ -1,4 +1,4 @@
-'''Common plotting code.'''
+'''Common code, much of it for plotting.'''
 
 import itertools
 import os
