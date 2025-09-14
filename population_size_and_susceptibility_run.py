@@ -16,7 +16,7 @@ def _get_persistence(SAT, lost_immunity_susceptibility, population_size,
     over the whole time interval.'''
     where = ' & '.join((f'{SAT=}',
                         f'{lost_immunity_susceptibility=}',
-                        f'{population_size=}'))
+                        f'{population_size=!s}'))
     extinction_time = common.get_extinction_time(store, where=where)
     store_extinction_time.put(extinction_time)
     return common.get_persistence(extinction_time)
@@ -49,7 +49,7 @@ def _run_over_population_sizes(SAT, lost_immunity_susceptibility, nruns,
                                            store, store_extinction_time)
             print(', '.join((f'{SAT=}',
                              f'{lost_immunity_susceptibility=}',
-                             f'{population_size=}'))
+                             f'{population_size=!s}'))
                   + f': {persistence=}')
             if persistence == 1.:
                 copy_only = True
