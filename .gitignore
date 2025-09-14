@@ -9,3 +9,4 @@ flycheck_*
 __pycache__/
 _cache/
 .ipynb_checkpoints/
+.syncthing.*.tmp
