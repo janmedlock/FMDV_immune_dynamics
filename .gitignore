@@ -6,7 +6,7 @@
 *.png
 *.pgf
 flycheck_*
+.syncthing.*.tmp
 __pycache__/
 _cache/
 .ipynb_checkpoints/
-.syncthing.*.tmp
