@@ -30,7 +30,15 @@ def _copy_runs(hdfstore_out, nruns, SAT, **kwds):
             hdfstore_out.put(chunk)
 
 
-def _run(module, SAT, val, nruns, hdfstore, *args, **kwargs):
+def _save_extinction_time(hdfstore, hdfstore_extinction_time, **kwds):
+    where = ' & '.join(f'{k}={v}'
+                       for (k, v) in kwds.items())
+    extinction_time = common.get_extinction_time(hdfstore, where=where)
+    hdfstore_extinction_time.put(extinction_time)
+
+
+def _run(module, SAT, val, nruns, hdfstore, hdfstore_extinction_time,
+         *args, **kwargs):
     parameters_kwds = {
         'SAT': SAT,
         module.var: val,
@@ -46,15 +54,23 @@ def _run(module, SAT, val, nruns, hdfstore, *args, **kwargs):
         for dfr in chunks:
             common.prepend_index_levels(dfr, **parameters_kwds)
             hdfstore.put(dfr)
+    _save_extinction_time(hdfstore, hdfstore_extinction_time,
+                          **parameters_kwds)
 
 
 def run(module, nruns, *args, **kwargs):
     '''Run simulations varying the parameter in `module`.'''
-    with h5.HDFStore(module.store_path) as hdfstore:
+    store_extinction_time_path = common.get_path_extinction_time(
+        module.store_path)
+    with (h5.HDFStore(module.store_path) as hdfstore,
+          h5.HDFStore(store_extinction_time_path) as hdfstore_extinction_time):
         for SAT in common.SATs:
             for val in module.values:
-                _run(module, SAT, val, nruns, hdfstore, *args, **kwargs)
+                _run(module, SAT, val, nruns,
+                     hdfstore, hdfstore_extinction_time,
+                     *args, **kwargs)
         hdfstore.repack()
+        hdfstore_extinction_time.repack()
     common.set_read_only(module.store_path)
 
 
