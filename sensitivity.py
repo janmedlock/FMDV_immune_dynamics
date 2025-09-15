@@ -1,4 +1,4 @@
-'''Common code for analyzing and plotting the results of simulations
+'''Common code for running, analyzing, and plotting simulations with
 varying parameters.'''
 
 import matplotlib.pyplot
@@ -8,13 +8,54 @@ import pandas
 import seaborn
 import statsmodels.nonparametric.api
 
+import baseline
 import common
+import h5
+import herd
 import stats
 
 
 rc = common.rc | common.rc_text_small | {
     'figure.figsize': (common.WIDTH_MAXIMUM['double_column'], 4),
 }
+
+
+def _copy_runs(hdfstore_out, nruns, SAT, **kwds):
+    '''Copy the data from 'baseline.h5'.'''
+    where = ' & '.join((f'{SAT=}',
+                        f'run<{nruns}'))
+    with h5.HDFStore(baseline.store_path, mode='r') as hdfstore_in:
+        for chunk in hdfstore_in.select(where=where, iterator=True):
+            common.insert_index_levels(chunk, 2, **kwds)
+            hdfstore_out.put(chunk)
+
+
+def _run(module, SAT, val, nruns, hdfstore, *args, **kwargs):
+    parameters_kwds = {
+        'SAT': SAT,
+        module.var: val,
+    }
+    if val == module.default:
+        _copy_runs(hdfstore, nruns, **parameters_kwds)
+    else:
+        parameters = herd.Parameters(**parameters_kwds)
+        logging_prefix = common.get_logging_prefix(**parameters_kwds)
+        chunks = baseline.run_many_chunked(parameters, nruns, *args,
+                                           logging_prefix=logging_prefix,
+                                           **kwargs)
+        for dfr in chunks:
+            common.prepend_index_levels(dfr, **parameters_kwds)
+            hdfstore.put(dfr)
+
+
+def run(module, nruns, *args, **kwargs):
+    '''Run simulations varying the parameter in `module`.'''
+    with h5.HDFStore(module.store_path) as hdfstore:
+        for SAT in common.SATs:
+            for val in module.values:
+                _run(module, SAT, val, nruns, hdfstore, *args, **kwargs)
+        hdfstore.repack()
+    common.set_read_only(module.store_path)
 
 
 def _get_proportion_observed_one(grp):

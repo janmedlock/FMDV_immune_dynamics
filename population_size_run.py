@@ -3,17 +3,12 @@
 called `population_size.h5`.'''
 
 import common
-import h5
 import population_size
+import sensitivity
 
 
 if __name__ == '__main__':
     NRUNS = 1000
 
     common.nice_self()
-    with h5.HDFStore(population_size.store_path) as store:
-        for SAT in common.SATs:
-            for popsize in population_size.values:
-                population_size.run(SAT, popsize, NRUNS, store)
-        store.repack()
-    common.set_read_only(population_size.store_path)
+    sensitivity.run(population_size, NRUNS)
