@@ -26,7 +26,7 @@ def _copy_runs_population_size(hdfstore_out, nruns, SAT,
                                population_size, **kwds):
     '''Copy the data from 'population_size.h5'.'''
     where = ' & '.join((f'{SAT=}',
-                        f'{population_size=}',
+                        f'{population_size=!s}',
                         f'run<{nruns}'))
     with h5.HDFStore(population_size_.store_path, mode='r') as hdfstore_in:
         for chunk in hdfstore_in.select(where=where, iterator=True):
