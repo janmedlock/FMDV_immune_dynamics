@@ -50,7 +50,7 @@ def _run_over_population_sizes(SAT, lost_immunity_susceptibility, nruns,
             print(', '.join((f'{SAT=}',
                              f'{lost_immunity_susceptibility=!s}',
                              f'{population_size=!s}'))
-                  + f': {persistence=!s}')
+                  + f': {persistence=}')
             if persistence == 1.:
                 copy_only = True
 
