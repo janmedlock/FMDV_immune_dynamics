@@ -50,7 +50,8 @@ class Base(metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def plot_rate(cls, axes, x): pass
 
-    rvs = herd.RandomVariables()
+    parameters = herd.Parameters()
+    rvs = herd.RandomVariables(parameters)
     n_points = 1001
     y_minor_ndivs = 2
 
@@ -100,7 +101,7 @@ class Birth(Base):
 
     @classmethod
     def plot_rate(cls, axes, time, **kwds):
-        rate = cls.rvs.birth.hazard(time, 4)
+        rate = cls.rvs.birth.hazard(time + cls.parameters.start_time, 4)
         axes.plot(time, rate, **kwds)
 
 
