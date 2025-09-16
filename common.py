@@ -151,9 +151,14 @@ def load_downsampled(path):
     return h5.HDFStore(path_downsampled, mode='r')
 
 
-def get_infected(dfr):
-    return dfr[cols_infected].sum(axis='columns') \
-                             .rename('infected')
+def get_infected(obj):
+    infected = obj[cols_infected]
+    if isinstance(infected, pandas.Series):
+        return infected.sum()
+    if isinstance(infected, pandas.DataFrame):
+        return infected.sum(axis='columns') \
+                       .rename('infected')
+    raise ValueError(f'Unknown {type(obj)=}!')
 
 
 def _build_infected(path, path_out):
@@ -181,10 +186,10 @@ def load_infected(path):
 
 
 def _get_extinction_time_one(dfr):
-    infected = get_infected(dfr)
-    t = infected.index.get_level_values(t_name)
+    infected_end = get_infected(dfr.iloc[-1])
+    t = dfr.index.get_level_values(t_name)
     time = t.max() - t.min()
-    observed = (infected.iloc[-1] == 0)
+    observed = (infected_end == 0)
     assert observed or (time == TMAX)
     return dict(time=time, observed=observed)
 
