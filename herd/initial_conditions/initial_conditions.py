@@ -7,8 +7,7 @@ from herd.initial_conditions import immune_status
 
 
 class gen:
-    '''This assumes that all newborns have maternal antibodies (M)
-    and that the hazard of infection is constant in time,
+    '''This assumes that the hazard of infection is constant in time,
     not periodic as it is with a periodic birth pulse.'''
 
     def __init__(self, parameters, debug=False):
