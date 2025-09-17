@@ -12,6 +12,7 @@ import tables
 
 
 # Defaults
+KEY = 'df'
 _COMPLIB = 'blosc:zstd'
 _COMPLEVEL = 6
 _FLETCHER32 = True
@@ -106,7 +107,7 @@ class HDFStore(pandas.HDFStore):
     '''
     pandas.HDFStore() with improved defaults.
     '''
-    def __init__(self, path, key='df',
+    def __init__(self, path, key=KEY,
                  complib=_COMPLIB, complevel=_COMPLEVEL,
                  fletcher32=_FLETCHER32, **kwargs):
         self.key = key
