@@ -113,10 +113,10 @@ def _build_downsampled_group(group, t, t_step, by):
     # Only keep time index.
     group = group.reset_index(by, drop=True)
     # Shift start to 0.
-    group.index -= group.index.min()
+    group.index -= group.index[0]
     # Only interpolate between start and extinction.
     # Round up to the next multiple of `t_step`.
-    t_max = numpy.ceil(group.index.max() / t_step) * t_step
+    t_max = numpy.ceil(group.index[-1] / t_step) * t_step
     mask = (t <= t_max)
     # Interpolate from the closest point <= t.
     return group.reindex(t[mask], method='ffill')
@@ -188,7 +188,7 @@ def load_infected(path):
 def _get_extinction_time_one(dfr):
     infected_end = get_infected(dfr.iloc[-1])
     t = dfr.index.get_level_values(t_name)
-    time = t.max() - t.min()
+    time = t[-1] - t[0]
     observed = (infected_end == 0)
     assert observed or (time == TMAX)
     return dict(time=time, observed=observed)
