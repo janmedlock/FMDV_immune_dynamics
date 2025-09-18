@@ -232,12 +232,12 @@ class HDFStore(pandas.HDFStore):
         repack(self._path, **kwargs)
 
 
-def load(path, *args, key=_KEY, use_dask=False, **kwargs):
+def load(path, *args, key=_KEY, mode='r', use_dask=False, **kwargs):
     if use_dask:
         if len(args) > 0:
             raise NotImplementedError
-        return dask.dataframe.read_hdf(path, key=key, mode='r', **kwargs)
-    with HDFStore(path, key=key, mode='r') as store:
+        return dask.dataframe.read_hdf(path, key=key, mode=mode, **kwargs)
+    with HDFStore(path, key=key, mode=mode) as store:
         return store.select(*args, **kwargs)
 
 
