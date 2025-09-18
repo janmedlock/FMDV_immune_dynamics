@@ -203,7 +203,7 @@ def plot_kde_2d(module, df, save=True):
             ax_po.set_xlim(min(vals), max(vals))
             ax_po.set_xlabel(module.label)
             if ax_po.get_subplotspec().is_first_col():
-                ax_po.set_ylabel('persisting 10 y')
+                ax_po.set_ylabel(f'persisting {common.TMAX} y')
                 ax_po.set_ylim(0, 1)
                 ax_po.yaxis.set_major_formatter(
                     matplotlib.ticker.PercentFormatter(xmax=1))
