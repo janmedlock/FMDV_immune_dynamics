@@ -7,9 +7,13 @@ import shutil
 import subprocess
 import warnings
 
-import dask.dataframe
 import pandas
 import tables
+with warnings.catch_warnings():
+    warnings.filterwarnings('ignore',
+                            category=FutureWarning,
+                            module=r'dask\.dataframe')
+    import dask.dataframe
 
 
 # Defaults

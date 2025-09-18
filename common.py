@@ -3,9 +3,9 @@
 import itertools
 import os
 import stat
+import warnings
 
 import astropy.units
-import dask.dataframe
 import matplotlib.collections
 import matplotlib.colors
 import matplotlib.pyplot
@@ -13,6 +13,11 @@ import numpy
 import pandas
 import psutil
 import statsmodels.nonparametric.api
+with warnings.catch_warnings():
+    warnings.filterwarnings('ignore',
+                            category=FutureWarning,
+                            module=r'dask\.dataframe')
+    import dask.dataframe
 
 import h5
 from herd.utility import arange
