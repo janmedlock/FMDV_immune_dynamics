@@ -3,8 +3,6 @@
 susceptibility. This produces a file called
 `population_size_and_susceptibility.h5`.'''
 
-import pandas
-
 import common
 import h5
 import population_size as population_size_
@@ -12,50 +10,26 @@ import population_size_and_susceptibility
 import susceptibility
 
 
-def _get_extinction_time(SAT, lost_immunity_susceptibility, population_size,
-                         store, store_extinction_time):
+def _build_extinction_time(store, store_extinction_time, **kwds):
     '''Get and save extinction time.'''
-    by = common.get_by(store)
-    where = ' & '.join((f'{SAT=}',
-                        f'{lost_immunity_susceptibility=}',
-                        f'{population_size=!s}'))
-    grouper = store.groupby(by,
-                            where=where,
-                            columns=common.cols_infected)
-
-    def get_one(group):
-        infected_end = common.get_infected(group.iloc[-1])
-        t = group.index.get_level_values(common.t_name)
-        time = t[-1] - t[0]
-        observed = infected_end == 0
-        assert observed or (time == common.TMAX), (observed, time, common.TMAX)
-        return {
-            'time': time,
-            'observed': observed,
-        }
-
-    extinction_time = (
-        pandas.DataFrame.from_dict(
-            {
-                ix: get_one(group)
-                for (ix, group) in grouper
-            },
-            orient='index',
-        )
-        .rename_axis(by, axis='index')
-        .sort_index(level=by)
+    store.flush(fsync=True)
+    dfr = h5.load(store.filename,
+                  columns=common.cols_infected,
+                  use_dask=True)
+    index = dfr.index.to_frame()
+    mask = (
+        index[list(kwds.keys())] == kwds.values()
     )
+    extinction_time = common.get_extinction_time(dfr[mask])
     store_extinction_time.put(extinction_time)
     return extinction_time
 
 
-def _get_persistence(SAT, lost_immunity_susceptibility, population_size,
-                     store, store_extinction_time):
+def _get_persistence(store, store_extinction_time, **kwds):
     '''Get the proportion of simulations where the pathogen persisted
     over the whole time interval.'''
-    extinction_time = _get_extinction_time(
-        SAT, lost_immunity_susceptibility, population_size,
-        store, store_extinction_time
+    extinction_time = _build_extinction_time(
+        store, store_extinction_time, **kwds
     )
     return common.get_persistence(extinction_time)
 
@@ -83,8 +57,10 @@ def _run_over_population_sizes(SAT, lost_immunity_susceptibility, nruns,
         # Calculate `persistence` if data was added to `store`.
         if stored:
             persistence = _get_persistence(
-                SAT, lost_immunity_susceptibility, population_size,
-                store, store_extinction_time
+                store, store_extinction_time,
+                SAT=SAT,
+                lost_immunity_susceptibility=lost_immunity_susceptibility,
+                population_size=population_size,
             )
             print(', '.join((f'{SAT=}',
                              f'{lost_immunity_susceptibility=!s}',

@@ -104,63 +104,47 @@ def _path_stem_append(path, postfix):
     return path.with_stem(path.stem + f'_{postfix}')
 
 
-def get_by(obj, by=None):
+def _get_by(dfr, by=None):
     if by is None:
         # `by` is all of the index levels except `t_name`.
-        if isinstance(obj, h5.HDFStore):
-            levels = obj.get_index_names()
-        elif isinstance(obj, dask.dataframe.DataFrame):
-            levels = obj.index \
-                        .to_frame() \
-                        .columns
-        else:
-            raise ValueError(f'Unknown {type(obj)=}!')
+        levels = dfr.index \
+                    .to_frame() \
+                    .columns
         by = levels.difference({t_name})
     return by
 
 
-def _build_downsampled_group(group, t, t_step, by):
-    # Only keep time index.
-    group = group.reset_index(by, drop=True)
-    # Shift start to 0.
-    group.index -= group.index[0]
-    # Only interpolate between start and extinction.
-    # Round up to the next multiple of `t_step`.
-    t_max = numpy.ceil(group.index[-1] / t_step) * t_step
-    mask = (t <= t_max)
-    # Interpolate from the closest point <= t.
-    return group.reindex(t[mask], method='ffill')
+def _is_dask(dfr):
+    if _is_dask(dfr):
+        downsampled = downsampled.compute()
+    return (
+        downsampled.set_index(list(dfr.index.to_frame().columns))
+        .sort_index()
+    )
 
 
-def _build_downsampled(path_in, path_out,
-                       t_min=0, t_max=TMAX, t_step=1/365):
-    t = arange(t_min, t_max, t_step, endpoint=True)
-    with h5.HDFStore(path_out, mode='w') as store_out:
-        with h5.HDFStore(path_in, mode='r') as store_in:
-            by = get_by(store_in)
-            grouper = store_in.groupby(by)
-            for (ix, group) in grouper:
-                downsampled = _build_downsampled_group(group, t, t_step, by)
-                levels = dict(zip(by, ix))
-                prepend_index_levels(downsampled, **levels)
-                assert numpy.all(downsampled.notnull().all())
-                store_out.put(downsampled, index=False)
-        store_out.create_table_index()
-        store_out.repack()
-
-
-def get_path_downsampled(path):
-    return _path_stem_append(path, 'downsampled')
-
-
-def load_downsampled(path):
+def build_downsampled(path):
+    '''Build the downsampled store.'''
+    dfr = h5.load(path, use_dask=True)
+    downsampled = get_downsampled(dfr)
     path_downsampled = get_path_downsampled(path)
-    if not path_downsampled.exists():
-        _build_downsampled(path, path_downsampled)
-    return h5.HDFStore(path_downsampled, mode='r')
+    h5.dump(downsampled, path_downsampled, mode='w')
+    return downsampled
 
 
-def get_infected(obj):
+def load_downsampled(path, **kwds):
+    path_downsampled = get_path_downsampled(path)
+    try:
+        return h5.load(path_downsampled, **kwds)
+    except FileNotFoundError:
+        pass
+    downsampled = build_downsampled(path)
+    if len(kwds) == 0:
+        return downsampled
+    return load_downsampled(path, **kwds)
+
+
+def sum_infected(obj):
     '''Get the number of infected at each time.'''
     infected = obj[cols_infected]
     if isinstance(infected, (pandas.Series, dask.dataframe.Series)):
@@ -171,39 +155,53 @@ def get_infected(obj):
     raise ValueError(f'Unknown {type(obj)=}!')
 
 
-def _build_infected(path, path_out):
-    with h5.HDFStore(path_out, mode='w') as store_out:
-        with load_downsampled(path) as store_in:
-            chunker = store_in.select(columns=cols_infected,
-                                      iterator=True)
-            for chunk in chunker:
-                infected = get_infected(chunk)
-                store_out.put(infected, index=False)
-        store_out.create_table_index()
-        store_out.repack()
-
-
 def get_path_infected(path):
     return _path_stem_append(path, 'infected')
 
 
-def load_infected(path):
+def get_infected(dfr):
+    '''Get the infected.'''
+    infected = sum_infected(dfr)
+    if _is_dask(dfr):
+        infected = infected.compute()
+    return infected.sort_index()
+
+
+def build_infected(path):
+    '''Build the infected store.'''
+    downsampled = load_downsampled(path, columns=cols_infected, use_dask=True)
+    infected = get_infected(downsampled)
     path_infected = get_path_infected(path)
-    if not path_infected.exists():
-        _build_infected(path, path_infected)
-    infected = h5.load(path_infected)
+    h5.dump(infected, path_infected, mode='w')
     return infected
 
 
-def get_extinction_time(dfr, **kwds):
+def load_infected(path, **kwds):
+    path_infected = get_path_infected(path)
+    try:
+        return h5.load(path_infected, **kwds)
+    except FileNotFoundError:
+        pass
+    infected = build_infected(path)
+    if len(kwds) == 0:
+        return infected
+    return load_infected(path, **kwds)
+
+
+def get_path_extinction_time(path):
+    return _path_stem_append(path, 'extinction_time')
+
+
+def get_extinction_time(dfr):
     '''Get the extinction time for each run.'''
-    infected = get_infected(dfr)
-    by = get_by(dfr)
+    infected = sum_infected(dfr)
+    by = _get_by(dfr)
     # `.groupby()` does not seem to work on index levels.
     grouper = infected.reset_index() \
-                      .groupby(list(by), **kwds)
+                      .groupby(list(by))
 
-    def get_one(group):
+    # `**_` consumes the `meta` argument when `dfr` is a `pandas.DataFrame()`.
+    def get_one(group, **_):
         t = group[t_name]
         (t_start, t_end) = (t.min(), t.max())
         time = t_end - t_start
@@ -215,40 +213,37 @@ def get_extinction_time(dfr, **kwds):
             'observed': observed,
         })
 
-    dtypes = {
-        'time': grouper.dfr.dtypes[t_name],
-        'observed': bool,
-    }
-    deferred = grouper.apply(get_one,
-                             meta=dtypes)
-    extinction_time = deferred.compute() \
-                              .sort_index()
-    return extinction_time
-
-
-def _build_extinction_time(path, path_out):
-    dfr = h5.load_dask(path,
-                       columns=cols_infected)
-    extinction_time = get_extinction_time(dfr)
-    h5.dump(extinction_time, path_out, mode='w')
-
-
-def get_path_extinction_time(path):
-    return _path_stem_append(path, 'extinction_time')
+    apply_kwds = {}
+    if _is_dask(dfr):
+        apply_kwds['meta'] = {
+            'time': dfr.index.to_frame().dtypes[t_name],
+            'observed': bool,
+        }
+    extinction_time = grouper.apply(get_one, **apply_kwds)
+    if _is_dask(dfr):
+        extinction_time = extinction_time.compute()
+    return extinction_time.sort_index()
 
 
 def build_extinction_time(path):
     '''Build the extinction-time store.'''
+    dfr = h5.load(path, columns=cols_infected, use_dask=True)
+    extinction_time = get_extinction_time(dfr)
     path_extinction_time = get_path_extinction_time(path)
-    _build_extinction_time(path, path_extinction_time)
-
-
-def load_extinction_time(path):
-    path_extinction_time = get_path_extinction_time(path)
-    if not path_extinction_time.exists():
-        _build_extinction_time(path, path_extinction_time)
-    extinction_time = h5.load(path_extinction_time)
+    h5.dump(extinction_time, path_extinction_time, mode='w')
     return extinction_time
+
+
+def load_extinction_time(path, **kwds):
+    path_extinction_time = get_path_extinction_time(path)
+    try:
+        return h5.load(path_extinction_time, **kwds)
+    except FileNotFoundError:
+        pass
+    extinction_time = build_extinction_time(path)
+    if len(kwds) == 0:
+        return extinction_time
+    return load_extinction_time(path, **kwds)
 
 
 def get_persistence(extinction_time):
