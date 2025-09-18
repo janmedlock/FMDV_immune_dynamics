@@ -1,6 +1,6 @@
 #cython: language_level=3, boundscheck=False, wraparound=False
 
-'''The McKendrick–von Foerster age-structured PDE model
+r'''The McKendrick–von Foerster age-structured PDE model
 for the density u(t, a) of buffalo of age a at time t is
 (d/dt + d/da) u(t, a) = - d(a) u(t, a),
 u(t, 0) = \int_0^{inf} b(t, a) u(t, a) da
@@ -177,7 +177,7 @@ cdef class Solver:
     @cython.wraparound(True)
     cdef inline bint _init_births(Solver self,
                                   const double step) except False nogil:
-        '''The trapezoid rule for the birth integral for i = 0,
+        r'''The trapezoid rule for the birth integral for i = 0,
         u_0^n = \sum_j (b_j^n u_j^n + b_{j + 1}^n u_{j + 1}^n) * da / 2.
         This can be written as
         u_0^n = (v * b^n) @ u^n,
@@ -201,7 +201,7 @@ cdef class Solver:
                                   _Solution solution,
                                   object birth_rate,
                                   numpy.ndarray temp) except False nogil:
-        '''Calculate the birth integral
+        r'''Calculate the birth integral
         B(t) = \int_0^{inf} b(t, a) U(t, a) da
         using the composite trapezoid rule,
         where U = `solution[0]`.'''

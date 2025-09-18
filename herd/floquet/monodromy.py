@@ -1,4 +1,4 @@
-'''The McKendrick–von Foerster age-structured PDE model
+r'''The McKendrick–von Foerster age-structured PDE model
 for the density u(t, a) of buffalo of age a at time t is
 (d/dt + d/da) u(t, a) = - d(a) u(t, a),
 u(t, 0) = \int_0^{inf} b(t, a) u(t, a) da
@@ -95,7 +95,7 @@ class Solver:
         numpy.fill_diagonal(solution[0], 1)
 
     def _init_births(self, step):
-        '''The trapezoid rule for the birth integral for i = 0,
+        r'''The trapezoid rule for the birth integral for i = 0,
         u_0^n = \sum_j (b_j^n u_j^n + b_{j + 1}^n u_{j + 1}^n) * da / 2.
         This can be written as
         u_0^n = (v * b^n) @ u^n,
@@ -108,7 +108,7 @@ class Solver:
         self._v_trapezoid[[0, -1]] /= 2
 
     def _step_births(self, t_n, solution, birth_rate, temp):
-        '''Calculate the birth integral
+        r'''Calculate the birth integral
         B(t) = \int_0^{inf} b(t, a) U(t, a) da
         using the composite trapezoid rule,
         where U is `solution[0]`.'''
