@@ -19,7 +19,8 @@ def _build_extinction_time(store, store_extinction_time, **kwds):
                   use_dask=True)
     index = dfr.index.to_frame()
     mask = (
-        index[list(kwds.keys())] == kwds.values()
+        (index[list(kwds.keys())] == kwds.values())
+        .all(axis='columns')
     )
     extinction_time = common.get_extinction_time(dfr[mask])
     store_extinction_time.put(extinction_time)
