@@ -14,7 +14,7 @@ def _build_extinction_time(store, store_extinction_time, **kwds):
     '''Get and save extinction time.'''
     store.flush(fsync=True)
     dfr = h5.load(store.filename,
-                  mode='a',  # Must match mode of already open file.
+                  mode=store._mode,
                   columns=common.cols_infected,
                   use_dask=True)
     index = dfr.index.to_frame()
