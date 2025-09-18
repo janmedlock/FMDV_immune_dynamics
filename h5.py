@@ -129,6 +129,11 @@ class HDFStore(pandas.HDFStore):
             key = self.key
         return super().select(key, *args, **kwargs)
 
+    def remove(self, *args, key=None, **kwargs):
+        if key is None:
+            key = self.key
+        return super().remove(key, *args, **kwargs)
+
     def put(self, value, key=None, format='table', append=True, **kwargs):
         if len(value) == 0:
             return
