@@ -5,6 +5,7 @@ import os
 import stat
 
 import astropy.units
+import dask.dataframe
 import matplotlib.collections
 import matplotlib.colors
 import matplotlib.pyplot
@@ -101,11 +102,18 @@ def _path_stem_append(path, postfix):
     return path.with_stem(path.stem + f'_{postfix}')
 
 
-def _get_by(store, by):
+def get_by(obj, by=None):
     if by is None:
-        # All the index levels except `t_name`.
-        by = store.get_index_names() \
-                  .difference({t_name})
+        # `by` is all of the index levels except `t_name`.
+        if isinstance(obj, h5.HDFStore):
+            levels = obj.get_index_names()
+        elif isinstance(obj, dask.dataframe.DataFrame):
+            levels = obj.index \
+                        .to_frame() \
+                        .columns
+        else:
+            raise ValueError(f'Unknown {type(obj)=}!')
+        by = levels.difference({t_name})
     return by
 
 
@@ -128,7 +136,7 @@ def _build_downsampled(path_in, path_out,
     t = arange(t_min, t_max, t_step, endpoint=True)
     with h5.HDFStore(path_out, mode='w') as store_out:
         with h5.HDFStore(path_in, mode='r') as store_in:
-            by = _get_by(store_in, by)
+            by = get_by(store_in, by)
             grouper = store_in.groupby(by)
             for (ix, group) in grouper:
                 downsampled = _build_downsampled_group(group, t, t_step, by)
@@ -152,10 +160,11 @@ def load_downsampled(path):
 
 
 def get_infected(obj):
+    '''Get the number of infected at each time.'''
     infected = obj[cols_infected]
-    if isinstance(infected, pandas.Series):
+    if isinstance(infected, (pandas.Series, dask.dataframe.Series)):
         return infected.sum()
-    if isinstance(infected, pandas.DataFrame):
+    if isinstance(infected, (pandas.DataFrame, dask.dataframe.DataFrame)):
         return infected.sum(axis='columns') \
                        .rename('infected')
     raise ValueError(f'Unknown {type(obj)=}!')
@@ -185,35 +194,52 @@ def load_infected(path):
     return infected
 
 
-def _get_extinction_time_one(dfr):
-    infected_end = get_infected(dfr.iloc[-1])
-    t = dfr.index.get_level_values(t_name)
-    time = t[-1] - t[0]
-    observed = (infected_end == 0)
-    assert observed or (time == TMAX)
-    return dict(time=time, observed=observed)
+def get_extinction_time(dfr, by=None, **kwds):
+    '''Get the extinction time for each run.'''
+    by = get_by(dfr, by)
+    infected = get_infected(dfr)
+    # `.groupby()` does not seem to work on index levels.
+    grouper = infected.reset_index() \
+                      .groupby(list(by), **kwds)
 
+    def get_one(group):
+        t = group[t_name]
+        (t_start, t_end) = (t.min(), t.max())
+        time = t_end - t_start
+        (infected_end,) = group['infected'][t == t_end]
+        observed = infected_end == 0
+        assert observed or (time == TMAX), (observed, time, TMAX)
+        return pandas.Series({
+            'time': time,
+            'observed': observed,
+        })
 
-def get_extinction_time(store, by=None, **kwds):
-    by = _get_by(store, by)
-    grouper = store.groupby(by, columns=cols_infected, **kwds)
-    extinction_time = {ix: _get_extinction_time_one(group)
-                       for (ix, group) in grouper}
-    extinction_time = pandas.DataFrame.from_dict(extinction_time,
-                                                 orient='index') \
-                                      .rename_axis(by, axis='index') \
-                                      .sort_index(level=by)
+    dtypes = {
+        'time': grouper.dfr.dtypes[t_name],
+        'observed': bool,
+    }
+    deferred = grouper.apply(get_one,
+                             meta=dtypes)
+    extinction_time = deferred.compute() \
+                              .sort_index()
     return extinction_time
 
 
 def _build_extinction_time(path, path_out):
-    with h5.HDFStore(path, mode='r') as store:
-        extinction_time = get_extinction_time(store)
+    dfr = h5.load_dask(path,
+                       columns=cols_infected)
+    extinction_time = get_extinction_time(dfr)
     h5.dump(extinction_time, path_out, mode='w')
 
 
 def get_path_extinction_time(path):
     return _path_stem_append(path, 'extinction_time')
+
+
+def build_extinction_time(path):
+    '''Build the extinction-time store.'''
+    path_extinction_time = get_path_extinction_time(path)
+    _build_extinction_time(path, path_extinction_time)
 
 
 def load_extinction_time(path):

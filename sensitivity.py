@@ -58,23 +58,6 @@ def run(module, nruns, *args, **kwargs):
     common.set_read_only(module.store_path)
 
 
-def build_extinction_time(module):
-    '''Iteratively build the extinction-time store.'''
-    store_extinction_time_path = common.get_path_extinction_time(
-        module.store_path)
-    with (h5.HDFStore(module.store_path, mode='r') as hdfstore,
-          h5.HDFStore(store_extinction_time_path) as hdfstore_extinction_time):
-        for SAT in common.SATs:
-            for val in module.values:
-                kwds = {
-                    'SAT': SAT,
-                    module.var: val,
-                }
-                _save_extinction_time(hdfstore, hdfstore_extinction_time,
-                                      **kwds)
-        hdfstore_extinction_time.repack()
-
-
 def _get_proportion_observed_one(grp):
     return sum(grp.observed) / len(grp)
 

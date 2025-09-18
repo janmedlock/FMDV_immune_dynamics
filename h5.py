@@ -7,12 +7,13 @@ import shutil
 import subprocess
 import warnings
 
+import dask.dataframe
 import pandas
 import tables
 
 
 # Defaults
-KEY = 'df'
+_KEY = 'df'
 _COMPLIB = 'blosc:zstd'
 _COMPLEVEL = 6
 _FLETCHER32 = True
@@ -107,7 +108,7 @@ class HDFStore(pandas.HDFStore):
     '''
     pandas.HDFStore() with improved defaults.
     '''
-    def __init__(self, path, key=KEY,
+    def __init__(self, path, key=_KEY,
                  complib=_COMPLIB, complevel=_COMPLEVEL,
                  fletcher32=_FLETCHER32, **kwargs):
         self.key = key
@@ -230,6 +231,11 @@ class HDFStore(pandas.HDFStore):
 def load(path, *args, **kwargs):
     with HDFStore(path, mode='r') as store:
         return store.select(*args, **kwargs)
+
+
+def load_dask(path, key=_KEY, **kwargs):
+    '''Load `path` using `dask.dataframe.read_hdf()`.'''
+    return dask.dataframe.read_hdf(path, key=key, mode='r')
 
 
 def dump(df, path, mode='a', **kwargs):
