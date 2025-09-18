@@ -115,7 +115,7 @@ def _get_by(dfr, by=None):
         levels = dfr.index \
                     .to_frame() \
                     .columns
-        by = levels.difference({t_name})
+        by = list(levels.difference({t_name}))
     return by
 
 
@@ -135,7 +135,7 @@ def get_downsampled(dfr, t_min=0, t_max=TMAX, t_step=1/365):
     by = _get_by(dfr)
     # `.groupby()` does not seem to work on index levels.
     grouper = dfr.reset_index() \
-                 .groupby(list(by))
+                 .groupby(by)
 
     def get_one(group):
         time = group[t_name]
@@ -243,10 +243,9 @@ def get_extinction_time(dfr):
     by = _get_by(dfr)
     # `.groupby()` does not seem to work on index levels.
     grouper = infected.reset_index() \
-                      .groupby(list(by))
+                      .groupby(by)
 
-    # `**_` consumes the `meta` argument when `dfr` is a `pandas.DataFrame()`.
-    def get_one(group, **_):
+    def get_one(group):
         t = group[t_name]
         (t_start, t_end) = (t.min(), t.max())
         time = t_end - t_start
