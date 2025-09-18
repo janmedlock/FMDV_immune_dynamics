@@ -8,7 +8,5 @@ import susceptibility
 
 
 if __name__ == '__main__':
-    NRUNS = 1000
-
     common.nice_self()
-    sensitivity.run(susceptibility, NRUNS)
+    sensitivity.run(susceptibility, common.NRUNS)

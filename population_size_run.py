@@ -8,7 +8,5 @@ import sensitivity
 
 
 if __name__ == '__main__':
-    NRUNS = 1000
-
     common.nice_self()
-    sensitivity.run(population_size, NRUNS)
+    sensitivity.run(population_size, common.NRUNS)

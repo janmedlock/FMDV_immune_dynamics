@@ -43,6 +43,8 @@ WIDTH_MAXIMUM = {
 
 HEIGHT_MAXIMUM = 250 * _mm_to_inch
 
+NRUNS = 1000
+
 SATs = (1, 2, 3)
 
 TMAX = 10

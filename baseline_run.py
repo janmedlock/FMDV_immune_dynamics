@@ -8,11 +8,9 @@ import h5
 
 
 if __name__ == '__main__':
-    NRUNS = 1000
-
     common.nice_self()
     with h5.HDFStore(baseline.store_path) as store:
         for SAT in common.SATs:
-            baseline.run(SAT, NRUNS, store)
+            baseline.run(SAT, common.NRUNS, store)
         store.repack()
     common.set_read_only(baseline.store_path)
