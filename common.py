@@ -133,12 +133,11 @@ def _build_downsampled_group(group, t, t_step, by):
 
 
 def _build_downsampled(path_in, path_out,
-                       t_min=0, t_max=TMAX, t_step=1/365,
-                       by=None):
+                       t_min=0, t_max=TMAX, t_step=1/365):
     t = arange(t_min, t_max, t_step, endpoint=True)
     with h5.HDFStore(path_out, mode='w') as store_out:
         with h5.HDFStore(path_in, mode='r') as store_in:
-            by = get_by(store_in, by)
+            by = get_by(store_in)
             grouper = store_in.groupby(by)
             for (ix, group) in grouper:
                 downsampled = _build_downsampled_group(group, t, t_step, by)
@@ -196,10 +195,10 @@ def load_infected(path):
     return infected
 
 
-def get_extinction_time(dfr, by=None, **kwds):
+def get_extinction_time(dfr, **kwds):
     '''Get the extinction time for each run.'''
-    by = get_by(dfr, by)
     infected = get_infected(dfr)
+    by = get_by(dfr)
     # `.groupby()` does not seem to work on index levels.
     grouper = infected.reset_index() \
                       .groupby(list(by), **kwds)
