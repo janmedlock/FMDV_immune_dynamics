@@ -135,7 +135,7 @@ def get_downsampled(dfr, t_min=0, t_max=TMAX, t_step=1/365):
     by = _get_by(dfr)
     # `.groupby()` does not seem to work on index levels.
     grouper = dfr.reset_index() \
-                 .groupby(list(by), as_index=False)
+                 .groupby(list(by))
 
     def get_one(group):
         time = group[t_name]
@@ -150,6 +150,8 @@ def get_downsampled(dfr, t_min=0, t_max=TMAX, t_step=1/365):
             group.set_index(t_name)
             .sort_index()
             .reindex(t[mask], method='ffill')
+            .reset_index()
+            .loc[:, group.columns]
         )
 
     apply_kwds = {}
