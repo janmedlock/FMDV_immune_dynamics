@@ -120,6 +120,44 @@ def _get_by(dfr, by=None):
 
 
 def _is_dask(dfr):
+    return isinstance(
+        dfr,
+        (dask.dataframe.DataFrame, dask.dataframe.Series)
+    )
+
+
+def get_path_downsampled(path):
+    return _path_stem_append(path, 'downsampled')
+
+
+def get_downsampled(dfr, t_min=0, t_max=TMAX, t_step=1/365):
+    t = arange(t_min, t_max, t_step, endpoint=True)
+    by = _get_by(dfr)
+    # `.groupby()` does not seem to work on index levels.
+    grouper = dfr.reset_index() \
+                 .groupby(list(by), as_index=False)
+
+    def get_one(group):
+        time = group[t_name]
+        # Shift start to 0.
+        time -= time.min()
+        # Only interpolate between start and extinction.
+        # Round up to the next multiple of `t_step`.
+        t_max = numpy.ceil(time.max() / t_step) * t_step
+        mask = t <= t_max
+        # Interpolate from the closest point <= t.
+        return (
+            group.set_index(t_name)
+            .sort_index()
+            .reindex(t[mask], method='ffill')
+        )
+
+    apply_kwds = {}
+    if _is_dask(dfr):
+        apply_kwds['meta'] = dask.dataframe.utils.make_meta(
+            dfr.reset_index()
+        )
+    downsampled = grouper.apply(get_one, **apply_kwds)
     if _is_dask(dfr):
         downsampled = downsampled.compute()
     return (
