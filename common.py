@@ -223,7 +223,7 @@ def load_infected(path, **kwds):
     path_infected = get_path_infected(path)
     try:
         return h5.load(path_infected, **kwds)
-    except OSErrorError:
+    except OSError:
         pass
     infected = build_infected(path)
     if len(kwds) == 0:
@@ -281,7 +281,7 @@ def load_extinction_time(path, **kwds):
     path_extinction_time = get_path_extinction_time(path)
     try:
         return h5.load(path_extinction_time, **kwds)
-    except OSErrorError:
+    except OSError:
         pass
     extinction_time = build_extinction_time(path)
     if len(kwds) == 0:
