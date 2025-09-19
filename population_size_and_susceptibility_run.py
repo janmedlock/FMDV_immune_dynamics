@@ -11,7 +11,9 @@ import susceptibility
 
 
 def _build_extinction_time(store, store_extinction_time, **kwds):
-    '''Get and save extinction time.'''
+    '''Get and save extinction time. Extinction time is needed to
+    calculate persistence, so save extinction time to avoid building
+    it again later.'''
     store.flush(fsync=True)
     dfr = h5.load(store.filename,
                   mode=store._mode,
@@ -28,6 +30,7 @@ def _build_extinction_time(store, store_extinction_time, **kwds):
 
 
 def _get_persistence(store, store_extinction_time, **kwds):
+
     '''Get the proportion of simulations where the pathogen persisted
     over the whole time interval.'''
     extinction_time = _build_extinction_time(
