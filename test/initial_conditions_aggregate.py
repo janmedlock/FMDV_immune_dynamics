@@ -132,7 +132,7 @@ def get_incidence(p, params):
     hazard = get_hazard_infection(p, params)
     P = integrate_over_age(p)
     # The fraction susceptible to infection.
-    S = P.loc[['susceptible', 'lost immunity']].sum()
+    S = P.loc[['susceptible', 'lost_immunity']].sum()
     return hazard * S
 
 

@@ -24,10 +24,10 @@ def load():
 
 
 def plot_one(ax, SAT, group):
-    time = group.index.get_level_values(common.t_name)
+    time = group.index.get_level_values('time')
     t = time - time.min()
     for (name, ser) in group.items():
-        ax.plot(t, ser, label=name.capitalize(),
+        ax.plot(t, ser, label=common.get_state_label(name),
                 drawstyle='steps-pre',
                 alpha=0.9, linewidth=1, zorder=3)
     ax.annotate(f'SAT{SAT}',
@@ -37,7 +37,7 @@ def plot_one(ax, SAT, group):
                 verticalalignment='center')
     ax.set_ylabel('Number')
     if ax.get_subplotspec().is_last_row():
-        ax.set_xlabel(common.t_label)
+        ax.set_xlabel(common.TIME_LABEL)
         ax.margins(x=0)
         ax.xaxis.set_major_locator(
             matplotlib.ticker.MultipleLocator(1)

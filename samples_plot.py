@@ -57,7 +57,7 @@ def plot_times(dfr):
     for (SAT, group) in grouper:
         survival = stats.get_survival(group, 'time', 'observed')
         ax.plot(survival, label=f'SAT{SAT}', drawstyle='steps-post')
-    ax.set_xlabel(common.t_name)
+    ax.set_xlabel(common.TIME_LABEL)
     ax.set_ylabel('Survival')
     # ax.set_yscale('log')
     # Next smaller power of 10.
@@ -191,8 +191,8 @@ def plot_sensitivity(dfr, rank=True, errorbars=False):
     xabsmax = rho.abs().max().max()
     y = range(len(rho))
     ylabels = [param_transforms.get(p, p)
-                               .capitalize()
                                .replace('_', ' ')
+                               .capitalize()
                for p in rho.index]
     ncols = len(SATs)
     with pyplot.rc_context(rc):

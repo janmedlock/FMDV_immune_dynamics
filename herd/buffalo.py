@@ -8,7 +8,7 @@ class Buffalo:
     # that she passes on to her calves.
     has_antibodies = frozenset({'chronic', 'recovered'})
 
-    def __init__(self, herd, immune_status='maternal immunity', age=0):
+    def __init__(self, herd, immune_status='maternal_immunity', age=0):
         self.herd = herd
         self.immune_status = immune_status
         self.birth_date = self.herd.time - age
@@ -39,7 +39,7 @@ class Buffalo:
     def give_birth(self):
         assert self.sex == 'female'
         if self.immune_status in self.has_antibodies:
-            immune_status_calf = 'maternal immunity'
+            immune_status_calf = 'maternal_immunity'
         else:
             immune_status_calf = 'susceptible'
         self.herd.add(Buffalo(self.herd, immune_status_calf))
