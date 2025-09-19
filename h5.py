@@ -8,7 +8,6 @@ import subprocess
 import warnings
 
 import pandas
-import tables
 
 import _dask_dataframe
 
@@ -95,16 +94,6 @@ def _as_sequence(val):
     return [val]
 
 
-class _catch_natural_name_warnings(warnings.catch_warnings):
-    '''
-    Ignore `tables.NaturalNameWarning`.
-    '''
-    def __enter__(self):
-        super().__enter__()
-        warnings.filterwarnings('ignore',
-                                category=tables.NaturalNameWarning)
-
-
 class HDFStore(pandas.HDFStore):
     '''
     pandas.HDFStore() with improved defaults.
@@ -136,24 +125,21 @@ class HDFStore(pandas.HDFStore):
             return
         if key is None:
             key = self.key
-        with _catch_natural_name_warnings():
-            return super().put(key, value,
-                               format=format, append=append,
-                               **kwargs)
+        return super().put(key, value,
+                           format=format, append=append,
+                           **kwargs)
 
     def append(self, value, key=None, format='table', append=True, **kwargs):
         if key is None:
             key = self.key
-        with _catch_natural_name_warnings():
-            return super().append(key, value,
-                                  format=format, append=append,
-                                  **kwargs)
+        return super().append(key, value,
+                              format=format, append=append,
+                              **kwargs)
 
     def create_table_index(self, key=None, **kwargs):
         if key is None:
             key = self.key
-        with _catch_natural_name_warnings():
-            return super().create_table_index(key, **kwargs)
+        return super().create_table_index(key, **kwargs)
 
     def get_index(self, *args, key=None, iterator=False, **kwargs):
         # For speed, don't read any columns.
