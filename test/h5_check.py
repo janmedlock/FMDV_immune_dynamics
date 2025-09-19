@@ -14,7 +14,7 @@ def check_completed(path, by, **kwds):
             extinction = infected.iloc[-1] == 0
             t = group.index.get_level_values('time')
             time = t.max() - t.min()
-            completed = extinction or (time == common.TMAX)
+            completed = extinction or (time == common.TIME_MAX)
             assert completed
 
 
