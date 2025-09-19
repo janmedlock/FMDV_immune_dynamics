@@ -11,6 +11,7 @@ from scipy.integrate import quad
 # Rebuild the 'monodromy' module, if necessary.
 subprocess.run(['make'], cwd='../herd/floquet', check=True)
 
+from context import common
 from context import herd
 import herd.age_structure
 import herd.mortality
@@ -62,8 +63,8 @@ def plot(ages, stable_age_structure):
     ax.plot(ages[which], herd.mortality.sf(ages[which]) / mortality_sf_scale,
             label='scaled mortality survival',
             color='black', linestyle='dotted')
-    ax.set_xlabel('age (y)')
-    ax.set_ylabel('density (y$^{-1}$)')
+    ax.set_xlabel(f'age ({common.TIME_UNIT})')
+    ax.set_ylabel(f'density ({common.TIME_UNIT}$^{-1}$)')
     ax.legend()
     fig.tight_layout()
     pyplot.show()

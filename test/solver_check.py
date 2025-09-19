@@ -8,6 +8,7 @@ import matplotlib.patches
 import matplotlib.pyplot
 import numpy
 
+from context import common
 from context import herd
 from herd.initial_conditions.immune_status import blocks, solver
 
@@ -78,7 +79,7 @@ def plot_blocks(slvr):
 def plot_solution(prob):
     (fig, axes) = matplotlib.pyplot.subplots(constrained_layout=True)
     axes.stackplot(prob.index, prob.T, labels=prob.columns)
-    axes.set_xlabel('age (y)')
+    axes.set_xlabel(f'age ({common.TIME_UNIT})')
     axes.set_ylabel('constant-birth\ndensity')
     axes.legend()
     return axes

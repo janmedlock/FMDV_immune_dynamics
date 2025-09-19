@@ -62,7 +62,7 @@ def plot_ICs(SAT):
                  plot_samples)
     for (ax, plot_fcn) in zip(axes, plot_fcns):
         plot_fcn(ICs, ages, ax)
-    axes[-1].set_xlabel('age (y)')
+    axes[-1].set_xlabel(f'age ({common.TIME_UNIT})')
     for ax in axes:
         ax.margins(0)
     fig.align_ylabels()
