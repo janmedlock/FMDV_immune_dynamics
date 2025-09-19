@@ -63,7 +63,9 @@ def plot_persistence(dfs, save=True, show=True):
                                 fontsize=rc['axes.titlesize'],
                                 rotation='vertical',
                                 verticalalignment='center')
-                    ax.set_ylabel(f'Persisting {common.TMAX} years')
+                    ax.set_ylabel(
+                        f'Persisting {common.TIME_MAX} {common.TIME_UNIT}s'
+                    )
                     ax.set_ylim(0, 1)
                     ax.yaxis.set_major_formatter(
                         matplotlib.ticker.PercentFormatter(xmax=1)
