@@ -1,0 +1,29 @@
+* Improve initializing time since entry
+  At equilibrium, the distribution of times since entry has
+  probability density S(z) / mu, where S(z) is the survival function
+  and mu is the mean waiting time. Sample from
+  that. `herd.event.Event.sample_time()` will need a flag to
+  distinguish between initialing the simulation using the sampling
+  process above and the sampling there now for a buffalo entering a
+  new state (which is only different for events with time since entry,
+  i.e. not exponential random variables).
+  Maternal-immunity waning is in this same category.
+
+* Old
+** Investigate the 26 samples that break
+  `herd.initial_conditions.immune_state.solve()`
+  The samples are not used in the current manuscript as of 2025-09-15
+** Compare `susceptibility_null` to old model
+** Write up: `herd.initial_conditions.immune_status.Solver.get_pdf()` now
+   sets `pdf[0] = 0`
+*** How does `(hazard_infection, newborn_proportion_immune)` in
+    `herd.initial_conditions.immune_status.Solver.solve()` change as
+    `pdf[0]` varies?
+
+* Merge changes in devel branch
+  + Pull 'devel' and 'devel_testing_fast_computation' from '../devel'
+  + Merge 'devel' into 'main' and push to github
+  + Add '.gitignore' and 'todo.org' to 'devel' and 'devel_testing_fast_computation'
+  + Rebase 'devel_testing_fast_computation' onto 'main'
+  + Re-run 'sensitivity_plot.py', 'population_size_and_susceptibility_plot.py'
+  + Delete 'devel'
