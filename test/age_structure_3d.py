@@ -4,8 +4,10 @@
 import numpy
 from matplotlib import pyplot
 
+from context import common
 from context import herd
 import herd.age_structure
+
 import age_structure
 
 
@@ -17,9 +19,9 @@ def plot_age_structures_3d(age_structures, show=True):
     (fig, ax) = pyplot.subplots()
     pcm = ax.pcolormesh(ages, start_times, age_structures,
                         cmap='viridis', shading='gouraud')
-    ax.set_xlabel('age (y)')
-    ax.set_ylabel('start time (y)')
-    fig.colorbar(pcm, label='density (y$^{-1}$)')
+    ax.set_xlabel(f'age ({common.TIME_UNIT})')
+    ax.set_ylabel(f'start time ({common.TIME_UNIT})')
+    fig.colorbar(pcm, label=f'density ({common.TIME_UNIT}$^{-1}$)')
     fig.tight_layout()
     if show:
         pyplot.show()

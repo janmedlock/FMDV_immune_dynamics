@@ -126,7 +126,7 @@ class Herd(set):
         result = DataFrame.from_dict(dict(result),
                                      orient='index',
                                      columns=immune_statuses)
-        result.index.name = 'time (y)'
+        result.index.name = 'time'
         result.columns.name = 'status'
         return result
 

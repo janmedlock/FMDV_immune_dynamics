@@ -6,6 +6,7 @@ from matplotlib import pyplot
 import numpy
 from scipy.integrate import quad
 
+from context import common
 from context import herd
 import herd.age_structure
 import herd.mortality
@@ -39,7 +40,7 @@ def plot_age_structures(age_structures, show=True):
     ax.plot(ages, herd.mortality.sf(ages) / mortality_sf_scale,
             label='scaled mortality survival',
             color='black', linestyle='dotted')
-    ax.set_xlabel('age (y)')
+    ax.set_xlabel(f'age ({common.TIME_UNIT})')
     ax.set_ylabel('density (y$^{-1}$)')
     ax.legend(title='start time')
     fig.tight_layout()
