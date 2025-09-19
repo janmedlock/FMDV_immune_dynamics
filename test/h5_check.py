@@ -12,7 +12,7 @@ def check_completed(path, by, **kwds):
         for (_, group) in grouper:
             infected = group.sum(axis='columns')
             extinction = infected.iloc[-1] == 0
-            t = group.index.get_level_values(common.t_name)
+            t = group.index.get_level_values('time')
             time = t.max() - t.min()
             completed = extinction or (time == common.TMAX)
             assert completed

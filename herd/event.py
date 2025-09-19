@@ -93,7 +93,7 @@ class Birth(Event):
 class MaternalImmunityWaning(Event):
     '''A buffalo losing maternal immunity.'''
     def is_valid(self):
-        return self.buffalo.immune_status == 'maternal immunity'
+        return self.buffalo.immune_status == 'maternal_immunity'
 
     def do(self):
         self.buffalo.change_immune_status_to('susceptible')
@@ -106,7 +106,7 @@ class MaternalImmunityWaning(Event):
             if time >= self.buffalo.herd.time:
                 return time
 
-events_by_immune_status['maternal immunity'].add(MaternalImmunityWaning)
+events_by_immune_status['maternal_immunity'].add(MaternalImmunityWaning)
 
 
 class Infection(Event):
@@ -190,7 +190,7 @@ class AntibodyLoss(Event):
         return self.buffalo.immune_status == 'recovered'
 
     def do(self):
-        self.buffalo.change_immune_status_to('lost immunity')
+        self.buffalo.change_immune_status_to('lost_immunity')
 
     def sample_time(self):
         return (self.buffalo.herd.time
@@ -200,12 +200,12 @@ events_by_immune_status['recovered'].add(AntibodyLoss)
 
 
 class SecondaryInfection(Infection):
-    '''A buffalo becoming infected from lost immunity.'''
+    '''A buffalo becoming 'infected' from 'lost_immunity'.'''
     def is_valid(self):
-        return self.buffalo.immune_status == 'lost immunity'
+        return self.buffalo.immune_status == 'lost_immunity'
 
     def do(self):
-        # Immune status 'lost immunity' can change by either
+        # Immune status 'lost_immunity' can change by either
         # `SecondaryInfection()` or `AntibodyGain()`.
         # Remove the one that didn't happen so it doesn't stay
         # in the queue.
@@ -216,15 +216,15 @@ class SecondaryInfection(Infection):
         return (self.buffalo.herd.params.lost_immunity_susceptibility
                 * super().get_force_of_infection())
 
-events_by_immune_status['lost immunity'].add(SecondaryInfection)
+events_by_immune_status['lost_immunity'].add(SecondaryInfection)
 
 
 class AntibodyGain(Event):
     def is_valid(self):
-        return self.buffalo.immune_status == 'lost immunity'
+        return self.buffalo.immune_status == 'lost_immunity'
 
     def do(self):
-        # Immune status 'lost immunity' can change by either
+        # Immune status 'lost_immunity' can change by either
         # `SecondaryInfection()` or `AntibodyGain()`.
         # Remove the one that didn't happen so it doesn't stay
         # in the queue.
@@ -235,4 +235,4 @@ class AntibodyGain(Event):
         return (self.buffalo.herd.time
                 + self.buffalo.herd.rvs.antibody_gain.rvs())
 
-events_by_immune_status['lost immunity'].add(AntibodyGain)
+events_by_immune_status['lost_immunity'].add(AntibodyGain)

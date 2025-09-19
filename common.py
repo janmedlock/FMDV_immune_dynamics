@@ -49,8 +49,8 @@ SATs = (1, 2, 3)
 
 TMAX = 10
 
-t_name = 'time (y)'
-t_label = 'Time (year)'
+TIME_UNIT = 'year'
+TIME_LABEL = f'Time ({TIME_UNIT})'
 
 cols_infected = ['exposed', 'infectious', 'chronic']
 
@@ -106,11 +106,11 @@ def _path_stem_append(path, postfix):
 
 def _get_by(dfr, by=None):
     if by is None:
-        # `by` is all of the index levels except `t_name`.
+        # `by` is all of the index levels except 'time'.
         levels = dfr.index \
                     .to_frame() \
                     .columns
-        by = list(levels.difference({t_name}))
+        by = list(levels.difference({'time'}))
     return by
 
 
@@ -133,7 +133,7 @@ def get_downsampled(dfr, t_min=0, t_max=TMAX, t_step=1/365):
                  .groupby(by)
 
     def get_one(group):
-        time = group[t_name]
+        time = group['time']
         # Shift start to 0.
         time -= time.min()
         # Only interpolate between start and extinction.
@@ -142,7 +142,7 @@ def get_downsampled(dfr, t_min=0, t_max=TMAX, t_step=1/365):
         mask = t <= t_max
         # Interpolate from the closest point <= t.
         return (
-            group.set_index(t_name)
+            group.set_index('time')
             .sort_index()
             .reindex(t[mask], method='ffill')
             .reset_index()
@@ -241,7 +241,7 @@ def get_extinction_time(dfr):
                       .groupby(by)
 
     def get_one(group):
-        t = group[t_name]
+        t = group['time']
         (t_start, t_end) = (t.min(), t.max())
         time = t_end - t_start
         (infected_end,) = group['infected'][t == t_end]
@@ -255,7 +255,7 @@ def get_extinction_time(dfr):
     apply_kwds = {}
     if _is_dask(dfr):
         apply_kwds['meta'] = {
-            'time': dfr.index.to_frame().dtypes[t_name],
+            'time': dfr.index.to_frame().dtypes['time'],
             'observed': bool,
         }
     extinction_time = grouper.apply(get_one, **apply_kwds)
@@ -353,3 +353,8 @@ def legend_multicolumn(obj, handles, labels, ncol, **kwds):
     return obj.legend(reorder(handles, ncol),
                       reorder(labels, ncol),
                       ncol=ncol, **kwds)
+
+
+def get_state_label(state):
+    '''Make a plot label for `state`.'''
+    return state.replace('_', ' ').capitalize()

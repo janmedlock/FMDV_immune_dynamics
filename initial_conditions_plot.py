@@ -42,7 +42,7 @@ def plot_status_probability(ICs, ages, ax):
     '''Plot probability of being in each status vs. age.'''
     p = ICs.immune_status_pdf(ages)
     ax.stackplot(ages, p.T,
-                 labels=p.columns.str.capitalize(),
+                 labels=p.columns,
                  zorder=3)
     if ax.get_subplotspec().is_first_col():
         ax.set_ylabel('Status\nprobability')
@@ -60,7 +60,7 @@ def plot_status_probability_given_alive(ICs, ages, ax):
     being alive vs. age.'''
     p = ICs.immune_status_conditional_pdf(ages)
     ax.stackplot(ages, p.T,
-                 labels=p.columns.str.capitalize(),
+                 labels=p.columns,
                  alpha=0.8, zorder=3)
     if ax.get_subplotspec().is_first_col():
         # ax.set_ylabel('Status conditional\nprobability')
@@ -78,7 +78,7 @@ def plot_joint_density(ICs, ages, ax):
     '''Plot the joint density.'''
     p = ICs.pdf(ages)
     ax.stackplot(ages, p.T,
-                 labels=p.columns.str.capitalize(),
+                 labels=p.columns,
                  zorder=3)
     if ax.get_subplotspec().is_first_col():
         ax.set_ylabel('Joint density\n(year$^{-1}$)')
@@ -155,6 +155,7 @@ def plot_SATs(save=True):
             plot_SAT(axes[:, col], SAT, ages)
         fig.align_ylabels()
         (handles, labels) = axes[1, 0].get_legend_handles_labels()
+        labels = map(common.get_state_label, labels)
         nrow = 2
         ncol = math.ceil(len(handles) / nrow)
         common.legend_multicolumn(fig, handles, labels, ncol,

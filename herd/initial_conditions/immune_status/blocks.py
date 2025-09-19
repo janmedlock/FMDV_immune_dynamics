@@ -10,13 +10,13 @@ from scipy import sparse
 
 # The short & long names of the variables.
 # The order of the output is determined by the order of these, too.
-NAMES = {'M': 'maternal immunity',
+NAMES = {'M': 'maternal_immunity',
          'S': 'susceptible',
          'E': 'exposed',
          'I': 'infectious',
          'C': 'chronic',
          'R': 'recovered',
-         'L': 'lost immunity'}
+         'L': 'lost_immunity'}
 
 
 class _Block(metaclass=abc.ABCMeta):

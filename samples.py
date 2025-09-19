@@ -78,7 +78,7 @@ def combine(unlink=True):
     with h5.HDFStore(store_path, mode='a') as store:
         # (SAT, sample) that are already in `store`.
         try:
-            store_idx = store.get_index().droplevel(common.t_name).unique()
+            store_idx = store.get_index().droplevel('time').unique()
         except KeyError:
             store_idx = set()
         paths_SAT = sorted(samples_path.iterdir(), key=_get_SAT)
@@ -92,7 +92,7 @@ def combine(unlink=True):
                         recarray = numpy.load(path_sample)
                         dfr = pandas.DataFrame.from_records(
                             recarray,
-                            index=common.t_name)
+                            index='time')
                         common.prepend_index_levels(dfr, SAT=SAT,
                                                     sample=sample)
                         print('Inserting '

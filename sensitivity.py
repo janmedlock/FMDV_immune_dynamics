@@ -108,7 +108,7 @@ def plot_median(module, df, CI=0.5):
                              color=common.SAT_colors[SAT],
                              alpha=0.5)
             ax.set_xlim(left=0)
-            ax.set_xlabel(f'extinction {common.t_name}')
+            ax.set_xlabel(f'extinction {common.TIME_LABEL.lower()}')
             if module.log:
                 ax.set_yscale('log')
             subplotspec = ax.get_subplotspec()
@@ -145,7 +145,7 @@ def plot_kde(module, df):
                 common.kdeplot(e, label=label, ax=ax,
                                shade=False, clip_on=False)
             if subplotspec.is_last_row():
-                ax.set_xlabel(f'extinction {common.t_name}')
+                ax.set_xlabel(f'extinction {common.TIME_LABEL.lower()}')
                 ax.set_xlim(left=0)
             ax.yaxis.set_major_locator(matplotlib.ticker.NullLocator())
             ax.set_ylabel(f'SAT{SAT}\ndensity')
@@ -188,7 +188,7 @@ def plot_kde_2d(module, df, save=True):
             ax.set_xlim(min(vals), max(vals))
             ax.set_title(f'SAT{SAT}')
             if ax.get_subplotspec().is_first_col():
-                ax.set_ylabel(f'extinction {common.t_name}')
+                ax.set_xlabel(f'extinction {common.TIME_LABEL.lower()}')
                 ax.yaxis.set_major_locator(
                     matplotlib.ticker.MultipleLocator(
                         max(extinction_time) / 5))
@@ -203,7 +203,9 @@ def plot_kde_2d(module, df, save=True):
             ax_po.set_xlim(min(vals), max(vals))
             ax_po.set_xlabel(module.label)
             if ax_po.get_subplotspec().is_first_col():
-                ax_po.set_ylabel(f'persisting {common.TMAX} y')
+                ax_po.set_ylabel(
+                    f'persisting {common.TMAX} {common.TIME_UNIT}s'
+                )
                 ax_po.set_ylim(0, 1)
                 ax_po.yaxis.set_major_formatter(
                     matplotlib.ticker.PercentFormatter(xmax=1))

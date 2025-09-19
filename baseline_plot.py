@@ -80,7 +80,7 @@ def plot_extinction_time(ax, extinction_time, SAT):
     ax.yaxis.set_major_locator(ticker.NullLocator())
     # Shared x-axes between SATs.
     if ax.get_subplotspec().is_last_row():
-        ax.set_xlabel(common.t_label)
+        ax.set_xlabel(common.TIME_LABEL)
     else:
         ax.xaxis.set_tick_params(which='both',
                                  labelbottom=False, labeltop=False)
@@ -124,7 +124,7 @@ def plot(infected, extinction_time,
             plot_infected(axes[row_inf, col], infected, SAT,
                           draft=draft)
             plot_extinction_time(axes[row_ext, col], extinction_time, SAT)
-        t_max = infected.index.get_level_values(common.t_name).max()
+        t_max = infected.index.get_level_values('time').max()
         # I get weird results if I set these limits individually.
         for (col, SAT) in enumerate(SATs):
             for row in (row_inf, row_ext):
