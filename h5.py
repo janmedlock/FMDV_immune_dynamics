@@ -9,11 +9,8 @@ import warnings
 
 import pandas
 import tables
-with warnings.catch_warnings():
-    warnings.filterwarnings('ignore',
-                            category=FutureWarning,
-                            module=r'dask\.dataframe')
-    import dask.dataframe
+
+import _dask_dataframe
 
 
 # Defaults
@@ -241,7 +238,7 @@ def load(path, *args, key=_KEY, mode='r', use_dask=False, **kwargs):
     if use_dask:
         if len(args) > 0:
             raise NotImplementedError
-        return dask.dataframe.read_hdf(path, key=key, mode=mode, **kwargs)
+        return _dask_dataframe.read_hdf(path, key=key, mode=mode, **kwargs)
     with HDFStore(path, key=key, mode=mode) as store:
         return store.select(*args, **kwargs)
 
