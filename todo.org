@@ -22,8 +22,6 @@
 
 * Merge changes in devel branch
   + Pull 'devel' and 'devel_testing_fast_computation' from '../devel'
-  + Add '.gitignore' and 'todo.org' to 'devel_testing_fast_computation'
-  + Delete 'devel' directory
 
   + Re-run 'sensitivity_plot.py', 'population_size_and_susceptibility_plot.py'
 
@@ -31,3 +29,5 @@
     + Rename columns
     + Merge 'devel' into 'main' and push to github
     + Rebase 'devel_testing_fast_computation' onto 'main'
+
+  + Delete 'devel' directory
