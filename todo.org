@@ -21,8 +21,6 @@
     `pdf[0]` varies?
 
 * Merge changes in devel branch
-  + Pull 'devel' and 'devel_testing_fast_computation' from '../devel'
-
   + Re-run 'sensitivity_plot.py', 'population_size_and_susceptibility_plot.py'
 
   + Can I rename columns in h5 files? If so, ...
