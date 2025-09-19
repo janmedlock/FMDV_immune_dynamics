@@ -159,7 +159,7 @@ def plot_kde_2d(module, df, save=True):
              .get_level_values(module.var) \
              .unique() \
              .sort_values()
-    extinction_time = numpy.linspace(0, common.TMAX, 301)
+    extinction_time = numpy.linspace(0, common.TIME_MAX, 301)
     with seaborn.axes_style('ticks'), matplotlib.pyplot.rc_context(rc=rc):
         grouper_SAT = df.groupby('SAT')
         ncols = len(grouper_SAT)
@@ -204,7 +204,7 @@ def plot_kde_2d(module, df, save=True):
             ax_po.set_xlabel(module.label)
             if ax_po.get_subplotspec().is_first_col():
                 ax_po.set_ylabel(
-                    f'persisting {common.TMAX} {common.TIME_UNIT}s'
+                    f'Persisting {common.TIME_MAX} {common.TIME_UNIT}s'
                 )
                 ax_po.set_ylim(0, 1)
                 ax_po.yaxis.set_major_formatter(

@@ -21,7 +21,7 @@ def seed_cache(parameters):
 def run_one(parameters, run_number, *args, tmax=None, **kwargs):
     '''Run one simulation.'''
     if tmax is None:
-        tmax = common.TMAX
+        tmax = common.TIME_MAX
     herd_ = herd.Herd(parameters, run_number=run_number, *args, **kwargs)
     return herd_.run(tmax)
 

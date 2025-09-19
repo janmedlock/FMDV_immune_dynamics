@@ -47,9 +47,8 @@ SATs = (1, 2, 3)
 
 NRUNS = 1000
 
-TMAX = 10
-
 TIME_UNIT = 'year'
+TIME_MAX = 10
 TIME_LABEL = f'Time ({TIME_UNIT})'
 
 cols_infected = ['exposed', 'infectious', 'chronic']
@@ -125,7 +124,7 @@ def get_path_downsampled(path):
     return _path_stem_append(path, 'downsampled')
 
 
-def get_downsampled(dfr, t_min=0, t_max=TMAX, t_step=1/365):
+def get_downsampled(dfr, t_min=0, t_max=TIME_MAX, t_step=1/365):
     t = arange(t_min, t_max, t_step, endpoint=True)
     by = _get_by(dfr)
     # `.groupby()` does not seem to work on index levels.
@@ -246,7 +245,7 @@ def get_extinction_time(dfr):
         time = t_end - t_start
         (infected_end,) = group['infected'][t == t_end]
         observed = infected_end == 0
-        assert observed or (time == TMAX), (observed, time, TMAX)
+        assert observed or (time == TIME_MAX), (observed, time, TIME_MAX)
         return pandas.Series({
             'time': time,
             'observed': observed,
