@@ -3,7 +3,6 @@
 import itertools
 import os
 import stat
-import warnings
 
 import astropy.units
 import matplotlib.collections
@@ -13,12 +12,8 @@ import numpy
 import pandas
 import psutil
 import statsmodels.nonparametric.api
-with warnings.catch_warnings():
-    warnings.filterwarnings('ignore',
-                            category=FutureWarning,
-                            module=r'dask\.dataframe')
-    import dask.dataframe
 
+import _dask_dataframe
 import h5
 from herd.utility import arange
 
@@ -122,7 +117,7 @@ def _get_by(dfr, by=None):
 def _is_dask(dfr):
     return isinstance(
         dfr,
-        (dask.dataframe.DataFrame, dask.dataframe.Series)
+        (_dask_dataframe.DataFrame, _dask_dataframe.Series)
     )
 
 
@@ -156,7 +151,7 @@ def get_downsampled(dfr, t_min=0, t_max=TMAX, t_step=1/365):
 
     apply_kwds = {}
     if _is_dask(dfr):
-        apply_kwds['meta'] = dask.dataframe.utils.make_meta(
+        apply_kwds['meta'] = _dask_dataframe.utils.make_meta(
             dfr.reset_index()
         )
     downsampled = grouper.apply(get_one, **apply_kwds)
@@ -192,9 +187,9 @@ def load_downsampled(path, **kwds):
 def sum_infected(obj):
     '''Get the number of infected at each time.'''
     infected = obj[cols_infected]
-    if isinstance(infected, (pandas.Series, dask.dataframe.Series)):
+    if isinstance(infected, (pandas.Series, _dask_dataframe.Series)):
         return infected.sum()
-    if isinstance(infected, (pandas.DataFrame, dask.dataframe.DataFrame)):
+    if isinstance(infected, (pandas.DataFrame, _dask_dataframe.DataFrame)):
         return infected.sum(axis='columns') \
                        .rename('infected')
     raise ValueError(f'Unknown {type(obj)=}!')
