@@ -21,11 +21,12 @@
     `pdf[0]` varies?
 
 * Merge changes in devel branch
-  + Re-run 'sensitivity_plot.py', 'population_size_and_susceptibility_plot.py'
+  + Merge changes from main into devel, testing_..., and devel_testing_...
 
-  + Can I rename columns in h5 files? If so, ...
-    + Rename columns
+  + Consider renaming columns by copying, then
     + Merge 'devel' into 'main' and push to github
     + Rebase 'devel_testing_fast_computation' onto 'main'
+
+  + Handle 'todo.org' in main
 
   + Delete 'devel' directory
