@@ -98,10 +98,24 @@ def get_logging_prefix(**kwds):
                      for (key, val) in kwds.items())
 
 
+_WRITEABLE = stat.S_IWUSR | stat.S_IWGRP | stat.S_IWOTH
+
+
+def _get_permissions(path):
+    return stat.S_IMODE(
+        path.stat().st_mode
+    )
+
+
+def is_read_only(path):
+    '''Whether `path` is read only.'''
+    return _get_permissions(path) & _WRITEABLE == 0
+
+
 def set_read_only(path):
     '''Set `path` as read only.'''
     return path.chmod(
-        stat.S_IRUSR | stat.S_IRGRP | stat.S_IROTH
+        _get_permissions(path) & ~_WRITEABLE
     )
 
 
