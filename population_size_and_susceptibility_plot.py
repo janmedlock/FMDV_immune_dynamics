@@ -31,9 +31,7 @@ population_size_label = population_size.label.replace('\n', ' ')
 susceptibility_label = susceptibility.label.replace('\n', ' ') \
                                            .replace('of ', 'of\n')
 
-persistence_label = (
-    f'Proportion persisting {common.TIME_MAX} {common.TIME_UNIT}s'
-)
+persistence_label = f'Proportion persisting {common.TMAX} years'
 
 
 def load_extinction_time():
