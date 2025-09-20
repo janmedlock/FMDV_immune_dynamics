@@ -12,7 +12,6 @@
 * Old
 ** Investigate the 26 samples that break
   `herd.initial_conditions.immune_state.solve()`
-  The samples are not used in the current manuscript as of 2025-09-15
 ** Compare `susceptibility_null` to old model
 ** Write up: `herd.initial_conditions.immune_status.Solver.get_pdf()` now
    sets `pdf[0] = 0`
@@ -21,12 +20,10 @@
     `pdf[0]` varies?
 
 * Merge changes in devel branch
-  + Merge changes from main into devel, testing_..., and devel_testing_...
-
   + Consider renaming columns by copying, then
     + Merge 'devel' into 'main' and push to github
     + Rebase 'devel_testing_fast_computation' onto 'main'
 
-  + Handle 'todo.org' in main
+  + Handle hiding 'todo.org' in main
 
   + Delete 'devel' directory
