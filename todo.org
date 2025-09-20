@@ -21,8 +21,6 @@
     `pdf[0]` varies?
 
 * Merge changes in devel branch
-  + Merge changes from '../devel' into '../buffalo'
-
   + Merge changes from main into devel, testing_..., and devel_testing_...
 
   + Consider renaming columns by copying, then
