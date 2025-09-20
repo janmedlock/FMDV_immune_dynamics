@@ -22,8 +22,6 @@
 * Merge changes in devel branch
   + Consider renaming columns by copying, then
     + Merge 'devel' into 'main' and push to github
-    + Rebase 'devel_testing_fast_computation' onto 'main'
-
-  + Handle hiding 'todo.org' in main
+    + But hide 'todo.org' in main
 
   + Delete 'devel' directory
