@@ -21,7 +21,8 @@
 
 * Merge changes in devel branch
   + Consider renaming columns by copying, then
-    + Merge 'devel' into 'main' and push to github
-    + But hide 'todo.org' in main
+    + Merge devel into main
+    + Hide 'todo.org' in main
+    + Push to github
 
   + Delete 'devel' directory
