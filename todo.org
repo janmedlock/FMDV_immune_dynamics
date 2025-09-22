@@ -1,3 +1,19 @@
+* Save multiple tables in '*.h5' files, one for each script
+  Drop as much from 'h5.py' as possible, although setting the defaults
+  for compression etc seems still useful.
+
+* Save less output, calculate and saved derived output at the end of each run
+  + Only 'simulation_plot.py' uses the raw simulation data:
+    stop saving it for the other scripts.
+  + Only 'acute_plot.py', 'baseline_plot.py', and
+    'susceptibility_null_plot.py' use '*_infected.py':
+    stop saving it for other scripts.
+    + 'susceptibility_null_plot.py' reads from
+      'susceptibility_infected.h5': make it run directly.
+  + No plotting script uses '*_downsampled.h5':
+    Either stop saving it or '*_infected.h5'.
+  + I think dask is then no longer needed: remove it.
+
 * Improve initializing time since entry
   At equilibrium, the distribution of times since entry has
   probability density S(z) / mu, where S(z) is the survival function
