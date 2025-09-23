@@ -103,3 +103,4 @@ def dump(path, key, df, mode='a', **kwargs):
     with HDFStore(path, mode=mode) as store:
         store.put(key, df, **kwargs)
         store.repack()
+        store.set_read_only()
