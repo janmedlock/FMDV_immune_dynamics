@@ -12,6 +12,12 @@ SEED = 0xa70a_8239
 store_path = pathlib.Path(__file__).with_suffix('.h5')
 
 
+def _save_result(store, result):
+    '''Save the raw simulation data.'''
+    common.save_result(store, result,
+                       simulation=True)
+
+
 def run(SAT, store, seed=None):
     '''Run one simulation.'''
     if seed is None:
@@ -19,4 +25,4 @@ def run(SAT, store, seed=None):
     p = herd.Parameters(SAT=SAT)
     result = baseline.run_one(p, seed)
     common.prepend_index_levels(result, SAT=SAT)
-    common.save_result(store, result, simulation=True)
+    _save_result(store, result)

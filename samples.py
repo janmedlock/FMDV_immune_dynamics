@@ -15,11 +15,12 @@ store_path = pathlib.Path(__file__).with_suffix('.h5')
 
 
 def load_samples():
+    '''Load parameter samples.'''
     return herd.samples.load()
 
 
 def _save_result(store, result):
-    '''Only save extinction time.'''
+    '''Save extinction time.'''
     common.save_result(store, result,
                        extinction_time=True)
 

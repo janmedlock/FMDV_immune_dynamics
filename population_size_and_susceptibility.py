@@ -15,15 +15,11 @@ store_path = pathlib.Path(__file__).with_suffix('.h5')
 
 
 def _save_result(store, result):
-    '''Only save extinction time.'''
+    '''Save extinction time.'''
     # If you change this, you must change `_copy_population_size()`
     # and `_copy_susceptibility()` to save matching output.
     common.save_result(store, result,
                        extinction_time=True)
-
-
-def _is_default(module, val):
-    return (module.default == val)
 
 
 def _copy_population_size(store, nruns, SAT,
@@ -55,6 +51,10 @@ def _copy_susceptibility(store, nruns, SAT,
     extinction_time_masked = extinction_time[mask]
     common.insert_index_levels(extinction_time_masked, 3, **kwds)
     store.put('extinction_time', extinction_time_masked)
+
+
+def _is_default(module, val):
+    return (module.default == val)
 
 
 def run(SAT, lost_immunity_susceptibility, population_size, nruns, store,

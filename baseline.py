@@ -13,6 +13,12 @@ import herd
 store_path = pathlib.Path(__file__).with_suffix('.h5')
 
 
+def _save_result(store, result):
+    '''Save infected daily and extinction time.'''
+    common.save_result(store, result,
+                       infected_daily=True, extinction_time=True)
+
+
 def seed_cache(parameters):
     '''Populate the cache.'''
     herd.RandomVariables(parameters)
@@ -60,13 +66,8 @@ def run_many(parameters, nruns, *args, **kwargs):
     return results
 
 
-def _save_result(store, result):
-    '''Only save infected daily and extinction time.'''
-    common.save_result(store, result,
-                       infected_daily=True, extinction_time=True)
-
-
 def run(SAT, nruns, store, _parameters=None, *args, **kwargs):
+    '''Run `nruns` for `SAT`.'''
     if _parameters is None:
         _parameters = {}
     parameters = herd.Parameters(SAT=SAT, **_parameters)

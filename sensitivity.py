@@ -22,7 +22,7 @@ rc = plotting.rc | plotting.rc_text_small | {
 
 
 def _save_result(store, result):
-    '''Only save extinction time.'''
+    '''Save extinction time.'''
     # If you change this, you must change `_copy_baseline()` to
     # save matching output.
     common.save_result(store, result,
