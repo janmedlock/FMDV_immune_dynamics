@@ -9,16 +9,19 @@ import matplotlib.ticker
 import numpy
 import seaborn
 
-import common
 import herd
-import supplemental_materials
+import plotting
 
 
-rc = common.rc | supplemental_materials.rc | {
-    'figure.figsize': (supplemental_materials.WIDTH_MAXIMUM, 4),
-    'axes.spines.right': False,
-    'axes.spines.top': False,
-}
+rc = (
+    plotting.rc
+    | plotting.SupplementalMaterials.rc
+    | {
+        'figure.figsize': (plotting.SupplementalMaterials.WIDTH_MAXIMUM, 4),
+        'axes.spines.right': False,
+        'axes.spines.top': False,
+    }
+)
 
 
 class Base(metaclass=abc.ABCMeta):

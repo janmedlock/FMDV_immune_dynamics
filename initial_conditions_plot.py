@@ -13,13 +13,18 @@ import common
 import herd
 import herd.initial_conditions
 import herd.utility
-import supplemental_materials
+import plotting
 
 
-rc = common.rc | supplemental_materials.rc | common.rc_text_small | {
-    'figure.figsize': (supplemental_materials.WIDTH_MAXIMUM, 4.5),
-    'axes.spines.top': False,
-}
+rc = (
+    plotting.rc
+    | plotting.SupplementalMaterials.rc
+    | plotting.rc_text_small
+    | {
+        'figure.figsize': (plotting.SupplementalMaterials.WIDTH_MAXIMUM, 4.5),
+        'axes.spines.top': False,
+    }
+)
 
 
 def plot_age_density(ICs, ages, ax):
@@ -155,12 +160,12 @@ def plot_SATs(save=True):
             plot_SAT(axes[:, col], SAT, ages)
         fig.align_ylabels()
         (handles, labels) = axes[1, 0].get_legend_handles_labels()
-        labels = map(common.get_state_label, labels)
+        labels = list(map(plotting.get_state_label, labels))
         nrow = 2
         ncol = math.ceil(len(handles) / nrow)
-        common.legend_multicolumn(fig, handles, labels, ncol,
-                                  loc='lower right',
-                                  bbox_to_anchor=(0.95, 0))
+        plotting.legend_multicolumn(fig, handles, labels, ncol,
+                                    loc='lower right',
+                                    bbox_to_anchor=(0.95, 0))
     if save:
         source_path = pathlib.Path(__file__)
         output_path_stem = source_path.with_name(
