@@ -18,11 +18,3 @@
 *** How does `(hazard_infection, newborn_proportion_immune)` in
     `herd.initial_conditions.immune_status.Solver.solve()` change as
     `pdf[0]` varies?
-
-* Merge changes in devel branch
-  + Consider renaming columns by copying, then
-    + Merge devel into main
-    + Hide 'todo.org' in main
-    + Push to github
-
-  + Delete 'devel' directory
