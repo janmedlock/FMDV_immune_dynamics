@@ -1,3 +1,6 @@
+'''Utility functions.'''
+
+
 import numpy
 
 
@@ -26,3 +29,12 @@ def arange(*args, dtype=None, endpoint=False):
                 or ((step < 0) and (val[-1] > stop))):
             val = numpy.hstack((val, stop))
     return val
+
+
+def is_increasing(arr, strict=False, axis=-1):
+    '''Check whether `arr` is increasing along `axis`.'''
+    if strict:
+        test = numpy.greater
+    else:
+        test = numpy.greater_equal
+    return test(numpy.diff(arr, axis=axis), 0).all(axis=axis)

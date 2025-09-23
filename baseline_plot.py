@@ -2,23 +2,25 @@
 '''Build a figure comparing the runs of the SATs. This requires the
 file `baseline.h5`, which is built by `baseline_run.py`.'''
 
-from matplotlib import pyplot, ticker
+import matplotlib.pyplot
+import matplotlib.ticker
 import numpy
 import seaborn
 
 import baseline
-import common
+import h5
+import plotting
 
 
-rc = common.rc | common.rc_text_small | {
-    'figure.figsize': (common.WIDTH_MAXIMUM['double_column'], 3),
+rc = plotting.rc | plotting.rc_text_small | {
+    'figure.figsize': (plotting.WIDTH_MAXIMUM['double_column'], 3),
     'axes.spines.top': False,
 }
 
 
 def load(_module=baseline):
-    infected = common.load_infected(_module.store_path)
-    extinction_time = common.load_extinction_time(_module.store_path)
+    infected = h5.load(_module.store_path, 'infected_daily')
+    extinction_time = h5.load(_module.store_path, 'extinction_time')
     return (infected, extinction_time)
 
 
@@ -30,7 +32,7 @@ def plot_infected(ax, infected, SAT, draft=False):
         i = i.iloc[:, :100]
     # Start time at 0.
     t = i.index - i.index.min()
-    ax.plot(t, i, color=common.SAT_colors[SAT],
+    ax.plot(t, i, color=plotting.SAT_COLORS[SAT],
             alpha=0.15, linewidth=0.5,
             drawstyle='steps-pre', clip_on=False, zorder=4)
     # `i.fillna(0)` gives mean including those that
@@ -59,8 +61,8 @@ def plot_extinction_time(ax, extinction_time, SAT):
     et = extinction_time.loc[SAT]
     e = et.time.copy()
     e[~et.observed] = numpy.nan
-    color = common.SAT_colors[SAT]
-    common.kdeplot(e, ax=ax, color=color, shade=True,
+    color = plotting.SAT_COLORS[SAT]
+    plotting.kdeplot(e, ax=ax, color=color, shade=True,
                    clip_on=False, zorder=4)
     not_extinct = len(e[e.isnull()]) / len(e)
     if not_extinct > 0:
@@ -77,10 +79,10 @@ def plot_extinction_time(ax, extinction_time, SAT):
                     horizontalalignment='right',
                     zorder=4)
     # No y ticks.
-    ax.yaxis.set_major_locator(ticker.NullLocator())
+    ax.yaxis.set_major_locator(matplotlib.ticker.NullLocator())
     # Shared x-axes between SATs.
     if ax.get_subplotspec().is_last_row():
-        ax.set_xlabel(common.TIME_LABEL)
+        ax.set_xlabel(plotting.TIME_LABEL)
     else:
         ax.xaxis.set_tick_params(which='both',
                                  labelbottom=False, labeltop=False)
@@ -98,8 +100,8 @@ def plot(infected, extinction_time,
     height_ratios = (4, 1)
     row_inf = 0
     row_ext = 1
-    with seaborn.axes_style('whitegrid'), pyplot.rc_context(rc=rc):
-        fig = pyplot.figure()
+    with seaborn.axes_style('whitegrid'), matplotlib.pyplot.rc_context(rc=rc):
+        fig = matplotlib.pyplot.figure()
         gs = fig.add_gridspec(nrows, ncols,
                               height_ratios=height_ratios,
                               wspace=0.1, hspace=0.1)
@@ -131,11 +133,17 @@ def plot(infected, extinction_time,
                 ax = axes[row, col]
                 ax.set_xlim(left=0, right=t_max)
                 ax.set_ylim(bottom=0)
-                ax.xaxis.set_major_locator(ticker.MultipleLocator(2))
-                ax.xaxis.set_minor_locator(ticker.AutoMinorLocator(2))
+                ax.xaxis.set_major_locator(
+                    matplotlib.ticker.MultipleLocator(2)
+                )
+                ax.xaxis.set_minor_locator(
+                    matplotlib.ticker.AutoMinorLocator(2)
+                )
                 ax.grid(axis='x', which='minor', visible=True)
                 if row == row_inf:
-                    ax.yaxis.set_major_locator(ticker.MultipleLocator(100))
+                    ax.yaxis.set_major_locator(
+                        matplotlib.ticker.MultipleLocator(100)
+                    )
         # For some reason, aligning the rows and columns works better
         # than aligning all axes.
         fig.align_xlabels(axes[-1, :])
@@ -150,4 +158,4 @@ if __name__ == '__main__':
     DRAFT = False
     (infected, extinction_time) = load()
     plot(infected, extinction_time, draft=DRAFT)
-    pyplot.show()
+    matplotlib.pyplot.show()

@@ -11,52 +11,36 @@ import matplotlib.ticker
 import seaborn
 
 import common
+import h5
+import herd.utility
+import plotting
 import population_size
 import population_size_and_susceptibility
-import supplemental_materials
 import susceptibility
 
 
-rc = common.rc | supplemental_materials.rc | common.rc_text_small | {
-    'figure.figsize': (3.5, 6.5),
-    'pcolor.shading': 'gouraud',
-    'contour.algorithm': 'threaded',
-    'contour.linewidth': 1,
-    'axes.spines.right': False,
-    'axes.spines.top': False,
-}
-
-population_size_label = population_size.label.replace('\n', ' ')
-
-susceptibility_label = susceptibility.label.replace('\n', ' ') \
-                                           .replace('of ', 'of\n')
-
-persistence_label = (
-    f'Proportion persisting {common.TIME_MAX} {common.TIME_UNIT}s'
+rc = (
+    plotting.rc
+    | plotting.SupplementalMaterials.rc
+    | plotting.rc_text_small
+    | {
+        'figure.figsize': (3.5, 6.5),
+        'pcolor.shading': 'gouraud',
+        'contour.algorithm': 'threaded',
+        'contour.linewidth': 1,
+        'axes.spines.right': False,
+        'axes.spines.top': False,
+    }
 )
 
+POPULATION_SIZE_LABEL = population_size.label.replace('\n', ' ')
 
-def load_extinction_time():
-    return common.load_extinction_time(
-        population_size_and_susceptibility.store_path)
+SUSCEPTIBILITY_LABEL = susceptibility.label.replace('\n', ' ') \
+                                           .replace('of ', 'of\n')
 
-
-def get_persistence(dfr):
-    grouper = dfr.groupby(['SAT',
-                           susceptibility.var,
-                           population_size.var])
-    return grouper.apply(common.get_persistence)
-
-
-def fill_missing_persistence(dfr):
-    assert common.is_increasing(dfr.columns, strict=True)
-    # Starting from the left, where there is a missing value, if the
-    # value in the previous column is 1, set the current value to 1.
-    # Skip the first column since it has no previous column.
-    for (col_prev, col_curr) in zip(dfr.columns[:-1], dfr.columns[1:]):
-        to_update = (dfr[col_curr].isnull()
-                     & (dfr[col_prev] == 1))
-        dfr.loc[to_update, col_curr] = 1
+PERSISTENCE_LABEL = (
+    f'Proportion persisting {common.TIME_MAX} {common.TIME_UNIT}s'
+)
 
 
 _LogitNorm = matplotlib.colors.make_norm_from_scale(
@@ -68,27 +52,50 @@ _LogitNorm.__name__ = _LogitNorm.__qualname__ = 'LogitNorm'
 _LogitNorm.__doc__ = 'Logit norm.'
 
 
-def prepend_to_text(s, text):
+def load_extinction_time():
+    return h5.load(population_size_and_susceptibility.store_path,
+                   'extinction_time')
+
+
+def _get_persistence(extinction_time):
+    grouper = extinction_time.groupby(['SAT',
+                                       susceptibility.var,
+                                       population_size.var])
+    return grouper.apply(common.get_persistence)
+
+
+def _fill_missing_persistence(extinction_time):
+    assert herd.utility.is_increasing(extinction_time.columns, strict=True)
+    # Starting from the left, where there is a missing value, if the
+    # value in the previous column is 1, set the current value to 1.
+    # Skip the first column since it has no previous column.
+    for (col_prev, col_curr) in zip(extinction_time.columns[:-1],
+                                    extinction_time.columns[1:]):
+        to_update = (extinction_time[col_curr].isnull()
+                     & (extinction_time[col_prev] == 1))
+        extinction_time.loc[to_update, col_curr] = 1
+
+
+def _prepend_to_text(s, text):
     text.set_text(s + text.get_text())
 
 
-def plot_persistence(dfr, save=True):
+def plot_persistence(extinction_time, save=True):
     contour_levels = [0.01, 0.5, 0.99]
     with seaborn.axes_style('ticks'), matplotlib.pyplot.rc_context(rc=rc):
-        persistence = get_persistence(dfr)
+        persistence = _get_persistence(extinction_time)
         grouper = persistence.groupby('SAT')
         nrows = len(grouper)
         (fig, axes) = matplotlib.pyplot.subplots(
-            nrows=nrows,
-            sharex='col',
+            nrows=nrows, sharex='col',
         )
         for ((SAT, group), ax) in zip(grouper, axes):
             # Move population_size from an index level to columns.
             arr = group.unstack()
-            fill_missing_persistence(arr)
+            _fill_missing_persistence(arr)
             x = arr.columns
             y = arr.index.droplevel('SAT')
-            cmap = common.get_cmap_SAT(SAT)
+            cmap = plotting.get_cmap_SAT(SAT)
             epsilon = 0.01
             vmin = 0 + epsilon
             vmax = 1 - epsilon
@@ -114,12 +121,12 @@ def plot_persistence(dfr, save=True):
             subplotspec = ax.get_subplotspec()
             if subplotspec.is_last_row():
                 ax.set_xscale('log')
-                ax.set_xlabel(population_size_label)
+                ax.set_xlabel(POPULATION_SIZE_LABEL)
                 ax.xaxis.set_major_formatter(
                     matplotlib.ticker.LogFormatter()
                 )
             if ax.get_subplotspec().is_first_col():
-                ax.set_ylabel(susceptibility_label)
+                ax.set_ylabel(SUSCEPTIBILITY_LABEL)
                 ax.yaxis.set_major_locator(
                     matplotlib.ticker.MultipleLocator(0.2)
                 )
@@ -130,15 +137,15 @@ def plot_persistence(dfr, save=True):
                 img,
                 ax=ax,
                 location='right',
-                label=persistence_label,
+                label=PERSISTENCE_LABEL,
                 format=matplotlib.ticker.PercentFormatter(xmax=1),
             )
             cbar.outline.set_edgecolor('none')
             cbar.ax.spines['right'].set_visible(True)
             cbar.minorformatter = matplotlib.ticker.NullFormatter()
             cticklabels = cbar.long_axis.get_ticklabels()
-            prepend_to_text('≤ ', cticklabels[0])
-            prepend_to_text('≥ ', cticklabels[-1])
+            _prepend_to_text('≤ ', cticklabels[0])
+            _prepend_to_text('≥ ', cticklabels[-1])
             cbar.set_ticks(
                 cbar.get_ticks(), labels=cticklabels
             )
@@ -151,6 +158,6 @@ def plot_persistence(dfr, save=True):
 
 
 if __name__ == '__main__':
-    dfr = load_extinction_time()
-    plot_persistence(dfr)
+    extinction_time = load_extinction_time()
+    plot_persistence(extinction_time)
     matplotlib.pyplot.show()

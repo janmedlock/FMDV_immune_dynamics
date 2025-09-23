@@ -4,14 +4,15 @@ parameter sets. This requires the file `samples.h5`, which is built by
 `samples_run.py`.'''
 
 
-from matplotlib import pyplot, ticker
-from matplotlib.backends import backend_pdf
+import matplotlib.backends.backend_pdf
+import matplotlib.pyplot
+import matplotlib.ticker
 import numpy
 import pandas
 import seaborn
 
-import common
-import herd.samples
+import h5
+import plotting
 import samples
 import stats
 
@@ -23,15 +24,17 @@ parameter_name_replacements = {
 
 
 def load():
-    extinction_time = common.load_extinction_time(samples.store_path)
+    extinction_time = h5.load(samples.store_path, 'extinction_time')
     idx_lvls = extinction_time.index.names
     # Load samples and make the rows and columns match
     # `extinction_time`.
-    samples_ = herd.samples.load() \
-                           .rename_axis(index=idx_lvls.difference(['SAT'])) \
-                           .stack('SAT', future_stack=True) \
-                           .reorder_levels(idx_lvls, axis='index') \
-                           .rename(parameter_name_replacements, axis='columns')
+    samples_ = (
+        samples.load_samples()
+        .rename_axis(index=idx_lvls.difference(['SAT']))
+        .stack('SAT', future_stack=True)
+        .reorder_levels(idx_lvls, axis='index')
+        .rename(parameter_name_replacements, axis='columns')
+    )
     # Merge, using `how='inner'` to drop samples where the simulations
     # did not run.
     return samples_.merge(extinction_time,
@@ -53,11 +56,11 @@ def _get_labels(name, rank):
 
 def plot_times(dfr):
     grouper = dfr.groupby('SAT')
-    (fig, ax) = pyplot.subplots()
+    (fig, ax) = matplotlib.pyplot.subplots()
     for (SAT, group) in grouper:
         survival = stats.get_survival(group, 'time', 'observed')
         ax.plot(survival, label=f'SAT{SAT}', drawstyle='steps-post')
-    ax.set_xlabel(common.TIME_LABEL)
+    ax.set_xlabel(plotting.TIME_LABEL)
     ax.set_ylabel('Survival')
     # ax.set_yscale('log')
     # Next smaller power of 10.
@@ -75,7 +78,8 @@ def plot_parameters(dfr, rank=True, marker='.', s=1, alpha=0.6):
     colors = seaborn.color_palette('tab20', 20)
     # Put dark colors first, then light.
     colors = colors[0::2] + colors[1::2]
-    with backend_pdf.PdfPages('samples_parameters.pdf') as pdf:
+    with matplotlib.backends.backend_pdf.PdfPages('samples_parameters.pdf') \
+         as pdf:
         for SAT in SATs:
             X = dfr.loc[(SAT, slice(None)), params]
             X = X.dropna(axis='columns', how='all')
@@ -83,7 +87,7 @@ def plot_parameters(dfr, rank=True, marker='.', s=1, alpha=0.6):
             if rank:
                 X = (X.rank() - 1) / (len(X) - 1)
                 y = (y.rank() - 1) / (len(y) - 1)
-            fig, axes = pyplot.subplots(X.shape[1], 2)
+            fig, axes = matplotlib.pyplot.subplots(X.shape[1], 2)
             for (i, (param, x)) in enumerate(X.items()):
                 color = colors[i]
                 (xlabel, xlabel_resid) = _get_labels(param, rank)
@@ -151,11 +155,14 @@ def plot_sensitivity(dfr, rank=True, errorbars=False):
     colors = Colors()
     width = 390 / 72.27
     height = 0.8 * width
-    rc = common.rc.copy()
-    rc['figure.figsize'] = (width, height)
-    rc['xtick.labelsize'] = rc['ytick.labelsize'] = 7
-    rc['axes.labelsize'] = 8
-    rc['axes.titlesize'] = 9
+    tick_labelsize = 7
+    rc = plotting.rc | {
+        'figure.figsize': (width, height),
+        'xtick.labelsize': tick_labelsize,
+        'ytick.labelsize': 7,
+        'axes.labelsize': 8,
+        'axes.titlesize': 9,
+    }
     rho = pandas.DataFrame(index=params, columns=SATs, dtype=float)
     if errorbars:
         columns = pandas.MultiIndex.from_product((SATs,
@@ -195,8 +202,8 @@ def plot_sensitivity(dfr, rank=True, errorbars=False):
                                .capitalize()
                for p in rho.index]
     ncols = len(SATs)
-    with pyplot.rc_context(rc):
-        fig = pyplot.figure(constrained_layout=True)
+    with matplotlib.pyplot.rc_context(rc):
+        fig = matplotlib.pyplot.figure(constrained_layout=True)
         gs = fig.add_gridspec(1, ncols)
         axes = numpy.empty(ncols, dtype=object)
         axes[0] = None  # Make sharey work for axes[0].
@@ -225,7 +232,7 @@ def plot_sensitivity(dfr, rank=True, errorbars=False):
             ax.set_xlabel(xlabel)
             ax.set_xlim(- xabsmax, xabsmax)
             ax.set_ylim(- 0.5, len(rho) - 0.5)
-            ax.xaxis.set_minor_locator(ticker.AutoMinorLocator(2))
+            ax.xaxis.set_minor_locator(matplotlib.ticker.AutoMinorLocator(2))
             ax.yaxis.set_tick_params(which='both', left=False, right=False,
                                      pad=85)
             ax.set_title(f'SAT{SAT}')
@@ -246,4 +253,4 @@ if __name__ == '__main__':
     # plot_times(dfr)
     # plot_parameters(dfr)
     plot_sensitivity(dfr)
-    pyplot.show()
+    matplotlib.pyplot.show()

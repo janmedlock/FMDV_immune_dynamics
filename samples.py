@@ -1,29 +1,27 @@
 '''Common code for running and plotting the parameter samples.'''
 
 import pathlib
-import warnings
 
-from joblib import delayed, Parallel
-import numpy
+import joblib
 import pandas
 
 import baseline
 import common
-import h5
 import herd
 import herd.samples
 
 
 store_path = pathlib.Path(__file__).with_suffix('.h5')
-samples_path = store_path.with_suffix('')
 
 
-def SAT_path(SAT):
-    return samples_path.joinpath(str(SAT))
+def load_samples():
+    return herd.samples.load()
 
 
-def sample_path(SAT, sample_number):
-    return SAT_path(SAT).joinpath(f'{sample_number}.npy')
+def _save_result(store, result):
+    '''Only save extinction time.'''
+    common.save_result(store, result,
+                       extinction_time=True)
 
 
 def run_one(parameters, sample, sample_number, *args, **kwargs):
@@ -32,83 +30,31 @@ def run_one(parameters, sample, sample_number, *args, **kwargs):
     return baseline.run_one(params, sample_number, *args, **kwargs)
 
 
-def run_one_and_save(parameters, sample, sample_number, path, *args,
-                     **kwargs):
-    '''Run one simulation and save the output.'''
-    if not path.exists():
-        try:
-            dfr = run_one(parameters, sample, sample_number,
-                          *args, **kwargs)
-        except AssertionError as err:
-            path.touch(exist_ok=False)
-            warnings.warn(UserWarning(err))
-        else:
-            # Save the data for this sample.
-            numpy.save(path, dfr.to_records())
+def run_many_chunked(parameters, samples, *args,
+                     chunksize=100, n_jobs=-1, **kwargs):
+    '''Generator to return chunks of many simulation results.'''
+    if chunksize < 1:
+        chunksize = len(samples)
+    starts = range(0, len(samples), chunksize)
+    with joblib.Parallel(n_jobs=n_jobs) as parallel:
+        for start in starts:
+            end = min(start + chunksize, len(samples))
+            runs = range(start, end)
+            results = parallel(
+                joblib.delayed(run_one)(parameters, samples.loc[i], i,
+                                        *args, **kwargs)
+                for i in runs
+            )
+        # Make 'sample' the outer row index.
+        yield pandas.concat(results, keys=runs, names=['sample'],
+                            copy=False)
 
 
-def run(*args, n_jobs=-1, **kwargs):
-    samples = herd.samples.load()
-    parameters = {SAT: herd.Parameters(SAT=SAT)
-                  for SAT in common.SATs}
-    samples_path.mkdir(exist_ok=True)
-    for SAT in common.SATs:
-        SAT_path(SAT).mkdir(exist_ok=True)
-    # For each sample, iterate over the SATs,
-    # i.e. SAT changes fastest.
-    jobs = (delayed(run_one_and_save)(parameters[SAT], sample[SAT],
-                                      sample_number,
-                                      sample_path(SAT, sample_number),
-                                      *args, logging_prefix=f'{SAT=}',
-                                      **kwargs)
-            for (sample_number, sample) in samples.iterrows()
-            for SAT in common.SATs)
-    Parallel(n_jobs=n_jobs)(jobs)
-
-
-def _get_SAT(path):
-    return int(path.name)
-
-
-def _get_sample_number(path):
-    return int(path.stem)
-
-
-def combine(unlink=True):
-    with h5.HDFStore(store_path, mode='a') as store:
-        # (SAT, sample) that are already in `store`.
-        try:
-            store_idx = store.get_index().droplevel('time').unique()
-        except KeyError:
-            store_idx = set()
-        paths_SAT = sorted(samples_path.iterdir(), key=_get_SAT)
-        for path_SAT in paths_SAT:
-            SAT = _get_SAT(path_SAT)
-            paths_sample = sorted(path_SAT.iterdir(), key=_get_sample_number)
-            for path_sample in paths_sample:
-                sample = _get_sample_number(path_sample)
-                if (SAT, sample) not in store_idx:
-                    if path_sample.stat().st_size > 0:
-                        recarray = numpy.load(path_sample)
-                        dfr = pandas.DataFrame.from_records(
-                            recarray,
-                            index='time')
-                        common.prepend_index_levels(dfr, SAT=SAT,
-                                                    sample=sample)
-                        print('Inserting '
-                              + ', '.join((f'SAT={SAT}',
-                                           f'sample={sample}'))
-                              + '.')
-                        store.put(dfr)
-                    else:
-                        print('Empty '
-                              + ', '.join((f'SAT={SAT}',
-                                           f'sample={sample}'))
-                              + '.')
-                if unlink:
-                    path_sample.unlink()
-            if unlink:
-                path_SAT.rmdir()
-        if unlink:
-            samples_path.rmdir()
-    common.set_read_only(store_path)
+def run(SAT, samples, store, *args, **kwargs):
+    parameters = herd.Parameters(SAT=SAT)
+    logging_prefix = f'{SAT=}'
+    chunks = run_many_chunked(parameters, samples, *args,
+                              logging_prefix=logging_prefix, **kwargs)
+    for chunk in chunks:
+        common.prepend_index_levels(chunk, SAT=SAT)
+        _save_result(store, chunk)

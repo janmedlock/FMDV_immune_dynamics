@@ -72,6 +72,11 @@ The scripts ending in `_run.py` run the model simulations.
   baseline values for the other parameters. It produces a file
   called `acute.h5`.
 
+* [susceptibility_null_run.py](susceptibility_null_run.py), for each
+  of the 3 SATs, runs 1,000 simulations with zero susceptibility
+  of the lost-immunity state and using the baseline values for the
+  other parameters. It produces a file called `susceptibility_null.h5`.
+
 * [population_size_run.py](population_size_run.py), for each of the 3
   SATs and for 14 different population sizes, runs 1,000 simulations
   using the baseline values for the other parameters. It produces a
@@ -124,6 +129,12 @@ require having run the simulation scripts above.
   of the simulations with no carrier infections. This requires
   the file `acute.h5`.
 
+* [susceptibility_null_plot.py](susceptibility_null_plot.py) analyzes
+  and plots the results with zero susceptibility of the
+  lost-immunity state to confirm the dynamics are equivalent to the
+  model without the lost-immunity class. This requires the file
+  `susceptibility_null.h5`.
+
 * [population_size_plot.py](population_size_plot.py) analyzes and
   plots the results of varying the population size. This requires the
   file `population_size.h5`.
@@ -131,12 +142,6 @@ require having run the simulation scripts above.
 * [susceptibility_plot.py](susceptibility_plot.py) analyzes and
   plots the results of varying the susceptibility of the lost-immunity
   state. This requires the file `susceptibility.h5`.
-
-  * [susceptibility_null_plot.py](susceptibility_null_plot.py) analyzes
-    and plots the results with zero susceptibility of the
-    lost-immunity state to confirm the dynamics are equivalent to the
-    model without the lost-immunity class. This requires the file
-    `susceptibility.h5`.
 
 * [sensitivity_plot.py](sensitivity_plot.py) plots a summary of the
   persistence for varying either population size or susceptibility of
@@ -159,11 +164,10 @@ In the base directory, besides the scripts for simulation, analysis,
 and plotting, there are helper Python modules for those scripts.
 
 * [common.py](common.py) contains common functions and other
-  definitions, many of which are for plotting.
+  definitions.
 
-	* [supplemental_materials.py](supplemental_materials.py) has a few
-      definitions for plotting used in making the publication
-      supplemental materials.
+* [plotting.py](plotting.py) contains common functions and other
+  definitions for plotting.
 
 * [h5.py](h5.py) implements reading and writing the HDF5 files used for
   storing simulation output.
@@ -189,6 +193,10 @@ and plotting, there are helper Python modules for those scripts.
   [acute_run.py](acute_run.py) and
   [acute_plot.py](acute_plot.py).
 
+* [susceptibility_null.py](susceptibility_null.py) has common code
+  used by [susceptibility_null_run.py](susceptibility_null_run.py)
+  and [susceptibility_null_plot.py](susceptibility_null_plot.py).
+
 * [population_size.py](population_size.py) has common code used by
   [population_size_run.py](population_size_run.py) and
   [population_size_plot.py](population_size_plot.py).
@@ -196,10 +204,6 @@ and plotting, there are helper Python modules for those scripts.
 * [susceptibility.py](susceptibility.py) has common code used by
   [susceptibility_run.py](susceptibility_run.py) and
   [susceptibility_plot.py](susceptibility_plot.py).
-
-	* [susceptibility_null.py](susceptibility_null.py) has common code
-      used by [susceptibility_null_run.py](susceptibility_null_run.py)
-      and [susceptibility_null_plot.py](susceptibility_null_plot.py).
 
 * [population_size_and_susceptibility.py](population_size_and_susceptibility.py)
   has common code used by
@@ -253,9 +257,6 @@ the test scripts to import from [herd](herd).
 * [solver_check.py](test/solver_check.py) checks the consistency of
   the solver for the initial conditions, plots block structure of the
   solver matrix, and plots a solution.
-
-* [h5_check.py](test/h5_check.py) checks the simulation output files for
-  consistency.
 
 * [force_of_infection.ipynb](test/force_of_infection.ipynb) is a
   [Jupyter](https://jupyter.org/) notebook that runs one short

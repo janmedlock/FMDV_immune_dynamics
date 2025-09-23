@@ -3,14 +3,14 @@
 
 import time
 
-from matplotlib import pyplot
+import matplotlib.pyplot
 
 from context import baseline
 from context import herd
 
 
-def make_plot(data, show=True):
-    (fig, axes) = pyplot.subplots()
+def make_plot(data):
+    (fig, axes) = matplotlib.pyplot.subplots()
     for (name, ser) in data.items():
         axes.plot(ser, label=name,
                   drawstyle='steps-pre',
@@ -18,8 +18,6 @@ def make_plot(data, show=True):
     axes.set_xlabel(data.index.name)
     axes.set_ylabel('number')
     axes.legend(loc='center right')
-    if show:
-        pyplot.show()
     return fig
 
 
@@ -35,3 +33,4 @@ if __name__ == '__main__':
     print(f'Run time: {t} seconds.')
 
     make_plot(data)
+    matplotlib.pyplot.show()

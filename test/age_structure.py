@@ -1,10 +1,10 @@
 #!/usr/bin/python3
 '''Plot the stable age distribution.'''
 
-from joblib import delayed, Parallel
-from matplotlib import pyplot
+import joblib
+import matplotlib.pyplot
 import numpy
-from scipy.integrate import quad
+import scipy
 
 from context import common
 from context import herd
@@ -25,14 +25,18 @@ def get_age_structure(ages, start_time):
 
 
 def get_age_structures(ages, start_times):
-    with Parallel(n_jobs=N_JOBS) as parallel:
-        return parallel(delayed(get_age_structure)(ages, start_time)
-                        for start_time in start_times)
+    with joblib.Parallel(n_jobs=N_JOBS) as parallel:
+        return parallel(
+            joblib.delayed(get_age_structure)(ages, start_time)
+            for start_time in start_times
+        )
 
 
-def plot_age_structures(age_structures, show=True):
-    mortality_sf_scale, _ = quad(herd.mortality.sf, ages[0], ages[-1])
-    (fig, ax) = pyplot.subplots()
+def plot_age_structures(age_structures):
+    mortality_sf_scale, _ = scipy.integrate.quad(
+        herd.mortality.sf, ages[0], ages[-1]
+    )
+    (fig, ax) = matplotlib.pyplot.subplots()
     for (start_time, age_structure) in zip(start_times, age_structures):
         ax.plot(ages, age_structure,
                 label='{:g} months'.format(12 * start_time),
@@ -44,11 +48,10 @@ def plot_age_structures(age_structures, show=True):
     ax.set_ylabel('density (y$^{-1}$)')
     ax.legend(title='start time')
     fig.tight_layout()
-    if show:
-        pyplot.show()
     return ax
 
 
 if __name__ == '__main__':
     age_structures = get_age_structures(ages, start_times)
     plot_age_structures(age_structures)
+    matplotlib.pyplot.show()

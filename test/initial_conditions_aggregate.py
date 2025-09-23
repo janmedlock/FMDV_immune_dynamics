@@ -2,13 +2,14 @@
 '''Plot the model initial condititions. This is similar to
 `initial_conditions.py`, but uses more explicit calculations.'''
 
-from matplotlib import pyplot
+import matplotlib.pyplot
 import numpy
 import pandas
 import scipy
 
 from context import common
 from context import herd
+from context import plotting
 import herd.initial_conditions
 import herd.mortality
 import herd.utility
@@ -45,7 +46,7 @@ def sum_over_immune_state(X):
 
 def plot_integral_over_age(p):
     P = integrate_over_age(p)
-    (fig, ax) = pyplot.subplots(constrained_layout=True)
+    (fig, ax) = matplotlib.pyplot.subplots(constrained_layout=True)
     y = P / P.sum()
     x = range(len(y.columns))
     bottom = numpy.zeros(len(y.columns))
@@ -77,8 +78,8 @@ def plot_probability_constant_birth(p):
     ages = p.index
     # Group by SAT
     grouper = p.T.groupby(level=0)
-    (fig, axes) = pyplot.subplots(len(grouper),
-                                  sharex=True)
+    (fig, axes) = matplotlib.pyplot.subplots(len(grouper),
+                                             sharex=True)
     for (ax, (SAT, group)) in zip(axes, grouper):
         collection = ax.stackplot(ages, group, labels=p.columns)
         ax.set_ylabel(f'SAT{SAT}\nconstant-birth\ndensity')
@@ -88,8 +89,8 @@ def plot_probability_constant_birth(p):
     immune_statuses = p.columns.levels[1]
     nrow = 2
     ncol = (len(immune_statuses) + nrow - 1) // nrow
-    common.legend_multicolumn(fig, collection, immune_statuses, ncol,
-                              loc='lower center')
+    plotting.legend_multicolumn(fig, collection, immune_statuses, ncol,
+                                loc='lower center')
     return fig
 
 
@@ -99,8 +100,8 @@ def plot_conditional_probability(p):
     ages = p.index
     # Group by SAT
     grouper = p.T.groupby(level=0)
-    (fig, axes) = pyplot.subplots(len(grouper),
-                                  sharex=True)
+    (fig, axes) = matplotlib.pyplot.subplots(len(grouper),
+                                             sharex=True)
     for (ax, (SAT, group)) in zip(axes, grouper):
         Y = group.divide(sum_over_immune_state(group),
                          level=0)
@@ -112,8 +113,8 @@ def plot_conditional_probability(p):
     immune_statuses = p.columns.levels[1]
     nrow = 2
     ncol = (len(immune_statuses) + nrow - 1) // nrow
-    common.legend_multicolumn(fig, collection, immune_statuses, ncol,
-                              loc='lower center')
+    plotting.legend_multicolumn(fig, collection, immune_statuses, ncol,
+                                loc='lower center')
     return fig
 
 
@@ -143,4 +144,4 @@ if __name__ == '__main__':
     # plot_sum_over_immune_state(p)
     plot_probability_constant_birth(p)
     plot_conditional_probability(p)
-    pyplot.show()
+    matplotlib.pyplot.show()

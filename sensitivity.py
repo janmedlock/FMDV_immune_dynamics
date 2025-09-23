@@ -12,59 +12,66 @@ import baseline
 import common
 import h5
 import herd
+import plotting
 import stats
 
 
-rc = common.rc | common.rc_text_small | {
-    'figure.figsize': (common.WIDTH_MAXIMUM['double_column'], 4),
+rc = plotting.rc | plotting.rc_text_small | {
+    'figure.figsize': (plotting.WIDTH_MAXIMUM['double_column'], 4),
 }
 
 
-def _copy_runs(hdfstore_out, nruns, SAT, **kwds):
+def _save_result(store, result):
+    '''Only save extinction time.'''
+    # If you change this, you must change `_copy_baseline()` to
+    # save matching output.
+    common.save_result(store, result,
+                       extinction_time=True)
+
+
+def _copy_baseline(store, nruns, SAT, **kwds):
     '''Copy the data from 'baseline.h5'.'''
-    where = ' & '.join((f'{SAT=}',
-                        f'run<{nruns}'))
-    with h5.HDFStore(baseline.store_path, mode='r') as hdfstore_in:
-        for chunk in hdfstore_in.select(where=where, iterator=True):
-            common.insert_index_levels(chunk, 2, **kwds)
-            hdfstore_out.put(chunk)
+    extinction_time = h5.load(baseline.store_path, 'extinction_time')
+    index = extinction_time.index.to_frame()
+    mask = (
+        (index['SAT'] == SAT)
+        & (index['run'] < nruns)
+    )
+    extinction_time_masked = extinction_time[mask]
+    common.insert_index_levels(extinction_time_masked, 2, **kwds)
+    store.put('extinction_time', extinction_time_masked)
 
 
-def _run(module, SAT, val, nruns, hdfstore, *args, **kwargs):
+def _run(module, SAT, val, nruns, store, *args, **kwargs):
     parameters_kwds = {
         'SAT': SAT,
         module.var: val,
     }
     if val == module.default:
-        _copy_runs(hdfstore, nruns, **parameters_kwds)
+        _copy_baseline(store, nruns, **parameters_kwds)
     else:
         parameters = herd.Parameters(**parameters_kwds)
         logging_prefix = common.get_logging_prefix(**parameters_kwds)
         chunks = baseline.run_many_chunked(parameters, nruns, *args,
                                            logging_prefix=logging_prefix,
                                            **kwargs)
-        for dfr in chunks:
-            common.prepend_index_levels(dfr, **parameters_kwds)
-            hdfstore.put(dfr)
+        for chunk in chunks:
+            common.prepend_index_levels(chunk, **parameters_kwds)
+            _save_result(store, chunk)
 
 
 def run(module, nruns, *args, **kwargs):
     '''Run simulations varying the parameter in `module`.'''
-    with h5.HDFStore(module.store_path) as hdfstore:
+    with h5.HDFStore(module.store_path) as store:
         for SAT in common.SATs:
             for val in module.values:
-                _run(module, SAT, val, nruns, hdfstore, *args, **kwargs)
-        hdfstore.repack()
-    common.set_read_only(module.store_path)
+                _run(module, SAT, val, nruns, store, *args, **kwargs)
+        store.repack()
+        store.set_read_only()
 
 
-def _get_proportion_observed_one(grp):
-    return sum(grp.observed) / len(grp)
-
-
-def get_proportion_observed(dfr, by_var):
-    grouper = dfr.groupby(by_var)
-    return grouper.apply(_get_proportion_observed_one)
+def load(module):
+    return h5.load(module.store_path, 'extinction_time')
 
 
 def _get_density_one(grp, time):
@@ -89,26 +96,22 @@ def get_density(dfr, by_var, time):
                             columns=time)
 
 
-def load_extinction_time(module):
-    return common.load_extinction_time(module.store_path)
-
-
-def plot_median(module, df, CI=0.5):
+def plot_median(module, extinction_time, CI=0.5):
     levels = [CI / 2, 1 - CI / 2]
     with seaborn.axes_style('darkgrid'):
         (fig, axes) = matplotlib.pyplot.subplots(3, 1, sharex=True)
         idx_mid = len(axes) // 2
-        for ((SAT, group), ax) in zip(df.groupby('SAT'), axes):
+        for ((SAT, group), ax) in zip(extinction_time.groupby('SAT'), axes):
             times = group.groupby(module.var).time
             median = times.median()
             ax.plot(median, median.index,
-                    color=common.SAT_colors[SAT])
+                    color=plotting.SAT_COLORS[SAT])
             CI_ = times.quantile(levels).unstack()
             ax.fill_betweenx(CI_.index, CI_[levels[0]], CI_[levels[1]],
-                             color=common.SAT_colors[SAT],
+                             color=plotting.SAT_COLORS[SAT],
                              alpha=0.5)
             ax.set_xlim(left=0)
-            ax.set_xlabel(f'extinction {common.TIME_LABEL.lower()}')
+            ax.set_xlabel(f'extinction {plotting.TIME_LABEL.lower()}')
             if module.log:
                 ax.set_yscale('log')
             subplotspec = ax.get_subplotspec()
@@ -123,9 +126,9 @@ def plot_median(module, df, CI=0.5):
         fig.tight_layout()
 
 
-def plot_survival(module, df):
+def plot_survival(module, extinction_time):
     (fig, axes) = matplotlib.pyplot.subplots(3, 1, sharex=True)
-    for ((SAT, group), ax) in zip(df.groupby('SAT'), axes):
+    for ((SAT, group), ax) in zip(extinction_time.groupby('SAT'), axes):
         for (idx, g) in group.groupby(module.var):
             survival = stats.get_survival(g, 'time', 'observed')
             ax.plot(survival.index, survival,
@@ -133,19 +136,19 @@ def plot_survival(module, df):
                     drawstyle='steps-post')
 
 
-def plot_kde(module, df):
+def plot_kde(module, extinction_time):
     with seaborn.axes_style('darkgrid'):
         (fig, axes) = matplotlib.pyplot.subplots(3, 1, sharex='col')
-        for ((SAT, group), ax) in zip(df.groupby('SAT'), axes):
+        for ((SAT, group), ax) in zip(extinction_time.groupby('SAT'), axes):
             subplotspec = ax.get_subplotspec()
             for (s, g) in group.groupby(module.var):
                 e = g.time.copy()
                 e[~g.observed] = numpy.nan
                 label = f'{s:g}' if subplotspec.is_first_row() else ''
-                common.kdeplot(e, label=label, ax=ax,
-                               shade=False, clip_on=False)
+                plotting.kdeplot(e, label=label, ax=ax,
+                                 shade=False, clip_on=False)
             if subplotspec.is_last_row():
-                ax.set_xlabel(f'extinction {common.TIME_LABEL.lower()}')
+                ax.set_xlabel(f'extinction {plotting.TIME_LABEL.lower()}')
                 ax.set_xlim(left=0)
             ax.yaxis.set_major_locator(matplotlib.ticker.NullLocator())
             ax.set_ylabel(f'SAT{SAT}\ndensity')
@@ -154,32 +157,33 @@ def plot_kde(module, df):
         fig.tight_layout(rect=(0, 0, 0.82, 1))
 
 
-def plot_kde_2d(module, df, save=True):
-    vals = df.index \
-             .get_level_values(module.var) \
-             .unique() \
-             .sort_values()
-    extinction_time = numpy.linspace(0, common.TIME_MAX, 301)
+def plot_kde_2d(module, extinction_time, save=True):
+    vals = (
+        extinction_time.index
+        .get_level_values(module.var)
+        .unique()
+        .sort_values()
+    )
+    times = numpy.linspace(0, common.TIME_MAX, 301)
     with seaborn.axes_style('ticks'), matplotlib.pyplot.rc_context(rc=rc):
-        grouper_SAT = df.groupby('SAT')
+        grouper_SAT = extinction_time.groupby('SAT')
         ncols = len(grouper_SAT)
         (fig, axes) = matplotlib.pyplot.subplots(
             2, ncols,
             sharex='col', sharey='row',
-            gridspec_kw=dict(height_ratios=(3, 1)))
+            gridspec_kw={'height_ratios': (3, 1)})
         for ((SAT, group_SAT), axes_col) in zip(grouper_SAT, axes.T):
-            proportion_observed = get_proportion_observed(group_SAT,
-                                                          module.var)
-            density = get_density(group_SAT, module.var,
-                                  extinction_time)
+            persistence = (
+                group_SAT.groupby(module.var)
+                .apply(common.get_persistence)
+            )
+            density = get_density(group_SAT, module.var, times)
             ax = axes_col[0]
-            cmap = common.get_cmap_SAT(SAT)
-            extent=(min(vals), max(vals),
-                    min(extinction_time), max(extinction_time)),
+            cmap = plotting.get_cmap_SAT(SAT)
             # Use `density` to set the color range.
             vmax = density.max().max()
             # Plot `density * proportion_observed`.
-            arr = density.T * proportion_observed
+            arr = density.T * (1 - persistence)
             ax.pcolormesh(arr.columns, arr.index, arr,
                           cmap=cmap, vmin=0, vmax=vmax,
                           shading='gouraud')
@@ -188,13 +192,13 @@ def plot_kde_2d(module, df, save=True):
             ax.set_xlim(min(vals), max(vals))
             ax.set_title(f'SAT{SAT}')
             if ax.get_subplotspec().is_first_col():
-                ax.set_xlabel(f'extinction {common.TIME_LABEL.lower()}')
+                ax.set_xlabel(f'extinction {plotting.TIME_LABEL.lower()}')
                 ax.yaxis.set_major_locator(
-                    matplotlib.ticker.MultipleLocator(
-                        max(extinction_time) / 5))
+                    matplotlib.ticker.MultipleLocator(common.TIME_MAX / 5)
+                )
             ax_po = axes_col[-1]
-            ax_po.plot(1 - proportion_observed,
-                       color=common.SAT_colors[SAT],
+            ax_po.plot(persistence,
+                       color=plotting.SAT_COLORS[SAT],
                        clip_on=False, zorder=3)
             if module.log:
                 ax_po.set_xscale('log')
@@ -216,7 +220,6 @@ def plot_kde_2d(module, df, save=True):
                 ax.spines[sp].set_visible(False)
         fig.align_xlabels(axes[-1, :])
         fig.align_ylabels(axes[:, 0])
-        fig.tight_layout()
         if save:
             for suffix in ('.pdf', '.png'):
                 fig.savefig(module.store_path.with_suffix(suffix))

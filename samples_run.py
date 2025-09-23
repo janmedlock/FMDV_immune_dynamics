@@ -4,6 +4,7 @@ estimates, run 1 simulation. This produces a file called
 `samples.h5`.'''
 
 import common
+import h5
 import samples
 
 
@@ -11,5 +12,9 @@ if __name__ == '__main__':
     N_JOBS = -1
 
     common.nice_self()
-    samples.run(n_jobs=N_JOBS)
-    samples.combine(unlink=True)
+    parameter_samples = samples.load_samples()
+    with h5.HDFStore(samples.store_path) as store:
+        for SAT in common.SATs:
+            samples.run(SAT, parameter_samples[SAT], store, n_jobs=N_JOBS)
+        store.repack()
+        store.set_read_only()

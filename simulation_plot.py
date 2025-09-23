@@ -7,27 +7,31 @@ import matplotlib.pyplot
 import matplotlib.ticker
 import seaborn
 
-import common
 import h5
+import plotting
 import simulation
-import supplemental_materials
 
 
-rc = common.rc | supplemental_materials.rc | common.rc_text_small | {
-    'figure.figsize': (supplemental_materials.WIDTH_MAXIMUM, 7),
-    'axes.spines.top': False,
-}
+rc = (
+    plotting.rc
+    | plotting.SupplementalMaterials.rc
+    | plotting.rc_text_small
+    | {
+        'figure.figsize': (plotting.SupplementalMaterials.WIDTH_MAXIMUM, 7),
+        'axes.spines.top': False,
+    }
+)
 
 
 def load():
-    return h5.load(simulation.store_path)
+    return h5.load(simulation.store_path, 'simulation')
 
 
 def plot_one(ax, SAT, group):
     time = group.index.get_level_values('time')
     t = time - time.min()
     for (name, ser) in group.items():
-        ax.plot(t, ser, label=common.get_state_label(name),
+        ax.plot(t, ser, label=plotting.get_state_label(name),
                 drawstyle='steps-pre',
                 alpha=0.9, linewidth=1, zorder=3)
     ax.annotate(f'SAT{SAT}',
@@ -37,7 +41,7 @@ def plot_one(ax, SAT, group):
                 verticalalignment='center')
     ax.set_ylabel('Number')
     if ax.get_subplotspec().is_last_row():
-        ax.set_xlabel(common.TIME_LABEL)
+        ax.set_xlabel(plotting.TIME_LABEL)
         ax.margins(x=0)
         ax.xaxis.set_major_locator(
             matplotlib.ticker.MultipleLocator(1)
@@ -49,9 +53,9 @@ def plot_one(ax, SAT, group):
         (handles, labels) = ax.get_legend_handles_labels()
         nrow = 2
         ncol = math.ceil(len(handles) / nrow)
-        common.legend_multicolumn(ax, handles, labels, ncol,
-                                  loc='upper center',
-                                  bbox_to_anchor=(0.5, -0.25))
+        plotting.legend_multicolumn(ax, handles, labels, ncol,
+                                    loc='upper center',
+                                    bbox_to_anchor=(0.5, -0.25))
 
 
 def plot_SATs(data, save=True):

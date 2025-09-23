@@ -1,11 +1,12 @@
 #!/usr/bin/python3
 '''Plot the model initial condititions.'''
 
-from matplotlib import pyplot
+import matplotlib.pyplot
 import numpy
 
 from context import common
 from context import herd
+from context import plotting
 import herd.initial_conditions
 import herd.utility
 
@@ -55,7 +56,7 @@ def plot_ICs(SAT):
     parameters = herd.Parameters(SAT=SAT)
     ICs = herd.initial_conditions.gen(parameters)
     ages = herd.utility.arange(0, 20, 0.1, endpoint=True)
-    (fig, axes) = pyplot.subplots(4, 1, sharex=True)
+    (fig, axes) = matplotlib.pyplot.subplots(4, 1, sharex=True)
     plot_fcns = (plot_probability_constant_birth,
                  plot_conditional_probability,
                  plot_probability,
@@ -70,11 +71,11 @@ def plot_ICs(SAT):
     (handles, labels) = axes[0].get_legend_handles_labels()
     nrow = 2
     ncol = (len(labels) + nrow - 1) // nrow
-    common.legend_multicolumn(fig, handles, labels, ncol,
-                              loc='lower center')
+    plotting.legend_multicolumn(fig, handles, labels, ncol,
+                                loc='lower center')
 
 
 if __name__ == '__main__':
     for SAT in common.SATs:
         plot_ICs(SAT)
-    pyplot.show()
+    matplotlib.pyplot.show()

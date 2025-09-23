@@ -10,9 +10,9 @@ import susceptibility
 
 
 if __name__ == '__main__':
-    df = sensitivity.load_extinction_time(susceptibility)
-    # sensitivity.plot_median(susceptibility, df)
-    # sensitivity.plot_survival(susceptibility, df)
-    # sensitivity.plot_kde(susceptibility, df)
-    sensitivity.plot_kde_2d(susceptibility, df)
+    extinction_time = sensitivity.load(susceptibility)
+    # sensitivity.plot_median(susceptibility, extinction_time)
+    # sensitivity.plot_survival(susceptibility, extinction_time)
+    # sensitivity.plot_kde(susceptibility, extinction_time)
+    sensitivity.plot_kde_2d(susceptibility, extinction_time)
     matplotlib.pyplot.show()

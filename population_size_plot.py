@@ -10,9 +10,9 @@ import sensitivity
 
 
 if __name__ == '__main__':
-    df = sensitivity.load_extinction_time(population_size)
-    # sensitivity.plot_median(population_size, df)
-    # sensitivity.plot_survival(population_size, df)
-    # sensitivity.plot_kde(population_size, df)
-    sensitivity.plot_kde_2d(population_size, df)
+    extinction_time = sensitivity.load(population_size)
+    # sensitivity.plot_median(population_size, extinction_time)
+    # sensitivity.plot_survival(population_size, extinction_time)
+    # sensitivity.plot_kde(population_size, extinction_time)
+    sensitivity.plot_kde_2d(population_size, extinction_time)
     matplotlib.pyplot.show()

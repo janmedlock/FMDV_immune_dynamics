@@ -2,14 +2,26 @@
 '''Run many simulations.'''
 
 import itertools
+import pathlib
+import sys
 import time
 
-from matplotlib import pyplot
+import matplotlib.pyplot
 import pandas
 import seaborn
 
 from context import baseline
 from context import herd
+
+
+def run_many(parameters, nruns):
+    # Add the parent directory to `sys.path`
+    # so that `joblib.Parallel()` can find `herd`.
+    path = pathlib.Path(__file__).parents[1]
+    sys.path.append(str(path))
+    data = baseline.run_many(parameters, nruns)
+    sys.path.pop()
+    return data
 
 
 def get_mean(data):
@@ -25,8 +37,8 @@ def get_mean(data):
     return data_mean.div(persisting, axis=0)
 
 
-def make_plots(data, show=True):
-    (fig, axes) = pyplot.subplots(6, sharex=True)
+def make_plots(data):
+    (fig, axes) = matplotlib.pyplot.subplots(data.shape[1], sharex=True)
     colors = itertools.cycle(seaborn.color_palette('husl', 8))
     for (i, color) in zip(data.index.levels[0], colors):
         data_i = data.loc[i]
@@ -43,8 +55,6 @@ def make_plots(data, show=True):
         ylim = axes_.get_ylim()
         if ylim[0] < 0:
             axes_.set_ylim(ymin=0)
-    if show:
-        pyplot.show()
     return fig
 
 
@@ -52,10 +62,11 @@ if __name__ == '__main__':
     SAT = 1
     NRUNS = 100
 
-    p = herd.Parameters(SAT=SAT)
+    parameters = herd.Parameters(SAT=SAT)
     t0 = time.time()
-    data = baseline.run_many(p, NRUNS)
+    data = run_many(parameters, NRUNS)
     t = time.time() - t0
     print(f'Run time: {t} seconds.')
 
     make_plots(data)
+    matplotlib.pyplot.show()

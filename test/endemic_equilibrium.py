@@ -4,12 +4,14 @@ at the endemic equilibrium.'''
 
 from context import common
 from context import herd
-from herd.initial_conditions.immune_status.solver import get_equilibrium
+import herd.initial_conditions.immune_status.solver
 
 
 def get_equilibria():
     return {
-        SAT: get_equilibrium(herd.Parameters(SAT=SAT))
+        SAT: herd.initial_conditions.immune_status.solver.get_equilibrium(
+            herd.Parameters(SAT=SAT)
+        )
         for SAT in common.SATs
     }
 

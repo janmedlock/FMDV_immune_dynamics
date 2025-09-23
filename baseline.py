@@ -3,7 +3,7 @@ values.'''
 
 import pathlib
 
-from joblib import delayed, Parallel
+import joblib
 import pandas
 
 import common
@@ -33,15 +33,17 @@ def run_many_chunked(parameters, nruns, *args,
         chunksize = nruns
     seed_cache(parameters)
     starts = range(0, nruns, chunksize)
-    for start in starts:
-        end = min(start + chunksize, nruns)
-        runs = range(start, end)
-        results = Parallel(n_jobs=n_jobs)(
-            delayed(run_one)(parameters, i, *args, **kwargs)
-            for i in runs)
-        # Make 'run' the outer row index.
-        yield pandas.concat(results, keys=runs, names=['run'],
-                            copy=False)
+    with joblib.Parallel(n_jobs=n_jobs) as parallel:
+        for start in starts:
+            end = min(start + chunksize, nruns)
+            runs = range(start, end)
+            results = parallel(
+                joblib.delayed(run_one)(parameters, i, *args, **kwargs)
+                for i in runs
+            )
+            # Make 'run' the outer row index.
+            yield pandas.concat(results, keys=runs, names=['run'],
+                                copy=False)
 
 
 def run_many(parameters, nruns, *args, **kwargs):
@@ -58,13 +60,19 @@ def run_many(parameters, nruns, *args, **kwargs):
     return results
 
 
-def run(SAT, nruns, hdfstore, _parameters=None, *args, **kwargs):
+def _save_result(store, result):
+    '''Only save infected daily and extinction time.'''
+    common.save_result(store, result,
+                       infected_daily=True, extinction_time=True)
+
+
+def run(SAT, nruns, store, _parameters=None, *args, **kwargs):
     if _parameters is None:
         _parameters = {}
     parameters = herd.Parameters(SAT=SAT, **_parameters)
     logging_prefix = f'{SAT=}'
     chunks = run_many_chunked(parameters, nruns, *args,
                               logging_prefix=logging_prefix, **kwargs)
-    for dfr in chunks:
-        common.prepend_index_levels(dfr, SAT=SAT)
-        hdfstore.put(dfr)
+    for chunk in chunks:
+        common.prepend_index_levels(chunk, SAT=SAT)
+        _save_result(store, chunk)

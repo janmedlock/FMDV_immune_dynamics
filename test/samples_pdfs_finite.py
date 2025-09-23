@@ -5,14 +5,15 @@ finite.'''
 
 from context import common
 from context import herd
-from herd.initial_conditions.immune_status import solver
+import herd.initial_conditions.immune_status.solver
 import herd.samples
 
 
 def test_sample(parameters, sample, sat, idx, debug=False):
     print(f'{sat=}, {idx=}')
     params = parameters.merge(**sample)
-    slvr = solver.Solver(params, debug=debug)
+    slvr = herd.initial_conditions.immune_status.solver.Solver(params,
+                                                               debug=debug)
     # This was failing because some pdf(0) = infinity, i.e. gamma with
     # shape < 1, but it should work for all now.
     slvr.get_A()

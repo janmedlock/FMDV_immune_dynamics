@@ -13,4 +13,4 @@ if __name__ == '__main__':
         for SAT in common.SATs:
             acute.run(SAT, common.NRUNS, store)
         store.repack()
-    common.set_read_only(acute.store_path)
+        store.set_read_only()

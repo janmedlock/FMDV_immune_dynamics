@@ -10,13 +10,14 @@ import numpy
 import seaborn
 
 import common
+import plotting
 import population_size
 import sensitivity
 import susceptibility
 
 
-rc = common.rc | common.rc_text_small | {
-    'figure.figsize': (common.WIDTH_MAXIMUM['double_column'], 4),
+rc = plotting.rc | plotting.rc_text_small | {
+    'figure.figsize': (plotting.WIDTH_MAXIMUM['double_column'], 4),
 }
 
 
@@ -25,33 +26,37 @@ MODULES = (population_size, susceptibility)
 
 def load():
     return [
-        sensitivity.load_extinction_time(module)
+        sensitivity.load(module)
         for module in MODULES
     ]
 
 
-def plot_persistence(dfs, save=True, show=True):
+def plot_persistence(extinction_times, save=True):
     with seaborn.axes_style('ticks'), matplotlib.pyplot.rc_context(rc=rc):
-        fig = None
-        ncols = len(dfs)
-        for (col, (df, module)) in enumerate(zip(dfs, MODULES)):
-            grouper_SAT = df.groupby('SAT')
+        (fig, axes) = (None, None)
+        ncols = len(extinction_times)
+        for (col, (extinction_time, module)) in enumerate(
+                zip(extinction_times, MODULES)
+        ):
+            grouper_SAT = extinction_time.groupby('SAT')
             if fig is None:
                 nrows = len(grouper_SAT)
                 (fig, axes) = matplotlib.pyplot.subplots(
                     nrows, ncols,
                     sharex='col', sharey='row',
                 )
-            vals = df.index \
+            vals = extinction_time.index \
                      .get_level_values(module.var) \
                      .unique() \
                      .sort_values()
             for ((SAT, group_SAT), ax) in zip(grouper_SAT, axes[:, col]):
-                proportion_observed = sensitivity.get_proportion_observed(
-                    group_SAT, module.var
+                persistence = (
+                    group_SAT.groupby(module.var)
+                    .apply(common.get_persistence)
                 )
+                proportion_observed = 1 - persistence
                 ax.plot(1 - proportion_observed,
-                        color=common.SAT_colors[SAT],
+                        color=plotting.SAT_COLORS[SAT],
                         clip_on=False, zorder=3)
                 subplotspec = ax.get_subplotspec()
                 if subplotspec.is_last_row():
@@ -122,11 +127,10 @@ def plot_persistence(dfs, save=True, show=True):
             )
             for suffix in ('.pdf', '.png'):
                 fig.savefig(output_path_stem.with_suffix(suffix))
-        if show:
-            matplotlib.pyplot.show()
         return fig
 
 
 if __name__ == '__main__':
-    dfs = load()
-    plot_persistence(dfs)
+    extinction_times = load()
+    plot_persistence(extinction_times)
+    matplotlib.pyplot.show()

@@ -2,11 +2,11 @@
 '''Time the Floquet solver.'''
 
 import subprocess
-from time import perf_counter, process_time
+import time
 
-from matplotlib import pyplot
+import matplotlib.pyplot
 import numpy
-from scipy.integrate import quad
+import scipy
 
 # Rebuild the 'monodromy' module, if necessary.
 subprocess.run(['make'], cwd='../herd/floquet', check=True)
@@ -25,7 +25,7 @@ def find_stable_age_structure(parameters, fast=False):
     _find_dominant_eigen = herd.floquet.floquet._find_dominant_eigen
     herd.floquet.floquet._find_dominant_eigen = _find_dominant_eigen.func
     try:
-        t0, p0 = perf_counter(), process_time()
+        t0, p0 = time.perf_counter(), time.process_time()
         if fast:
             birth_scaling = 0.9378975738425385
             r, v, ages = herd.floquet.floquet._find_dominant_eigen(
@@ -38,7 +38,7 @@ def find_stable_age_structure(parameters, fast=False):
                 cache_parameters,
                 herd.floquet.floquet._step_default,
                 herd.floquet.floquet._age_max_default)
-        t1, p1 = perf_counter(), process_time()
+        t1, p1 = time.perf_counter(), time.process_time()
     finally:
         # Restore caching version of `_find_dominant_eigen`.
         herd.floquet.floquet._find_dominant_eigen = _find_dominant_eigen
@@ -54,12 +54,14 @@ def find_stable_age_structure(parameters, fast=False):
 
 
 def plot(ages, stable_age_structure):
-    fig, ax = pyplot.subplots()
+    fig, ax = matplotlib.pyplot.subplots()
     age_max = 25
     which = (ages <= age_max)
     ax.plot(ages[which], stable_age_structure[which],
             label='stable age structure')
-    mortality_sf_scale, _ = quad(herd.mortality.sf, ages[0], ages[-1])
+    mortality_sf_scale, _ = scipy.integrate.quad(
+        herd.mortality.sf, ages[0], ages[-1]
+    )
     ax.plot(ages[which], herd.mortality.sf(ages[which]) / mortality_sf_scale,
             label='scaled mortality survival',
             color='black', linestyle='dotted')
@@ -67,7 +69,6 @@ def plot(ages, stable_age_structure):
     ax.set_ylabel(f'density ({common.TIME_UNIT}$^{-1}$)')
     ax.legend()
     fig.tight_layout()
-    pyplot.show()
 
 
 if __name__ == '__main__':
@@ -75,3 +76,4 @@ if __name__ == '__main__':
     stable_age_structure, ages = find_stable_age_structure(parameters,
                                                            fast=True)
     plot(ages, stable_age_structure)
+    matplotlib.pyplot.show()

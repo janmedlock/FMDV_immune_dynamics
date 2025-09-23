@@ -36,7 +36,7 @@ class Herd(set):
         # These need to be defined before initializing
         # susceptible `Buffalo()`.
         self.number_infectious = self.number_chronic = 0
-        # Sample until there are some infected animals.
+        # Sample until there are some infected hosts.
         while True:
             immune_status_ages = self.rvs.initial_conditions.rvs()
             infected = sum(len(immune_status_ages[s])
@@ -44,7 +44,7 @@ class Herd(set):
             if infected > 0:
                 break
             else:
-                print('No infected animals! Resampling!')
+                print('No infected hosts! Resampling!')
         for (immune_status, ages) in immune_status_ages.items():
             for age in ages:
                 self.add(Buffalo(self, immune_status, age))

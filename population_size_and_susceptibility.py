@@ -14,50 +14,61 @@ import susceptibility
 store_path = pathlib.Path(__file__).with_suffix('.h5')
 
 
-def _is_default_susceptibility(lost_immunity_susceptibility):
-    return (lost_immunity_susceptibility == susceptibility.default)
+def _save_result(store, result):
+    '''Only save extinction time.'''
+    # If you change this, you must change `_copy_population_size()`
+    # and `_copy_susceptibility()` to save matching output.
+    common.save_result(store, result,
+                       extinction_time=True)
 
 
-def _is_default_population_size(population_size):
-    return (population_size == population_size_.default)
+def _is_default(module, val):
+    return (module.default == val)
 
 
-def _copy_runs_population_size(hdfstore_out, nruns, SAT,
-                               population_size, **kwds):
+def _copy_population_size(store, nruns, SAT,
+                          population_size, **kwds):
     '''Copy the data from 'population_size.h5'.'''
-    where = ' & '.join((f'{SAT=}',
-                        f'{population_size=!s}',
-                        f'run<{nruns}'))
-    with h5.HDFStore(population_size_.store_path, mode='r') as hdfstore_in:
-        for chunk in hdfstore_in.select(where=where, iterator=True):
-            common.insert_index_levels(chunk, 2, **kwds)
-            hdfstore_out.put(chunk)
-
-
-def _copy_runs_susceptibility(hdfstore_out, nruns, SAT,
-                              lost_immunity_susceptibility, **kwds):
-    '''Copy the data from 'susceptibility.h5'.'''
-    where = ' & '.join((f'{SAT=}',
-                        f'{lost_immunity_susceptibility=}',
-                        f'run<{nruns}'))
-    with h5.HDFStore(susceptibility.store_path, mode='r') as hdfstore_in:
-        for chunk in hdfstore_in.select(where=where, iterator=True):
-            common.insert_index_levels(chunk, 3, **kwds)
-            hdfstore_out.put(chunk)
-
-
-def run(SAT, lost_immunity_susceptibility, population_size, nruns, hdfstore,
-        copy_only, *args, **kwargs):
-    parameters_kwds = dict(
-        SAT=SAT,
-        lost_immunity_susceptibility=lost_immunity_susceptibility,
-        population_size=population_size
+    extinction_time = h5.load(population_size_.store_path, 'extinction_time')
+    index = extinction_time.index.to_frame()
+    mask = (
+        (index['SAT'] == SAT)
+        & (index['population_size'] == population_size)
+        & (index['run'] < nruns)
     )
-    if _is_default_susceptibility(lost_immunity_susceptibility):
-        _copy_runs_population_size(hdfstore, nruns, **parameters_kwds)
+    extinction_time_masked = extinction_time[mask]
+    common.insert_index_levels(extinction_time_masked, 2, **kwds)
+    store.put('extinction_time', extinction_time_masked)
+
+
+def _copy_susceptibility(store, nruns, SAT,
+                         lost_immunity_susceptibility, **kwds):
+    '''Copy the data from 'susceptibility.h5'.'''
+    extinction_time = h5.load(susceptibility.store_path, 'extinction_time')
+    index = extinction_time.index.to_frame()
+    mask = (
+        (index['SAT'] == SAT)
+        & (index['lost_immunity_susceptibility']
+           == lost_immunity_susceptibility)
+        & (index['run'] < nruns)
+    )
+    extinction_time_masked = extinction_time[mask]
+    common.insert_index_levels(extinction_time_masked, 3, **kwds)
+    store.put('extinction_time', extinction_time_masked)
+
+
+def run(SAT, lost_immunity_susceptibility, population_size, nruns, store,
+        copy_only, *args, **kwargs):
+    parameters_kwds = {
+        'SAT': SAT,
+        'lost_immunity_susceptibility': lost_immunity_susceptibility,
+        'population_size': population_size,
+    }
+    if _is_default(susceptibility, lost_immunity_susceptibility):
+        _copy_population_size(store, nruns, **parameters_kwds)
         stored = True
-    elif _is_default_population_size(population_size):
-        _copy_runs_susceptibility(hdfstore, nruns, **parameters_kwds)
+    elif _is_default(population_size_, population_size):
+        _copy_susceptibility(store, nruns, **parameters_kwds)
         stored = True
     elif not copy_only:
         parameters = herd.Parameters(**parameters_kwds)
@@ -65,9 +76,9 @@ def run(SAT, lost_immunity_susceptibility, population_size, nruns, hdfstore,
         chunks = baseline.run_many_chunked(parameters, nruns, *args,
                                            logging_prefix=logging_prefix,
                                            **kwargs)
-        for dfr in chunks:
-            common.prepend_index_levels(dfr, **parameters_kwds)
-            hdfstore.put(dfr)
+        for chunk in chunks:
+            common.prepend_index_levels(chunk, **parameters_kwds)
+            _save_result(store, chunk)
         stored = True
     else:
         stored = False
