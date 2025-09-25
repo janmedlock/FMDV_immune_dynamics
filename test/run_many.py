@@ -15,8 +15,8 @@ from context import herd
 
 
 def run_many(parameters, nruns):
-    # Add the parent directory to `sys.path`
-    # so that `joblib.Parallel()` can find `herd`.
+    # Add the parent directory to `sys.path` so that the
+    # `joblib.Parallel()` workers can find the `herd` module.
     path = pathlib.Path(__file__).parents[1]
     sys.path.append(str(path))
     data = baseline.run_many(parameters, nruns)

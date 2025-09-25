@@ -1,6 +1,7 @@
 '''Common code for the running and plotting the baseline parameter
 values.'''
 
+import itertools
 import pathlib
 
 import joblib
@@ -38,17 +39,21 @@ def run_many_chunked(parameters, nruns, *args,
     if chunksize < 1:
         chunksize = nruns
     seed_cache(parameters)
-    starts = range(0, nruns, chunksize)
-    with joblib.Parallel(n_jobs=n_jobs) as parallel:
-        for start in starts:
-            end = min(start + chunksize, nruns)
-            runs = range(start, end)
-            results = parallel(
-                joblib.delayed(run_one)(parameters, i, *args, **kwargs)
-                for i in runs
+    with joblib.Parallel(n_jobs=n_jobs,
+                         return_as='generator') as parallel:
+        results = parallel(
+            joblib.delayed(run_one)(
+                parameters, run_number, *args, **kwargs
             )
+            for run_number in range(nruns)
+        )
+        chunker = itertools.batched(results, chunksize)
+        for (chunk_number, chunk) in enumerate(chunker):
             # Make 'run' the outer row index.
-            yield pandas.concat(results, keys=runs, names=['run'],
+            start = chunk_number * chunksize
+            end = min((chunk_number + 1) * chunksize, nruns)
+            run_numbers = range(start, end)
+            yield pandas.concat(chunk, keys=run_numbers, names=['run'],
                                 copy=False)
 
 

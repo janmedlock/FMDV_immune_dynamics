@@ -1,5 +1,6 @@
 '''Common code for running and plotting the parameter samples.'''
 
+import itertools
 import pathlib
 
 import joblib
@@ -36,22 +37,26 @@ def run_many_chunked(parameters, samples, *args,
     '''Generator to return chunks of many simulation results.'''
     if chunksize < 1:
         chunksize = len(samples)
-    starts = range(0, len(samples), chunksize)
-    with joblib.Parallel(n_jobs=n_jobs) as parallel:
-        for start in starts:
-            end = min(start + chunksize, len(samples))
-            runs = range(start, end)
-            results = parallel(
-                joblib.delayed(run_one)(parameters, samples.loc[i], i,
-                                        *args, **kwargs)
-                for i in runs
+    with joblib.Parallel(n_jobs=n_jobs,
+                         return_as='generator') as parallel:
+        results = parallel(
+            joblib.delayed(run_one)(
+                parameters, sample, sample_number, *args, **kwargs
             )
-        # Make 'sample' the outer row index.
-        yield pandas.concat(results, keys=runs, names=['sample'],
-                            copy=False)
+            for (sample_number, sample) in samples.iterrows()
+        )
+        chunker = itertools.batched(results, chunksize)
+        for (chunk_number, chunk) in enumerate(chunker):
+            # Make 'sample' the outer row index.
+            start = chunk_number * chunksize
+            end = min((chunk_number + 1) * chunksize, len(samples))
+            sample_numbers = samples.index[start:end]
+            yield pandas.concat(chunk, keys=sample_numbers, names=['sample'],
+                                copy=False)
 
 
 def run(SAT, samples, store, *args, **kwargs):
+    '''Run simulation results with samples for SAT.'''
     parameters = herd.Parameters(SAT=SAT)
     logging_prefix = f'{SAT=}'
     chunks = run_many_chunked(parameters, samples, *args,
