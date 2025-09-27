@@ -89,8 +89,8 @@ def _get_density_one(grp, time):
 def get_density(dfr, by_var, time):
     grouper = dfr.groupby(by_var)
     ser = grouper.apply(_get_density_one, time)
-    # Unforunately, we have an array-valued `pandas.Series()`,
-    # so convert that to a `pandas.DataFrame()`.
+    # `ser` is a array-valued `pandas.Series()`:
+    # convert it to a `pandas.DataFrame()`.
     return pandas.DataFrame(ser.to_list(),
                             index=ser.index,
                             columns=time)
@@ -173,8 +173,7 @@ def plot_kde_2d(module, extinction_time, save=True):
             sharex='col', sharey='row',
             gridspec_kw={'height_ratios': (3, 1)})
         for ((SAT, group_SAT), axes_col) in zip(grouper_SAT, axes.T):
-            persistence = common.get_persistence(group_SAT) \
-                                .reset_index('SAT', drop=True)
+            persistence = common.get_persistence(group_SAT, by=module.var)
             density = get_density(group_SAT, module.var, times)
             ax = axes_col[0]
             cmap = plotting.get_cmap_SAT(SAT)

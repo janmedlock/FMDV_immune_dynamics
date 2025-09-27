@@ -37,7 +37,7 @@ def plot_persistence(extinction_times, save=True):
         ncols = len(extinction_times)
         for (col, (extinction_time, module)) in enumerate(zip(extinction_times,
                                                               MODULES)):
-            persistence = common.get_persistence(extinction_time)
+            persistence = common.get_persistence(extinction_time, over='run')
             grouper_SAT = persistence.groupby('SAT')
             if fig is None:
                 nrows = len(grouper_SAT)
@@ -45,10 +45,10 @@ def plot_persistence(extinction_times, save=True):
                     nrows, ncols,
                     sharex='col', sharey='row',
                 )
-            vals = extinction_time.index \
-                                  .get_level_values(module.var) \
-                                  .unique() \
-                                  .sort_values()
+            vals = persistence.index \
+                              .get_level_values(module.var) \
+                              .unique() \
+                              .sort_values()
             for ((SAT, persistence_SAT), ax) in zip(grouper_SAT, axes[:, col]):
                 ax.plot(persistence_SAT.reset_index('SAT', drop='True'),
                         color=plotting.SAT_COLORS[SAT],

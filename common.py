@@ -1,5 +1,6 @@
 '''Common code, much of it for plotting.'''
 
+import collections.abc
 import os
 
 import numpy
@@ -66,13 +67,6 @@ def get_infected(obj):
 
 def get_daily(dfr):
     '''Resample `dfr` daily.'''
-    assert TIME_UNIT == 'year'
-    t_step = 1 / 365
-    t_daily = herd.utility.arange(0, TIME_MAX, t_step, endpoint=True)
-    # `by` is all of the index levels except 'time'.
-    by = dfr.index.names.difference({'time'})
-    grouper = dfr.groupby(by)
-
     def get_one(group):
         t = group.index.get_level_values('time')
         # Shift start to 0.
@@ -87,8 +81,17 @@ def get_daily(dfr):
             .reindex(t_daily[mask], method='ffill')
         )
 
-    daily = grouper.apply(get_one)
-    return daily
+    assert TIME_UNIT == 'year'
+    t_step = 1 / 365
+    t_daily = herd.utility.arange(0, TIME_MAX, t_step, endpoint=True)
+    # `by` is all of the index levels except 'time'.
+    by = dfr.index.names.difference({'time'})
+    if len(by) == 0:
+        return get_one(dfr)
+    return (
+        dfr.groupby(by)
+        .apply(get_one)
+    )
 
 
 def get_infected_daily(dfr):
@@ -100,11 +103,6 @@ def get_infected_daily(dfr):
 
 def get_extinction_time(dfr):
     '''Get the extinction time for each run.'''
-    infected = get_infected(dfr)
-    # `by` is all of the index levels except 'time'.
-    by = dfr.index.names.difference({'time'})
-    grouper = infected.groupby(by)
-
     def get_one(group):
         t = group.index.get_level_values('time')
         (t_start, t_end) = (t.min(), t.max())
@@ -118,17 +116,30 @@ def get_extinction_time(dfr):
             'observed': observed,
         }
 
-    extinction_time = (
-        grouper.apply(get_one)
+    # `dfr.index` only has `.dtypes` if it has more than one level
+    # (i.e. `len(by) > 0`), so wrap this in a function to avoid an
+    # error when `len(by) == 0`.
+    def dtypes_result(dfr):
+        return {
+            'time': dfr.index.dtypes['time'],
+            'observed': bool,
+        }
+
+    infected = get_infected(dfr)
+    # `by` is all of the index levels except 'time'.
+    by = dfr.index.names.difference({'time'})
+    if len(by) == 0:
+        return pandas.Series(
+            get_one(infected)
+        )
+    return (
+        infected.groupby(by)
+        .apply(get_one)
         # 'time' and 'observed' are the last index level:
         # make them columns.
         .unstack(-1)
-        .astype({
-            'time': dfr.index.dtypes['time'],
-            'observed': bool,
-        })
+        .astype(dtypes_result(dfr))
     )
-    return extinction_time
 
 
 def save_result(store, result,
@@ -144,15 +155,36 @@ def save_result(store, result,
         store.put('extinction_time', extime)
 
 
-def get_persistence(extinction_time):
+def get_persistence(extinction_time, by=None, over=None):
     '''Get persistence from `extinction_time`.'''
     def get_one(group):
         persisted = ~group.observed
         return sum(persisted) / len(group)
 
-    # `by` is all of the index levels except 'time' and 'run'.
-    by = extinction_time.index.names.difference({'time', 'run'})
+    def as_collection(obj):
+        if (isinstance(obj, collections.abc.Collection)
+                and not isinstance(obj, str)):
+            return obj
+        return [obj]
+
+    if (by is not None) and (over is not None):
+        raise ValueError('Only one of `by` and `over` may be specified!')
+    if by is not None:
+        assert over is None
+        by = as_collection(by)
+    elif over is None:
+        assert by is None
+        by = []
+    else:
+        assert (by is None) and (over is not None)
+        over = as_collection(over)
+        assert set(over).issubset(extinction_time.index.names), \
+            f'{over=} is not a subset of {extinction_time.index.names=}!'
+        # `by` is all of the index levels except `over`.
+        by = extinction_time.index.names.difference(over)
     if len(by) == 0:
         return get_one(extinction_time)
-    grouper = extinction_time.groupby(by)
-    return grouper.apply(get_one)
+    return (
+        extinction_time.groupby(by)
+        .apply(get_one)
+    )

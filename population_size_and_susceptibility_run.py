@@ -24,12 +24,7 @@ def _get_persistence(store, **parameters):
         ],
         axis=0
     )
-    return common.get_persistence(
-        # A `pandas.DataFrame()` with index with only the levels 'run'
-        # and 'time' so that `common.get_persistence()` returns a scalar.
-        extinction_time[mask]
-        .reset_index(list(parameters.keys()), drop=True)
-    )
+    return common.get_persistence(extinction_time[mask])
 
 
 def _run_over_population_sizes(SAT, lost_immunity_susceptibility, nruns,

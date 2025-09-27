@@ -76,18 +76,20 @@ def _prepend_to_text(s, text):
 def plot_persistence(extinction_time, save=True):
     contour_levels = [0.01, 0.5, 0.99]
     with seaborn.axes_style('ticks'), matplotlib.pyplot.rc_context(rc=rc):
-        persistence = common.get_persistence(extinction_time)
+        persistence = common.get_persistence(extinction_time, over='run')
         grouper = persistence.groupby('SAT')
         nrows = len(grouper)
         (fig, axes) = matplotlib.pyplot.subplots(
             nrows=nrows, sharex='col',
         )
         for ((SAT, group), ax) in zip(grouper, axes):
-            # Move population_size from an index level to columns.
-            arr = group.unstack()
+            # `arr` has 'lost_immunity_susceptibility' on the index
+            # and 'population_size' on the columns.
+            arr = group.reset_index('SAT', drop='True') \
+                       .unstack()
             _fill_missing_persistence(arr)
             x = arr.columns
-            y = arr.index.droplevel('SAT')
+            y = arr.index
             cmap = plotting.get_cmap_SAT(SAT)
             epsilon = 0.01
             vmin = 0 + epsilon
