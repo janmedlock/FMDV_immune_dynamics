@@ -48,16 +48,6 @@ def get_logging_prefix(**kwds):
                      for (key, val) in kwds.items())
 
 
-def _get_by(dfr, by=None):
-    if by is None:
-        # `by` is all of the index levels except 'time'.
-        levels = dfr.index \
-                    .to_frame() \
-                    .columns
-        by = list(levels.difference({'time'}))
-    return by
-
-
 def get_infected(obj):
     '''Get the number of infected at each time.'''
     # Sum over columns for a `pandas.DataFrame()`,
@@ -79,7 +69,8 @@ def get_daily(dfr):
     assert TIME_UNIT == 'year'
     t_step = 1 / 365
     t_daily = herd.utility.arange(0, TIME_MAX, t_step, endpoint=True)
-    by = _get_by(dfr)
+    # `by` is all of the index levels except 'time'.
+    by = dfr.index.names.difference({'time'})
     grouper = dfr.groupby(by)
 
     def get_one(group):
@@ -110,7 +101,8 @@ def get_infected_daily(dfr):
 def get_extinction_time(dfr):
     '''Get the extinction time for each run.'''
     infected = get_infected(dfr)
-    by = _get_by(dfr)
+    # `by` is all of the index levels except 'time'.
+    by = dfr.index.names.difference({'time'})
     grouper = infected.groupby(by)
 
     def get_one(group):
@@ -154,5 +146,13 @@ def save_result(store, result,
 
 def get_persistence(extinction_time):
     '''Get persistence from `extinction_time`.'''
-    persisted = ~extinction_time.observed
-    return sum(persisted) / len(extinction_time)
+    def get_one(group):
+        persisted = ~group.observed
+        return sum(persisted) / len(group)
+
+    # `by` is all of the index levels except 'time' and 'run'.
+    by = extinction_time.index.names.difference({'time', 'run'})
+    if len(by) == 0:
+        return get_one(extinction_time)
+    grouper = extinction_time.groupby(by)
+    return grouper.apply(get_one)

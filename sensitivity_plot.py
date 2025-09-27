@@ -35,10 +35,10 @@ def plot_persistence(extinction_times, save=True):
     with seaborn.axes_style('ticks'), matplotlib.pyplot.rc_context(rc=rc):
         (fig, axes) = (None, None)
         ncols = len(extinction_times)
-        for (col, (extinction_time, module)) in enumerate(
-                zip(extinction_times, MODULES)
-        ):
-            grouper_SAT = extinction_time.groupby('SAT')
+        for (col, (extinction_time, module)) in enumerate(zip(extinction_times,
+                                                              MODULES)):
+            persistence = common.get_persistence(extinction_time)
+            grouper_SAT = persistence.groupby('SAT')
             if fig is None:
                 nrows = len(grouper_SAT)
                 (fig, axes) = matplotlib.pyplot.subplots(
@@ -46,16 +46,11 @@ def plot_persistence(extinction_times, save=True):
                     sharex='col', sharey='row',
                 )
             vals = extinction_time.index \
-                     .get_level_values(module.var) \
-                     .unique() \
-                     .sort_values()
-            for ((SAT, group_SAT), ax) in zip(grouper_SAT, axes[:, col]):
-                persistence = (
-                    group_SAT.groupby(module.var)
-                    .apply(common.get_persistence)
-                )
-                proportion_observed = 1 - persistence
-                ax.plot(1 - proportion_observed,
+                                  .get_level_values(module.var) \
+                                  .unique() \
+                                  .sort_values()
+            for ((SAT, persistence_SAT), ax) in zip(grouper_SAT, axes[:, col]):
+                ax.plot(persistence_SAT.reset_index('SAT', drop='True'),
                         color=plotting.SAT_COLORS[SAT],
                         clip_on=False, zorder=3)
                 subplotspec = ax.get_subplotspec()

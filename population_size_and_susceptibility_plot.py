@@ -57,13 +57,6 @@ def load_extinction_time():
                    'extinction_time')
 
 
-def _get_persistence(extinction_time):
-    grouper = extinction_time.groupby(['SAT',
-                                       susceptibility.var,
-                                       population_size.var])
-    return grouper.apply(common.get_persistence)
-
-
 def _fill_missing_persistence(extinction_time):
     assert herd.utility.is_increasing(extinction_time.columns, strict=True)
     # Starting from the left, where there is a missing value, if the
@@ -83,7 +76,7 @@ def _prepend_to_text(s, text):
 def plot_persistence(extinction_time, save=True):
     contour_levels = [0.01, 0.5, 0.99]
     with seaborn.axes_style('ticks'), matplotlib.pyplot.rc_context(rc=rc):
-        persistence = _get_persistence(extinction_time)
+        persistence = common.get_persistence(extinction_time)
         grouper = persistence.groupby('SAT')
         nrows = len(grouper)
         (fig, axes) = matplotlib.pyplot.subplots(

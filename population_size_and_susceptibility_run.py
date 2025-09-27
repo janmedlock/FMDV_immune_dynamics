@@ -3,6 +3,8 @@
 susceptibility. This produces a file called
 `population_size_and_susceptibility.h5`.'''
 
+import numpy
+
 import common
 import h5
 import herd.utility
@@ -11,19 +13,23 @@ import population_size_and_susceptibility
 import susceptibility
 
 
-def _get_persistence(SAT, lost_immunity_susceptibility, population_size,
-                     store):
+def _get_persistence(store, **parameters):
     '''Get the proportion of simulations where the pathogen persisted
-    over the whole time interval.'''
+    over the whole time interval for the given parameter values.'''
     extinction_time = store.select('extinction_time')
-    index = extinction_time.index.to_frame()
-    mask = (
-        (index['SAT'] == SAT)
-        & (index['lost_immunity_susceptibility']
-           == lost_immunity_susceptibility)
-        & (index['population_size'] == population_size)
+    mask = numpy.all(
+        [
+            extinction_time.index.get_level_values(level) == value
+            for (level, value) in parameters.items()
+        ],
+        axis=0
     )
-    return common.get_persistence(extinction_time[mask])
+    return common.get_persistence(
+        # A `pandas.DataFrame()` with index with only the levels 'run'
+        # and 'time' so that `common.get_persistence()` returns a scalar.
+        extinction_time[mask]
+        .reset_index(list(parameters.keys()), drop=True)
+    )
 
 
 def _run_over_population_sizes(SAT, lost_immunity_susceptibility, nruns,
@@ -48,8 +54,12 @@ def _run_over_population_sizes(SAT, lost_immunity_susceptibility, nruns,
         )
         # Calculate `persistence` if data was added to `store`.
         if stored:
-            persistence = _get_persistence(SAT, lost_immunity_susceptibility,
-                                           population_size, store)
+            persistence = _get_persistence(
+                store,
+                SAT=SAT,
+                lost_immunity_susceptibility=lost_immunity_susceptibility,
+                population_size=population_size,
+            )
             print(', '.join((f'{SAT=}',
                              f'{lost_immunity_susceptibility=!s}',
                              f'{population_size=!s}'))

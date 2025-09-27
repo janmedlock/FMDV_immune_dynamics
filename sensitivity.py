@@ -173,10 +173,8 @@ def plot_kde_2d(module, extinction_time, save=True):
             sharex='col', sharey='row',
             gridspec_kw={'height_ratios': (3, 1)})
         for ((SAT, group_SAT), axes_col) in zip(grouper_SAT, axes.T):
-            persistence = (
-                group_SAT.groupby(module.var)
-                .apply(common.get_persistence)
-            )
+            persistence = common.get_persistence(group_SAT) \
+                                .reset_index('SAT', drop=True)
             density = get_density(group_SAT, module.var, times)
             ax = axes_col[0]
             cmap = plotting.get_cmap_SAT(SAT)
