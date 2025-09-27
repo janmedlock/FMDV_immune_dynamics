@@ -60,16 +60,6 @@ class SupplementalMaterials:
     WIDTH_MAXIMUM = 0.7 * 8.5  # inch
 
 
-def _get_by(dfr, by=None):
-    if by is None:
-        # `by` is all of the index levels except 'time'.
-        levels = dfr.index \
-                    .to_frame() \
-                    .columns
-        by = list(levels.difference({'time'}))
-    return by
-
-
 def set_violins_linewidth(ax, lw):
     for col in ax.collections:
         if isinstance(col, matplotlib.collections.PolyCollection):
