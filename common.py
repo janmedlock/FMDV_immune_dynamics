@@ -1,4 +1,4 @@
-'''Common code, much of it for plotting.'''
+'''Common code.'''
 
 import collections.abc
 import os
