@@ -1,6 +1,8 @@
 '''Common code for running, analyzing, and plotting simulations with
 varying parameters.'''
 
+import math
+
 import matplotlib.pyplot
 import matplotlib.ticker
 import numpy
@@ -18,7 +20,12 @@ import stats
 
 rc = plotting.rc | plotting.rc_text_small | {
     'figure.figsize': (plotting.WIDTH_MAXIMUM['double_column'], 4),
+    'axes.spines.top': False,
+    'axes.spines.right': False,
 }
+
+
+EXTINCTION_TIME_LABEL = f'Extinction {plotting.TIME_LABEL.lower()}'
 
 
 def _save_result(store, result):
@@ -97,11 +104,19 @@ def get_density(dfr, by_var, time):
 
 
 def plot_median(module, extinction_time, CI=0.5):
+    vals = (
+        extinction_time.index
+        .get_level_values(module.var)
+        .unique()
+        .sort_values()
+    )
     levels = [CI / 2, 1 - CI / 2]
-    with seaborn.axes_style('darkgrid'):
-        (fig, axes) = matplotlib.pyplot.subplots(3, 1, sharex=True)
+    with seaborn.axes_style('ticks'), matplotlib.pyplot.rc_context(rc=rc):
+        grouper = extinction_time.groupby('SAT')
+        nrows = len(grouper)
+        (fig, axes) = matplotlib.pyplot.subplots(nrows, sharex=True)
         idx_mid = len(axes) // 2
-        for ((SAT, group), ax) in zip(extinction_time.groupby('SAT'), axes):
+        for ((SAT, group), ax) in zip(grouper, axes):
             times = group.groupby(module.var).time
             median = times.median()
             ax.plot(median, median.index,
@@ -110,51 +125,111 @@ def plot_median(module, extinction_time, CI=0.5):
             ax.fill_betweenx(CI_.index, CI_[levels[0]], CI_[levels[1]],
                              color=plotting.SAT_COLORS[SAT],
                              alpha=0.5)
-            ax.set_xlim(left=0)
-            ax.set_xlabel(f'extinction {plotting.TIME_LABEL.lower()}')
+            ax.set_ylim(min(vals), max(vals))
             if module.log:
                 ax.set_yscale('log')
             subplotspec = ax.get_subplotspec()
+            if subplotspec.is_last_row():
+                ax.set_xlim(0, common.TIME_MAX)
+                ax.set_xlabel(EXTINCTION_TIME_LABEL)
             if subplotspec.is_first_col():
                 (_, _, idx, _) = subplotspec.get_geometry()
                 if idx == idx_mid:
                     ylabel = module.label
                 else:
-                    ylabel = '\n\n'
+                    ylabel = ''
                 ax.set_ylabel(f'SAT{SAT}\n{ylabel}')
-        fig.suptitle('')
-        fig.tight_layout()
+        fig.align_ylabels()
 
 
 def plot_survival(module, extinction_time):
-    (fig, axes) = matplotlib.pyplot.subplots(3, 1, sharex=True)
-    for ((SAT, group), ax) in zip(extinction_time.groupby('SAT'), axes):
-        for (idx, g) in group.groupby(module.var):
-            survival = stats.get_survival(g, 'time', 'observed')
-            ax.plot(survival.index, survival,
-                    label=f'{module.var} {idx}',
-                    drawstyle='steps-post')
+    vals = (
+        extinction_time.index
+        .get_level_values(module.var)
+        .unique()
+        .sort_values()
+    )
+    with seaborn.axes_style('ticks'), \
+         seaborn.color_palette('husl', len(vals), desat=1), \
+         matplotlib.pyplot.rc_context(rc=rc):
+        grouper = extinction_time.groupby('SAT')
+        nrows = len(grouper)
+        fig = matplotlib.pyplot.figure()
+        # Add an extra row for the legend.
+        gs = fig.add_gridspec(
+            nrows + 1, 1,
+            height_ratios=((1,) * nrows + (0.8,)),
+        )
+        axes = numpy.empty(nrows, dtype=object)
+        axes[0] = None  # `sharex` for `axes[0]`.
+        for row in range(nrows):
+            axes[row] = fig.add_subplot(
+                gs[row],
+                sharex=axes[0],
+            )
+        for ((SAT, group), ax) in zip(grouper, axes):
+            for (idx, g) in group.groupby(module.var):
+                survival = stats.get_survival(g, 'time', 'observed')
+                ax.plot(survival.index, survival,
+                        label=f'{idx:g}',
+                        drawstyle='steps-post',
+                        alpha=0.7,
+                        clip_on=False)
+            ax.set_ylim(0, 1)
+        for ax in axes[:-1]:
+            ax.xaxis.set_tick_params(which='both',
+                                     labelleft=False, labelright=False)
+            ax.xaxis.offsetText.set_visible(False)
+        axes[-1].set_xlabel(EXTINCTION_TIME_LABEL)
+        axes[-1].set_xlim(0, common.TIME_MAX)
+        (handles, labels) = axes[0].get_legend_handles_labels()
+        nrow = 2
+        ncol = math.ceil(len(handles) / nrow)
+        plotting.legend_multicolumn(fig, handles, labels, ncol,
+                                    title=module.label,
+                                    loc='lower center',
+                                    bbox_to_anchor=(0.5, 0))
 
 
 def plot_kde(module, extinction_time):
-    with seaborn.axes_style('darkgrid'):
-        (fig, axes) = matplotlib.pyplot.subplots(3, 1, sharex='col')
-        for ((SAT, group), ax) in zip(extinction_time.groupby('SAT'), axes):
-            subplotspec = ax.get_subplotspec()
+    with seaborn.axes_style('ticks'), matplotlib.pyplot.rc_context(rc=rc):
+        grouper = extinction_time.groupby('SAT')
+        nrows = len(grouper)
+        fig = matplotlib.pyplot.figure()
+        # Add an extra row for the legend.
+        gs = fig.add_gridspec(
+            nrows + 1, 1,
+            height_ratios=((1,) * nrows + (0.8,)),
+        )
+        axes = numpy.empty(nrows, dtype=object)
+        axes[0] = None  # `sharex` for `axes[0]`.
+        for row in range(nrows):
+            axes[row] = fig.add_subplot(
+                gs[row],
+                sharex=axes[0],
+            )
+        for ((SAT, group), ax) in zip(grouper, axes):
             for (s, g) in group.groupby(module.var):
                 e = g.time.copy()
                 e[~g.observed] = numpy.nan
-                label = f'{s:g}' if subplotspec.is_first_row() else ''
-                plotting.kdeplot(e, label=label, ax=ax,
+                plotting.kdeplot(e, label=f'{s:g}', ax=ax,
                                  shade=False, clip_on=False)
-            if subplotspec.is_last_row():
-                ax.set_xlabel(f'extinction {plotting.TIME_LABEL.lower()}')
-                ax.set_xlim(left=0)
             ax.yaxis.set_major_locator(matplotlib.ticker.NullLocator())
             ax.set_ylabel(f'SAT{SAT}\ndensity')
-        leg = fig.legend(loc='center left', bbox_to_anchor=(0.8, 0.5),
-                         title=module.label)
-        fig.tight_layout(rect=(0, 0, 0.82, 1))
+            ax.margins(y=0)
+        for ax in axes[:-1]:
+            ax.xaxis.set_tick_params(which='both',
+                                     labelleft=False, labelright=False)
+            ax.xaxis.offsetText.set_visible(False)
+        axes[-1].set_xlabel(EXTINCTION_TIME_LABEL)
+        axes[-1].set_xlim(0, common.TIME_MAX)
+        (handles, labels) = axes[0].get_legend_handles_labels()
+        nrow = 2
+        ncol = math.ceil(len(handles) / nrow)
+        plotting.legend_multicolumn(fig, handles, labels, ncol,
+                                    title=module.label,
+                                    loc='lower center',
+                                    bbox_to_anchor=(0.5, 0))
 
 
 def plot_kde_2d(module, extinction_time, save=True):
@@ -166,15 +241,18 @@ def plot_kde_2d(module, extinction_time, save=True):
     )
     times = numpy.linspace(0, common.TIME_MAX, 301)
     with seaborn.axes_style('ticks'), matplotlib.pyplot.rc_context(rc=rc):
-        grouper_SAT = extinction_time.groupby('SAT')
-        ncols = len(grouper_SAT)
+        grouper = extinction_time.groupby('SAT')
+        ncols = len(grouper)
         (fig, axes) = matplotlib.pyplot.subplots(
             2, ncols,
             sharex='col', sharey='row',
             gridspec_kw={'height_ratios': (3, 1)})
-        for ((SAT, group_SAT), axes_col) in zip(grouper_SAT, axes.T):
-            persistence = common.get_persistence(group_SAT, by=module.var)
-            density = get_density(group_SAT, module.var, times)
+        for ((SAT, group), axes_col) in zip(grouper, axes.T):
+            persistence = (
+                group.groupby(module.var)
+                .apply(common.get_persistence)
+            )
+            density = get_density(group, module.var, times)
             ax = axes_col[0]
             cmap = plotting.get_cmap_SAT(SAT)
             # Use `density` to set the color range.
@@ -186,10 +264,9 @@ def plot_kde_2d(module, extinction_time, save=True):
                           shading='gouraud')
             if module.log:
                 ax.set_xscale('log')
-            ax.set_xlim(min(vals), max(vals))
             ax.set_title(f'SAT{SAT}')
             if ax.get_subplotspec().is_first_col():
-                ax.set_xlabel(f'extinction {plotting.TIME_LABEL.lower()}')
+                ax.set_ylabel(EXTINCTION_TIME_LABEL)
                 ax.yaxis.set_major_locator(
                     matplotlib.ticker.MultipleLocator(common.TIME_MAX / 5)
                 )
@@ -213,8 +290,6 @@ def plot_kde_2d(module, extinction_time, save=True):
         for ax in fig.axes:
             ax.axvline(module.default,
                        color='black', linestyle='dotted', alpha=0.7)
-            for sp in ('top', 'right'):
-                ax.spines[sp].set_visible(False)
         fig.align_xlabels(axes[-1, :])
         fig.align_ylabels(axes[:, 0])
         if save:

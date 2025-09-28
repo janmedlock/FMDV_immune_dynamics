@@ -10,7 +10,7 @@ import herd.utility
 
 var = 'population_size'
 
-label = 'Population\nsize'
+label = 'Population size'
 
 log = True
 

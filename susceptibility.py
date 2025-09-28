@@ -10,7 +10,7 @@ import herd
 
 var = 'lost_immunity_susceptibility'
 
-label = 'Susceptibility\nof lost-immunity\nstate'
+label = 'Susceptibility of lost-immunity state'
 
 log = False
 

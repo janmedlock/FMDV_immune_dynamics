@@ -24,7 +24,9 @@ def _get_persistence(store, **parameters):
         ],
         axis=0
     )
-    return common.get_persistence(extinction_time[mask])
+    return common.get_persistence(
+        extinction_time[mask]
+    )
 
 
 def _run_over_population_sizes(SAT, lost_immunity_susceptibility, nruns,

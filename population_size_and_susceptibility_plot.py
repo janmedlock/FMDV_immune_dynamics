@@ -4,18 +4,16 @@ and the susceptibility of the lost-immunity state. This requires the
 file `population_size_and_susceptibility.h5`, which is built by
 `population_size_and_susceptibility_run.py`.'''
 
-import matplotlib.colors
 import matplotlib.pyplot
-import matplotlib.scale
 import matplotlib.ticker
 import seaborn
 
 import common
-import h5
 import herd.utility
 import plotting
 import population_size
 import population_size_and_susceptibility
+import sensitivity
 import susceptibility
 
 
@@ -32,29 +30,6 @@ rc = (
         'axes.spines.top': False,
     }
 )
-
-POPULATION_SIZE_LABEL = population_size.label.replace('\n', ' ')
-
-SUSCEPTIBILITY_LABEL = susceptibility.label.replace('\n', ' ') \
-                                           .replace('of ', 'of\n')
-
-PERSISTENCE_LABEL = (
-    f'Proportion persisting {common.TIME_MAX} {common.TIME_UNIT}s'
-)
-
-
-_LogitNorm = matplotlib.colors.make_norm_from_scale(
-    matplotlib.scale.LogitScale
-)(
-    matplotlib.colors.Normalize
-)
-_LogitNorm.__name__ = _LogitNorm.__qualname__ = 'LogitNorm'
-_LogitNorm.__doc__ = 'Logit norm.'
-
-
-def load_extinction_time():
-    return h5.load(population_size_and_susceptibility.store_path,
-                   'extinction_time')
 
 
 def _fill_missing_persistence(extinction_time):
@@ -76,28 +51,34 @@ def _prepend_to_text(s, text):
 def plot_persistence(extinction_time, save=True):
     contour_levels = [0.01, 0.5, 0.99]
     with seaborn.axes_style('ticks'), matplotlib.pyplot.rc_context(rc=rc):
-        persistence = common.get_persistence(extinction_time, over='run')
-        grouper = persistence.groupby('SAT')
+        grouper = extinction_time.groupby('SAT')
         nrows = len(grouper)
         (fig, axes) = matplotlib.pyplot.subplots(
             nrows=nrows, sharex='col',
         )
         for ((SAT, group), ax) in zip(grouper, axes):
-            # `arr` has 'lost_immunity_susceptibility' on the index
-            # and 'population_size' on the columns.
-            arr = group.reset_index('SAT', drop='True') \
-                       .unstack()
-            _fill_missing_persistence(arr)
-            x = arr.columns
-            y = arr.index
+            # `persistence` has index 'lost_immunity_susceptibility'
+            # and columns 'population_size'.
+            persistence = (
+                group.groupby(['lost_immunity_susceptibility',
+                               'population_size'])
+                .apply(common.get_persistence)
+                .unstack()
+            )
+            _fill_missing_persistence(persistence)
             cmap = plotting.get_cmap_SAT(SAT)
             epsilon = 0.01
             vmin = 0 + epsilon
             vmax = 1 - epsilon
-            norm = _LogitNorm(vmin=vmin, vmax=vmax, clip=True)
-            img = ax.pcolormesh(x, y, arr,
+            norm = plotting.LogitNorm(vmin=vmin, vmax=vmax, clip=True)
+            img = ax.pcolormesh(persistence.columns,
+                                persistence.index,
+                                persistence,
                                 cmap=cmap, norm=norm)
-            contours = ax.contour(x, y, arr, contour_levels,
+            contours = ax.contour(persistence.columns,
+                                  persistence.index,
+                                  persistence,
+                                  contour_levels,
                                   colors='black')
             contours.clabel(inline=True,
                             fmt=lambda x: f'{100*x:g}%')
@@ -116,23 +97,31 @@ def plot_persistence(extinction_time, save=True):
             subplotspec = ax.get_subplotspec()
             if subplotspec.is_last_row():
                 ax.set_xscale('log')
-                ax.set_xlabel(POPULATION_SIZE_LABEL)
+                ax.set_xlabel(
+                    population_size.label
+                )
                 ax.xaxis.set_major_formatter(
                     matplotlib.ticker.LogFormatter()
                 )
             if ax.get_subplotspec().is_first_col():
-                ax.set_ylabel(SUSCEPTIBILITY_LABEL)
+                ax.set_ylabel(
+                    susceptibility.label
+                    .replace('of ', 'of\n')
+                )
                 ax.yaxis.set_major_locator(
                     matplotlib.ticker.MultipleLocator(0.2)
                 )
                 ax.yaxis.set_minor_locator(
                     matplotlib.ticker.AutoMinorLocator(2)
                 )
+            persistence_label = (
+                f'Proportion persisting {common.TIME_MAX} {common.TIME_UNIT}s'
+            )
             cbar = fig.colorbar(
                 img,
                 ax=ax,
                 location='right',
-                label=PERSISTENCE_LABEL,
+                label=persistence_label,
                 format=matplotlib.ticker.PercentFormatter(xmax=1),
             )
             cbar.outline.set_edgecolor('none')
@@ -153,6 +142,6 @@ def plot_persistence(extinction_time, save=True):
 
 
 if __name__ == '__main__':
-    extinction_time = load_extinction_time()
+    extinction_time = sensitivity.load(population_size_and_susceptibility)
     plot_persistence(extinction_time)
     matplotlib.pyplot.show()

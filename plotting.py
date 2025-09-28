@@ -6,6 +6,7 @@ import astropy.units
 import matplotlib.collections
 import matplotlib.colors
 import matplotlib.pyplot
+import matplotlib.scale
 import numpy
 import statsmodels.nonparametric.api
 
@@ -28,24 +29,14 @@ rc_text_small = {
     'axes.titlesize': 11,
 }
 
-_mm_to_inch = astropy.units.mm.to(astropy.units.imperial.inch)
+_MM_TO_INCH = astropy.units.mm.to(astropy.units.imperial.inch)
 
 WIDTH_MAXIMUM = {
-    'single_column': 84 * _mm_to_inch,
-    'double_column': 175 * _mm_to_inch,
+    'single_column': 84 * _MM_TO_INCH,
+    'double_column': 175 * _MM_TO_INCH,
 }
 
-HEIGHT_MAXIMUM = 250 * _mm_to_inch
-
-
-# Erin's colors.
-SAT_COLORS = {
-    1: '#2271b5',
-    2: '#ef3b2c',
-    3: '#807dba'
-}
-
-TIME_LABEL = f'Time ({common.TIME_UNIT})'
+HEIGHT_MAXIMUM = 250 * _MM_TO_INCH
 
 
 class SupplementalMaterials:
@@ -60,19 +51,19 @@ class SupplementalMaterials:
     WIDTH_MAXIMUM = 0.7 * 8.5  # inch
 
 
-def set_violins_linewidth(ax, lw):
-    for col in ax.collections:
-        if isinstance(col, matplotlib.collections.PolyCollection):
-            col.set_linewidth(0)
+# Erin's colors.
+SAT_COLORS = {
+    1: '#2271b5',
+    2: '#ef3b2c',
+    3: '#807dba',
+}
+
+TIME_LABEL = f'Time ({common.TIME_UNIT})'
 
 
-def get_density(endog, times):
-    # Avoid errors if endog is empty.
-    if len(endog) > 0:
-        kde = statsmodels.nonparametric.api.KDEUnivariate(endog)
-        kde.fit(cut=0)
-        return kde.evaluate(times)
-    return numpy.zeros_like(times)
+@matplotlib.colors.make_norm_from_scale(matplotlib.scale.LogitScale)
+class LogitNorm(matplotlib.colors.Normalize):
+    '''Logit norm.'''
 
 
 def kdeplot(endog, ax=None, shade=False, cut=0, **kwds):

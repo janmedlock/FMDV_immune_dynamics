@@ -155,36 +155,7 @@ def save_result(store, result,
         store.put('extinction_time', extime)
 
 
-def get_persistence(extinction_time, by=None, over=None):
+def get_persistence(extinction_time):
     '''Get persistence from `extinction_time`.'''
-    def get_one(group):
-        persisted = ~group.observed
-        return sum(persisted) / len(group)
-
-    def as_collection(obj):
-        if (isinstance(obj, collections.abc.Collection)
-                and not isinstance(obj, str)):
-            return obj
-        return [obj]
-
-    if (by is not None) and (over is not None):
-        raise ValueError('Only one of `by` and `over` may be specified!')
-    if by is not None:
-        assert over is None
-        by = as_collection(by)
-    elif over is None:
-        assert by is None
-        by = []
-    else:
-        assert (by is None) and (over is not None)
-        over = as_collection(over)
-        assert set(over).issubset(extinction_time.index.names), \
-            f'{over=} is not a subset of {extinction_time.index.names=}!'
-        # `by` is all of the index levels except `over`.
-        by = extinction_time.index.names.difference(over)
-    if len(by) == 0:
-        return get_one(extinction_time)
-    return (
-        extinction_time.groupby(by)
-        .apply(get_one)
-    )
+    persisted = ~extinction_time.observed
+    return sum(persisted) / len(extinction_time)

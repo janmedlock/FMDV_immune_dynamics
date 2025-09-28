@@ -37,26 +37,29 @@ def plot_persistence(extinction_times, save=True):
         ncols = len(extinction_times)
         for (col, (extinction_time, module)) in enumerate(zip(extinction_times,
                                                               MODULES)):
-            persistence = common.get_persistence(extinction_time, over='run')
-            grouper_SAT = persistence.groupby('SAT')
+            grouper = extinction_time.groupby('SAT')
             if fig is None:
-                nrows = len(grouper_SAT)
+                nrows = len(grouper)
                 (fig, axes) = matplotlib.pyplot.subplots(
                     nrows, ncols,
                     sharex='col', sharey='row',
                 )
-            vals = persistence.index \
-                              .get_level_values(module.var) \
-                              .unique() \
-                              .sort_values()
-            for ((SAT, persistence_SAT), ax) in zip(grouper_SAT, axes[:, col]):
-                ax.plot(persistence_SAT.reset_index('SAT', drop='True'),
+            vals = extinction_time.index \
+                                  .get_level_values(module.var) \
+                                  .unique() \
+                                  .sort_values()
+            for ((SAT, group), ax) in zip(grouper, axes[:, col]):
+                persistence = (
+                    group.groupby(module.var)
+                    .apply(common.get_persistence)
+                )
+                ax.plot(persistence,
                         color=plotting.SAT_COLORS[SAT],
                         clip_on=False, zorder=3)
                 subplotspec = ax.get_subplotspec()
                 if subplotspec.is_last_row():
                     ax.set_xlim(min(vals), max(vals))
-                    ax.set_xlabel(module.label.replace('\n', ' '))
+                    ax.set_xlabel(module.label)
                 if subplotspec.is_first_col():
                     ax.annotate(f'SAT{SAT}',
                                 (-0.275, 0.5), xycoords='axes fraction',
