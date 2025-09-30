@@ -13,7 +13,7 @@ def make_plot(data):
     (fig, axes) = matplotlib.pyplot.subplots()
     for (name, ser) in data.items():
         axes.plot(ser, label=name,
-                  drawstyle='steps-pre',
+                  drawstyle='steps-post',
                   alpha=0.9, linewidth=1)
     axes.set_xlabel(data.index.name)
     axes.set_ylabel('number')

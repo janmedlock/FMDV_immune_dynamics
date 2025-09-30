@@ -40,15 +40,20 @@ def get_mean(data):
 def make_plots(data):
     (fig, axes) = matplotlib.pyplot.subplots(data.shape[1], sharex=True)
     colors = itertools.cycle(seaborn.color_palette('husl', 8))
+    plot_kwds = {
+        'drawstyle': 'steps-post',
+    }
     for (i, color) in zip(data.index.levels[0], colors):
         data_i = data.loc[i]
         for (j, (name, ser)) in enumerate(data_i.items()):
             axes[j].plot(data_i.index, ser,
-                         drawstyle='steps-pre', color=color, alpha=0.5)
+                         color=color, alpha=0.5,
+                         **plot_kwds)
     data_mean = get_mean(data)
     for (j, (name, ser)) in enumerate(data_mean.items()):
         axes[j].plot(ser.index, ser,
-                     drawstyle='steps-pre', color='black', alpha=0.6)
+                     color='black', alpha=0.6,
+                     **plot_kwds)
         axes[j].set_ylabel(name.replace(' ', '\n'))
     axes[-1].set_xlabel(data.index.names[1])
     for axes_ in axes:

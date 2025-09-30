@@ -32,7 +32,7 @@ def plot_one(ax, SAT, group):
     t = time - time.min()
     for (name, ser) in group.items():
         ax.plot(t, ser, label=plotting.get_state_label(name),
-                drawstyle='steps-pre',
+                drawstyle='steps-post',
                 alpha=0.9, linewidth=1, zorder=3)
     ax.annotate(f'SAT{SAT}',
                 (-0.1625, 0.5), xycoords='axes fraction',

@@ -32,14 +32,19 @@ def plot_infected(ax, infected, SAT, draft=False):
         i = i.iloc[:, :100]
     # Start time at 0.
     t = i.index - i.index.min()
+    plot_kwds = {
+        'drawstyle': 'steps-post',
+        'clip_on': False,
+        'zorder': 4,
+    }
     ax.plot(t, i, color=plotting.SAT_COLORS[SAT],
             alpha=0.15, linewidth=0.5,
-            drawstyle='steps-pre', clip_on=False, zorder=4)
+            **plot_kwds)
     # `i.fillna(0)` gives mean including those that
     # have gone extinct.
     ax.plot(t, i.fillna(0).mean(axis='columns'),
             color='black', alpha=1,
-            drawstyle='steps-pre', clip_on=False, zorder=4)
+            **plot_kwds)
     # Tighten y-axis limits.
     ax.margins(y=0)
     # Shared x-axis with extinction time.
