@@ -108,7 +108,7 @@ class Birth(Base):
         axes.plot(time, rate, **kwds)
 
 
-def plot_rates(save=True):
+def plot_rates(save=True, show=False):
     '''Plot the rates.'''
     rates = Base.__subclasses__()
     with seaborn.axes_style('ticks'), matplotlib.pyplot.rc_context(rc=rc):
@@ -123,9 +123,10 @@ def plot_rates(save=True):
                 source_path.name.replace('_plot.py', '')
             )
             fig.savefig(output_path_stem.with_suffix('.pgf'))
+        if show:
+            matplotlib.pyplot.show()
         return fig
 
 
 if __name__ == '__main__':
     plot_rates()
-    matplotlib.pyplot.show()

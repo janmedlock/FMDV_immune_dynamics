@@ -27,6 +27,13 @@ rc = plotting.rc | plotting.rc_text_small | {
 
 EXTINCTION_TIME_LABEL = f'Extinction {plotting.TIME_LABEL.lower()}'
 
+PERSISTENCE_LABEL = (
+    plotting.PERSISTENCE_LABEL
+    .replace('FMDV ', 'FMDV\n')
+)
+
+YLABEL_VERTICALALIGNMENT = 'baseline'
+
 
 def _save_result(store, result):
     '''Save extinction time.'''
@@ -232,7 +239,7 @@ def plot_kde(module, extinction_time):
                                     bbox_to_anchor=(0.5, 0))
 
 
-def plot_kde_2d(module, extinction_time, save=True):
+def plot_kde_2d(module, extinction_time, save=True, show=False):
     vals = (
         extinction_time.index
         .get_level_values(module.var)
@@ -266,7 +273,8 @@ def plot_kde_2d(module, extinction_time, save=True):
                 ax.set_xscale('log')
             ax.set_title(f'SAT{SAT}')
             if ax.get_subplotspec().is_first_col():
-                ax.set_ylabel(EXTINCTION_TIME_LABEL)
+                ax.set_ylabel(EXTINCTION_TIME_LABEL,
+                              verticalalignment=YLABEL_VERTICALALIGNMENT)
                 ax.yaxis.set_major_locator(
                     matplotlib.ticker.MultipleLocator(common.TIME_MAX / 5)
                 )
@@ -281,9 +289,8 @@ def plot_kde_2d(module, extinction_time, save=True):
             ax_po.set_xlim(min(vals), max(vals))
             ax_po.set_xlabel(module.label)
             if ax_po.get_subplotspec().is_first_col():
-                ax_po.set_ylabel(
-                    f'Persisting {common.TIME_MAX} {common.TIME_UNIT}s'
-                )
+                ax_po.set_ylabel(PERSISTENCE_LABEL,
+                                 verticalalignment=YLABEL_VERTICALALIGNMENT)
                 ax_po.set_ylim(0, 1)
                 ax_po.yaxis.set_major_formatter(
                     matplotlib.ticker.PercentFormatter(xmax=1))
@@ -295,4 +302,6 @@ def plot_kde_2d(module, extinction_time, save=True):
         if save:
             for suffix in ('.pdf', '.png'):
                 fig.savefig(module.store_path.with_suffix(suffix))
+        if show:
+            matplotlib.pyplot.show()
         return fig

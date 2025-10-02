@@ -98,7 +98,8 @@ def plot_extinction_time(ax, extinction_time, SAT):
 
 
 def plot(infected, extinction_time,
-         draft=False, save=True, _module=baseline):
+         draft=False, save=True, show=False,
+         _module=baseline):
     SATs = infected.index.get_level_values('SAT').unique()
     nrows = 2
     ncols = len(SATs)
@@ -156,6 +157,8 @@ def plot(infected, extinction_time,
         if save:
             for suffix in ('.pdf', '.png'):
                 fig.savefig(_module.store_path.with_suffix(suffix))
+        if show:
+            matplotlib.pyplot.show()
         return fig
 
 
@@ -163,4 +166,3 @@ if __name__ == '__main__':
     DRAFT = False
     (infected, extinction_time) = load()
     plot(infected, extinction_time, draft=DRAFT)
-    matplotlib.pyplot.show()

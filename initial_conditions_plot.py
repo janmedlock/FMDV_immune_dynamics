@@ -136,7 +136,7 @@ def plot_SAT(axes, SAT, ages):
             ax.yaxis.offsetText.set_visible(False)
 
 
-def plot_SATs(save=True):
+def plot_SATs(save=True, show=False):
     ages = herd.utility.arange(0, 20, 0.025, endpoint=True)
     with seaborn.axes_style('whitegrid'), matplotlib.rc_context(rc=rc):
         fig = matplotlib.pyplot.figure()
@@ -172,9 +172,10 @@ def plot_SATs(save=True):
             source_path.name.replace('_plot.py', '')
         )
         fig.savefig(output_path_stem.with_suffix('.pdf'))
+    if show:
+        matplotlib.pyplot.show()
     return fig
 
 
 if __name__ == '__main__':
     plot_SATs()
-    matplotlib.pyplot.show()

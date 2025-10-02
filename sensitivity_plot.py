@@ -21,6 +21,12 @@ rc = plotting.rc | plotting.rc_text_small | {
 }
 
 
+PERSISTENCE_LABEL = (
+    plotting.PERSISTENCE_LABEL
+    .replace('FMDV ', 'FMDV\n')
+)
+
+
 MODULES = (population_size, susceptibility)
 
 
@@ -31,7 +37,7 @@ def load():
     ]
 
 
-def plot_persistence(extinction_times, save=True):
+def plot_persistence(extinction_times, save=True, show=False):
     with seaborn.axes_style('ticks'), matplotlib.pyplot.rc_context(rc=rc):
         (fig, axes) = (None, None)
         ncols = len(extinction_times)
@@ -62,13 +68,11 @@ def plot_persistence(extinction_times, save=True):
                     ax.set_xlabel(module.label)
                 if subplotspec.is_first_col():
                     ax.annotate(f'SAT{SAT}',
-                                (-0.275, 0.5), xycoords='axes fraction',
+                                (-0.32, 0.5), xycoords='axes fraction',
                                 fontsize=rc['axes.titlesize'],
                                 rotation='vertical',
                                 verticalalignment='center')
-                    ax.set_ylabel(
-                        f'Persisting {common.TIME_MAX} {common.TIME_UNIT}s'
-                    )
+                    ax.set_ylabel(PERSISTENCE_LABEL)
                     ax.set_ylim(0, 1)
                     ax.yaxis.set_major_formatter(
                         matplotlib.ticker.PercentFormatter(xmax=1)
@@ -125,10 +129,11 @@ def plot_persistence(extinction_times, save=True):
             )
             for suffix in ('.pdf', '.png'):
                 fig.savefig(output_path_stem.with_suffix(suffix))
+        if show:
+            matplotlib.pyplot.show()
         return fig
 
 
 if __name__ == '__main__':
     extinction_times = load()
     plot_persistence(extinction_times)
-    matplotlib.pyplot.show()

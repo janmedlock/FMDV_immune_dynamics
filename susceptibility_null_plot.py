@@ -3,8 +3,6 @@
 susceptibility of the lost-immunity class. This requires the file
 `susceptibility_null.h5`, which is built by `susceptibility_null_run.py`.'''
 
-import matplotlib.pyplot
-
 import baseline_plot
 import susceptibility_null
 
@@ -14,9 +12,9 @@ def load():
 
 
 def plot(infected, extinction_time,
-         draft=False, save=True):
+         draft=False, save=True, show=False):
     return baseline_plot.plot(infected, extinction_time,
-                              draft=draft, save=save,
+                              draft=draft, save=save, show=show,
                               _module=susceptibility_null)
 
 
@@ -24,4 +22,3 @@ if __name__ == '__main__':
     DRAFT = False
     (infected, extinction_time) = load()
     plot(infected, extinction_time, draft=DRAFT)
-    matplotlib.pyplot.show()

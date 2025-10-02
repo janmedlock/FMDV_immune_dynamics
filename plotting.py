@@ -60,6 +60,10 @@ SAT_COLORS = {
 
 TIME_LABEL = f'Time ({common.TIME_UNIT})'
 
+PERSISTENCE_LABEL = (
+    f'{common.TIME_MAX}-{common.TIME_UNIT} FMDV persistence'
+)
+
 
 @matplotlib.colors.make_norm_from_scale(matplotlib.scale.LogitScale)
 class LogitNorm(matplotlib.colors.Normalize):

@@ -22,7 +22,7 @@ rc = (
     | plotting.SupplementalMaterials.rc
     | plotting.rc_text_small
     | {
-        'figure.figsize': (3.5, 6.5),
+        'figure.figsize': (3.2, 6),
         'pcolor.shading': 'gouraud',
         'contour.algorithm': 'threaded',
         'contour.linewidth': 1,
@@ -48,7 +48,7 @@ def _prepend_to_text(s, text):
     text.set_text(s + text.get_text())
 
 
-def plot_persistence(extinction_time, save=True):
+def plot_persistence(extinction_time, save=True, show=False):
     contour_levels = [0.01, 0.5, 0.99]
     with seaborn.axes_style('ticks'), matplotlib.pyplot.rc_context(rc=rc):
         grouper = extinction_time.groupby('SAT')
@@ -114,14 +114,11 @@ def plot_persistence(extinction_time, save=True):
                 ax.yaxis.set_minor_locator(
                     matplotlib.ticker.AutoMinorLocator(2)
                 )
-            persistence_label = (
-                f'Proportion persisting {common.TIME_MAX} {common.TIME_UNIT}s'
-            )
             cbar = fig.colorbar(
                 img,
                 ax=ax,
                 location='right',
-                label=persistence_label,
+                label=plotting.PERSISTENCE_LABEL,
                 format=matplotlib.ticker.PercentFormatter(xmax=1),
             )
             cbar.outline.set_edgecolor('none')
@@ -138,10 +135,11 @@ def plot_persistence(extinction_time, save=True):
         if save:
             store_path = population_size_and_susceptibility.store_path
             fig.savefig(store_path.with_suffix('.pdf'))
+        if show:
+            matplotlib.pyplot.show()
         return fig
 
 
 if __name__ == '__main__':
     extinction_time = sensitivity.load(population_size_and_susceptibility)
     plot_persistence(extinction_time)
-    matplotlib.pyplot.show()

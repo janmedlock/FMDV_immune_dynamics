@@ -146,7 +146,8 @@ param_transforms = {
 }
 
 
-def plot_sensitivity(dfr, rank=True, errorbars=False):
+def plot_sensitivity(dfr,
+                     rank=True, errorbars=False, save=True, show=False):
     outcome = 'time'
     SATs = dfr.index.get_level_values('SAT').unique()
     samples_ = dfr.index.get_level_values('sample').unique()
@@ -245,12 +246,13 @@ def plot_sensitivity(dfr, rank=True, errorbars=False):
                 ax.yaxis.offsetText.set_visible(False)
             for sp in ('top', 'left', 'right'):
                 ax.spines[sp].set_visible(False)
+    if save:
         fig.savefig('samples_sensitivity.pdf')
+    if show:
+        matplotlib.pyplot.show()
+    return fig
 
 
 if __name__ == '__main__':
     dfr = load()
-    # plot_times(dfr)
-    # plot_parameters(dfr)
     plot_sensitivity(dfr)
-    matplotlib.pyplot.show()

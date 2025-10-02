@@ -2,8 +2,6 @@
 '''Build a figure comparing the runs with no chronic infections. This
 requires the file `acute.h5`, which is built by `acute_run.py`.'''
 
-import matplotlib.pyplot
-
 import acute
 import baseline_plot
 
@@ -13,9 +11,9 @@ def load():
 
 
 def plot(infected, extinction_time,
-         draft=False, save=True):
+         draft=False, save=True, show=False):
     return baseline_plot.plot(infected, extinction_time,
-                              draft=draft, save=save,
+                              draft=draft, save=save, show=show,
                               _module=acute)
 
 
@@ -23,4 +21,3 @@ if __name__ == '__main__':
     DRAFT = False
     (infected, extinction_time) = load()
     plot(infected, extinction_time, draft=DRAFT)
-    matplotlib.pyplot.show()

@@ -58,7 +58,7 @@ def plot_one(ax, SAT, group):
                                     bbox_to_anchor=(0.5, -0.25))
 
 
-def plot_SATs(data, save=True):
+def plot_SATs(data, save=True, show=False):
     grouper = data.groupby('SAT')
     with seaborn.axes_style('whitegrid'), matplotlib.pyplot.rc_context(rc=rc):
         (fig, axes) = matplotlib.pyplot.subplots(
@@ -67,12 +67,13 @@ def plot_SATs(data, save=True):
         )
         for (ax, (SAT, group)) in zip(axes, grouper):
             plot_one(ax, SAT, group)
-        if save:
-            fig.savefig(simulation.store_path.with_suffix('.pdf'))
+    if save:
+        fig.savefig(simulation.store_path.with_suffix('.pdf'))
+    if show:
+        matplotlib.pyplot.show()
     return fig
 
 
 if __name__ == '__main__':
     data = load()
     plot_SATs(data)
-    matplotlib.pyplot.show()
