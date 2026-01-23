@@ -18,11 +18,9 @@ def _minimizer_global(func, theta_0,
                                **kwds)
 
 
-def estimate(model, theta_0, jac='3-point',
-             global_=False, global_kwds=None,
-             **kwds):
+def estimate(model, theta_0,
+             global_=False, global_kwds=None, **kwds):
     '''Find the maximum-likelihood estimate for the model parameters.'''
-    kwds['jac'] = jac
     if global_:
         minimizer = _minimizer_global
         if global_kwds is None:
@@ -39,7 +37,7 @@ def estimate(model, theta_0, jac='3-point',
     theta_mle = pandas.Series(result.x,
                               index=model.parameter_index,
                               name='MLE')
-    # Store Hessian and covariance, if available.
+    # Store Hessian or covariance, if available.
     try:
         theta_mle.fisher_information = result.hess
     except AttributeError:

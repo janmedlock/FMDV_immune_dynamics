@@ -187,19 +187,20 @@ class Model:
             theta_0[index] = numpy.log(rate)
         return theta_0
 
-    def estimate_ml(self, theta_0=None, **kwds):
+    def estimate_ml(self, theta_0=None, global_=False, **kwds):
         '''Estimate the maximum-likelihood parameter values.'''
         if theta_0 is None:
             theta_0 = self.parameters_initial_guess()
-        return _ml.estimate(self, theta_0, **kwds)
+        return _ml.estimate(self, theta_0, global_=global_, **kwds)
 
     def estimate_ci(self, theta_mle, alpha=0.05):
         '''Estimate the confidence intervals for the parameter values .'''
         return _ci.estimate(self, theta_mle, alpha=alpha)
 
-    def estimate_ml_and_ci(self, theta_0=None, alpha=0.05, **kwds):
+    def estimate_ml_and_ci(self, theta_0=None, global_=False, alpha=0.05,
+                           **kwds):
         '''Estimate the maximum-likelihood parameter values and their
         confidence intervals.'''
-        theta_mle = self.estimate_ml(theta_0, **kwds)
-        theta_ci = self.estimate_ci(theta_mle, alpha=alpha, **kwds)
+        theta_mle = self.estimate_ml(theta_0, global_=global_, **kwds)
+        theta_ci = self.estimate_ci(theta_mle, alpha=alpha)
         return pandas.concat([theta_mle, theta_ci], axis='columns')
