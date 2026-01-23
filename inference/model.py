@@ -176,31 +176,27 @@ class Model:
     def parameters_initial_guess(self):
         '''Get a rough estimate of the model parameters.'''
         rates = self._transition_rates()
-        theta_0 = pandas.Series(
-            index=self.parameter_index,
-            name='initial_guess',
-        )
-        assert all('log rate' in parameter
-                   for parameter in self.parameter_names)
+        theta_0 = pandas.Series(index=self.parameter_index,
+                                name='initial_guess',
+                                dtype=float)
         for (x_0, rate) in rates.items():
             index = self._transition_rates_to_parameters[x_0]
             theta_0[index] = numpy.log(rate)
         return theta_0
 
-    def estimate_ml(self, theta_0=None, global_=False, **kwds):
+    def estimate_ml(self, theta_0=None, **kwds):
         '''Estimate the maximum-likelihood parameter values.'''
         if theta_0 is None:
             theta_0 = self.parameters_initial_guess()
-        return _ml.estimate(self, theta_0, global_=global_, **kwds)
+        return _ml.estimate(self, theta_0, **kwds)
 
     def estimate_ci(self, theta_mle, alpha=0.05):
         '''Estimate the confidence intervals for the parameter values .'''
         return _ci.estimate(self, theta_mle, alpha=alpha)
 
-    def estimate_ml_and_ci(self, theta_0=None, global_=False, alpha=0.05,
-                           **kwds):
+    def estimate_ml_and_ci(self, theta_0=None, alpha=0.05, **kwds):
         '''Estimate the maximum-likelihood parameter values and their
         confidence intervals.'''
-        theta_mle = self.estimate_ml(theta_0, global_=global_, **kwds)
+        theta_mle = self.estimate_ml(theta_0, **kwds)
         theta_ci = self.estimate_ci(theta_mle, alpha=alpha)
         return pandas.concat([theta_mle, theta_ci], axis='columns')

@@ -5,24 +5,21 @@ import pandas
 import scipy
 
 
-def _minimizer_global(func, theta_0,
-                      bounds=(-20, 20), sampling_method='sobol', workers=-1,
-                      **kwds):
+def _minimize_global(func, theta_0,
+                     bounds_diff=numpy.log(1e6), **kwds):
     '''Wrapper to call `scipy.optimize.shgo()` with a signature like
-    that of `scipy.optimize.minimize()` and to tweak some defaults.'''
-    if numpy.ndim(bounds) < numpy.ndim(theta_0) + 1:
-        bounds = (bounds, ) * len(theta_0)
-    return scipy.optimize.shgo(func, bounds,
-                               sampling_method=sampling_method,
-                               workers=workers,
-                               **kwds)
+    that of `scipy.optimize.minimize()`.'''
+    # Add and subtract `bounds_diff` to each component of `theta_0`.
+    bounds = (numpy.reshape(theta_0, (-1, 1))
+              + numpy.array((-bounds_diff, bounds_diff)))
+    return scipy.optimize.shgo(func, bounds, **kwds)
 
 
 def estimate(model, theta_0,
              global_=False, global_kwds=None, **kwds):
     '''Find the maximum-likelihood estimate for the model parameters.'''
     if global_:
-        minimizer = _minimizer_global
+        minimize = _minimize_global
         if global_kwds is None:
             global_kwds = {}
         # Merge `kwds` into `global_kwds['minimizer_kwargs']`.
@@ -31,8 +28,8 @@ def estimate(model, theta_0,
         # `global_kwds` is the `kwds` for `_minimizer_global()`.
         kwds = global_kwds
     else:
-        minimizer = scipy.optimize.minimize
-    result = minimizer(model.minus_log_likelihood, theta_0, **kwds)
+        minimize = scipy.optimize.minimize
+    result = minimize(model.minus_log_likelihood, theta_0, **kwds)
     assert result.success, result
     theta_mle = pandas.Series(result.x,
                               index=model.parameter_index,

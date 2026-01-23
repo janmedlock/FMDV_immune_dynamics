@@ -19,7 +19,7 @@ def _waiting_time(ax, sat, waiting_time_sat, y):
         waiting_time_sat.CI_lower - waiting_time_sat.MLE
     ]
     ax.errorbar(waiting_time_sat.MLE, y, xerr=waiting_time_sat_err,
-                label=f'SAT {sat}',
+                label=f'SAT{sat}',
                 linestyle='None', marker='|',
                 markersize=5, markeredgewidth=2,
                 markerfacecolor='black', markeredgecolor='black',
@@ -47,7 +47,7 @@ def waiting_times_by_sat(log_rate, dist=0.1, show=True):
     )
     ax.set_xlim(left=0)
     ax.set_xlabel(waiting_time.name)
-    ax.legend(loc='center right', labelspacing=1)
+    ax.legend(loc='center right', labelspacing=1, frameon=True)
     seaborn.despine(ax=ax)
     if show:
         matplotlib.pyplot.show()
