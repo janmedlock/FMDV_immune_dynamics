@@ -4,13 +4,7 @@ import matplotlib.pyplot
 import numpy
 import seaborn
 
-
-# Erin's colors by SAT.
-COLORS = {
-    1: '#2271b5',
-    2: '#ef3b2c',
-    3: '#807dba',
-}
+from context import plotting
 
 
 def _waiting_time(ax, sat, waiting_time_sat, y):
@@ -18,12 +12,14 @@ def _waiting_time(ax, sat, waiting_time_sat, y):
         waiting_time_sat.MLE - waiting_time_sat.CI_upper,
         waiting_time_sat.CI_lower - waiting_time_sat.MLE
     ]
-    ax.errorbar(waiting_time_sat.MLE, y, xerr=waiting_time_sat_err,
-                label=f'SAT{sat}',
-                linestyle='None', marker='|',
-                markersize=5, markeredgewidth=2,
-                markerfacecolor='black', markeredgecolor='black',
-                ecolor=COLORS[sat], elinewidth=5)
+    ax.errorbar(
+        waiting_time_sat.MLE, y, xerr=waiting_time_sat_err,
+        label=f'SAT{sat}',
+        linestyle='None', marker='|',
+        markersize=5, markeredgewidth=2,
+        markerfacecolor='black', markeredgecolor='black',
+        ecolor=plotting.SAT_COLORS[sat], elinewidth=5,
+    )
 
 
 def waiting_times_by_sat(log_rate, dist=0.1, show=True):
