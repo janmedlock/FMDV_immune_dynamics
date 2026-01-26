@@ -13,8 +13,9 @@ Fuquan Zhang.**
 **Copyright 2014–2025, Jan Medlock et al.  All rights reserved.
 Released under the [GNU AGPL 3](LICENSE).**
 
-This repository contains Python code used to simulate and analyze FMDV
-transmission in African buffalo for our paper
+This repository contains Python code used to estimate parameters,
+simulate, and analyze FMDV transmission in African buffalo for our
+paper
 > Reyes Grimaldo RNG, Buss P, Charleston B, de Klerk-Lorist L-M,
 > Gorsich E, Gubbins S, Maree F, Perez-Martin E, van Schalkwyk OL,
 > Scott K, Zang F, Dugovich B, Medlock J, Beechler B, Jolles A.
@@ -43,7 +44,21 @@ third-party libraries.  Most notably:
 a virtual environment with the Python and library versions that we
 used to write and run the code.
 
-### Main simulation code
+### Statistical estimation
+
+The directory [data](data) contains the
+[data file](data/Cleaned%20Data%20-%20January%202018.xlsx).
+TODO: More about the data file...
+
+The directory [inference](inference) contains code to estimate the
+rates of loss and gain of antibodies. The script
+[inference/estimate.py](inference/estimate.py) performs the estimation
+and plots the results, while the other files in this directory contain
+the majority of the code for estimation and plotting. In particular,
+[inference/model.py](inference/model.py) implements the likelihood for
+the 2-state continuous-time Markov-chain model of the antibody data.
+
+### Simulation
 
 The Python module [herd](herd) simulates the FMDV model.
 
@@ -54,7 +69,7 @@ implementation in [Cython](https://cython.org/) of
 `herd.floquet.monodromy` that can be built using the included
 [Makefile](herd/floquet/Makefile).
 
-### Simulation scripts
+#### Simulation scripts
 
 The scripts ending in `_run.py` run the model simulations.
 **Most of these takes many cpu-days to run.**
@@ -101,7 +116,7 @@ The scripts ending in `_run.py` run the model simulations.
   produces a file called `samples.h5`. **This takes a very long
   time to run.**
 
-### Analysis and plotting scripts
+#### Analysis and plotting scripts
 
 These scripts analyze and plot the simulation results. Most of them
 require having run the simulation scripts above.
@@ -158,7 +173,7 @@ require having run the simulation scripts above.
   PRCC sensitivity of extinction time to the model parameters. This
   requires the file `samples.h5`.
 
-### Other Python files in the base directory
+#### Other Python files in the base directory
 
 In the base directory, besides the scripts for simulation, analysis,
 and plotting, there are helper Python modules for those scripts.
@@ -215,7 +230,7 @@ and plotting, there are helper Python modules for those scripts.
   [samples_run.py](samples_run.py) and
   [samples_plot.py](samples_plot.py).
 
-### Test scripts
+#### Test scripts
 
 The [test](test) directory contains some scripts to test various parts
 of the model code, along with [context.py](test/context.py) to allow
@@ -264,7 +279,7 @@ the test scripts to import from [herd](herd).
   examines the force of infection for random samples of initial
   conditions.
 
-### Metadata files in the base directory
+#### Metadata files in the base directory
 
 * [pyproject.toml](pyproject.toml) describes the project, including
   the versions of libraries used directly.
