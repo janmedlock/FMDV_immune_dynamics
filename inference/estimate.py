@@ -12,11 +12,11 @@ def estimate_by_sat(**kwds):
     '''Estimate the ML parameters and CI by SAT.'''
     data_ = model.load_data()
     grouper = data_.groupby('SAT', observed=False)
-    theta = {}
+    log_lambda = {}
     for (sat, data_sat) in grouper:
         model_ = model.Model(data_sat)
-        theta[sat] = model_.estimate_ml_and_ci(**kwds)
-    return pandas.concat(theta, names=['SAT'])
+        log_lambda[sat] = model_.estimate_ml_and_ci(**kwds)
+    return pandas.concat(log_lambda, names=['SAT'])
 
 
 def to_annual_rate(log_rate_):

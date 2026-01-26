@@ -1,7 +1,7 @@
 '''Model the antibody levels as a 2-state continuous-time Markov chain
-with antibody states {low, high}, with antibody-gain and -loss rates
-that are constant in time. The parameters are the antibody-gain log
-rate and the antibody-loss log rate.'''
+with antibody states {negative, positive}, with antibody-gain and
+-loss rates that are constant in time. The parameters are the
+antibody-gain log rate and the antibody-loss log rate.'''
 
 import numpy
 import pandas
@@ -12,11 +12,12 @@ import _utility
 import data
 
 
-_LOW = 'low'
-_HIGH = 'high'
+_NEGATIVE = 'negative'
+_POSITIVE = 'positive'
 # The calculations in the methods `Model.log_P()`, `Model.log_p()`,
 # and `Model._log_p*()` assume this order of `_STATES`.
-_STATES = (_LOW, _HIGH)
+_STATES = (_NEGATIVE, _POSITIVE)
+_STATES_DTYPE = pandas.CategoricalDtype(_STATES, ordered=True)
 
 
 def load_data(**kws):
@@ -31,12 +32,12 @@ def load_data(**kws):
     6. x: antibody state at current capture.'''
     data_ = data.load(**kws)
     # Drop rows with no antibody data.
-    data_ = data_.dropna(subset=['high'])
+    data_ = data_.dropna(subset=['positive'])
     # Build 'state' column.
     data_['state'] = (
-        data_.high
-        .map({True: _HIGH, False: _LOW})
-        .astype(pandas.CategoricalDtype(_STATES, ordered=True))
+        data_.positive
+        .map({True: _POSITIVE, False: _NEGATIVE})
+        .astype(_STATES_DTYPE)
     )
     dfr = []
     grouper = data_.groupby(['SAT', 'Numeric Animal ID'],
@@ -61,11 +62,11 @@ def load_data(**kws):
 
 class Model:
     '''A 2-state continuous-time Markov chain with antibody states
-    {low, high}, with antibody-gain and -loss rates that are
+    {negative, positive}, with antibody-gain and -loss rates that are
     constant in time. The parameters are the antibody-gain log rate
     and the antibody-loss log rate.'''
 
-    # See the comment below for `._transition_rates_to_parameters`
+    # See the comment benegative for `._transition_rates_to_parameters`
     # for how it depends on the order of `.parameter_names`.
     parameter_names = ('antibody-gain log rate',
                        'antibody-loss log rate')
@@ -79,75 +80,76 @@ class Model:
         self.data = data_
         assert (self.data.t >= self.data.t_0).all()
 
-    def _log_p_null(self, log_c):
-        '''Get the logarithm of `p_{low,low}` and `p_{high,low}`
-        when `b` == 0.'''
-        assert numpy.isneginf(log_c), f'{log_c=}'
-        # p_high = 0
-        log_p_high = - numpy.inf * numpy.ones_like(self.data.t)
-        # p_low = 1
-        log_p_low = numpy.zeros_like(self.data.t)
-        return (log_p_low, log_p_high)
+    def _log_p_negative_null(self):
+        '''Get the logarithm of
+        `p_negative(t | t_0, negative)` and `p_negative(t | t_0, positive)`
+        when `lambda_gain` == `lambda_loss` == 0.'''
+        # p_negative_negative = 1
+        log_p_negative_negative = numpy.zeros_like(self.data.t)
+        # p_negative_positive = 0
+        log_p_negative_positive = -numpy.inf * numpy.ones_like(self.data.t)
+        return (log_p_negative_negative, log_p_negative_positive)
 
-    def _log_p_constant(self, log_b, log_c):
-        '''Get the logarithm of `p_{low,low}` and `p_{high,low}`
-        when `b` > 0.'''
-        if _utility.exp_is_zero(log_b):
-            return self._log_p_null(log_c)
-        # mu = numpy.exp(- b * (self.data.t  - self.data.t_0))
-        log_mu = - numpy.exp(
-            log_b
+    def log_p_negative(self, log_lambda):
+        '''Calculate the logarithm of `p_negative(t | t_0, x_0)`
+        the probabilities of being in the negative state at time `t`
+        given the starting state `x_0` at time `t_0`.'''
+        if _utility.exp_is_zero(log_lambda).all():
+            # lambda_gain == lambda_loss == 0
+            return self._log_p_negative_null()
+        # `lambda_gain` > 0 or `lambda_loss` > 0.
+        (log_lambda_gain, log_lambda_loss) = log_lambda
+        # lambda_sum = lambda_gain + lambda_loss
+        log_lambda_sum = _utility.log_add_exp(log_lambda_gain, log_lambda_loss)
+        # lambda_sum > 0.
+        assert not _utility.exp_is_zero(log_lambda_sum)
+        # mu = numpy.exp(lambda_sum * (self.data.t  - self.data.t_0))
+        log_mu = numpy.exp(
+            log_lambda_sum
             + _utility.log_no_0_warning(self.data.t - self.data.t_0)
         )
-        # phi = c / b
-        log_phi = log_c - log_b
-        # p_high = phi - phi * mu
-        log_p_high = _utility.log_sub_exp(log_phi, log_phi + log_mu)
-        # p_low = p_high + mu
-        log_p_low = _utility.log_add_exp(log_p_high, log_mu)
-        return (log_p_low, log_p_high)
+        # phi = lambda_loss / (lambda_gain + lambda_loss)
+        log_phi = log_lambda_loss - log_lambda_sum
+        # p_negative_positive = phi - phi / mu
+        log_p_negative_positive = _utility.log_sub_exp(log_phi,
+                                                       log_phi - log_mu)
+        # p_negative_negative = p_negative_positive + 1 / mu
+        log_p_negative_negative = _utility.log_add_exp(log_p_negative_positive,
+                                                       - log_mu)
+        return (log_p_negative_negative, log_p_negative_positive)
 
-    def log_p(self, log_h_gain, log_h_loss):
-        '''Calculate the logarithm of `p_{low,low}` and `p_{high,low}`,
-        the probabilities of being in the low state at time `t`
-        given the starting state at time `t_0`.'''
-        # b = h_gain + h_loss
-        log_b = _utility.log_add_exp(log_h_gain, log_h_loss)
-        # c = h_loss
-        log_c = log_h_loss
-        return self._log_p_constant(log_b, log_c)
-
-    def log_P(self, theta):
-        '''Calculate the logarithm of the state probabities at time
-        `t` given the starting state `x_0` at time `t_0`.'''
-        # Choose between `p_{x_0, low}` using the initial state.
-        log_P_low = _utility.choose_by_state(
-            self.data.x_0, self.log_p(*theta)
+    def log_p(self, log_lambda):
+        '''Calculate the logarithm of the state probabities
+        `p_x(t | t, x_0)`.'''
+        # Choose between `p_negative(t | t_0, x_0)` using the initial
+        # state, `x_0`.
+        log_p_negative = _utility.choose_by_state(
+            self.data.x_0, self.log_p_negative(log_lambda)
         )
-        assert _utility.log_prob_is_valid(log_P_low), f'{log_P_low=}'
-        # Compute the complementary probability
-        # P_high = 1 - P_low.
-        log_P_high = _utility.log_sub_exp(0, log_P_low.clip(max=0))
-        assert _utility.log_prob_is_valid(log_P_high), f'{log_P_high=}'
-        return (log_P_low, log_P_high)
+        assert _utility.log_prob_is_valid(log_p_negative), f'{log_p_negative=}'
+        # Compute the complementary probability,
+        # `p_positive(t | t_0, x_0) = 1 - p_negative(t | t_0, x_0)`.
+        log_p_positive = _utility.log_sub_exp(0, log_p_negative.clip(max=0))
+        assert _utility.log_prob_is_valid(log_p_positive), f'{log_p_positive=}'
+        return (log_p_negative, log_p_positive)
 
-    def log_likelihood(self, theta):
+    def log_likelihood(self, log_lambda):
         '''The log likelihood.'''
-        if any(numpy.isnan(theta)):
+        if any(numpy.isnan(log_lambda)):
             return numpy.nan
-        # Choose between `P_x` using the state.
-        log_P_x = _utility.choose_by_state(
-            self.data.x, self.log_P(theta)
+        # Choose between `p_x(t | t_0, x_0)` using the state `x`.
+        log_p_x = _utility.choose_by_state(
+            self.data.x, self.log_p(log_lambda)
         )
-        ll = log_P_x.sum()
+        ll = log_p_x.sum()
         if numpy.isnan(ll):
             ll = - numpy.inf
         assert ll <= 0, f'{ll=}'
         return ll
 
-    def minus_log_likelihood(self, theta):
+    def minus_log_likelihood(self, log_lambda):
         '''The minus log likelihood.'''
-        return -self.log_likelihood(theta)
+        return -self.log_likelihood(log_lambda)
 
     def _transition_rates(self):
         '''Estimate the rates of leaving each state from the count
@@ -156,10 +158,10 @@ class Model:
             index=pandas.Index(_STATES, name='x_0'),
             name='rate',
         )
-        event = (self.data.x != self.data.x_0)
+        event = self.data.x != self.data.x_0
         exposure = self.data.t - self.data.t_0
         for x_0 in rates.index:
-            is_x_0 = (self.data.x_0 == x_0)
+            is_x_0 = self.data.x_0 == x_0
             rates[x_0] = (
                 event[is_x_0].sum()
                 / exposure[is_x_0].sum()
@@ -167,36 +169,36 @@ class Model:
         return rates
 
     _transition_rates_to_parameters = {
-        # The rate from the 'low' state sets the gain parameter.
-        _LOW: parameter_names[0],
-        # The rate from the 'high' state sets the loss parameter.
-        _HIGH: parameter_names[1],
+        # The rate from the 'negative' state sets the gain parameter.
+        _NEGATIVE: parameter_names[0],
+        # The rate from the 'positive' state sets the loss parameter.
+        _POSITIVE: parameter_names[1],
     }
 
     def parameters_initial_guess(self):
         '''Get a rough estimate of the model parameters.'''
         rates = self._transition_rates()
-        theta_0 = pandas.Series(index=self.parameter_index,
-                                name='initial_guess',
-                                dtype=float)
+        log_lambda_0 = pandas.Series(index=self.parameter_index,
+                                     name='initial_guess',
+                                     dtype=float)
         for (x_0, rate) in rates.items():
             index = self._transition_rates_to_parameters[x_0]
-            theta_0[index] = numpy.log(rate)
-        return theta_0
+            log_lambda_0[index] = numpy.log(rate)
+        return log_lambda_0
 
-    def estimate_ml(self, theta_0=None, **kwds):
+    def estimate_ml(self, log_lambda_0=None, **kwds):
         '''Estimate the maximum-likelihood parameter values.'''
-        if theta_0 is None:
-            theta_0 = self.parameters_initial_guess()
-        return _ml.estimate(self, theta_0, **kwds)
+        if log_lambda_0 is None:
+            log_lambda_0 = self.parameters_initial_guess()
+        return _ml.estimate(self, log_lambda_0, **kwds)
 
-    def estimate_ci(self, theta_mle, alpha=0.05):
+    def estimate_ci(self, log_lambda_mle, alpha=0.05):
         '''Estimate the confidence intervals for the parameter values .'''
-        return _ci.estimate(self, theta_mle, alpha=alpha)
+        return _ci.estimate(self, log_lambda_mle, alpha=alpha)
 
-    def estimate_ml_and_ci(self, theta_0=None, alpha=0.05, **kwds):
+    def estimate_ml_and_ci(self, log_lambda_0=None, alpha=0.05, **kwds):
         '''Estimate the maximum-likelihood parameter values and their
         confidence intervals.'''
-        theta_mle = self.estimate_ml(theta_0, **kwds)
-        theta_ci = self.estimate_ci(theta_mle, alpha=alpha)
-        return pandas.concat([theta_mle, theta_ci], axis='columns')
+        log_lambda_mle = self.estimate_ml(log_lambda_0, **kwds)
+        log_lambda_ci = self.estimate_ci(log_lambda_mle, alpha=alpha)
+        return pandas.concat([log_lambda_mle, log_lambda_ci], axis='columns')

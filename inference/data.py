@@ -179,13 +179,13 @@ def load(titer_cutoff=1.7):
     antibodies.reset_index(inplace=True)
     data = pandas.wide_to_long(antibodies, 'titer', 'Unique ID', 'SAT')
     data.reset_index(inplace=True)
-    # Add columns for whether antibodies are high or low.
+    # Add columns for whether antibodies are positive or negative.
     has_titer = data.titer.notnull()
-    data.loc[has_titer, 'high'] = (data.titer[has_titer] >= titer_cutoff)
-    data.loc[has_titer, 'low'] = (data.titer[has_titer] < titer_cutoff)
+    data.loc[has_titer, 'positive'] = data.titer[has_titer] >= titer_cutoff
+    data.loc[has_titer, 'negative'] = data.titer[has_titer] < titer_cutoff
     # Drop unwanted columns and reorder.
     data = data[['Unique ID', 'Numeric Animal ID', 'Capture Number',
-                 'date', 'SAT', 'titer', 'high', 'low']]
+                 'date', 'SAT', 'titer', 'positive', 'negative']]
     data.sort_values(['Numeric Animal ID', 'Capture Number', 'SAT'],
                      inplace=True)
     # Index consecutively.
