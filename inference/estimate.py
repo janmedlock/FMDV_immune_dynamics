@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 '''Estimate the model parameters by SAT.'''
 
+import numpy
 import pandas
 
 import model
@@ -18,6 +19,22 @@ def estimate_by_sat(**kwds):
     return pandas.concat(theta, names=['SAT'])
 
 
+def to_annual_rate(log_rate_):
+    '''Convert log daily rate to annual rate.'''
+    return (
+        (
+            log_rate_.apply(numpy.exp)
+            * 365
+        )
+        .rename(lambda x: x.replace('log rate', 'annual rate'),
+                level='parameter')
+    )
+
+
 if __name__ == '__main__':
-    parameters = estimate_by_sat(global_=False)
-    plot.waiting_times_by_sat(parameters)
+    log_rate = estimate_by_sat(global_=False)
+    print(
+        to_annual_rate(log_rate)
+        .round(2)
+    )
+    plot.waiting_times_by_sat(log_rate)
