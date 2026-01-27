@@ -7,10 +7,14 @@ import numpy
 import pandas
 
 
-DATA_PATH = (
+DATA_FILE = (
     pathlib.Path(__file__).parent
     / '../data/Cleaned Data - January 2018.xlsx'
 )
+
+# log10 FMDV antibody body titer of at least this value is 'positive',
+# below is 'negative'.
+ANTIBODY_TITER_CUTOFF = 1.7
 
 
 def td_to_days(ser):
@@ -50,7 +54,7 @@ def _check_id(df):
 
 
 def _load_info():
-    info = pandas.read_excel(DATA_PATH,
+    info = pandas.read_excel(DATA_FILE,
                              sheet_name='Capture info')
     # Fix data types.
     info = info.astype({col: int
@@ -143,7 +147,7 @@ def _load_info():
 
 
 def _load_antibodies():
-    antibodies = pandas.read_excel(DATA_PATH,
+    antibodies = pandas.read_excel(DATA_FILE,
                                    sheet_name='FMDV Serology')
     # Fix data types.
     antibodies = antibodies.astype({col: int
@@ -166,7 +170,7 @@ def _load_antibodies():
                               for col in sats})
 
 
-def load(titer_cutoff=1.7):
+def load():
     '''Load the data.'''
     info = _load_info()
     antibodies = _load_antibodies()
@@ -181,8 +185,12 @@ def load(titer_cutoff=1.7):
     data.reset_index(inplace=True)
     # Add columns for whether antibodies are positive or negative.
     has_titer = data.titer.notnull()
-    data.loc[has_titer, 'positive'] = data.titer[has_titer] >= titer_cutoff
-    data.loc[has_titer, 'negative'] = data.titer[has_titer] < titer_cutoff
+    data.loc[has_titer, 'positive'] = (
+        data.titer[has_titer] >= ANTIBODY_TITER_CUTOFF
+    )
+    data.loc[has_titer, 'negative'] = (
+        data.titer[has_titer] < ANTIBODY_TITER_CUTOFF
+    )
     # Drop unwanted columns and reorder.
     data = data[['Unique ID', 'Numeric Animal ID', 'Capture Number',
                  'date', 'SAT', 'titer', 'positive', 'negative']]
