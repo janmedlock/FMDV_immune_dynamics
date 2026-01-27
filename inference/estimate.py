@@ -31,10 +31,15 @@ def to_annual_rate(log_rate_):
     )
 
 
-if __name__ == '__main__':
-    log_rate = estimate_by_sat(global_=False)
-    print(
-        to_annual_rate(log_rate)
+def to_parameters(log_rate_):
+    '''Format the parameters like what is used in the manuscript.'''
+    return (
+        to_annual_rate(log_rate_)
         .round(2)
     )
-    plot.waiting_times_by_sat(log_rate)
+
+
+if __name__ == '__main__':
+    log_rate = estimate_by_sat(global_=False)
+    print(to_parameters(log_rate))
+    plot.rates_by_sat(log_rate)

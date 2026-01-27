@@ -4,7 +4,63 @@ import matplotlib.pyplot
 import numpy
 import seaborn
 
+import estimate
 from context import plotting
+
+
+rc = plotting.rc | plotting.rc_text_small | {
+    'figure.figsize': (plotting.WIDTH_MAXIMUM['double_column'], 3),
+}
+
+RATE_LABEL = 'rate (y$^{-1}$)'
+
+
+def _rate(ax, rate_):
+    (sats, (parameter,)) = (
+        rate_.index
+        .remove_unused_levels()
+        .levels
+    )
+    colors = [plotting.SAT_COLORS[sat] for sat in sats]
+    ax.scatter(
+        sats, rate_.MLE,
+        c=colors,
+        marker='_', s=100,
+    )
+    err = (
+        rate_.CI_upper - rate_.MLE,
+        rate_.MLE - rate_.CI_lower
+    )
+    ax.errorbar(
+        sats, rate_.MLE, yerr=err,
+        linestyle='None', marker='None',
+        ecolor=colors,
+    )
+    ax.set_xticks(sats, [f'SAT{sat}' for sat in sats])
+    ax.set_xlim(sats.min() - 0.5, sats.max() + 0.5)
+    ax.set_ylim(bottom=0)
+    if ax.get_subplotspec().is_first_col():
+        ax.set_ylabel(RATE_LABEL)
+    title = (
+        parameter.replace('annual rate', '')
+        .replace('-', ' ')
+    )
+    ax.set_title(title)
+
+
+def rates_by_sat(log_rate, show=True):
+    '''Plot the rates.'''
+    rates = estimate.to_annual_rate(log_rate)
+    grouper = rates.groupby('parameter', observed=True)
+    with seaborn.axes_style('darkgrid'), matplotlib.pyplot.rc_context(rc=rc):
+        (fig, axs) = matplotlib.pyplot.subplots(ncols=len(grouper),
+                                                sharey='row')
+        for ((_, rate_), ax) in zip(grouper, axs):
+            _rate(ax, rate_)
+        seaborn.despine(fig)
+        if show:
+            matplotlib.pyplot.show()
+        return fig
 
 
 def _waiting_time(ax, sat, waiting_time_sat, y):
