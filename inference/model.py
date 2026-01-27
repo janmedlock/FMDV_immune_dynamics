@@ -9,7 +9,7 @@ import pandas
 import _ci
 import _ml
 import _utility
-import data
+from context import data
 
 
 _NEGATIVE = 'negative'

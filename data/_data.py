@@ -1,4 +1,3 @@
-#!/usr/bin/python3
 '''Handle loading the data.'''
 
 import pathlib
@@ -7,9 +6,10 @@ import numpy
 import pandas
 
 
+# The data file is in the same directory as this source file.
 DATA_FILE = (
     pathlib.Path(__file__).parent
-    / '../data/Cleaned Data - January 2018.xlsx'
+    / 'Cleaned Data - January 2018.xlsx'
 )
 
 # log10 FMDV antibody body titer of at least this value is 'positive',
@@ -205,7 +205,3 @@ def load():
                        | {col: 'Int64'
                           for col in ('Numeric Animal ID',
                                       'Capture Number')})
-
-
-if __name__ == '__main__':
-    dfr = load()
