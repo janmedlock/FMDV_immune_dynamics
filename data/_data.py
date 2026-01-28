@@ -174,9 +174,9 @@ def load():
     '''Load the data.'''
     info = _load_info()
     antibodies = _load_antibodies()
-    # Add dates by merging on 'Unique ID'.
-    antibodies = pandas.merge(antibodies, info[['Unique ID', 'date']],
-                              how='outer')
+    # Add dates by merging on 'Unique ID' etc.
+    cols_merge = ['Unique ID', 'Numeric Animal ID', 'Capture Number', 'date']
+    antibodies = pandas.merge(antibodies, info[cols_merge], how='outer')
     # Put SATs into rows.
     antibodies.rename(columns={f'SAT-{x}': f'titer{x}' for x in (1, 2, 3)},
                       inplace=True)
@@ -192,8 +192,8 @@ def load():
         data.titer[has_titer] < ANTIBODY_TITER_CUTOFF
     )
     # Drop unwanted columns and reorder.
-    data = data[['Unique ID', 'Numeric Animal ID', 'Capture Number',
-                 'date', 'SAT', 'titer', 'positive', 'negative']]
+    cols_keep = cols_merge + ['SAT', 'titer', 'positive', 'negative']
+    data = data[cols_keep]
     data.sort_values(['Numeric Animal ID', 'Capture Number', 'SAT'],
                      inplace=True)
     # Index consecutively.
