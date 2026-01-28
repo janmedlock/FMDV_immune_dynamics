@@ -6,11 +6,12 @@ import numpy
 import pandas
 
 
-# The data file is in the same directory as this source file.
-DATA_FILE = (
-    pathlib.Path(__file__).parent
-    / 'Cleaned Data - January 2018.xlsx'
-)
+# The data files are in the same directory as this source file.
+_PATH = pathlib.Path(__file__).parent
+
+CLEANED_DATA = _PATH / 'Cleaned Data - January 2018.xlsx'
+
+ANIMALS = _PATH / 'animals captured at each capture END OF PROJECT.xlsx'
 
 # log10 FMDV antibody body titer of at least this value is 'positive',
 # below is 'negative'.
@@ -54,7 +55,7 @@ def _check_id(df):
 
 
 def _load_info():
-    info = pandas.read_excel(DATA_FILE,
+    info = pandas.read_excel(CLEANED_DATA,
                              sheet_name='Capture info')
     # Fix data types.
     info = info.astype({col: int
@@ -147,7 +148,7 @@ def _load_info():
 
 
 def _load_antibodies():
-    antibodies = pandas.read_excel(DATA_FILE,
+    antibodies = pandas.read_excel(CLEANED_DATA,
                                    sheet_name='FMDV Serology')
     # Fix data types.
     antibodies = antibodies.astype({col: int
@@ -205,3 +206,30 @@ def load():
                        | {col: 'Int64'
                           for col in ('Numeric Animal ID',
                                       'Capture Number')})
+
+
+def _load_observations():
+    dfr = load()
+    return (
+        # Count of non-null 'titer' values by animal and SAT.
+        dfr.groupby(['Numeric Animal ID', 'SAT'],
+                    observed=True)
+        ['titer']
+        .count()
+        .unstack('SAT')
+        .min(axis='columns')
+        .rename('Observations')
+    )
+
+
+def _load_animals():
+    return pandas.read_excel(ANIMALS)
+
+
+def load_observations():
+    '''Load animal metadata.'''
+    animals = _load_animals()
+    observations = _load_observations()
+    return pandas.merge(animals, observations,
+                        on='Numeric Animal ID',
+                        how='outer')
