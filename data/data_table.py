@@ -58,7 +58,8 @@ def load_table(save=True):
     cols_rename = {
         'Numeric Animal ID': 'ID',
         'Age at First Capture (Years)': 'Age at first capture (y)',
-        'Consecutive Observations': 'Consecutive observations',
+        'Observations': 'Antibody observations',
+        'Consecutive Observations': 'Consecutive antibody observations',
     }
     replacements = {'Sex': {'M': 'male', 'F': 'female'}}
     table_ = (
@@ -76,14 +77,13 @@ def load_table(save=True):
                 precision=1,
             )
             .format_index(
-                lambda x: rf'\multicolumn{{1}}{{c}}{{\textbf{{{x}}}}}',
+                lambda x: rf'\multicolumn{{1}}{{l}}{{\textbf{{{x}}}}}',
                 axis='columns',
             )
         )
         styler.to_latex(
             path,
             position='!h',
-            column_format='r',
             environment='longtable',
             hrules=True,
             label='table:data_summary',
