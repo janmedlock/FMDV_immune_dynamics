@@ -54,8 +54,9 @@ def load_table(save=True):
         'Observations',
         'Consecutive Observations',
     ]
+    col_index = 'Numeric Animal ID'
     cols_rename = {
-        'Numeric Animal ID': 'Numeric animal ID',
+        'Numeric Animal ID': 'ID',
         'Age at First Capture (Years)': 'Age at first capture (y)',
         'Consecutive Observations': 'Consecutive observations',
     }
@@ -65,11 +66,29 @@ def load_table(save=True):
         .loc[:, cols]
         .rename(columns=cols_rename)
         .replace(replacements)
-        .round(1)
+        .set_index(cols_rename.get(col_index, col_index))
     )
     if save:
-        path = pathlib.Path(__file__).with_suffix('.csv')
-        table_.to_csv(path, index=False)
+        path = pathlib.Path(__file__).with_suffix('.tex')
+        styler = (
+            table_.style
+            .format(
+                precision=1,
+            )
+            .format_index(
+                lambda x: rf'\multicolumn{{1}}{{c}}{{\textbf{{{x}}}}}',
+                axis='columns',
+            )
+        )
+        styler.to_latex(
+            path,
+            position='!h',
+            column_format='r',
+            environment='longtable',
+            hrules=True,
+            label='table:data_summary',
+            caption='Data summary.',
+        )
     return table_
 
 
