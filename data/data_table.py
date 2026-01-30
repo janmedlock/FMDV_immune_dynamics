@@ -3,7 +3,7 @@
 
 import pathlib
 
-import _data
+import data_
 
 
 def _len_consec(ser):
@@ -21,8 +21,8 @@ def _len_consec(ser):
 
 def load_len_consec():
     '''Get the length of the longest consecutive non-null subsequence.'''
-    dfr = _data.load()
-    return _data.consecutive_observations(dfr)
+    dfr = data_.load()
+    return data_.consecutive_observations(dfr)
 
 
 def build_table(save=True):
@@ -34,7 +34,7 @@ def build_table(save=True):
         'consecutive_observations': 'Consecutive antibody observations',
     }
     table_ = (
-        _data.load_observations()
+        data_.load_observations()
         .rename(columns=cols_rename)
     )
     if save:

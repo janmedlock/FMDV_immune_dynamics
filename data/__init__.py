@@ -1,3 +1,3 @@
 '''Handle loading the data.'''
 
-from ._data import *
+from .data_ import *
