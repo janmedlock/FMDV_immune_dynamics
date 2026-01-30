@@ -4,9 +4,9 @@ import matplotlib.pyplot
 import numpy
 import seaborn
 
-import _ci
-import estimate
 from context import plotting
+import estimate
+import _ci
 
 
 rc = plotting.rc | plotting.rc_text_small | {

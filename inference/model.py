@@ -6,10 +6,10 @@ antibody-gain log rate and the antibody-loss log rate.'''
 import numpy
 import pandas
 
+from context import data
 import _ci
 import _ml
 import _utility
-from context import data
 
 
 _NEGATIVE = 'negative'

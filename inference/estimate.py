@@ -4,9 +4,9 @@
 import numpy
 import pandas
 
-import _multiprocessing_
 import model
 import plot
+import _multiprocessing_
 
 
 def estimate_by_sat(pool=None, **kwds):
