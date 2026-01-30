@@ -4,6 +4,7 @@ import matplotlib.pyplot
 import numpy
 import seaborn
 
+import _ci
 import estimate
 from context import plotting
 
@@ -28,8 +29,8 @@ def _rate(ax, rate_):
         marker='_', s=100,
     )
     err = (
-        rate_.CI_upper - rate_.MLE,
-        rate_.MLE - rate_.CI_lower
+        rate_.MLE - rate_.CI_lower,
+        rate_.CI_upper - rate_.MLE
     )
     ax.errorbar(
         sats, rate_.MLE, yerr=err,
@@ -63,11 +64,20 @@ def rates_by_sat(log_rate, show=True):
         return fig
 
 
+def _to_waiting_time(log_rate):
+    rate = numpy.exp(log_rate)
+    waiting_time = 1 / rate
+    # Swap upper and lower CI.
+    waiting_time[_ci.COLUMNS] = waiting_time[_ci.COLUMNS[::-1]]
+    waiting_time.name = 'mean waiting time (d)'
+    return waiting_time
+
+
 def _waiting_time(ax, sat, waiting_time_sat, y):
-    waiting_time_sat_err = [
-        waiting_time_sat.MLE - waiting_time_sat.CI_upper,
-        waiting_time_sat.CI_lower - waiting_time_sat.MLE
-    ]
+    waiting_time_sat_err = (
+        waiting_time_sat.MLE - waiting_time_sat.CI_lower,
+        waiting_time_sat.CI_upper - waiting_time_sat.MLE
+    )
     ax.errorbar(
         waiting_time_sat.MLE, y, xerr=waiting_time_sat_err,
         label=f'SAT{sat}',
@@ -80,9 +90,7 @@ def _waiting_time(ax, sat, waiting_time_sat, y):
 
 def waiting_times_by_sat(log_rate, dist=0.1, show=True):
     '''Plot the waiting times.'''
-    rate = numpy.exp(log_rate)
-    waiting_time = 1 / rate
-    waiting_time.name = 'mean waiting time (d)'
+    waiting_time = _to_waiting_time(log_rate)
     (sats, parameters) = waiting_time.index.levels
     n_sats = len(sats)
     n_parameters = len(parameters)

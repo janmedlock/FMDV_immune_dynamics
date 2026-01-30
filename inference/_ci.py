@@ -71,7 +71,7 @@ def _solve(model, ll_ci, theta, i_which):
     return below
 
 
-_COLUMNS = ('CI_lower', 'CI_upper')
+COLUMNS = ['CI_lower', 'CI_upper']
 
 
 def estimate(model, theta, alpha=0.05, pool=None):
@@ -88,10 +88,10 @@ def estimate(model, theta, alpha=0.05, pool=None):
     solve = functools.partial(_solve, model, ll_ci, theta)
     # Iterate over `i`, the parameter to estimate, and
     # `which`, the lower or upper side of the CI.
-    i_which_vals = itertools.product(range(len(theta)), _COLUMNS)
+    i_which_vals = itertools.product(range(len(theta)), COLUMNS)
     with _multiprocessing_.Pool(pool) as pool_:
         ci = pool_.map(solve, i_which_vals)
     ci = numpy.reshape(ci, (len(theta), -1))
     return pandas.DataFrame(ci,
                             index=model.parameter_index,
-                            columns=_COLUMNS)
+                            columns=COLUMNS)
