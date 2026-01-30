@@ -46,17 +46,36 @@ used to write and run the code.
 
 ### Statistical estimation
 
-The directory [data](data) contains the
-[data file](data/Cleaned%20Data%20-%20January%202018.xlsx).
-TODO: More about the data file...
+#### Data
 
-The directory [inference](inference) contains code to estimate the
-rates of loss and gain of antibodies. The script
-[inference/estimate.py](inference/estimate.py) performs the estimation
-and plots the results, while the other files in this directory contain
-the majority of the code for estimation and plotting. In particular,
-[inference/model.py](inference/model.py) implements the likelihood for
-the 2-state continuous-time Markov-chain model of the antibody data.
+The directory [data](data) contains the data files, along with some
+Python code.
+
+* [data/antibodies.csv](data/antibodies.csv) contains the antibodies
+  titers for FMDV serotypes SAT1, SAT2, and SAT3 for 106 buffalo over
+  16 captures.
+
+* [data/captures.csv](data/captures.csv) contains the dates of the
+  captures.
+
+* [data/animals.csv](data/animals.csv) contains the sex and age in
+  years at first capture for the buffalo.
+
+* [data/data_table.py](data/data_table.py) is a script to make a
+  summary table of the data.
+
+#### Inference
+
+The directory [inference](inference) contains Python code to estimate the
+rates of loss and gain of antibodies.
+
+* [inference/estimate.py](inference/estimate.py) is a script that
+  performs the estimation of the rates and plots the results.
+
+The other files in this directory contain the code for estimation and
+plotting. In particular, [inference/model.py](inference/model.py)
+implements the log-likelihood for the 2-state continuous-time
+Markov-chain model of the antibody data.
 
 ### Simulation
 
