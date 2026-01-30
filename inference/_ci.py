@@ -3,12 +3,12 @@ log likelihood.'''
 
 import functools
 import itertools
-import multiprocessing
 
 import numpy
 import pandas
 import scipy
 
+import _multiprocessing_
 import _profile
 import _utility
 
@@ -74,7 +74,7 @@ def _solve(model, ll_ci, theta, i_which):
 _COLUMNS = ('CI_lower', 'CI_upper')
 
 
-def estimate(model, theta, alpha=0.05):
+def estimate(model, theta, alpha=0.05, pool=None):
     '''Get the confidence interval using the profile log likelihood.'''
     # For each i, find the value of theta_i where
     # the profile log likelihod is chi2 / 2 less than
@@ -89,8 +89,8 @@ def estimate(model, theta, alpha=0.05):
     # Iterate over `i`, the parameter to estimate, and
     # `which`, the lower or upper side of the CI.
     i_which_vals = itertools.product(range(len(theta)), _COLUMNS)
-    with multiprocessing.Pool() as pool:
-        ci = pool.map(solve, i_which_vals)
+    with _multiprocessing_.Pool(pool) as pool_:
+        ci = pool_.map(solve, i_which_vals)
     ci = numpy.reshape(ci, (len(theta), -1))
     return pandas.DataFrame(ci,
                             index=model.parameter_index,

@@ -4,18 +4,20 @@
 import numpy
 import pandas
 
+import _multiprocessing_
 import model
 import plot
 
 
-def estimate_by_sat(**kwds):
+def estimate_by_sat(pool=None, **kwds):
     '''Estimate the ML parameters and CI by SAT.'''
     data_ = model.load_data()
     grouper = data_.groupby('SAT', observed=False)
     log_lambda = {}
-    for (sat, data_sat) in grouper:
-        model_ = model.Model(data_sat)
-        log_lambda[sat] = model_.estimate_ml_and_ci(**kwds)
+    with _multiprocessing_.Pool(pool) as pool_:
+        for (sat, data_sat) in grouper:
+            model_ = model.Model(data_sat)
+            log_lambda[sat] = model_.estimate_ml_and_ci(pool=pool_, **kwds)
     return pandas.concat(log_lambda, names=['SAT'])
 
 

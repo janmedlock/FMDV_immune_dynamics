@@ -183,19 +183,21 @@ class Model:
             log_lambda_0[index] = numpy.log(rate)
         return log_lambda_0
 
-    def estimate_ml(self, log_lambda_0=None, **kwds):
+    def estimate_ml(self, log_lambda_0=None, pool=None, **kwds):
         '''Estimate the maximum-likelihood parameter values.'''
         if log_lambda_0 is None:
             log_lambda_0 = self.parameters_initial_guess()
-        return _ml.estimate(self, log_lambda_0, **kwds)
+        return _ml.estimate(self, log_lambda_0, pool=pool, **kwds)
 
-    def estimate_ci(self, log_lambda_mle, alpha=0.05):
+    def estimate_ci(self, log_lambda_mle, alpha=0.05, pool=None):
         '''Estimate the confidence intervals for the parameter values .'''
-        return _ci.estimate(self, log_lambda_mle, alpha=alpha)
+        return _ci.estimate(self, log_lambda_mle, alpha=alpha, pool=pool)
 
-    def estimate_ml_and_ci(self, log_lambda_0=None, alpha=0.05, **kwds):
+    def estimate_ml_and_ci(self, log_lambda_0=None, alpha=0.05, pool=None,
+                           **kwds):
         '''Estimate the maximum-likelihood parameter values and their
         confidence intervals.'''
-        log_lambda_mle = self.estimate_ml(log_lambda_0, **kwds)
-        log_lambda_ci = self.estimate_ci(log_lambda_mle, alpha=alpha)
+        log_lambda_mle = self.estimate_ml(log_lambda_0, pool=pool, **kwds)
+        log_lambda_ci = self.estimate_ci(log_lambda_mle,
+                                         alpha=alpha, pool=pool)
         return pandas.concat([log_lambda_mle, log_lambda_ci], axis='columns')

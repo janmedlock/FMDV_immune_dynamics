@@ -4,19 +4,22 @@ import numpy
 import pandas
 import scipy
 
+import _multiprocessing_
+
 
 def _minimize_global(func, theta_0,
-                     bounds_diff=numpy.log(1e6), **kwds):
+                     bounds_diff=numpy.log(1e6), pool=None, **kwds):
     '''Wrapper to call `scipy.optimize.shgo()` with a signature like
     that of `scipy.optimize.minimize()`.'''
     # Add and subtract `bounds_diff` to each component of `theta_0`.
     bounds = (numpy.reshape(theta_0, (-1, 1))
               + numpy.array((-bounds_diff, bounds_diff)))
-    return scipy.optimize.shgo(func, bounds, **kwds)
+    with _multiprocessing_.Pool(pool) as pool_:
+        return scipy.optimize.shgo(func, bounds, workers=pool_.map, **kwds)
 
 
 def estimate(model, theta_0,
-             global_=False, global_kwds=None, **kwds):
+             global_=False, global_kwds=None, pool=None, **kwds):
     '''Find the maximum-likelihood estimate for the model parameters.'''
     if global_:
         minimize = _minimize_global
@@ -25,6 +28,7 @@ def estimate(model, theta_0,
         # Merge `kwds` into `global_kwds['minimizer_kwargs']`.
         global_kwds.setdefault('minimizer_kwargs', {}) \
                    .update(kwds)
+        global_kwds['pool'] = pool
         # `global_kwds` is the `kwds` for `_minimizer_global()`.
         kwds = global_kwds
     else:
