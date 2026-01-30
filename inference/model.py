@@ -31,8 +31,6 @@ def load_data(**kws):
     5. x_0: antibody state at previous capture,
     6. x: antibody state at current capture.'''
     data_ = data.load(**kws)
-    # Drop rows with no antibody data.
-    data_ = data_.dropna(subset=['positive'])
     # Build 'state' column.
     data_['state'] = (
         data_.positive
@@ -40,11 +38,10 @@ def load_data(**kws):
         .astype(_STATES_DTYPE)
     )
     dfr = []
-    grouper = data_.groupby(['SAT', 'Numeric Animal ID'],
-                            observed=False)
+    grouper = data_.groupby(['SAT', 'ID'], observed=False)
     for (_, sub) in grouper:
         # Columns that will be used for the index.
-        tmp = sub[['SAT', 'Numeric Animal ID', 'Capture Number']].copy()
+        tmp = sub[['SAT', 'ID', 'capture']].copy()
         tmp['t_0'] = sub.date.shift(1)
         tmp['t'] = sub.date
         tmp['x_0'] = sub.state.shift(1)
