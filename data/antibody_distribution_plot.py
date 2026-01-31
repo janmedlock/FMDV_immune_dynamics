@@ -10,7 +10,7 @@ from context import plotting
 import data_
 
 
-ALPHA = 0.7
+ALPHA = 0.8
 
 
 rc = (
