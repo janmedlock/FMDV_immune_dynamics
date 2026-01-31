@@ -1,6 +1,7 @@
 '''Plotting.'''
 
 import matplotlib.pyplot
+import matplotlib.ticker
 import numpy
 import seaborn
 
@@ -9,56 +10,60 @@ import estimate
 import _ci
 
 
-rc = plotting.rc | plotting.rc_text_small | {
-    'figure.figsize': (plotting.WIDTH_MAXIMUM['double_column'], 3),
-}
+ALPHA = 0.7
 
 RATE_LABEL = 'rate (y$^{-1}$)'
 
 
-def _rate(ax, rate_):
+def _rate(ax, rate_, rate_max, alpha, elinewidth=10):
     (sats, (parameter,)) = (
         rate_.index
         .remove_unused_levels()
         .levels
     )
-    colors = [plotting.SAT_COLORS[sat] for sat in sats]
+    s = elinewidth ** 2
+    zorder_scatter = 3
     ax.scatter(
         sats, rate_.MLE,
-        c=colors,
-        marker='_', s=100,
+        marker='_', s=s, c='black', zorder=zorder_scatter,
     )
     err = (
         rate_.MLE - rate_.CI_lower,
         rate_.CI_upper - rate_.MLE
     )
+    ecolor = [plotting.SAT_COLORS[sat] for sat in sats]
+    zorder_errorbar = zorder_scatter - 1
     ax.errorbar(
         sats, rate_.MLE, yerr=err,
-        linestyle='None', marker='None',
-        ecolor=colors,
+        elinewidth=elinewidth, ecolor=ecolor, alpha=alpha,
+        linestyle='None', marker='None', zorder=zorder_errorbar,
     )
     ax.set_xticks(sats, [f'SAT{sat}' for sat in sats])
     ax.set_xlim(sats.min() - 0.5, sats.max() + 0.5)
-    ax.set_ylim(bottom=0)
-    if ax.get_subplotspec().is_first_col():
-        ax.set_ylabel(RATE_LABEL)
-    title = (
-        parameter.replace('annual rate', '')
-        .replace('-', ' ')
-    )
-    ax.set_title(title)
+    (_, y_margin) = ax.margins()
+    ax.set_ylim(0, (1 + y_margin) * rate_max)
+    ax.set_ylabel(parameter.replace('annual rate', RATE_LABEL))
+
+
+def rates_by_sat_on(log_rate, axs, alpha=ALPHA):
+    '''Plot the rates onto `axs`.'''
+    rates = estimate.to_annual_rate(log_rate)
+    rate_max = rates.max().max()
+    grouper = rates.groupby('parameter', observed=True)
+    for ((_, rate_), ax) in zip(grouper, axs):
+        _rate(ax, rate_, rate_max, alpha)
+        ax.yaxis.set_major_locator(matplotlib.ticker.MultipleLocator(0.5))
 
 
 def rates_by_sat(log_rate, show=True):
     '''Plot the rates.'''
-    rates = estimate.to_annual_rate(log_rate)
-    grouper = rates.groupby('parameter', observed=True)
-    with seaborn.axes_style('darkgrid'), matplotlib.pyplot.rc_context(rc=rc):
-        (fig, axs) = matplotlib.pyplot.subplots(ncols=len(grouper),
-                                                sharey='row')
-        for ((_, rate_), ax) in zip(grouper, axs):
-            _rate(ax, rate_)
-        seaborn.despine(fig)
+    parameters = log_rate.index.levels[
+        log_rate.index.names.index('parameter')
+    ]
+    with seaborn.axes_style('darkgrid'):
+        (fig, axs) = matplotlib.pyplot.subplots(ncols=len(parameters),
+                                                layout='constrained')
+        rates_by_sat_on(log_rate, axs)
         if show:
             matplotlib.pyplot.show()
         return fig
