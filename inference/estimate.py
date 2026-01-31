@@ -38,10 +38,13 @@ def to_parameters(log_rate_):
     return (
         to_annual_rate(log_rate_)
         .round(2)
+        .unstack('SAT')
+        .iloc[::-1]
+        .stack('SAT', future_stack=True)
     )
 
 
 if __name__ == '__main__':
     log_rate = estimate_by_sat(global_=False)
     print(to_parameters(log_rate))
-    plotting_.rates_by_sat(log_rate)
+    # plotting_.rates_by_sat(log_rate)
