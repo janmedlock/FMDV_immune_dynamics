@@ -115,3 +115,17 @@ def legend_multicolumn(obj, handles, labels, ncol, **kwds):
 def get_state_label(state):
     '''Make a plot label for `state`.'''
     return state.replace('_', ' ').capitalize()
+
+
+def add_part_labels(axs, **kws):
+    '''Add part labels to the `axs`.'''
+    label_start = 'a'
+    style = {
+        'fontstyle': 'italic',
+        'loc': 'left',
+        'verticalalignment': 'top',
+        'horizontalalignment': 'center',
+    }
+    for (label_ord, ax) in enumerate(axs.flat, start=ord(label_start)):
+        label = chr(label_ord)
+        ax.set_title(f'({label})', **style, **kws)

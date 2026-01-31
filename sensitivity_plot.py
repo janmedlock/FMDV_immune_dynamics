@@ -120,6 +120,7 @@ def plot_persistence(extinction_times, save=True, show=False):
                            clip_on=False)
                 for sp in ('top', 'right'):
                     ax.spines[sp].set_visible(False)
+        plotting.add_part_labels(axes[0, :], pad=13)
         fig.align_xlabels(axes[-1, :])
         fig.align_ylabels(axes[:, 0])
         if save:
