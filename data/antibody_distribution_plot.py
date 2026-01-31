@@ -13,12 +13,17 @@ import data_
 ALPHA = 0.7
 
 
-rc = plotting.rc | plotting.rc_text_small | {
-    'figure.figsize': (plotting.WIDTH_MAXIMUM['double_column'], 4.5),
-    'axes.spines.top': False,
-    'axes.spines.right': False,
-    'axes.grid.axis': 'y',
-}
+rc = (
+    plotting.rc
+    | plotting.SupplementalMaterials.rc
+    | plotting.rc_text_small
+    | {
+        'figure.figsize': (plotting.SupplementalMaterials.WIDTH_MAXIMUM, 3),
+        'axes.spines.top': False,
+        'axes.spines.right': False,
+        'axes.grid.axis': 'y',
+    }
+)
 
 
 def plot_antibodies(antibodies_, save=True, show=True):
@@ -47,12 +52,11 @@ def plot_antibodies(antibodies_, save=True, show=True):
         if save:
             path_file = pathlib.Path(__file__)
             path = path_file.with_stem(path_file.stem.replace('_plot', ''))
-            for suffix in ('.pdf', '.png'):
-                fig.savefig(path.with_suffix(suffix))
+            fig.savefig(path.with_suffix('.pdf'))
         if show:
             matplotlib.pyplot.show()
 
 
 if __name__ == '__main__':
     antibodies = data_.load()
-    plot_antibodies(antibodies, save=False)
+    plot_antibodies(antibodies, show=False)
