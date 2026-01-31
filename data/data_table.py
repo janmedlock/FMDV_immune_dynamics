@@ -6,27 +6,10 @@ import pathlib
 import data_
 
 
-def _len_consec(ser):
-    '''Get the length of the longest consecutive non-null subsequence.'''
-    isnull = ser.isnull()
-    if isnull.all():
-        return 0
-    start = ser.index[~isnull][0]
-    if not isnull.loc[start:].any():
-        return len(ser.loc[start:])
-    end = ser.loc[start:].index[isnull.loc[start:]][0]
-    len_ = len(ser.loc[start:end]) - 1
-    return max(len_, _len_consec(ser.loc[end:]))
-
-
-def load_len_consec():
-    '''Get the length of the longest consecutive non-null subsequence.'''
-    dfr = data_.load()
-    return data_.consecutive_observations(dfr)
-
-
-def build_table(save=True):
+def build_table(observations=None, save=True):
     '''Build the table of observations.'''
+    if observations is None:
+        observations = data_.load_observations()
     cols_rename = {
         'sex': 'Sex',
         'age_at_first_capture_y': 'Age at first capture (y)',
@@ -34,7 +17,7 @@ def build_table(save=True):
         'consecutive_observations': 'Consecutive antibody observations',
     }
     table_ = (
-        data_.load_observations()
+        observations
         .rename(columns=cols_rename)
     )
     if save:
