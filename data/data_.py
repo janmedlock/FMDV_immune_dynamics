@@ -180,3 +180,43 @@ def load_observations():
     consecutive = _get_consecutive_observations(antibodies)
     return pandas.concat([animals, observations, consecutive],
                          axis='columns')
+
+
+def _load_age():
+    animals = load_animals()
+    captures = load_captures()
+    age_at_first = pandas.concat(
+        [
+            animals['ID'],
+            pandas.to_timedelta(
+                animals['age_at_first_capture_y'] * 365,
+                unit='D',
+            ).rename('age_at_first'),
+        ],
+        axis='columns',
+    )
+    grouper = (
+        captures.merge(age_at_first)
+        .groupby('ID')
+    )
+
+    def get_age(group):
+        first = group.loc[group['capture'].idxmin()]
+        return (
+            (first['age_at_first'] + group['date'] - first['date'])
+            / pandas.offsets.Day() / 365
+        ).rename('age (y)')
+
+    age = (
+        grouper.apply(get_age, include_groups=False)
+        .reset_index('ID', drop=True)
+    )
+    return pandas.concat([captures[['ID', 'capture', 'date']], age],
+                         axis='columns')
+
+
+def load_with_age():
+    '''Load the antibody data with age at each capture.'''
+    age = _load_age()
+    antibodies = load()
+    return age.merge(antibodies)

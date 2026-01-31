@@ -10,7 +10,7 @@ import estimate
 import _ci
 
 
-ALPHA = 0.7
+ALPHA = 0.8
 
 RATE_LABEL = 'rate (y$^{-1}$)'
 
