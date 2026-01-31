@@ -31,11 +31,10 @@ def plot_antibodies(antibodies_, save=True, show=True):
     with seaborn.axes_style('whitegrid'), matplotlib.pyplot.rc_context(rc=rc):
         (fig, ax) = matplotlib.pyplot.subplots()
         sats = antibodies_.SAT.unique()
-        palette = {sat: plotting.SAT_COLORS[sat] for sat in sats}
         assert len(ax.collections) == 0
         seaborn.violinplot(
             antibodies_, x='SAT', y='titer', hue='SAT',
-            palette=palette, alpha=ALPHA, saturation=1,
+            palette=plotting.SAT_COLORS, alpha=ALPHA, saturation=1,
             cut=0,
             inner='box', inner_kws={'whis_width': 0, 'solid_capstyle': 'butt'},
             legend=False, ax=ax,

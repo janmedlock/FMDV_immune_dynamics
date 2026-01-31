@@ -21,21 +21,15 @@ rc = plotting.rc | plotting.rc_text_small | {
 }
 
 
-def get_seropositives(antibodies_):
-    '''Get the seropositives.'''
-    return antibodies_[antibodies.positive]
-
-
 def plot_seropositives(antibodies_, ax=None, alpha=plotting_.ALPHA):
     '''Plot the antibody titers by SAT for seropositives.'''
     if ax is None:
         ax = matplotlib.pyplot.gca()
-    seropositives = get_seropositives(antibodies_)
+    seropositives = antibodies_[antibodies_['positive']]
     sats = seropositives.SAT.unique()
-    palette = {sat: plotting.SAT_COLORS[sat] for sat in sats}
     seaborn.violinplot(
         seropositives, x='SAT', y='titer', hue='SAT',
-        palette=palette, alpha=alpha, saturation=1,
+        palette=plotting.SAT_COLORS, alpha=alpha, saturation=1,
         linewidth=0, cut=0, inner=None, legend=False, ax=ax,
     )
     mean = seropositives.groupby('SAT')['titer'].mean()
