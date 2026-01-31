@@ -20,6 +20,9 @@ rc = plotting.rc | plotting.rc_text_small | {
     'axes.spines.top': False,
     'axes.spines.right': False,
     'axes.grid.axis': 'y',
+    'axes.grid.which': 'both',
+    'ytick.minor.ndivs': 2,
+    'ytick.minor.visible': True,
 }
 
 
@@ -46,6 +49,9 @@ def plot_seropositives(ax):
     ax.set_xticks(x, [f'SAT{sat}' for sat in sats])
     ax.xaxis.label.set_visible(False)
     ax.set_ylabel(r'log$_{10}$ antibody titer')
+    ax.yaxis.set_major_locator(
+        matplotlib.ticker.MultipleLocator(0.2)
+    )
 
 
 AGE_BREAKS = [0, 1, 2, 3, 6, 11, numpy.inf]
@@ -89,6 +95,9 @@ def plot_seronegative_by_age(axs):
         ax.set_ylabel(f'SAT{sat} seronegative')
         ax.yaxis.set_major_formatter(
             matplotlib.ticker.PercentFormatter(xmax=1)
+        )
+        ax.yaxis.set_major_locator(
+            matplotlib.ticker.MultipleLocator(0.2)
         )
 
 

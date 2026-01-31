@@ -52,7 +52,9 @@ def rates_by_sat_on(log_rate, axs, alpha=ALPHA):
     grouper = rates.groupby('parameter', observed=True)
     for ((_, rate_), ax) in zip(grouper, axs):
         _rate(ax, rate_, rate_max, alpha)
-        ax.yaxis.set_major_locator(matplotlib.ticker.MultipleLocator(0.5))
+        ax.yaxis.set_major_locator(
+            matplotlib.ticker.MultipleLocator(1)
+        )
 
 
 def rates_by_sat(log_rate, show=True):
