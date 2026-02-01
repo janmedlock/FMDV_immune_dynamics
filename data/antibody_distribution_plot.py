@@ -22,6 +22,9 @@ rc = (
         'axes.spines.top': False,
         'axes.spines.right': False,
         'axes.grid.axis': 'y',
+        'axes.grid.which': 'both',
+        'ytick.minor.ndivs': 2,
+        'ytick.minor.visible': True,
     }
 )
 
@@ -43,6 +46,9 @@ def plot_antibody_distribution(data, save=True, show=True):
         ax.set_xticks(ax.get_xticks(), [f'SAT{sat}' for sat in sats])
         ax.xaxis.label.set_visible(False)
         ax.set_ylabel(r'log$_{10}$ antibody titer')
+        ax.yaxis.set_major_locator(
+            matplotlib.ticker.MultipleLocator(0.2)
+        )
         ax.axhline(
             data_.ANTIBODY_TITER_CUTOFF,
             linestyle='dotted', color='black', zorder=0.9,
