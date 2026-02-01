@@ -36,16 +36,17 @@ def plot_seropositives(ax):
     '''Plot the antibody titers by SAT for seropositives.'''
     seropositives = data_.load_seropositives()
     sats = seropositives.SAT.unique()
+    xticklabels = [f'SAT{sat}' for sat in sats]
     seaborn.violinplot(
         seropositives, x='SAT', y='titer', hue='SAT',
         palette=plotting.SAT_COLORS, alpha=plotting.ALPHA, saturation=1,
-        linewidth=0, cut=0, inner=None, legend=False, ax=ax,
+        inner=None, linewidth=0,
+        cut=0, legend=False, ax=ax,
     )
     mean = seropositives.groupby('SAT')['titer'].mean()
-    x = ax.get_xticks()
-    s = 20 ** 2
-    ax.scatter(x, mean, color='black', marker='_', s=s)
-    ax.set_xticks(x, [f'SAT{sat}' for sat in sats])
+    ax.plot(ax.get_xticks(), mean,
+            color='black', marker='_', markersize=20, linestyle='None')
+    ax.set_xticks(ax.get_xticks(), xticklabels)
     ax.xaxis.label.set_visible(False)
     ax.set_ylabel(r'log$_{10}$ antibody titer')
     ax.yaxis.set_major_locator(

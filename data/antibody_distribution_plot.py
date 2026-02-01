@@ -3,6 +3,7 @@
 
 import pathlib
 
+import matplotlib.collections
 import matplotlib.pyplot
 import seaborn
 
@@ -26,21 +27,30 @@ rc = (
 )
 
 
+def _remove_violin_borders(ax):
+    '''Remove violin borders. Assumes violins are instances of
+    `matplotlib.collections.FillBetweenPolyCollection()`, and that
+    there are no non-violin instances of that type.'''
+    for collection in ax.collections:
+        if isinstance(collection,
+                      matplotlib.collections.FillBetweenPolyCollection):
+            collection.set_linewidth(0)
+
+
 def plot_antibody_distribution(data, save=True, show=True):
     '''Plot the antibody titers by SAT.'''
+    sats = data.SAT.unique()
+    xticklabels = [f'SAT{sat}' for sat in sats]
     with seaborn.axes_style('whitegrid'), matplotlib.pyplot.rc_context(rc=rc):
         (fig, ax) = matplotlib.pyplot.subplots()
-        sats = data.SAT.unique()
         seaborn.violinplot(
             data, x='SAT', y='titer', hue='SAT',
             palette=plotting.SAT_COLORS, alpha=plotting.ALPHA, saturation=1,
-            cut=0,
             inner='box', inner_kws={'whis_width': 0, 'solid_capstyle': 'butt'},
-            legend=False, ax=ax,
+            cut=0, legend=False, ax=ax,
         )
-        for collection in ax.collections:
-            collection.set_linewidth(0)
-        ax.set_xticks(ax.get_xticks(), [f'SAT{sat}' for sat in sats])
+        _remove_violin_borders(ax)
+        ax.set_xticks(ax.get_xticks(), xticklabels)
         ax.xaxis.label.set_visible(False)
         ax.set_ylabel(r'log$_{10}$ antibody titer')
         ax.yaxis.set_major_locator(
@@ -56,6 +66,7 @@ def plot_antibody_distribution(data, save=True, show=True):
             fig.savefig(path.with_suffix('.pdf'))
         if show:
             matplotlib.pyplot.show()
+        return fig
 
 
 if __name__ == '__main__':
