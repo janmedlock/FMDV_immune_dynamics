@@ -64,6 +64,9 @@ Python code.
 * [data/data_table.py](data/data_table.py) is a script to make a
   summary table of the data.
 
+* [data/antibody_distribution_plot.py](data/antibody_distribution_plot.py)
+  is a script to make a plot the distributions of antibody titers.
+
 #### Inference
 
 The directory [inference](inference) contains Python code to estimate the
@@ -71,6 +74,10 @@ rates of loss and gain of antibodies.
 
 * [inference/estimate.py](inference/estimate.py) is a script that
   performs the estimation of the rates and plots the results.
+
+* [inference/variation_plot.py](inference/variation_plot.py) is a
+  script that plots the variation between strains in estimated rates,
+  titer for seropositives, and proportion seronegative by age.
 
 The other files in this directory contain the code for estimation and
 plotting. In particular, [inference/model.py](inference/model.py)
