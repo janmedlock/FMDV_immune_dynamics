@@ -11,12 +11,14 @@ import _ml
 import _utility
 
 
-STATE_NEGATIVE = 'negative'
-STATE_POSITIVE = 'positive'
 # The calculations in the methods `Model.log_P()`, `Model.log_p()`,
-# and `Model._log_p*()` assume this order of `STATES`.
-STATES = (STATE_NEGATIVE, STATE_POSITIVE)
-STATES_DTYPE = pandas.CategoricalDtype(STATES, ordered=True)
+# and `Model._log_p*()` assume this order of `_STATES`.
+_STATES = ('negative', 'positive')
+STATE = pandas.Series(
+    {val: val for val in _STATES},
+    dtype=pandas.CategoricalDtype(_STATES, ordered=True),
+    name='state',
+)
 
 
 class Model:
@@ -37,9 +39,9 @@ class Model:
 
     _transition_rates_to_parameters = {
         # The rate from the 'negative' state sets the gain parameter.
-        STATE_NEGATIVE: parameter_names[0],
+        STATE['negative']: parameter_names[0],
         # The rate from the 'positive' state sets the loss parameter.
-        STATE_POSITIVE: parameter_names[1],
+        STATE['positive']: parameter_names[1],
     }
 
     def __init__(self, data):
@@ -121,7 +123,7 @@ class Model:
         '''Estimate the rates of leaving each state from the count
         of these events divided by the total time exposed.'''
         rates = pandas.Series(
-            index=pandas.Index(STATES, name='x_0'),
+            index=pandas.Index(STATE, name='x_0'),
             name='rate',
         )
         event = self.data.x != self.data.x_0

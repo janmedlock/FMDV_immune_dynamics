@@ -1,6 +1,8 @@
 #!/usr/bin/python3
 '''Estimate the model parameters by SAT.'''
 
+import functools
+
 import numpy
 import pandas
 
@@ -10,7 +12,8 @@ import plotting_
 import _multiprocessing_
 
 
-def load_data(data=None, antibodies=None, captures=None):
+@functools.lru_cache(maxsize=1)
+def load_data():
     '''Load the `data` and rearrange it to the form used by `Model`.
     The resuling `pandas.DataFrame()` has columns:
     1. SAT,
@@ -25,9 +28,9 @@ def load_data(data=None, antibodies=None, captures=None):
         '''Build 'state' column.'''
         return (
             data.loc[:, 'positive']
-            .map({True: model.STATE_POSITIVE,
-                  False: model.STATE_NEGATIVE})
-            .astype(model.STATES_DTYPE)
+            .map({True: model.STATE['positive'],
+                  False: model.STATE['negative']})
+            .astype(model.STATE.dtype)
             .rename('state')
         )
 
@@ -52,8 +55,7 @@ def load_data(data=None, antibodies=None, captures=None):
             .iloc[1:]
         )
 
-    if data is None:
-        data = data_.load(antibodies=antibodies, captures=captures)
+    data = data_.load()
     grouper = (
         data.set_index('capture')
         .groupby(['SAT', 'ID'], observed=False)
@@ -63,14 +65,10 @@ def load_data(data=None, antibodies=None, captures=None):
                          include_groups=False)
 
 
-def estimate_by_sat(model_data=None, data=None,
-                    antibodies=None, captures=None,
-                    pool=None, **kwds):
+@functools.lru_cache(maxsize=1)
+def estimate_by_sat(pool=None, **kwds):
     '''Estimate the ML parameters and CI by SAT.'''
-    if model_data is None:
-        model_data = load_data(data=data,
-                               antibodies=antibodies,
-                               captures=captures)
+    model_data = load_data()
     grouper = model_data.groupby('SAT', observed=False)
     log_lambda = {}
     with _multiprocessing_.Pool(pool) as pool_:

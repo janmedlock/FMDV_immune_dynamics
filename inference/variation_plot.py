@@ -26,20 +26,15 @@ rc = plotting.rc | plotting.rc_text_small | {
 }
 
 
-def plot_rates(axs, log_rate=None):
+def plot_rates(axs):
     '''Plot the rates.'''
-    if log_rate is None:
-        log_rate = estimate.estimate_by_sat()
+    log_rate = estimate.estimate_by_sat()
     plotting_.rates_by_sat_on(log_rate, axs)
 
 
-def plot_seropositives(ax, seropositives=None,
-                       data=None, antibodies=None, captures=None):
+def plot_seropositives(ax):
     '''Plot the antibody titers by SAT for seropositives.'''
-    if seropositives is None:
-        seropositives = data_.load_seropositives(data=data,
-                                                 antibodies=antibodies,
-                                                 captures=captures)
+    seropositives = data_.load_seropositives()
     sats = seropositives.SAT.unique()
     seaborn.violinplot(
         seropositives, x='SAT', y='titer', hue='SAT',
@@ -61,13 +56,9 @@ def plot_seropositives(ax, seropositives=None,
 AGE_BREAKS = [0, 1, 2, 3, 6, 11, numpy.inf]
 
 
-def plot_seronegative_by_age(axs, data_with_age=None,
-                             animals=None, captures=None, data=None,
-                             antibodies=None):
+def plot_seronegative_by_age(axs):
     '''Plot the proportion seronegative by age.'''
-    if data_with_age is None:
-        data_with_age = data_.load_with_age(animals=animals, captures=captures,
-                                            data=data, antibodies=antibodies)
+    data_with_age = data_.load_with_age()
     age_bins = pandas.IntervalIndex.from_breaks(
         AGE_BREAKS, closed='left', name='age (y)'
     )
@@ -109,21 +100,13 @@ def plot_seronegative_by_age(axs, data_with_age=None,
         )
 
 
-def plot_variation(save=True, show=True,
-                   log_rate=None, seropositives=None, data_with_age=None,
-                   data=None, animals=None, captures=None, antibodies=None):
+def plot_variation(save=True, show=True):
     '''Make the figure showing variation between SATs.'''
     with seaborn.axes_style('whitegrid'), matplotlib.pyplot.rc_context(rc=rc):
         (fig, axs) = matplotlib.pyplot.subplots(nrows=2, ncols=3)
-        plot_rates(axs[0, :2],
-                   log_rate=log_rate)
-        plot_seropositives(axs[0, 2],
-                           seropositives=seropositives, data=data,
-                           antibodies=antibodies, captures=captures)
-        plot_seronegative_by_age(axs[1, :],
-                                 data_with_age=data_with_age,
-                                 animals=animals, captures=captures,
-                                 data=data, antibodies=antibodies)
+        plot_rates(axs[0, :2])
+        plot_seropositives(axs[0, 2])
+        plot_seronegative_by_age(axs[1, :])
         plotting.add_part_labels(axs, pad=13)
         fig.align_labels()
         if save:
@@ -137,16 +120,4 @@ def plot_variation(save=True, show=True,
 
 
 if __name__ == '__main__':
-    captures_ = data_.load_captures()
-    data__ = data_.load(captures=captures_)
-    seropositives_ = data_.load_seropositives(data=data__)
-    animals_ = data_.load_animals()
-    data_with_age_ = data_.load_with_age(animals=animals_,
-                                         captures=captures_,
-                                         data=data__)
-    log_rate_ = estimate.estimate_by_sat(data=data__)
-    plot_variation(
-        seropositives=seropositives_,
-        data_with_age=data_with_age_,
-        log_rate=log_rate_,
-    )
+    plot_variation()

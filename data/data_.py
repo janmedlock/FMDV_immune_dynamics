@@ -1,5 +1,7 @@
 '''Handle loading the data.'''
 
+import functools
+
 import pathlib
 
 import numpy
@@ -14,26 +16,13 @@ _DATA_PATH = pathlib.Path(__file__).parent
 ANTIBODY_TITER_CUTOFF = 1.7
 
 
-def load_antibodies():
-    '''Load the antibody data.'''
-
-    def fix_titer(antibodies):
-        antibodies['titer'] = (
-            antibodies.loc[:, 'titer']
-            .replace({'<1.3': 1.2, '>2.2': 2.3})
-            .astype(float)
-        )
-
-    def add_positive_negative(antibodies):
-        antibodies['positive'] = antibodies['titer'] >= ANTIBODY_TITER_CUTOFF
-        antibodies['negative'] = ~antibodies['positive']
-
-    antibodies = pandas.read_csv(_DATA_PATH / 'antibodies.csv')
-    fix_titer(antibodies)
-    add_positive_negative(antibodies)
-    return antibodies
+@functools.lru_cache(maxsize=1)
+def load_animals():
+    '''Load the animal metadata.'''
+    return pandas.read_csv(_DATA_PATH / 'animals.csv')
 
 
+@functools.lru_cache(maxsize=1)
 def load_captures():
     '''Load the capture metadata.'''
 
@@ -84,7 +73,7 @@ def load_captures():
         fix_missing_year_month_date(captures, clean)
         assert captures['date'].notnull().all()
 
-    def make_date(captures):
+    def build_date(captures):
         cols_ymd = ['year', 'month', 'day']
         captures['date'] = pandas.to_datetime(
             captures.loc[:, cols_ymd].dropna()
@@ -96,21 +85,36 @@ def load_captures():
         pandas.read_csv(_DATA_PATH / 'captures.csv')
         .astype({col: 'Int64' for col in ('year', 'month', 'day')})
     )
-    make_date(captures)
+    build_date(captures)
     return captures
 
 
-def load_animals():
-    '''Load the animal metadata.'''
-    return pandas.read_csv(_DATA_PATH / 'animals.csv')
+@functools.lru_cache(maxsize=1)
+def load_antibodies():
+    '''Load the antibody data.'''
+
+    def fix_titer(antibodies):
+        antibodies['titer'] = (
+            antibodies.loc[:, 'titer']
+            .replace({'<1.3': 1.2, '>2.2': 2.3})
+            .astype(float)
+        )
+
+    def add_positive_negative(antibodies):
+        antibodies['positive'] = antibodies['titer'] >= ANTIBODY_TITER_CUTOFF
+        antibodies['negative'] = ~antibodies['positive']
+
+    antibodies = pandas.read_csv(_DATA_PATH / 'antibodies.csv')
+    fix_titer(antibodies)
+    add_positive_negative(antibodies)
+    return antibodies
 
 
-def load(antibodies=None, captures=None):
+@functools.lru_cache(maxsize=1)
+def load():
     '''Load the antibody data with dates.'''
-    if antibodies is None:
-        antibodies = load_antibodies()
-    if captures is None:
-        captures = load_captures()
+    antibodies = load_antibodies()
+    captures = load_captures()
     order = ['ID', 'capture', 'date', 'SAT', 'titer', 'positive', 'negative']
     return (
         antibodies.merge(captures, validate='many_to_one')
@@ -118,8 +122,8 @@ def load(antibodies=None, captures=None):
     )
 
 
-def load_observations(animals=None, data=None,
-                      antibodies=None, captures=None):
+@functools.lru_cache(maxsize=1)
+def load_observations():
     '''Load animal metadata and observation counts.'''
 
     def get_observations(data):
@@ -166,10 +170,8 @@ def load_observations(animals=None, data=None,
             .rename('consecutive_observations')
         )
 
-    if animals is None:
-        animals = load_animals()
-    if data is None:
-        data = load(antibodies=antibodies, captures=captures)
+    animals = load_animals()
+    data = load()
     return pandas.concat(
         [
             animals.set_index('ID'),
@@ -180,28 +182,25 @@ def load_observations(animals=None, data=None,
     )
 
 
-def load_seropositives(data=None, antibodies=None, captures=None):
+@functools.lru_cache(maxsize=1)
+def load_seropositives():
     '''Return the seropositives.'''
-    if data is None:
-        data = load(antibodies=antibodies, captures=captures)
+    data = load()
     return data[data['positive']]
 
 
-def load_with_age(animals=None, captures=None, data=None, antibodies=None):
+@functools.lru_cache(maxsize=1)
+def load_with_age():
     '''Load the antibody data with age at each capture.'''
 
-    def get_age(group):
+    def get_age_group(group):
         first = group.loc[group['capture'].idxmin()]
         return (
             (first['age_at_first'] + group['date'] - first['date'])
             / pandas.offsets.Day() / 365
         ).rename('age (y)')
 
-    def load_age(animals=None, captures=None):
-        if animals is None:
-            animals = load_animals()
-        if captures is None:
-            captures = load_captures()
+    def get_age(animals, captures):
         age_at_first = pandas.concat(
             [
                 animals['ID'],
@@ -217,17 +216,19 @@ def load_with_age(animals=None, captures=None, data=None, antibodies=None):
             .groupby('ID')
         )
         age = (
-            grouper.apply(get_age, include_groups=False)
+            grouper.apply(get_age_group, include_groups=False)
             .reset_index('ID', drop=True)
         )
-        return pandas.concat([captures[['ID', 'capture', 'date']], age],
-                             axis='columns')
+        return pandas.concat(
+            [
+                captures[['ID', 'capture', 'date']],
+                age,
+            ],
+            axis='columns',
+        )
 
-    if animals is None:
-        animals = load_animals()
-    if captures is None:
-        captures = load_captures()
-    age = load_age(animals=animals, captures=captures)
-    if data is None:
-        data = load(antibodies=antibodies, captures=captures)
+    animals = load_animals()
+    captures = load_captures()
+    age = get_age(animals, captures)
+    data = load()
     return age.merge(data)

@@ -6,10 +6,8 @@ import pathlib
 import data_
 
 
-def build_table(observations=None, save=True):
+def build_table(observations, save=True):
     '''Build the table of observations.'''
-    if observations is None:
-        observations = data_.load_observations()
     cols_rename = {
         'sex': 'Sex',
         'age_at_first_capture_y': 'Age at first capture (y)',
@@ -45,7 +43,5 @@ def build_table(observations=None, save=True):
 
 if __name__ == '__main__':
     observations_ = data_.load_observations()
-    table = build_table(
-        observations_,
-    )
+    table = build_table(observations_)
     print(table)
