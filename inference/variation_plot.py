@@ -9,7 +9,7 @@ import numpy
 import pandas
 import seaborn
 
-from context import data
+from context import data as data_
 from context import plotting
 import estimate
 import plotting_
@@ -26,16 +26,20 @@ rc = plotting.rc | plotting.rc_text_small | {
 }
 
 
-def plot_rates(axs):
+def plot_rates(axs, log_rate=None):
     '''Plot the rates.'''
-    log_rate = estimate.estimate_by_sat()
+    if log_rate is None:
+        log_rate = estimate.estimate_by_sat()
     plotting_.rates_by_sat_on(log_rate, axs)
 
 
-def plot_seropositives(ax):
+def plot_seropositives(ax, seropositives=None,
+                       data=None, antibodies=None, captures=None):
     '''Plot the antibody titers by SAT for seropositives.'''
-    antibodies = data.load()
-    seropositives = antibodies[antibodies['positive']]
+    if seropositives is None:
+        seropositives = data_.load_seropositives(data=data,
+                                                 antibodies=antibodies,
+                                                 captures=captures)
     sats = seropositives.SAT.unique()
     seaborn.violinplot(
         seropositives, x='SAT', y='titer', hue='SAT',
@@ -57,13 +61,17 @@ def plot_seropositives(ax):
 AGE_BREAKS = [0, 1, 2, 3, 6, 11, numpy.inf]
 
 
-def plot_seronegative_by_age(axs):
+def plot_seronegative_by_age(axs, data_with_age=None,
+                             animals=None, captures=None, data=None,
+                             antibodies=None):
     '''Plot the proportion seronegative by age.'''
-    dfr = data.load_with_age()
+    if data_with_age is None:
+        data_with_age = data_.load_with_age(animals=animals, captures=captures,
+                                            data=data, antibodies=antibodies)
     age_bins = pandas.IntervalIndex.from_breaks(
         AGE_BREAKS, closed='left', name='age (y)'
     )
-    ages = pandas.cut(dfr['age (y)'], bins=age_bins)
+    ages = pandas.cut(data_with_age['age (y)'], bins=age_bins)
 
     def get_interval_label(interval):
         right = interval.right - 1
@@ -75,7 +83,7 @@ def plot_seronegative_by_age(axs):
 
     age_labels = list(map(get_interval_label, age_bins))
     grouper = (
-        pandas.concat([dfr[['SAT', 'negative']], ages],
+        pandas.concat([data_with_age[['SAT', 'negative']], ages],
                       axis='columns')
         .groupby(['SAT', 'age (y)'],
                  observed=True)
@@ -101,13 +109,21 @@ def plot_seronegative_by_age(axs):
         )
 
 
-def plot_variation(save=True, show=True):
+def plot_variation(save=True, show=True,
+                   log_rate=None, seropositives=None, data_with_age=None,
+                   data=None, animals=None, captures=None, antibodies=None):
     '''Make the figure showing variation between SATs.'''
     with seaborn.axes_style('whitegrid'), matplotlib.pyplot.rc_context(rc=rc):
         (fig, axs) = matplotlib.pyplot.subplots(nrows=2, ncols=3)
-        plot_rates(axs[0, :2])
-        plot_seropositives(axs[0, 2])
-        plot_seronegative_by_age(axs[1, :])
+        plot_rates(axs[0, :2],
+                   log_rate=log_rate)
+        plot_seropositives(axs[0, 2],
+                           seropositives=seropositives, data=data,
+                           antibodies=antibodies, captures=captures)
+        plot_seronegative_by_age(axs[1, :],
+                                 data_with_age=data_with_age,
+                                 animals=animals, captures=captures,
+                                 data=data, antibodies=antibodies)
         plotting.add_part_labels(axs, pad=13)
         fig.align_labels()
         if save:
@@ -121,4 +137,16 @@ def plot_variation(save=True, show=True):
 
 
 if __name__ == '__main__':
-    plot_variation(show=False)
+    captures_ = data_.load_captures()
+    data__ = data_.load(captures=captures_)
+    seropositives_ = data_.load_seropositives(data=data__)
+    animals_ = data_.load_animals()
+    data_with_age_ = data_.load_with_age(animals=animals_,
+                                         captures=captures_,
+                                         data=data__)
+    log_rate_ = estimate.estimate_by_sat(data=data__)
+    plot_variation(
+        seropositives=seropositives_,
+        data_with_age=data_with_age_,
+        log_rate=log_rate_,
+    )

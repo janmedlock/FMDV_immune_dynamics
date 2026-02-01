@@ -14,106 +14,90 @@ _DATA_PATH = pathlib.Path(__file__).parent
 ANTIBODY_TITER_CUTOFF = 1.7
 
 
-def _fix_titer(dfr):
-    dfr['titer'] = (
-        dfr.loc[:, 'titer']
-        .replace({'<1.3': 1.2, '>2.2': 2.3})
-        .astype(float)
-    )
-
-
-def _add_positive_negative(dfr):
-    dfr['positive'] = dfr['titer'] >= ANTIBODY_TITER_CUTOFF
-    dfr['negative'] = ~dfr['positive']
-
-
 def load_antibodies():
     '''Load the antibody data.'''
+
+    def fix_titer(antibodies):
+        antibodies['titer'] = (
+            antibodies.loc[:, 'titer']
+            .replace({'<1.3': 1.2, '>2.2': 2.3})
+            .astype(float)
+        )
+
+    def add_positive_negative(antibodies):
+        antibodies['positive'] = antibodies['titer'] >= ANTIBODY_TITER_CUTOFF
+        antibodies['negative'] = ~antibodies['positive']
+
     antibodies = pandas.read_csv(_DATA_PATH / 'antibodies.csv')
-    _fix_titer(antibodies)
-    _add_positive_negative(antibodies)
+    fix_titer(antibodies)
+    add_positive_negative(antibodies)
     return antibodies
-
-
-def _dtmean(dt, drop_duplicates=False):
-    '''Calculate the mean of `pandas.Datetime()`.'''
-    if drop_duplicates:
-        dt = dt.drop_duplicates()
-    if len(dt) == 0:
-        return pandas.NaT
-    start = dt.iloc[0]
-    return (dt - start).mean() + start
-
-
-def _fix_missing_day(dfr, clean):
-    '''Fill in dates that are missing only 'day'.'''
-    cols_notnull = ['capture', 'year', 'month']
-    ix = (dfr['day'].isnull()
-          & dfr[cols_notnull].notnull().all(axis='columns'))
-    for (row, sub) in dfr[ix].groupby(cols_notnull):
-        row = pandas.Series(row, index=cols_notnull)
-        ix_ = clean[cols_notnull].eq(row).all(axis='columns')
-        if len(clean[ix_]) > 0:
-            val = _dtmean(clean.loc[ix_, 'date'])
-        else:
-            # There are no other samples with this capture, year, and
-            # month. Use the day in this year and month closest to
-            # the average date for this capture over all months and
-            # years.
-            ix_ = clean['capture'] == row['capture']
-            mean = _dtmean(clean.loc[ix_, 'date'])
-            start = pandas.Timestamp(
-                year=row.year, month=row.month, day=1
-            )
-            end = pandas.offsets.MonthEnd().rollforward(start)
-            val = numpy.clip(mean, start, end)
-        dfr.loc[sub.index, 'date'] = val
-
-
-def _fix_missing_year_month_date(dfr, clean):
-    '''Fill in dates that missing 'year', 'month', and 'day'.'''
-    ix = (dfr[['year', 'month', 'day']].isnull().all(axis='columns')
-          & dfr['capture'].notnull())
-    for (capture, sub) in dfr[ix].groupby('capture'):
-        ix_ = clean['capture'] == capture
-        dfr.loc[sub.index, 'date'] = _dtmean(clean.loc[ix_, 'date'])
-
-
-def _fix_missing_date(dfr):
-    clean = dfr.dropna(subset='date')  # Dates not extrapolated.
-    _fix_missing_day(dfr, clean)
-    _fix_missing_year_month_date(dfr, clean)
-    assert dfr['date'].notnull().all()
-
-
-def _make_date(dfr):
-    cols_ymd = ['year', 'month', 'day']
-    dfr['date'] = pandas.to_datetime(
-        dfr.loc[:, cols_ymd].dropna()
-    )
-    _fix_missing_date(dfr)
-    dfr.drop(columns=cols_ymd, inplace=True)
 
 
 def load_captures():
     '''Load the capture metadata.'''
+
+    def dtmean(dt, drop_duplicates=False):
+        '''Calculate the mean of `pandas.Datetime()`.'''
+        if drop_duplicates:
+            dt = dt.drop_duplicates()
+        if len(dt) == 0:
+            return pandas.NaT
+        start = dt.iloc[0]
+        return (dt - start).mean() + start
+
+    def fix_missing_day(captures, clean):
+        '''Fill in dates that are missing only 'day'.'''
+        cols_notnull = ['capture', 'year', 'month']
+        ix = (captures['day'].isnull()
+              & captures[cols_notnull].notnull().all(axis='columns'))
+        for (row, sub) in captures[ix].groupby(cols_notnull):
+            row = pandas.Series(row, index=cols_notnull)
+            ix_ = clean[cols_notnull].eq(row).all(axis='columns')
+            if len(clean[ix_]) > 0:
+                val = dtmean(clean.loc[ix_, 'date'])
+            else:
+                # There are no other samples with this capture, year, and
+                # month. Use the day in this year and month closest to
+                # the average date for this capture over all months and
+                # years.
+                ix_ = clean['capture'] == row['capture']
+                mean = dtmean(clean.loc[ix_, 'date'])
+                start = pandas.Timestamp(
+                    year=row.year, month=row.month, day=1
+                )
+                end = pandas.offsets.MonthEnd().rollforward(start)
+                val = numpy.clip(mean, start, end)
+            captures.loc[sub.index, 'date'] = val
+
+    def fix_missing_year_month_date(captures, clean):
+        '''Fill in dates that missing 'year', 'month', and 'day'.'''
+        ix = (captures[['year', 'month', 'day']].isnull().all(axis='columns')
+              & captures['capture'].notnull())
+        for (capture, sub) in captures[ix].groupby('capture'):
+            ix_ = clean['capture'] == capture
+            captures.loc[sub.index, 'date'] = dtmean(clean.loc[ix_, 'date'])
+
+    def fix_missing_date(captures):
+        clean = captures.dropna(subset='date')  # Dates not extrapolated.
+        fix_missing_day(captures, clean)
+        fix_missing_year_month_date(captures, clean)
+        assert captures['date'].notnull().all()
+
+    def make_date(captures):
+        cols_ymd = ['year', 'month', 'day']
+        captures['date'] = pandas.to_datetime(
+            captures.loc[:, cols_ymd].dropna()
+        )
+        fix_missing_date(captures)
+        captures.drop(columns=cols_ymd, inplace=True)
+
     captures = (
         pandas.read_csv(_DATA_PATH / 'captures.csv')
         .astype({col: 'Int64' for col in ('year', 'month', 'day')})
     )
-    _make_date(captures)
+    make_date(captures)
     return captures
-
-
-def load():
-    '''Load the antibody data with dates.'''
-    antibodies = load_antibodies()
-    captures = load_captures()
-    order = ['ID', 'capture', 'date', 'SAT', 'titer', 'positive', 'negative']
-    return (
-        antibodies.merge(captures, validate='many_to_one')
-        .loc[:, order]
-    )
 
 
 def load_animals():
@@ -121,84 +105,90 @@ def load_animals():
     return pandas.read_csv(_DATA_PATH / 'animals.csv')
 
 
-def _get_observations(dfr):
+def load(antibodies=None, captures=None):
+    '''Load the antibody data with dates.'''
+    if antibodies is None:
+        antibodies = load_antibodies()
+    if captures is None:
+        captures = load_captures()
+    order = ['ID', 'capture', 'date', 'SAT', 'titer', 'positive', 'negative']
     return (
-        # Count of non-null 'titer' values by animal and SAT.
-        dfr.groupby(['ID', 'SAT'], observed=True)
-        ['titer']
-        .count()
-        .unstack('SAT')
-        .min(axis='columns')  # Take the minimum over SAT.
-        .rename('observations')
+        antibodies.merge(captures, validate='many_to_one')
+        .loc[:, order]
     )
 
 
-def _len_consec(ser):
-    '''Get the length of the longest consecutive non-null subsequence.'''
-    isnull = ser.isnull()
-    if isnull.all():
-        return 0
-    start = ser.index[~isnull][0]
-    if not isnull.loc[start:].any():
-        return len(ser.loc[start:])
-    end = ser.loc[start:].index[isnull.loc[start:]][0]
-    len_ = len(ser.loc[start:end]) - 1
-    return max(len_, _len_consec(ser.loc[end:]))
-
-
-def _get_consecutive_observations(dfr):
-    '''Get the length of the longest consecutive non-null subsequence.'''
-    lens = (
-        dfr
-        .set_index(['ID', 'SAT', 'capture'])
-        .loc[:, 'titer']
-        .sort_index()
-        .unstack('capture')
-        .agg(_len_consec, axis='columns')
-        .unstack('SAT')
-    )
-    # Ensure the lengths are the same by SAT.
-    assert (
-        lens.min(axis='columns')
-        == lens.max(axis='columns')
-    ).all()
-    # Return the first SAT since they're all the same.
-    return (
-        lens.iloc[:, 0]
-        .rename('consecutive_observations')
-    )
-
-
-def load_observations():
+def load_observations(animals=None, data=None,
+                      antibodies=None, captures=None):
     '''Load animal metadata and observation counts.'''
-    animals = (
-        load_animals()
-        .set_index('ID')
-    )
-    antibodies = load()
-    observations = _get_observations(antibodies)
-    consecutive = _get_consecutive_observations(antibodies)
-    return pandas.concat([animals, observations, consecutive],
-                         axis='columns')
 
+    def get_observations(data):
+        return (
+            # Count of non-null 'titer' values by animal and SAT.
+            data.groupby(['ID', 'SAT'], observed=True)
+            ['titer']
+            .count()
+            .unstack('SAT')
+            .min(axis='columns')  # Take the minimum over SAT.
+            .rename('observations')
+        )
 
-def _load_age():
-    animals = load_animals()
-    captures = load_captures()
-    age_at_first = pandas.concat(
+    def len_consec(ser):
+        '''Get the length of the longest consecutive non-null subsequence.'''
+        isnull = ser.isnull()
+        if isnull.all():
+            return 0
+        start = ser.index[~isnull][0]
+        if not isnull.loc[start:].any():
+            return len(ser.loc[start:])
+        end = ser.loc[start:].index[isnull.loc[start:]][0]
+        len_ = len(ser.loc[start:end]) - 1
+        return max(len_, len_consec(ser.loc[end:]))
+
+    def get_consecutive_observations(data):
+        '''Get the length of the longest consecutive non-null subsequence.'''
+        lens = (
+            data.set_index(['ID', 'SAT', 'capture'])
+            .loc[:, 'titer']
+            .sort_index()
+            .unstack('capture')
+            .agg(len_consec, axis='columns')
+            .unstack('SAT')
+        )
+        # Ensure the lengths are the same by SAT.
+        assert (
+            lens.min(axis='columns')
+            == lens.max(axis='columns')
+        ).all()
+        # Return the first SAT since they're all the same.
+        return (
+            lens.iloc[:, 0]
+            .rename('consecutive_observations')
+        )
+
+    if animals is None:
+        animals = load_animals()
+    if data is None:
+        data = load(antibodies=antibodies, captures=captures)
+    return pandas.concat(
         [
-            animals['ID'],
-            pandas.to_timedelta(
-                animals['age_at_first_capture_y'] * 365,
-                unit='D',
-            ).rename('age_at_first'),
+            animals.set_index('ID'),
+            get_observations(data),
+            get_consecutive_observations(data),
         ],
         axis='columns',
     )
-    grouper = (
-        captures.merge(age_at_first)
-        .groupby('ID')
-    )
+
+
+def load_seropositives(data=None, antibodies=None, captures=None):
+    '''Return the seropositives.'''
+    if data is None:
+        data = load(antibodies=antibodies, captures=captures)
+    return data[data['positive']]
+
+
+def load_with_age(animals=None, captures=None, data=None, antibodies=None):
+    '''Load the antibody data with age at each capture.'''
 
     def get_age(group):
         first = group.loc[group['capture'].idxmin()]
@@ -207,16 +197,37 @@ def _load_age():
             / pandas.offsets.Day() / 365
         ).rename('age (y)')
 
-    age = (
-        grouper.apply(get_age, include_groups=False)
-        .reset_index('ID', drop=True)
-    )
-    return pandas.concat([captures[['ID', 'capture', 'date']], age],
-                         axis='columns')
+    def load_age(animals=None, captures=None):
+        if animals is None:
+            animals = load_animals()
+        if captures is None:
+            captures = load_captures()
+        age_at_first = pandas.concat(
+            [
+                animals['ID'],
+                pandas.to_timedelta(
+                    animals['age_at_first_capture_y'] * 365,
+                    unit='D',
+                ).rename('age_at_first'),
+            ],
+            axis='columns',
+        )
+        grouper = (
+            captures.merge(age_at_first)
+            .groupby('ID')
+        )
+        age = (
+            grouper.apply(get_age, include_groups=False)
+            .reset_index('ID', drop=True)
+        )
+        return pandas.concat([captures[['ID', 'capture', 'date']], age],
+                             axis='columns')
 
-
-def load_with_age():
-    '''Load the antibody data with age at each capture.'''
-    age = _load_age()
-    antibodies = load()
-    return age.merge(antibodies)
+    if animals is None:
+        animals = load_animals()
+    if captures is None:
+        captures = load_captures()
+    age = load_age(animals=animals, captures=captures)
+    if data is None:
+        data = load(antibodies=antibodies, captures=captures)
+    return age.merge(data)

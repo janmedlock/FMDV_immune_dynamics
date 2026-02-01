@@ -4,19 +4,78 @@
 import numpy
 import pandas
 
+from context import data as data_
 import model
 import plotting_
 import _multiprocessing_
 
 
-def estimate_by_sat(pool=None, **kwds):
+def load_data(data=None, antibodies=None, captures=None):
+    '''Load the `data` and rearrange it to the form used by `Model`.
+    The resuling `pandas.DataFrame()` has columns:
+    1. SAT,
+    2. animal,
+    3. number of current capture,
+    4. t_0: time of previous capture,
+    4. t: time of current capture,
+    5. x_0: antibody state at previous capture,
+    6. x: antibody state at current capture.'''
+
+    def get_state(data):
+        '''Build 'state' column.'''
+        return (
+            data.loc[:, 'positive']
+            .map({True: model.STATE_POSITIVE,
+                  False: model.STATE_NEGATIVE})
+            .astype(model.STATES_DTYPE)
+            .rename('state')
+        )
+
+    def days_since(ser, date_start):
+        '''Days since `date_start`.'''
+        return (
+            (ser - date_start)
+            / pandas.offsets.Day()
+        )
+
+    def convert_group(group, date_start):
+        time = days_since(group.date, date_start)
+        state = get_state(group)
+        return (
+            pandas.DataFrame({
+                't_0': time.shift(1),
+                'x_0': state.shift(1),
+                't':   time,
+                'x':   state,
+            })
+            # Drop the first row, which has no previous observation.
+            .iloc[1:]
+        )
+
+    if data is None:
+        data = data_.load(antibodies=antibodies, captures=captures)
+    grouper = (
+        data.set_index('capture')
+        .groupby(['SAT', 'ID'], observed=False)
+    )
+    date_start = data.date.min()
+    return grouper.apply(convert_group, date_start,
+                         include_groups=False)
+
+
+def estimate_by_sat(model_data=None, data=None,
+                    antibodies=None, captures=None,
+                    pool=None, **kwds):
     '''Estimate the ML parameters and CI by SAT.'''
-    data_ = model.load_data()
-    grouper = data_.groupby('SAT', observed=False)
+    if model_data is None:
+        model_data = load_data(data=data,
+                               antibodies=antibodies,
+                               captures=captures)
+    grouper = model_data.groupby('SAT', observed=False)
     log_lambda = {}
     with _multiprocessing_.Pool(pool) as pool_:
-        for (sat, data_sat) in grouper:
-            model_ = model.Model(data_sat)
+        for (sat, model_data_sat) in grouper:
+            model_ = model.Model(model_data_sat)
             log_lambda[sat] = model_.estimate_ml_and_ci(pool=pool_, **kwds)
     return pandas.concat(log_lambda, names=['SAT'])
 

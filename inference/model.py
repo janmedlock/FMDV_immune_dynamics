@@ -6,55 +6,17 @@ antibody-gain log rate and the antibody-loss log rate.'''
 import numpy
 import pandas
 
-from context import data
 import _ci
 import _ml
 import _utility
 
 
-_NEGATIVE = 'negative'
-_POSITIVE = 'positive'
+STATE_NEGATIVE = 'negative'
+STATE_POSITIVE = 'positive'
 # The calculations in the methods `Model.log_P()`, `Model.log_p()`,
-# and `Model._log_p*()` assume this order of `_STATES`.
-_STATES = (_NEGATIVE, _POSITIVE)
-_STATES_DTYPE = pandas.CategoricalDtype(_STATES, ordered=True)
-
-
-def load_data(**kws):
-    '''Load the raw data and rearrange it to the form used by `Model`.
-    The resuling `pandas.DataFrame()` has columns:
-    1. SAT,
-    2. animal,
-    3. number of current capture,
-    4. t_0: time of previous capture,
-    4. t: time of current capture,
-    5. x_0: antibody state at previous capture,
-    6. x: antibody state at current capture.'''
-    data_ = data.load(**kws)
-    # Build 'state' column.
-    data_['state'] = (
-        data_.positive
-        .map({True: _POSITIVE, False: _NEGATIVE})
-        .astype(_STATES_DTYPE)
-    )
-    dfr = []
-    grouper = data_.groupby(['SAT', 'ID'], observed=False)
-    for (_, sub) in grouper:
-        # Columns that will be used for the index.
-        tmp = sub[['SAT', 'ID', 'capture']].copy()
-        tmp['t_0'] = sub.date.shift(1)
-        tmp['t'] = sub.date
-        tmp['x_0'] = sub.state.shift(1)
-        tmp['x'] = sub.state
-        # Drop the first row, for which there is no previous state.
-        tmp = tmp.iloc[1:]
-        dfr.append(tmp)
-    dfr = pandas.concat(dfr, ignore_index=True)
-    # Convert dates to days since the earliest date.
-    t_start = data_.date.min()
-    for col in ('t_0', 't'):
-        dfr[col] = (dfr[col] - t_start) / pandas.offsets.Day()
-    return dfr
+# and `Model._log_p*()` assume this order of `STATES`.
+STATES = (STATE_NEGATIVE, STATE_POSITIVE)
+STATES_DTYPE = pandas.CategoricalDtype(STATES, ordered=True)
 
 
 class Model:
@@ -73,8 +35,15 @@ class Model:
                                               ordered=True,
                                               name='parameter')
 
-    def __init__(self, data_):
-        self.data = data_
+    _transition_rates_to_parameters = {
+        # The rate from the 'negative' state sets the gain parameter.
+        STATE_NEGATIVE: parameter_names[0],
+        # The rate from the 'positive' state sets the loss parameter.
+        STATE_POSITIVE: parameter_names[1],
+    }
+
+    def __init__(self, data):
+        self.data = data
         assert (self.data.t >= self.data.t_0).all()
 
     def _log_p_negative_null(self):
@@ -152,7 +121,7 @@ class Model:
         '''Estimate the rates of leaving each state from the count
         of these events divided by the total time exposed.'''
         rates = pandas.Series(
-            index=pandas.Index(_STATES, name='x_0'),
+            index=pandas.Index(STATES, name='x_0'),
             name='rate',
         )
         event = self.data.x != self.data.x_0
@@ -164,13 +133,6 @@ class Model:
                 / exposure[is_x_0].sum()
             )
         return rates
-
-    _transition_rates_to_parameters = {
-        # The rate from the 'negative' state sets the gain parameter.
-        _NEGATIVE: parameter_names[0],
-        # The rate from the 'positive' state sets the loss parameter.
-        _POSITIVE: parameter_names[1],
-    }
 
     def parameters_initial_guess(self):
         '''Get a rough estimate of the model parameters.'''

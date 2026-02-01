@@ -26,14 +26,16 @@ rc = (
 )
 
 
-def plot_antibodies(antibodies_, save=True, show=True):
+def plot_antibody_distribution(data=None, save=True, show=True):
     '''Plot the antibody titers by SAT.'''
+    if data is None:
+        data = data_.load()
     with seaborn.axes_style('whitegrid'), matplotlib.pyplot.rc_context(rc=rc):
         (fig, ax) = matplotlib.pyplot.subplots()
-        sats = antibodies_.SAT.unique()
+        sats = data.SAT.unique()
         assert len(ax.collections) == 0
         seaborn.violinplot(
-            antibodies_, x='SAT', y='titer', hue='SAT',
+            data, x='SAT', y='titer', hue='SAT',
             palette=plotting.SAT_COLORS, alpha=ALPHA, saturation=1,
             cut=0,
             inner='box', inner_kws={'whis_width': 0, 'solid_capstyle': 'butt'},
@@ -57,5 +59,7 @@ def plot_antibodies(antibodies_, save=True, show=True):
 
 
 if __name__ == '__main__':
-    antibodies = data_.load()
-    plot_antibodies(antibodies, show=False)
+    data__ = data_.load()
+    plot_antibody_distribution(
+        data__,
+    )

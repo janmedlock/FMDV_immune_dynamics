@@ -44,5 +44,8 @@ def build_table(observations=None, save=True):
 
 
 if __name__ == '__main__':
-    table = build_table()
+    observations_ = data_.load_observations()
+    table = build_table(
+        observations_,
+    )
     print(table)
