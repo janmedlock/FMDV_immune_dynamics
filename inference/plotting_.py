@@ -10,8 +10,6 @@ import estimate
 import _ci
 
 
-ALPHA = 0.8
-
 RATE_LABEL = 'rate (y$^{-1}$)'
 
 
@@ -45,7 +43,7 @@ def _rate(ax, rate_, rate_max, alpha, elinewidth=10):
     ax.set_ylabel(parameter.replace('annual rate', RATE_LABEL))
 
 
-def rates_by_sat_on(log_rate, axs, alpha=ALPHA):
+def rates_by_sat_on(log_rate, axs, alpha=plotting.ALPHA):
     '''Plot the rates onto `axs`.'''
     rates = estimate.to_annual_rate(log_rate)
     rate_max = rates.max().max()

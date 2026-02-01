@@ -29,7 +29,7 @@ rc = plotting.rc | plotting.rc_text_small | {
 def plot_rates(axs):
     '''Plot the rates.'''
     log_rate = estimate.estimate_by_sat()
-    plotting_.rates_by_sat_on(log_rate, axs)
+    plotting_.rates_by_sat_on(log_rate, axs, alpha=plotting.ALPHA)
 
 
 def plot_seropositives(ax):
@@ -38,7 +38,7 @@ def plot_seropositives(ax):
     sats = seropositives.SAT.unique()
     seaborn.violinplot(
         seropositives, x='SAT', y='titer', hue='SAT',
-        palette=plotting.SAT_COLORS, alpha=plotting_.ALPHA, saturation=1,
+        palette=plotting.SAT_COLORS, alpha=plotting.ALPHA, saturation=1,
         linewidth=0, cut=0, inner=None, legend=False, ax=ax,
     )
     mean = seropositives.groupby('SAT')['titer'].mean()
@@ -86,7 +86,7 @@ def plot_seronegative_by_age(axs):
     grouper = seronegative.groupby('SAT')
     for ((sat, ser), ax) in zip(grouper, axs):
         ax.bar(age_labels, ser,
-               color=plotting.SAT_COLORS[sat], alpha=plotting_.ALPHA)
+               color=plotting.SAT_COLORS[sat], alpha=plotting.ALPHA)
         (_, y_margin) = ax.margins()
         ax.set_ylim(0, (1 + y_margin) * y_max)
         ax.xaxis.set_tick_params(rotation=90)

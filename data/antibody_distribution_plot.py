@@ -10,9 +10,6 @@ from context import plotting
 import data_
 
 
-ALPHA = 0.8
-
-
 rc = (
     plotting.rc
     | plotting.SupplementalMaterials.rc
@@ -36,7 +33,7 @@ def plot_antibody_distribution(data, save=True, show=True):
         sats = data.SAT.unique()
         seaborn.violinplot(
             data, x='SAT', y='titer', hue='SAT',
-            palette=plotting.SAT_COLORS, alpha=ALPHA, saturation=1,
+            palette=plotting.SAT_COLORS, alpha=plotting.ALPHA, saturation=1,
             cut=0,
             inner='box', inner_kws={'whis_width': 0, 'solid_capstyle': 'butt'},
             legend=False, ax=ax,

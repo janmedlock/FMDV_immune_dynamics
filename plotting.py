@@ -58,6 +58,8 @@ SAT_COLORS = {
     3: '#807dba',
 }
 
+ALPHA = 0.8
+
 TIME_LABEL = f'Time ({common.TIME_UNIT})'
 
 PERSISTENCE_LABEL = (
