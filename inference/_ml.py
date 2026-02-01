@@ -36,7 +36,7 @@ def estimate(model, theta_0,
     result = minimize(model.minus_log_likelihood, theta_0, **kwds)
     assert result.success, result
     theta_mle = pandas.Series(result.x,
-                              index=model.parameter_index,
+                              index=model.parameters,
                               name='MLE')
     # Store Hessian or covariance, if available.
     try:

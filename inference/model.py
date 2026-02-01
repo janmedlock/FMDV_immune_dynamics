@@ -12,9 +12,9 @@ import _utility
 
 
 # The calculations in the methods `Model.log_P()`, `Model.log_p()`,
-# and `Model._log_p*()` assume this order of `_STATES`.
+# and `Model._log_p_negative_null()` assume this order of `STATES`.
 _STATES = ('negative', 'positive')
-STATE = pandas.Series(
+STATES = pandas.Series(
     {val: val for val in _STATES},
     dtype=pandas.CategoricalDtype(_STATES, ordered=True),
     name='state',
@@ -27,22 +27,14 @@ class Model:
     constant in time. The parameters are the antibody-gain log rate
     and the antibody-loss log rate.'''
 
-    # See the comment benegative for `._transition_rates_to_parameters`
-    # for how it depends on the order of `.parameter_names`.
-    parameter_names = ('antibody-gain log rate',
-                       'antibody-loss log rate')
-
-    parameter_index = pandas.CategoricalIndex(parameter_names,
-                                              categories=parameter_names,
-                                              ordered=True,
-                                              name='parameter')
-
-    _transition_rates_to_parameters = {
-        # The rate from the 'negative' state sets the gain parameter.
-        STATE['negative']: parameter_names[0],
-        # The rate from the 'positive' state sets the loss parameter.
-        STATE['positive']: parameter_names[1],
-    }
+    # The keys are short names used in `._transition_rates_to_parameters`
+    _parameters = {'gain': 'antibody-gain log rate',
+                   'loss': 'antibody-loss log rate'}
+    parameters = pandas.Series(
+        _parameters,
+        dtype=pandas.CategoricalDtype(_parameters.values(), ordered=True),
+        name='parameter',
+    )
 
     def __init__(self, data):
         self.data = data
@@ -122,10 +114,7 @@ class Model:
     def _transition_rates(self):
         '''Estimate the rates of leaving each state from the count
         of these events divided by the total time exposed.'''
-        rates = pandas.Series(
-            index=pandas.Index(STATE, name='x_0'),
-            name='rate',
-        )
+        rates = pandas.Series(index=STATES, name='rate', dtype=float)
         event = self.data.x != self.data.x_0
         exposure = self.data.t - self.data.t_0
         for x_0 in rates.index:
@@ -136,16 +125,30 @@ class Model:
             )
         return rates
 
+    # Map the output of `._transition_rates()` to `.parameters`.
+    # The rate from the 'negative' state sets the 'gain' parameter.
+    # The rate from the 'positive' state sets the 'loss' parameter.
+    _transition_rates_to_parameters = (
+        pandas.Series(
+            {
+                STATES['negative']: parameters['gain'],
+                STATES['positive']: parameters['loss'],
+            },
+            dtype=parameters.dtype, name=parameters.name,
+        )
+        .pipe(lambda ser: ser.set_axis(ser.index.astype(STATES.dtype)))
+        .rename_axis(STATES.name)
+    )
+
     def parameters_initial_guess(self):
         '''Get a rough estimate of the model parameters.'''
-        rates = self._transition_rates()
-        log_lambda_0 = pandas.Series(index=self.parameter_index,
-                                     name='initial_guess',
-                                     dtype=float)
-        for (x_0, rate) in rates.items():
-            index = self._transition_rates_to_parameters[x_0]
-            log_lambda_0[index] = numpy.log(rate)
-        return log_lambda_0
+        return (
+            self._transition_rates()
+            .apply(numpy.log)
+            .rename(self._transition_rates_to_parameters)
+            .rename_axis(self._transition_rates_to_parameters.name)
+            .rename('initial_guess')
+        )
 
     def estimate_ml(self, log_lambda_0=None, pool=None, **kwds):
         '''Estimate the maximum-likelihood parameter values.'''

@@ -93,5 +93,5 @@ def estimate(model, theta, alpha=0.05, pool=None):
         ci = pool_.map(solve, i_which_vals)
     ci = numpy.reshape(ci, (len(theta), -1))
     return pandas.DataFrame(ci,
-                            index=model.parameter_index,
+                            index=model.parameters,
                             columns=COLUMNS)

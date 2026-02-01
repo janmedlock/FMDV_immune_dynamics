@@ -12,6 +12,18 @@ import plotting_
 import _multiprocessing_
 
 
+_POSITIVE_TO_STATE = (
+    pandas.Series(
+        {
+            True: model.STATES['positive'],
+            False: model.STATES['negative'],
+        },
+        dtype=model.STATES.dtype, name=model.STATES.name,
+    )
+    .rename_axis('positive')
+)
+
+
 @functools.lru_cache(maxsize=1)
 def load_data():
     '''Load the `data` and rearrange it to the form used by `Model`.
@@ -28,10 +40,8 @@ def load_data():
         '''Build 'state' column.'''
         return (
             data.loc[:, 'positive']
-            .map({True: model.STATE['positive'],
-                  False: model.STATE['negative']})
-            .astype(model.STATE.dtype)
-            .rename('state')
+            .map(_POSITIVE_TO_STATE)
+            .rename(_POSITIVE_TO_STATE.name)
         )
 
     def days_since(ser, date_start):
