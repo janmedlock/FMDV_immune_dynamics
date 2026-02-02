@@ -9,5 +9,4 @@ import baseline
 import common
 import herd
 import plotting
-import samples
 sys.path.pop()

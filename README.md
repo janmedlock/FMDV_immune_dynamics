@@ -10,7 +10,7 @@ Simon Gubbins, Anna Jolles, Nick Juleff, Lin-Mari de Klerk-Lorist,
 Francois Maree, Eva Perez-Martin, O.L. van Schalkwyk, Katherine Scott,
 Fuquan Zhang.**
 
-**Copyright 2014–2025, Jan Medlock et al.  All rights reserved.
+**Copyright 2014–2026, Jan Medlock et al.  All rights reserved.
 Released under the [GNU AGPL 3](LICENSE).**
 
 This repository contains Python code used to estimate parameters,
@@ -67,6 +67,8 @@ Python code.
 * [data/antibody_distribution_plot.py](data/antibody_distribution_plot.py)
   is a script to make a plot the distributions of antibody titers.
 
+* [data/data_.py](data/data_.py) contains code to load the data.
+
 #### Inference
 
 The directory [inference](inference) contains Python code to estimate the
@@ -79,10 +81,12 @@ rates of loss and gain of antibodies.
   script that plots the variation between strains in estimated rates,
   titer for seropositives, and proportion seronegative by age.
 
+* [inference/model.py](inference/model.py) implements the
+  log-likelihood for the 2-state continuous-time Markov-chain model of
+  the antibody data.
+
 The other files in this directory contain the code for estimation and
-plotting. In particular, [inference/model.py](inference/model.py)
-implements the log-likelihood for the 2-state continuous-time
-Markov-chain model of the antibody data.
+plotting.
 
 ### Simulation
 
@@ -108,16 +112,6 @@ The scripts ending in `_run.py` run the model simulations.
   1,000 simulations using the baseline parameter values. It produces a
   file called `baseline.h5`.
 
-* [acute_run.py](acute_run.py), for each of the 3 SATs, runs 1,000
-  simulations with no carrier infections and using the
-  baseline values for the other parameters. It produces a file
-  called `acute.h5`.
-
-* [susceptibility_null_run.py](susceptibility_null_run.py), for each
-  of the 3 SATs, runs 1,000 simulations with zero susceptibility
-  of the lost-immunity state and using the baseline values for the
-  other parameters. It produces a file called `susceptibility_null.h5`.
-
 * [population_size_run.py](population_size_run.py), for each of the 3
   SATs and for 14 different population sizes, runs 1,000 simulations
   using the baseline values for the other parameters. It produces a
@@ -137,20 +131,10 @@ The scripts ending in `_run.py` run the model simulations.
  `population_size_and_susceptibility.h5`. **This takes a very long
  time to run.**
 
-* [samples_run.py](samples_run.py), for each of the 3 SATs and for
-  each of 20,000 parameter posterior samples, runs 1 simulation. It
-  produces a file called `samples.h5`. **This takes a very long
-  time to run.**
-
 #### Analysis and plotting scripts
 
 These scripts analyze and plot the simulation results. Most of them
 require having run the simulation scripts above.
-
-* [R0.py](R0.py) computes the basic reproduction number,
-  *R*<sub>0</sub>, for each of the 3 SATs and for each of 20,000
-  parameter posterior samples, and reports the median and 95% credible
-  interval.
 
 * [mortality_and_birth_rates_plot.py](mortality_and_birth_rates_plot.py)
   plots the mortality and birth rates.
@@ -165,16 +149,6 @@ require having run the simulation scripts above.
 * [baseline_plot.py](baseline_plot.py) analyzes and plots the results
   of the simulations with the baseline parameter values. This requires
   the file `baseline.h5`.
-
-* [acute_plot.py](acute_plot.py) analyzes and plots the results
-  of the simulations with no carrier infections. This requires
-  the file `acute.h5`.
-
-* [susceptibility_null_plot.py](susceptibility_null_plot.py) analyzes
-  and plots the results with zero susceptibility of the
-  lost-immunity state to confirm the dynamics are equivalent to the
-  model without the lost-immunity class. This requires the file
-  `susceptibility_null.h5`.
 
 * [population_size_plot.py](population_size_plot.py) analyzes and
   plots the results of varying the population size. This requires the
@@ -194,11 +168,6 @@ require having run the simulation scripts above.
   and the susceptibility of the lost-immunity state. This requires the
   file `population_size_and_susceptibility.h5`.
 
-* [samples_plot.py](samples_plot.py), from the results of the
-  simulations over the parameter posterior samples, calculates the
-  PRCC sensitivity of extinction time to the model parameters. This
-  requires the file `samples.h5`.
-
 #### Other Python files in the base directory
 
 In the base directory, besides the scripts for simulation, analysis,
@@ -213,10 +182,6 @@ and plotting, there are helper Python modules for those scripts.
 * [h5.py](h5.py) implements reading and writing the HDF5 files used for
   storing simulation output.
 
-* [stats.py](stats.py) implements statistics, largely for sensitivity
-  using the partial rank correlation coefficient used in
-  [samples_plot.py](samples_plot.py).
-
 * [sensitivity.py](sensitivity.py) has common plotting code used by
   [population_size_plot.py](population_size_plot.py),
   [susceptibility_plot.py](susceptibility_plot.py), and
@@ -229,14 +194,6 @@ and plotting, there are helper Python modules for those scripts.
 * [baseline.py](baseline.py) has common code used by
   [baseline_run.py](baseline_run.py) and
   [baseline_plot.py](baseline_plot.py).
-
-* [acute.py](acute.py) has common code used by
-  [acute_run.py](acute_run.py) and
-  [acute_plot.py](acute_plot.py).
-
-* [susceptibility_null.py](susceptibility_null.py) has common code
-  used by [susceptibility_null_run.py](susceptibility_null_run.py)
-  and [susceptibility_null_plot.py](susceptibility_null_plot.py).
 
 * [population_size.py](population_size.py) has common code used by
   [population_size_run.py](population_size_run.py) and
@@ -252,10 +209,6 @@ and plotting, there are helper Python modules for those scripts.
   and
   [population_size_and_susceptibility_plot.py](population_size_and_susceptibility_plot.py).
 
-* [samples.py](samples.py) has common code used by
-  [samples_run.py](samples_run.py) and
-  [samples_plot.py](samples_plot.py).
-
 #### Test scripts
 
 The [test](test) directory contains some scripts to test various parts
@@ -267,9 +220,6 @@ the test scripts to import from [herd](herd).
 
 * [run_many.py](test/run_many.py) runs 100 model simulations for one
   SAT and plots the results.
-
-* [samples_run_test.py](test/samples_run_test.py) sequentially runs
-  simulations with the parameter posterior samples for one SAT.
 
 * [age_structure.py](test/age_structure.py) and
   [age_structure_3d.py](test/age_structure_3d.py) plot the stable age
@@ -290,10 +240,6 @@ the test scripts to import from [herd](herd).
 * [endemic_equilibrium.py](test/endemic_equilibrium.py) shows the
   hazard of infection and the proportion of newborns immune at the
   endemic equilibrium for each SAT.
-
-* [samples_pdfs_finite.py](test/samples_pdfs_finite.py) ensures that
-  for each posterior parameter sample, all of the evaluations in the
-  model code of the probability density functions are finite.
 
 * [solver_check.py](test/solver_check.py) checks the consistency of
   the solver for the initial conditions, plots block structure of the
