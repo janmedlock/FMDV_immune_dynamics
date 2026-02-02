@@ -114,4 +114,4 @@ def to_parameters(log_rate_):
 if __name__ == '__main__':
     log_rate = estimate_by_sat(global_=False)
     print(to_parameters(log_rate))
-    # plotting_.rates_by_sat(log_rate)
+    # plotting_.rates_by_sat(log_rate, show=True)

@@ -37,7 +37,7 @@ def _remove_violin_borders(ax):
             collection.set_linewidth(0)
 
 
-def plot_antibody_distribution(data, save=True, show=True):
+def plot_antibody_distribution(data, save=True, show=False):
     '''Plot the antibody titers by SAT.'''
     sats = data.SAT.unique()
     xticklabels = [f'SAT{sat}' for sat in sats]
@@ -61,9 +61,12 @@ def plot_antibody_distribution(data, save=True, show=True):
             linestyle='dotted', color='black', zorder=0.9,
         )
         if save:
-            path_file = pathlib.Path(__file__)
-            path = path_file.with_stem(path_file.stem.replace('_plot', ''))
-            fig.savefig(path.with_suffix('.pdf'))
+            source_path = pathlib.Path(__file__)
+            output_path_stem = source_path.with_stem(
+                source_path.stem.removesuffix('_plot')
+            )
+            output_path = output_path_stem.with_suffix('.pdf')
+            plotting.savefig(fig, output_path)
         if show:
             matplotlib.pyplot.show()
         return fig

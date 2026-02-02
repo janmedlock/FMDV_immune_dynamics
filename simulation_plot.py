@@ -68,7 +68,8 @@ def plot_SATs(data, save=True, show=False):
         for (ax, (SAT, group)) in zip(axes, grouper):
             plot_one(ax, SAT, group)
     if save:
-        fig.savefig(simulation.store_path.with_suffix('.pdf'))
+        output_path = simulation.store_path.with_suffix('.pdf')
+        plotting.savefig(fig, output_path)
     if show:
         matplotlib.pyplot.show()
     return fig

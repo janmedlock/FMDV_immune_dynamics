@@ -156,7 +156,8 @@ def plot(infected, extinction_time,
         fig.align_ylabels(axes[[row_inf, row_ext], 0])
         if save:
             for suffix in ('.pdf', '.png'):
-                fig.savefig(_module.store_path.with_suffix(suffix))
+                output_path = _module.store_path.with_suffix(suffix)
+                plotting.savefig(fig, output_path)
         if show:
             matplotlib.pyplot.show()
         return fig

@@ -67,6 +67,17 @@ PERSISTENCE_LABEL = (
 )
 
 
+_SAVEFIG_KWDS = {
+    # PDF: suppress 'CreationDate' metadata.
+    '.pdf': {'metadata': {'CreationDate': None}},
+}
+
+
+def savefig(fig, path):
+    '''Save `fig` to `path`.'''
+    fig.savefig(path, **_SAVEFIG_KWDS.get(path.suffix, {}))
+
+
 @matplotlib.colors.make_norm_from_scale(matplotlib.scale.LogitScale)
 class LogitNorm(matplotlib.colors.Normalize):
     '''Logit norm.'''

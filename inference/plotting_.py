@@ -55,7 +55,7 @@ def rates_by_sat_on(log_rate, axs, alpha=plotting.ALPHA):
         )
 
 
-def rates_by_sat(log_rate, show=True):
+def rates_by_sat(log_rate, show=False):
     '''Plot the rates.'''
     parameters = log_rate.index.levels[
         log_rate.index.names.index('parameter')
@@ -93,7 +93,7 @@ def _waiting_time(ax, sat, waiting_time_sat, y):
     )
 
 
-def waiting_times_by_sat(log_rate, dist=0.1, show=True):
+def waiting_times_by_sat(log_rate, dist=0.1, show=False):
     '''Plot the waiting times.'''
     waiting_time = _to_waiting_time(log_rate)
     (sats, parameters) = waiting_time.index.levels

@@ -101,7 +101,7 @@ def plot_seronegative_by_age(axs):
         )
 
 
-def plot_variation(save=True, show=True):
+def plot_variation(save=True, show=False):
     '''Make the figure showing variation between SATs.'''
     with seaborn.axes_style('whitegrid'), matplotlib.pyplot.rc_context(rc=rc):
         (fig, axs) = matplotlib.pyplot.subplots(nrows=2, ncols=3)
@@ -111,10 +111,13 @@ def plot_variation(save=True, show=True):
         plotting.add_part_labels(axs, pad=13)
         fig.align_labels()
         if save:
-            path_file = pathlib.Path(__file__)
-            path = path_file.with_stem(path_file.stem.replace('_plot', ''))
+            source_path = pathlib.Path(__file__)
+            output_path_stem = source_path.with_stem(
+                source_path.stem.removesuffix('_plot')
+            )
             for suffix in ('.pdf', '.png'):
-                fig.savefig(path.with_suffix(suffix))
+                output_path = output_path_stem.with_suffix(suffix)
+                plotting.savefig(fig, output_path)
         if show:
             matplotlib.pyplot.show()
         return fig

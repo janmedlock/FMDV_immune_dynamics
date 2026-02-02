@@ -301,7 +301,8 @@ def plot_kde_2d(module, extinction_time, save=True, show=False):
         fig.align_ylabels(axes[:, 0])
         if save:
             for suffix in ('.pdf', '.png'):
-                fig.savefig(module.store_path.with_suffix(suffix))
+                output_path = module.store_path.with_suffix(suffix)
+                plotting.savefig(fig, output_path)
         if show:
             matplotlib.pyplot.show()
         return fig

@@ -119,10 +119,11 @@ def plot_rates(save=True, show=False):
         fig.align_labels()
         if save:
             source_path = pathlib.Path(__file__)
-            output_path_stem = source_path.with_name(
-                source_path.name.replace('_plot.py', '')
+            output_path_stem = source_path.with_stem(
+                source_path.stem.removesuffix('_plot')
             )
-            fig.savefig(output_path_stem.with_suffix('.pgf'))
+            output_path = output_path_stem.with_suffix('.pgf')
+            plotting.savefig(fig, output_path)
         if show:
             matplotlib.pyplot.show()
         return fig

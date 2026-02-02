@@ -133,8 +133,11 @@ def plot_persistence(extinction_time, save=True, show=False):
             cbar.long_axis.labelpad = 0
         fig.align_ylabels()
         if save:
-            store_path = population_size_and_susceptibility.store_path
-            fig.savefig(store_path.with_suffix('.pdf'))
+            output_path = (
+                population_size_and_susceptibility.store_path
+                .with_suffix('.pdf')
+            )
+            plotting.savefig(fig, output_path)
         if show:
             matplotlib.pyplot.show()
         return fig

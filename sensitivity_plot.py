@@ -125,11 +125,12 @@ def plot_persistence(extinction_times, save=True, show=False):
         fig.align_ylabels(axes[:, 0])
         if save:
             source_path = pathlib.Path(__file__)
-            output_path_stem = source_path.with_name(
-                source_path.name.replace('_plot.py', '')
+            output_path_stem = source_path.with_stem(
+                source_path.stem.removesuffix('_plot')
             )
             for suffix in ('.pdf', '.png'):
-                fig.savefig(output_path_stem.with_suffix(suffix))
+                output_path = output_path_stem.with_suffix(suffix)
+                plotting.savefig(fig, output_path)
         if show:
             matplotlib.pyplot.show()
         return fig
