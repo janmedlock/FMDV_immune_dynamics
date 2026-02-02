@@ -3,7 +3,6 @@
 
 import pathlib
 
-import matplotlib.collections
 import matplotlib.pyplot
 import seaborn
 
@@ -27,16 +26,6 @@ rc = (
 )
 
 
-def _remove_violin_borders(ax):
-    '''Remove violin borders. Assumes violins are instances of
-    `matplotlib.collections.FillBetweenPolyCollection()`, and that
-    there are no non-violin instances of that type.'''
-    for collection in ax.collections:
-        if isinstance(collection,
-                      matplotlib.collections.FillBetweenPolyCollection):
-            collection.set_linewidth(0)
-
-
 def plot_antibody_distribution(data, save=True, show=False):
     '''Plot the antibody titers by SAT.'''
     sats = data.SAT.unique()
@@ -49,7 +38,7 @@ def plot_antibody_distribution(data, save=True, show=False):
             inner='box', inner_kws={'whis_width': 0, 'solid_capstyle': 'butt'},
             cut=0, legend=False, ax=ax,
         )
-        _remove_violin_borders(ax)
+        plotting.remove_violin_borders(ax)
         ax.set_xticks(ax.get_xticks(), xticklabels)
         ax.xaxis.label.set_visible(False)
         ax.set_ylabel(r'log$_{10}$ antibody titer')

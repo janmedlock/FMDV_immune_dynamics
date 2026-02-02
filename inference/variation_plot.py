@@ -40,12 +40,11 @@ def plot_seropositives(ax):
     seaborn.violinplot(
         seropositives, x='SAT', y='titer', hue='SAT',
         palette=plotting.SAT_COLORS, alpha=plotting.ALPHA, saturation=1,
-        inner=None, linewidth=0,
+        inner='box',
+        inner_kws={'box_width': 3, 'whis_width': 0, 'solid_capstyle': 'butt'},
         cut=0, legend=False, ax=ax,
     )
-    mean = seropositives.groupby('SAT')['titer'].mean()
-    ax.plot(ax.get_xticks(), mean,
-            color='black', marker='_', markersize=20, linestyle='None')
+    plotting.remove_violin_borders(ax)
     ax.set_xticks(ax.get_xticks(), xticklabels)
     ax.xaxis.label.set_visible(False)
     ax.set_ylabel(r'log$_{10}$ antibody titer')

@@ -125,6 +125,16 @@ def legend_multicolumn(obj, handles, labels, ncol, **kwds):
                       ncol=ncol, **kwds)
 
 
+def remove_violin_borders(ax):
+    '''Remove violin borders. Assumes violins are instances of
+    `matplotlib.collections.FillBetweenPolyCollection()`, and that
+    there are no non-violin instances of that type.'''
+    for collection in ax.collections:
+        if isinstance(collection,
+                      matplotlib.collections.FillBetweenPolyCollection):
+            collection.set_linewidth(0)
+
+
 def get_state_label(state):
     '''Make a plot label for `state`.'''
     return state.replace('_', ' ').capitalize()
