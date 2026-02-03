@@ -1,5 +1,5 @@
 #!/usr/bin/python3
-'''Handle consecutive observations.'''
+'''Make the data table.'''
 
 import pathlib
 
