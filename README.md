@@ -67,6 +67,13 @@ Python code.
 * [data/antibody_distribution_plot.py](data/antibody_distribution_plot.py)
   is a script to make a plot the distributions of antibody titers.
 
+* [data/seropositives_test.py](data/seropositives_test.py) is a script
+  to compare titers by SAT for seropositives.
+
+* [data/seronegative_report.py](data/seronegative_report.py) is a
+  script to compare the proportion of buffalo aged 2+ years that are
+  seronegative by SAT.
+
 * [data/data_.py](data/data_.py) contains code to load the data.
 
 #### Inference
