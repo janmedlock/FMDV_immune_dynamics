@@ -17,7 +17,6 @@ import data_
 _CONSEC_OBS_MIN = 6
 
 _TICK_LABELSIZE = 6
-_TICK_MINOR_NDIVS = 2
 rc = (
     plotting.rc
     | plotting.SupplementalMaterials.rc
