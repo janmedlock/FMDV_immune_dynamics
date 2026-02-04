@@ -67,6 +67,12 @@ Python code.
 * [data/antibody_distribution_plot.py](data/antibody_distribution_plot.py)
   is a script to make a plot the distributions of antibody titers.
 
+* [data/titers_plot.py](data/titers_plot.py)
+  is a script to make plots of antibody titer dynamics by SAT and animal.
+
+* [data/dynamics_plot.py](data/dynamics_plot.py)
+  is a script to make plots of examples of antibody titer dynamics.
+
 * [data/seropositives_test.py](data/seropositives_test.py) is a script
   to compare titers by SAT for seropositives.
 
