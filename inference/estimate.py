@@ -26,15 +26,7 @@ _POSITIVE_TO_STATE = (
 
 @functools.lru_cache(maxsize=1)
 def load_data():
-    '''Load the `data` and rearrange it to the form used by `Model`.
-    The resuling `pandas.DataFrame()` has columns:
-    1. SAT,
-    2. animal,
-    3. number of current capture,
-    4. t_0: time of previous capture,
-    4. t: time of current capture,
-    5. x_0: antibody state at previous capture,
-    6. x: antibody state at current capture.'''
+    '''Load the `data` and rearrange it to the form used by `Model`.'''
 
     def get_state(data):
         '''Build 'state' column.'''
