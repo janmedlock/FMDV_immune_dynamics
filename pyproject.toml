@@ -8,7 +8,7 @@ maintainers = [
     {name = "Jan Medlock", email = "medlockj@oregonstate.edu"},
 ]
 readme = "README.md"
-license = {text = "APGL-3.0-only"}
+license = {text = "AGPL-3.0-only"}
 license-files = ["LICENSE"]
 dynamic = ["version"]
 requires-python = "==3.13.*"
