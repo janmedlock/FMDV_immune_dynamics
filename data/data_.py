@@ -233,30 +233,11 @@ def load_with_age():
 
 
 @functools.lru_cache(maxsize=1)
-def load_antibodies_predictive_values():
-    '''Load the predicitve values of the antibody titer.'''
-
-    def predictive_values(confusion_group):
-        observations = confusion_group.sum(axis='index')
-        freq = confusion_group / observations
-        return pandas.Series(freq.to_numpy().diagonal(),
-                             index=freq.index.rename('predictive_value'),
-                             copy=False)
-
-    def groupby_drop(confusion, by):
-        '''Make groups using the `by` level of the index without that
-        level appearing the index of the groups.'''
-        return (
-            confusion.reset_index(by, drop=True)
-            .groupby(confusion.index.get_level_values(by), sort=False)
-        )
-
-    confusion = (
+def load_antibodies_lpbe_vnt():
+    '''Load the predictive values of the antibody titer.'''
+    return (
         pandas.read_csv(_DATA_PATH / 'antibodies_lpbe_vnt.csv')
         .set_index(['SAT', 'LPBE', 'VNT'])
         .loc[:, 'count']
         .unstack('LPBE')
     )
-    grouper = groupby_drop(confusion, 'SAT')
-    return grouper.apply(predictive_values)
-
