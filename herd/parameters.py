@@ -2,16 +2,17 @@ import copy
 import warnings
 
 import numpy
-import pandas
 from pandas import Timestamp
 
 from . import precisions
 
 
 class Parameters:
-    def __init__(self, SAT=1, seed=None, _set_defaults=True, **kwds):
+    def __init__(self, SAT=1, sample_precision=False, seed=None,
+                 _set_defaults=True, **kwds):
         'Initialize with default values.'
         self.SAT = SAT
+        self.sample_precision = sample_precision
         if _set_defaults:
             self.population_size = 1000
             self.female_probability_at_birth = 0.5
@@ -19,23 +20,24 @@ class Parameters:
             # self.birth_seasonal_coefficient_of_variation = 0.505  # 1st year.
             # self.birth_seasonal_coefficient_of_variation = 0.984  # 2nd year.
             self.birth_seasonal_coefficient_of_variation = 0.613  # Both years.
-            # During in M before moving to S.
+            # Duration in M before moving to S.
             self.maternal_immunity_duration_mean = 0.37
             self.maternal_immunity_duration_shape = 1.19
-            # For the rate, not duration, leaving R to P.
             # The first day is 2014 March 05.
             date_min = Timestamp(year=2014, month=3, day=5)
             # Convert to years, with January 1 at 0.
             self.start_time = (date_min.dayofyear - 1) / 365
-            # Susceptibility of true states
-            self.susceptibility_true_recovered = 0
-            self.susceptibility_true_lost_immunity = 1
-            self.sample_precision = False
+            self.susceptibility_lost_immunity = 1
+            if self.sample_precision:
+                precision = precisions.sample(self.SAT, seed)
+            if not self.sample_precision:
+                precision = precisions.estimate(self.SAT)
+            self._set_precision(precision)
             if self.SAT == 1:
-                self.progression_shape = 1.2
                 self.progression_mean = 0.5 / 365
-                self.recovery_shape = 11.8
+                self.progression_shape = 1.2
                 self.recovery_mean = 5.7 / 365
+                self.recovery_shape = 11.8
                 self.transmission_rate = 2.8 * 365
                 # Proportion leaving I that become C.
                 self.probability_chronic = 0.90
@@ -48,10 +50,10 @@ class Parameters:
                 # Rate, not duration, leaving L to R.
                 self.antibody_gain_hazard = 0.007350989181831 * 365
             elif self.SAT == 2:
-                self.progression_shape = 1.6
                 self.progression_mean = 1.3 / 365
-                self.recovery_shape = 8.7
+                self.progression_shape = 1.6
                 self.recovery_mean = 4.6 / 365
+                self.recovery_shape = 8.7
                 self.transmission_rate = 1.6 * 365
                 # Proportion leaving I that become C.
                 self.probability_chronic = 0.44
@@ -64,10 +66,10 @@ class Parameters:
                 # Rate, not duration, leaving L to R.
                 self.antibody_gain_hazard = 0.005030729273316 * 365
             elif self.SAT == 3:
-                self.progression_shape = 1.6
                 self.progression_mean = 2.8 / 365
-                self.recovery_shape = 11.8
+                self.progression_shape = 1.6
                 self.recovery_mean = 4.2 / 365
+                self.recovery_shape = 11.8
                 self.transmission_rate = 1.2 * 365
                 # Proportion leaving I that become C.
                 self.probability_chronic = 0.67
@@ -83,12 +85,9 @@ class Parameters:
                 raise ValueError(f'Unknown {SAT=}!')
         self.set(seed=seed, **kwds)
 
-    def _get_series_from_attrs(self, prefix):
-        return pandas.Series({
-            attr.removeprefix(prefix): getattr(self, attr)
-            for attr in vars(self)
-            if attr.startswith(prefix)
-        })
+    def _warn_if_sample_precision(self):
+        if self.sample_precision:
+            warnings.warn('`.precision` not resampled!')
 
     def _set_attrs_from_series(self, prefix, ser):
         for (key, val) in ser.items():
@@ -99,51 +98,12 @@ class Parameters:
                     warnings.warn(f'Overwriting {attr}={cur} with {val}')
             setattr(self, attr, float(val))
 
-    def _warn_if_sample_precision(self):
-        if self.sample_precision:
-            warnings.warn('`.precision` not resampled!')
-
-    def _get_precision(self, seed):
-        precision = self._get_series_from_attrs('precision_')
-        if len(precision) > 0:
-            self._warn_if_sample_precision()
-            return precision
-        if self.sample_precision:
-            return precisions.sample(self.SAT, seed)
-        return precisions.estimate(self.SAT)
-
     def _set_precision(self, precision):
         self._set_attrs_from_series('precision_', precision)
-
-    @staticmethod
-    def _precision_matrix(precision):
-        assert len(precision) == 2
-        other = dict(zip(precision.index, precision.index[::-1]))
-        return pandas.DataFrame({
-            observed: {
-                observed: val,
-                other[observed]: 1. - val,
-            } for (observed, val) in precision.items()
-        })
-
-    def _susceptibility_true(self):
-        return self._get_series_from_attrs('susceptibility_true_')
-
-    def _set_susceptibility(self, susceptibility):
-        self._set_attrs_from_series('susceptibility_', susceptibility)
-
-    def _set_precision_and_susceptibility(self, seed):
-        precision = self._get_precision(seed)
-        self._set_precision(precision)
-        self._set_susceptibility(
-            self._susceptibility_true()
-            @ self._precision_matrix(precision)
-        )
 
     def set(self, seed=None, **kwds):
         for (key, val) in kwds.items():
             setattr(self, key, val)
-        self._set_precision_and_susceptibility(seed)
 
     def __repr__(self):
         'Make instances print nicely.'
