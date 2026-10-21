@@ -6,12 +6,67 @@ import pandas
 import sklearn.metrics
 
 
+def validate(confusion):
+    '''Validate the confusion matrix.'''
+
+    def all_integer(dfr):
+        return (
+            len(dfr.select_dtypes(numpy.integer).columns)
+            == len(dfr.columns)
+        )
+
+    def is_nonnegative(dfr):
+        return (dfr >= 0) | dfr.isnull()
+
+    assert all_integer(confusion)
+    assert is_nonnegative(confusion).all().all()
+
+
 def _groupby_drop(confusion, by):
     '''Make groups using the `by` level of the index without that
     level appearing the index of the groups.'''
     confusion_without_by = confusion.reset_index(by, drop=True)
     groups = confusion.index.get_level_values(by)
     return confusion_without_by.groupby(groups, sort=False)
+
+
+def _in_unit_interval(dfr):
+    return ((0. <= dfr) & (dfr <= 1.)) | dfr.isnull()
+
+
+def _validate_score_matrix(score_matrix):
+    '''Validate the score matrix.'''
+    assert _in_unit_interval(score_matrix).all().all()
+
+
+def _score_matrix(confusion, axis, by):
+    '''Calculate the score matrix optionally `by` an index level.'''
+    if by is not None:
+        grouper = _groupby_drop(confusion, by)
+        return grouper.apply(_score, axis, None)
+    states = confusion.index.union(confusion.columns, sort=False)
+    confusion = confusion.reindex(
+        index=states.rename(confusion.index.name),
+        columns=states.rename(confusion.columns.name),
+    )
+    score_matrix = confusion / confusion.to_numpy().sum(axis=axis,
+                                                        keepdims=True)
+    _validate_score_matrix(score_matrix)
+    return score_matrix
+
+
+def precision_matrix(confusion, by=None):
+    '''Calculate the precision matrix, optionally `by` an index
+    level. Precision is the frequency of each case label by
+    observation labels.'''
+    return _score_matrix(confusion, 0, by=by)
+
+
+def recall_matrix(confusion, by=None):
+    '''Calculate the recall matrix, optionally `by` an index
+    level. Recall is the frequency of each observation label by case
+    label.'''
+    return _score_matrix(confusion, 1, by=by)
 
 
 def _score_index_name(score_name, case_, observed):
@@ -21,6 +76,11 @@ def _score_index_name(score_name, case_, observed):
     if score_name == 'recall':
         return case_
     return 'class'
+
+
+def _validate_score(score):
+    '''Validate the score.'''
+    assert _in_unit_interval(score).all()
 
 
 def _score(confusion, score_name, by):
@@ -41,9 +101,13 @@ def _score(confusion, score_name, by):
     index_name = _score_index_name(score_name, case_, observed)
     index = confusion.index.union(confusion.columns, sort=False) \
                            .rename(index_name)
-    scores = scorer(dfr[case_], dfr[observed], sample_weight=dfr[count],
-                    labels=index, average=None)
-    return pandas.Series(scores, index=index, copy=False)
+    score = pandas.Series(
+        scorer(dfr[case_], dfr[observed], sample_weight=dfr[count],
+               labels=index, average=None),
+        index=index, copy=False,
+    )
+    _validate_score(score)
+    return score
 
 
 def precision(confusion, by=None):
@@ -73,6 +137,11 @@ def _resample_counts(counts, alpha_prior, rng):
     return sample
 
 
+def _validate_resample(sample, confusion, axis):
+    validate(sample)
+    assert (sample.sum(axis=axis) == confusion.sum(axis=axis)).all()
+
+
 def _resample(confusion, axis, alpha_prior, seed, by):
     '''Resample the confusion matrix, keeping total counts along
     `axis` constant, using the Dirichlet-multinomial distribution with
@@ -83,7 +152,7 @@ def _resample(confusion, axis, alpha_prior, seed, by):
         grouper = _groupby_drop(confusion, by)
         return grouper.apply(_resample, axis, alpha_prior, rng, None)
     sample = confusion.transform(_resample_counts, axis, alpha_prior, rng)
-    assert (sample.sum(axis=axis) == confusion.sum(axis=axis)).all()
+    _validate_resample(sample, confusion, axis)
     return sample
 
 

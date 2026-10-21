@@ -1,10 +1,15 @@
 import copy
+import warnings
 
+import numpy
+import pandas
 from pandas import Timestamp
+
+from . import precisions
 
 
 class Parameters:
-    def __init__(self, SAT=1, _set_defaults=True, **kwds):
+    def __init__(self, SAT=1, seed=None, _set_defaults=True, **kwds):
         'Initialize with default values.'
         self.SAT = SAT
         if _set_defaults:
@@ -22,7 +27,10 @@ class Parameters:
             date_min = Timestamp(year=2014, month=3, day=5)
             # Convert to years, with January 1 at 0.
             self.start_time = (date_min.dayofyear - 1) / 365
-            self.lost_immunity_susceptibility = 1
+            # Susceptibility of true states
+            self.susceptibility_true_recovered = 0
+            self.susceptibility_true_lost_immunity = 1
+            self.sample_precision = False
             if self.SAT == 1:
                 self.progression_shape = 1.2
                 self.progression_mean = 0.5 / 365
@@ -73,18 +81,79 @@ class Parameters:
                 self.antibody_gain_hazard = 0.004176835549525 * 365
             else:
                 raise ValueError(f'Unknown {SAT=}!')
-        self.set(**kwds)
+        self.set(seed=seed, **kwds)
 
-    def set(self, **kwds):
+    def _get_series_from_attrs(self, prefix):
+        return pandas.Series({
+            attr.removeprefix(prefix): getattr(self, attr)
+            for attr in vars(self)
+            if attr.startswith(prefix)
+        })
+
+    def _set_attrs_from_series(self, prefix, ser):
+        for (key, val) in ser.items():
+            attr = f'{prefix}{key}'
+            if hasattr(self, attr):
+                cur = getattr(self, attr, val)
+                if not numpy.isclose(val, cur):
+                    warnings.warn(f'Overwriting {attr}={cur} with {val}')
+            setattr(self, attr, float(val))
+
+    def _warn_if_sample_precision(self):
+        if self.sample_precision:
+            warnings.warn('`.precision` not resampled!')
+
+    def _get_precision(self, seed):
+        precision = self._get_series_from_attrs('precision_')
+        if len(precision) > 0:
+            self._warn_if_sample_precision()
+            return precision
+        if self.sample_precision:
+            return precisions.sample(self.SAT, seed)
+        return precisions.estimate(self.SAT)
+
+    def _set_precision(self, precision):
+        self._set_attrs_from_series('precision_', precision)
+
+    @staticmethod
+    def _precision_matrix(precision):
+        assert len(precision) == 2
+        other = dict(zip(precision.index, precision.index[::-1]))
+        return pandas.DataFrame({
+            observed: {
+                observed: val,
+                other[observed]: 1. - val,
+            } for (observed, val) in precision.items()
+        })
+
+    def _susceptibility_true(self):
+        return self._get_series_from_attrs('susceptibility_true_')
+
+    def _set_susceptibility(self, susceptibility):
+        self._set_attrs_from_series('susceptibility_', susceptibility)
+
+    def _set_precision_and_susceptibility(self, seed):
+        precision = self._get_precision(seed)
+        self._set_precision(precision)
+        self._set_susceptibility(
+            self._susceptibility_true()
+            @ self._precision_matrix(precision)
+        )
+
+    def set(self, seed=None, **kwds):
         for (key, val) in kwds.items():
             setattr(self, key, val)
+        self._set_precision_and_susceptibility(seed)
 
     def __repr__(self):
         'Make instances print nicely.'
-        clsname = '{}.{}'.format(self.__module__, self.__class__.__name__)
-        paramreprs = ('{!r}: {!r}'.format(k, self.__dict__[k])
-                      for k in sorted(self.__dict__.keys()))
-        return '<{}: {{{}}}>'.format(clsname, ', '.join(paramreprs))
+        clsname = f'{self.__module__}.{self.__class__.__name__}'
+        params = vars(self)
+        paramreprs = ', '.join(
+            f'{k!r}: {params[k]!r}'
+            for k in sorted(params)
+        )
+        return f'<{clsname}: {{{paramreprs}}}>'
 
     @classmethod
     def from_repr(cls, r_, set_defaults=True):
@@ -94,7 +163,7 @@ class Parameters:
         l = r.find(':')
         name = r[ : l]
         # Can be different depending on how the module is imported.
-        clsname = '{}.{}'.format(cls.__module__, cls.__name__)
+        clsname = f'{cls.__module__}.{cls.__name__}'
         assert (name == clsname)
         paramstr_ = r[l + 2 : ]
         assert paramstr_.startswith('{')
@@ -110,10 +179,13 @@ class Parameters:
             if int(v) == v:
                 v = int(v)
             setattr(p, k, v)
+        p._warn_if_sample_precision()
         return p
 
     def copy(self):
-        return copy.copy(self)
+        new = copy.copy(self)
+        new._warn_if_sample_precision()
+        return new
 
     def merge(self, **kwds):
         new = self.copy()
