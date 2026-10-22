@@ -1,6 +1,6 @@
 from scipy.stats import bernoulli
 
-from herd.rv import RV
+from .rv import RV
 
 
 class gen(RV):

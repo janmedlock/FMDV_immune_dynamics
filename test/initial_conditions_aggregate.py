@@ -7,9 +7,7 @@ import numpy
 import pandas
 import scipy
 
-from context import common
-from context import herd
-from context import plotting
+from context import common, herd, plotting
 import herd.initial_conditions
 import herd.mortality
 import herd.utility
@@ -123,10 +121,10 @@ def get_hazard_infection(p, params):
     P = integrate_over_age(p)
     transmission_rate = pandas.Series({k: v.transmission_rate
                                        for (k, v) in params.items()})
-    chronic_transmission_rate = pandas.Series({k: v.chronic_transmission_rate
+    carrier_transmission_rate = pandas.Series({k: v.carrier_transmission_rate
                                                for (k, v) in params.items()})
     return (transmission_rate * P.loc['infectious']
-            + chronic_transmission_rate * P.loc['chronic'])
+            + carrier_transmission_rate * P.loc['carrier'])
 
 
 def get_incidence(p, params):

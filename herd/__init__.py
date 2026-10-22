@@ -1,3 +1,9 @@
-from herd.herd import Herd
-from herd.parameters import Parameters
-from herd.random_variables import RandomVariables
+__all__ = (
+    'Herd',
+    'Parameters',
+    'RandomVariables',
+)
+
+from .herd_ import Herd
+from .parameters import Parameters
+from .random_variables import RandomVariables

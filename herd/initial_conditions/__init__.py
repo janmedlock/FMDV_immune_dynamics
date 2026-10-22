@@ -1,1 +1,1 @@
-from herd.initial_conditions.initial_conditions import *
+from .initial_conditions_ import *

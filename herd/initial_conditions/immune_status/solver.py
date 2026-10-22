@@ -8,10 +8,9 @@ import numpy.lib.recfunctions
 import pandas
 import scipy
 
-from herd import (antibody_gain, antibody_loss, birth, buffalo,
-                  chronic_recovery, maternal_immunity_waning,
-                  mortality, parameters, progression, recovery,
-                  utility)
+from ... import (antibody_gain, antibody_loss, birth, buffalo,
+                 carrier_recovery, maternal_immunity_waning, mortality,
+                 parameters, progression, recovery, utility)
 from . import blocks
 
 
@@ -19,7 +18,7 @@ def _rec_fromkwds(**kwds):
     '''Build a `numpy.recarray()` from `kwds`.'''
     return numpy.rec.fromarrays(
         numpy.broadcast_arrays(*kwds.values()),
-        dtype=[(k, float) for k in kwds.keys()])
+        dtype=[(k, float) for k in kwds])
 
 
 class _Params:
@@ -33,7 +32,7 @@ class _Params:
         rndvrs_pdf = {
             'progression': progression.gen(params),
             'recovery': recovery.gen(params),
-            'chronic_recovery': chronic_recovery.gen(params),
+            'carrier_recovery': carrier_recovery.gen(params),
         }
         pdf = {k: self._get_pdf(RV, ages)
                for (k, RV) in rndvrs_pdf.items()}
@@ -59,9 +58,9 @@ class _Params:
         # Other parameters.
         self.hazard = _rec_fromkwds(**hazard)
         self.female_probability_at_birth = params.female_probability_at_birth
-        self.probability_chronic = params.probability_chronic
+        self.probability_carrier = params.probability_carrier
         self.transmission_rate = params.transmission_rate
-        self.chronic_transmission_rate = params.chronic_transmission_rate
+        self.carrier_transmission_rate = params.carrier_transmission_rate
         self.lost_immunity_susceptibility = params.lost_immunity_susceptibility
         # The birth hazard is needed at `ages`, not `ages_mid`.
         self.hazard_birth = self._hazard_birth(ages)
@@ -211,7 +210,7 @@ class Solver:
                           args=(self.ages, ))
         haz = (
             (self.params.transmission_rate * P_total['infectious']
-             + self.params.chronic_transmission_rate * P_total['chronic'])
+             + self.params.carrier_transmission_rate * P_total['carrier'])
             / P_total.sum()
         )
         assert (haz >= 0) | numpy.isclose(haz, 0)
@@ -282,14 +281,14 @@ class _CacheParameters(parameters.Parameters):
                  'antibody_loss_hazard',
                  'birth_peak_time_of_year',
                  'birth_seasonal_coefficient_of_variation',
-                 'chronic_recovery_mean',
-                 'chronic_recovery_shape',
-                 'chronic_transmission_rate',
+                 'carrier_recovery_mean',
+                 'carrier_recovery_shape',
+                 'carrier_transmission_rate',
                  'female_probability_at_birth',
                  'lost_immunity_susceptibility',
                  'maternal_immunity_duration_mean',
                  'maternal_immunity_duration_shape',
-                 'probability_chronic',
+                 'probability_carrier',
                  'progression_mean',
                  'progression_shape',
                  'recovery_mean',

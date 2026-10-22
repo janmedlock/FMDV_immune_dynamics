@@ -1,9 +1,8 @@
-from herd.parameters import Parameters
-from herd import (antibody_gain, antibody_loss, birth,
-                  chronic_recovery, chronic_transmission_rate, female,
-                  initial_conditions, maternal_immunity_waning,
-                  mortality, probability_chronic, progression,
-                  recovery, transmission_rate)
+from . import (antibody_gain, antibody_loss, birth, carrier_recovery,
+               carrier_transmission_rate, female, initial_conditions,
+               maternal_immunity_waning, mortality, probability_carrier,
+               progression, recovery, transmission_rate)
+from .parameters import Parameters
 
 
 class RandomVariables:
@@ -18,12 +17,12 @@ class RandomVariables:
         # waiting time I to R
         self.recovery = recovery.gen(params)
         self.transmission_rate = transmission_rate.gen(params)
-        self.chronic_transmission_rate = chronic_transmission_rate.gen(params)
+        self.carrier_transmission_rate = carrier_transmission_rate.gen(params)
         self.birth = birth.gen(params)
         # proportion I to C
-        self.probability_chronic = probability_chronic.gen(params)
+        self.probability_carrier = probability_carrier.gen(params)
         # waiting time to recover C to R
-        self.chronic_recovery = chronic_recovery.gen(params)
+        self.carrier_recovery = carrier_recovery.gen(params)
         # waiting time leaving R to P
         self.antibody_loss = antibody_loss.gen(params)
         # waiting time leaving P to R

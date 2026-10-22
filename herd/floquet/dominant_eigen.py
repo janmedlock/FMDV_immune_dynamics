@@ -3,7 +3,7 @@ from scipy.sparse.linalg import eigs
 
 
 def find(A, which='LR', return_eigenvector=True, maxiter=100000,
-         *args, **kwargs):
+         **kwargs):
     '''Find the dominant eigenvalue & eigenvector of `A` using
     `scipy.sparse.linalg.eigs()`, which works for both sparse
     and dense matrices.
@@ -14,7 +14,7 @@ def find(A, which='LR', return_eigenvector=True, maxiter=100000,
     assert numpy.isfinite(A[numpy.nonzero(A)]).all(), 'A has inf/NaN entries.'
     result = eigs(A, k=1, which=which, maxiter=maxiter,
                   return_eigenvectors=return_eigenvector,
-                  *args, **kwargs)
+                  **kwargs)
     if return_eigenvector:
         L, V = result
     else:

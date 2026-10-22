@@ -3,11 +3,11 @@ from itertools import count
 import numpy
 from pandas import DataFrame
 
-from herd.buffalo import Buffalo
-from herd.events import HerdEvents
-from herd.immune_statuses import immune_statuses
-from herd.parameters import Parameters
-from herd.random_variables import RandomVariables
+from .buffalo import Buffalo
+from .events import HerdEvents
+from .immune_statuses import immune_statuses
+from .parameters import Parameters
+from .random_variables import RandomVariables
 
 
 class Herd(set):
@@ -35,12 +35,12 @@ class Herd(set):
         self.identifiers = count(0)
         # These need to be defined before initializing
         # susceptible `Buffalo()`.
-        self.number_infectious = self.number_chronic = 0
+        self.number_infectious = self.number_carrier = 0
         # Sample until there are some infected hosts.
         while True:
             immune_status_ages = self.rvs.initial_conditions.rvs()
             infected = sum(len(immune_status_ages[s])
-                           for s in {'exposed', 'infectious', 'chronic'})
+                           for s in ('exposed', 'infectious', 'carrier'))
             if infected > 0:
                 break
             else:
@@ -64,7 +64,7 @@ class Herd(set):
         super().remove(b)
 
     def update_infection_times(self):
-        '''Calculate the number of infectious and chronic buffalo,
+        '''Calculate the number of infectious and carrier buffalo,
         then, if these are different than previous, update
         the infection times for susceptible buffalo.'''
         updated = False
@@ -72,11 +72,11 @@ class Herd(set):
         if number_infectious_new != self.number_infectious:
             self.number_infectious = number_infectious_new
             updated = True
-        if self.rvs.chronic_transmission_rate > 0:
-            # This only matters if the chronic transmission rate is non-zero.
-            number_chronic_new = len(self.by_immune_status['chronic'])
-            if number_chronic_new != self.number_chronic:
-                self.number_chronic = number_chronic_new
+        if self.rvs.carrier_transmission_rate > 0:
+            # This only matters if the carrier transmission rate is non-zero.
+            number_carrier_new = len(self.by_immune_status['carrier'])
+            if number_carrier_new != self.number_carrier:
+                self.number_carrier = number_carrier_new
                 updated = True
         if updated:
             self.events.update_infection_times()
@@ -86,7 +86,7 @@ class Herd(set):
                  for s in immune_statuses]
         return (self.time, stats)
 
-    _INFECTED = {'exposed', 'infectious', 'chronic'}
+    _INFECTED = frozenset({'exposed', 'infectious', 'carrier'})
 
     @property
     def number_infected(self):

@@ -7,14 +7,13 @@ import numpy
 import numpy.lib.recfunctions
 from scipy import sparse
 
-
 # The short & long names of the variables.
 # The order of the output is determined by the order of these, too.
 NAMES = {'M': 'maternal_immunity',
          'S': 'susceptible',
          'E': 'exposed',
          'I': 'infectious',
-         'C': 'chronic',
+         'C': 'carrier',
          'R': 'recovered',
          'L': 'lost_immunity'}
 
@@ -216,24 +215,24 @@ class BlockI(_BlockPDE):
 
 class BlockC(_BlockPDE):
     def set_A_CI(self):
-        self.A_X['I'] = self._get_A_XY_PDE(self.params.probability_chronic
+        self.A_X['I'] = self._get_A_XY_PDE(self.params.probability_carrier
                                            * self.params.pdf.recovery)
 
     def set_A_CC(self):
         self.A_X['C'] = self._get_A_XX()
 
     def integrate(self, p_C):
-        return super().integrate(p_C, self.params.survival.chronic_recovery)
+        return super().integrate(p_C, self.params.survival.carrier_recovery)
 
 
 class BlockR(_BlockODE):
     def set_A_RI(self):
         self.A_X['I'] = self._get_A_XY_PDE(
-            (1 - self.params.probability_chronic)
+            (1 - self.params.probability_carrier)
             * self.params.pdf.recovery)
 
     def set_A_RC(self):
-        self.A_X['C'] = self._get_A_XY_PDE(self.params.pdf.chronic_recovery)
+        self.A_X['C'] = self._get_A_XY_PDE(self.params.pdf.carrier_recovery)
 
     def set_A_RR(self):
         self.A_X['R'] = self._get_A_XX(self.params.hazard.antibody_loss)

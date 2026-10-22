@@ -5,7 +5,7 @@ from abc import ABC, abstractmethod
 import numpy
 from scipy import stats
 
-from herd.immune_statuses import immune_statuses
+from .immune_statuses import immune_statuses
 
 # Events that can happen to each immune status.
 events_by_immune_status = {
@@ -117,8 +117,8 @@ class _Infection(Event):
     def get_force_of_infection(self):
         return ((self.buffalo.herd.rvs.transmission_rate
                  * self.buffalo.herd.number_infectious)
-                + (self.buffalo.herd.rvs.chronic_transmission_rate
-                   * self.buffalo.herd.number_chronic))
+                + (self.buffalo.herd.rvs.carrier_transmission_rate
+                   * self.buffalo.herd.number_carrier))
 
     def sample_time(self):
         force_of_infection = self.get_force_of_infection()
@@ -164,8 +164,8 @@ class Recovery(Event):
         return self.buffalo.immune_status == 'infectious'
 
     def do(self):
-        if self.buffalo.herd.rvs.probability_chronic.rvs() == 1:
-            self.buffalo.change_immune_status_to('chronic')
+        if self.buffalo.herd.rvs.probability_carrier.rvs() == 1:
+            self.buffalo.change_immune_status_to('carrier')
         else:
             self.buffalo.change_immune_status_to('recovered')
 
@@ -176,19 +176,19 @@ class Recovery(Event):
 events_by_immune_status['infectious'].add(Recovery)
 
 
-class ChronicRecovery(Event):
-    '''A buffalo recovering from chronically infected.'''
+class CarrierRecovery(Event):
+    '''A buffalo recovering from carrier infected.'''
     def is_valid(self):
-        return self.buffalo.immune_status == 'chronic'
+        return self.buffalo.immune_status == 'carrier'
 
     def do(self):
         self.buffalo.change_immune_status_to('recovered')
 
     def sample_time(self):
         return (self.buffalo.herd.time
-                + self.buffalo.herd.rvs.chronic_recovery.rvs())
+                + self.buffalo.herd.rvs.carrier_recovery.rvs())
 
-events_by_immune_status['chronic'].add(ChronicRecovery)
+events_by_immune_status['carrier'].add(CarrierRecovery)
 
 
 class RecoveredInfection(_Infection):

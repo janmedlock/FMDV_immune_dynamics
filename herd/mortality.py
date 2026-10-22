@@ -1,19 +1,22 @@
 import numpy
 from pandas import Interval, Series
 
-from herd.rv import RV
+from .rv import RV
+
+# {(a, b): s} is the annual survival for ages [a, b).
+_ANNUAL_SURVIVAL = {
+    (0, 1): 0.66,
+    (1, 3): 0.79,
+    (3, 12): 0.88,
+    (12, numpy.inf): 0.66,
+}
 
 
 class gen(RV):
-    # {(a, b): s} is the annual survival for ages [a, b).
-    _annual_survival = {(0, 1): 0.66,
-                        (1, 3): 0.79,
-                        (3, 12): 0.88,
-                        (12, numpy.inf): 0.66}
     # Convert to pandas.Interval()'s for convenience.
     _annual_survival = Series(
         {Interval(*interval, closed='left'): value
-         for (interval, value) in _annual_survival.items()}).sort_index()
+         for (interval, value) in _ANNUAL_SURVIVAL.items()}).sort_index()
 
     def __init__(self, parameters):
         pass

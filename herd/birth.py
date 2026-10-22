@@ -1,11 +1,10 @@
 import numpy
 from scipy import optimize
 
-from herd import periods
+from . import periods
 # Import in `gen()` to avoid an import loop.
-# from herd.floquet import find_birth_scaling
-from herd.rv import RV
-
+# from .floquet import find_birth_scaling
+from .rv import RV
 
 # The code below is not tested at all for `period != 1`!
 period = 1
@@ -51,7 +50,7 @@ class gen(RV):
                           * (1 + self.seasonal_coefficient_of_variation ** 2))
         if _scaling is None:
             # Import here to avoid an import loop.
-            from herd.floquet import find_birth_scaling
+            from .floquet import find_birth_scaling
             _scaling = find_birth_scaling(parameters,
                                           *args,
                                           **kwargs)

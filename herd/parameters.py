@@ -40,11 +40,11 @@ class Parameters:
                 self.recovery_shape = 11.8
                 self.transmission_rate = 2.8 * 365
                 # Proportion leaving I that become C.
-                self.probability_chronic = 0.90
+                self.probability_carrier = 0.90
                 # Duration in C before leaving to R.
-                self.chronic_recovery_mean = 243 / 365
-                self.chronic_recovery_shape = 3.2
-                self.chronic_transmission_rate = 0.028 * 365
+                self.carrier_recovery_mean = 243 / 365
+                self.carrier_recovery_shape = 3.2
+                self.carrier_transmission_rate = 0.028 * 365
                 # Rate, not duration, leaving R to L.
                 self.antibody_loss_hazard = 0.001440770075415 * 365
                 # Rate, not duration, leaving L to R.
@@ -56,11 +56,11 @@ class Parameters:
                 self.recovery_shape = 8.7
                 self.transmission_rate = 1.6 * 365
                 # Proportion leaving I that become C.
-                self.probability_chronic = 0.44
+                self.probability_carrier = 0.44
                 # Duration in C before leaving to R.
-                self.chronic_recovery_mean = 180 / 365
-                self.chronic_recovery_shape = 3.2
-                self.chronic_transmission_rate = 0.003 * 365
+                self.carrier_recovery_mean = 180 / 365
+                self.carrier_recovery_shape = 3.2
+                self.carrier_transmission_rate = 0.003 * 365
                 # Rate, not duration, leaving R to L.
                 self.antibody_loss_hazard = 0.003170648923222 * 365
                 # Rate, not duration, leaving L to R.
@@ -72,11 +72,11 @@ class Parameters:
                 self.recovery_shape = 11.8
                 self.transmission_rate = 1.2 * 365
                 # Proportion leaving I that become C.
-                self.probability_chronic = 0.67
+                self.probability_carrier = 0.67
                 # Duration in C before leaving to R.
-                self.chronic_recovery_mean = 174 / 365
-                self.chronic_recovery_shape = 3.2
-                self.chronic_transmission_rate = 0.012 * 365
+                self.carrier_recovery_mean = 174 / 365
+                self.carrier_recovery_shape = 3.2
+                self.carrier_transmission_rate = 0.012 * 365
                 # Rate, not duration, leaving R to L.
                 self.antibody_loss_hazard = 0.005460735526547 * 365
                 # Rate, not duration, leaving L to R.

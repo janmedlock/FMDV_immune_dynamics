@@ -1,6 +1,5 @@
 '''Common code.'''
 
-import collections.abc
 import os
 
 import numpy
@@ -9,7 +8,6 @@ import psutil
 
 import herd.utility
 
-
 SATs = (1, 2, 3)
 
 NRUNS = 1000
@@ -17,7 +15,7 @@ NRUNS = 1000
 TIME_UNIT = 'year'
 TIME_MAX = 10
 
-cols_infected = ['exposed', 'infectious', 'chronic']
+cols_infected = ['exposed', 'infectious', 'carrier']
 
 
 def nice_self():

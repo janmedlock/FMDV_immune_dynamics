@@ -25,7 +25,7 @@ cimport numpy
 import numpy
 from scipy import sparse
 
-from herd import birth, mortality, periods, utility
+from .. import birth, mortality, periods, utility
 
 
 # Functions from BLAS.

@@ -1,4 +1,4 @@
-from herd import events
+from . import events
 
 
 class Buffalo:
@@ -6,7 +6,7 @@ class Buffalo:
 
     # The immune statuses that give mom antibodies
     # that she passes on to her calves.
-    has_antibodies = frozenset({'chronic', 'recovered'})
+    has_antibodies = frozenset({'carrier', 'recovered'})
 
     def __init__(self, herd, immune_status='maternal_immunity', age=0):
         self.herd = herd

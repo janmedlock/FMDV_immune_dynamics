@@ -2,8 +2,8 @@
 
 from scipy.stats import multinomial
 
-from herd import age_structure
-from herd.initial_conditions import immune_status
+from .. import age_structure
+from . import immune_status
 
 
 class gen:

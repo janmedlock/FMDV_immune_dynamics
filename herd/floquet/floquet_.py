@@ -1,13 +1,12 @@
 import pathlib
 
-from joblib import Memory
 import numpy
+from joblib import Memory
 from scipy.integrate import trapezoid
 from scipy.optimize import brentq
 
-from herd import parameters, periods
-from herd.floquet import dominant_eigen, monodromy
-
+from .. import parameters, periods
+from . import dominant_eigen, monodromy
 
 _step_default = 0.01
 _age_max_default = 35

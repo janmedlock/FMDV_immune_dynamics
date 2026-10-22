@@ -4,7 +4,7 @@ from operator import attrgetter
 
 from sortedcontainers import SortedKeyList
 
-from herd import event
+from . import event
 
 
 class BuffaloEvents(set):

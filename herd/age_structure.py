@@ -1,8 +1,8 @@
 import numpy
 from scipy.stats import rv_discrete
 
-from herd.rv import RV
-from herd.floquet import find_stable_age_structure
+from .rv import RV
+from .floquet import find_stable_age_structure
 
 
 class gen(RV):
