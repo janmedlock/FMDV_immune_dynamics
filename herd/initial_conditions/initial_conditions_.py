@@ -13,9 +13,26 @@ class gen:
     def __init__(self, parameters, debug=False):
         self.parameters = parameters
         # Reuse these in case we call pdf() or rvs() repeatedly.
-        self.immune_status_pdf = (
-            immune_status.probability.Interpolant(self.parameters,
-                                                  debug=debug))
+        # TODO: Fix
+        if True:
+            import warnings
+
+            import pandas
+
+            from ..immune_statuses import immune_statuses
+
+            def immune_status_conditional_pdf(ages):
+                # Each of `immune_statuses` equally likely for all `ages`
+                return pandas.DataFrame(1. / len(immune_statuses),
+                                        index=ages,
+                                        columns=immune_statuses)
+
+            warnings.warn('Fake `initial_conditions`!')
+            self.immune_status_pdf = immune_status_conditional_pdf
+        else:
+            self.immune_status_pdf = (
+                immune_status.probability.Interpolant(self.parameters,
+                                                      debug=debug))
         self.ages = age_structure.gen(self.parameters)
 
     def immune_status_conditional_pdf(self, ages):
