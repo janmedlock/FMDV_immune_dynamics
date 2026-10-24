@@ -56,7 +56,22 @@ class Event(ABC):
         )
 
 
-class Mortality(Event):
+class ResampleMixin:
+    def resample_until_future(self, rv):
+        '''Rejection resample from `rv` until the event time
+        is in the future.'''
+        while True:
+            time = self.buffalo.birth_date + rv.rvs()
+            if time >= self.buffalo.herd.time:
+                return time
+            if self.buffalo.herd.debug:
+                print(f'{rv} sample rejected: '
+                      + ', '.join((f'{self.buffalo.herd.time=!s}',
+                                   f'{time=!s}',
+                                   f'{self.buffalo.birth_date=!s}')))
+
+
+class Mortality(ResampleMixin, Event):
     '''A buffalo dying.'''
     def is_valid(self):
         return True  # All buffalo can die.
@@ -65,12 +80,9 @@ class Mortality(Event):
         self.buffalo.die()
 
     def sample_time(self):
-        # Use resampling to get a mortality time >= current time.
-        while True:
-            time = (self.buffalo.birth_date
-                    + self.buffalo.herd.rvs.mortality.rvs())
-            if time >= self.buffalo.herd.time:
-                return time
+        return self.resample_until_future(
+            self.buffalo.herd.rvs.mortality
+        )
 
 
 class Birth(Event):
@@ -90,7 +102,7 @@ class Birth(Event):
                                                   self.buffalo.age))
 
 
-class MaternalImmunityWaning(Event):
+class MaternalImmunityWaning(ResampleMixin, Event):
     '''A buffalo losing maternal immunity.'''
     def is_valid(self):
         return self.buffalo.immune_status == 'maternal_immunity'
@@ -99,12 +111,9 @@ class MaternalImmunityWaning(Event):
         self.buffalo.change_immune_status_to('susceptible')
 
     def sample_time(self):
-        # Use resampling to get a waning time >= current time.
-        while True:
-            time = (self.buffalo.birth_date
-                    + self.buffalo.herd.rvs.maternal_immunity_waning.rvs())
-            if time >= self.buffalo.herd.time:
-                return time
+        return self.resample_until_future(
+            self.buffalo.herd.rvs.maternal_immunity_waning
+        )
 
 events_by_immune_status['maternal_immunity'].add(MaternalImmunityWaning)
 
