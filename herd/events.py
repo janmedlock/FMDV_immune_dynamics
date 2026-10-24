@@ -1,4 +1,5 @@
 '''Data structures to manage events.'''
+
 from itertools import tee
 from operator import attrgetter
 
