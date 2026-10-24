@@ -5,8 +5,7 @@ import time
 
 import matplotlib.pyplot
 
-from context import baseline
-from context import herd
+from context import baseline, herd
 
 
 def make_plot(data):
