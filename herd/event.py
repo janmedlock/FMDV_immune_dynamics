@@ -109,7 +109,7 @@ class MaternalImmunityWaning(Event):
 events_by_immune_status['maternal_immunity'].add(MaternalImmunityWaning)
 
 
-class _Infection(Event):
+class Infection(Event):
     '''Base class for a buffalo becoming infected.'''
     def do(self):
         self.buffalo.change_immune_status_to('exposed')
@@ -132,7 +132,7 @@ class _Infection(Event):
                 + stats.expon.rvs(scale=scale))
 
 
-class SusceptibleInfection(Event):
+class SusceptibleInfection(Infection):
     '''A buffalo becoming infected from 'susceptible'.'''
     def is_valid(self):
         return self.buffalo.immune_status == 'susceptible'
@@ -191,15 +191,15 @@ class CarrierRecovery(Event):
 events_by_immune_status['carrier'].add(CarrierRecovery)
 
 
-class _LostImmunityInfection(_Infection):
-    '''A buffalo becoming infected from 'lost_immunity_true'
-    or 'recovered_false'.'''
+class LostImmunityInfection(Infection):
+    '''Base class for a buffalo becoming infected from
+    'lost_immunity_true' or 'recovered_false'.'''
     def get_force_of_infection(self):
         return (self.buffalo.herd.params.lost_immunity_susceptibility
                 * super().get_force_of_infection())
 
 
-class LostImmunityTrueInfection(_LostImmunityInfection):
+class LostImmunityTrueInfection(LostImmunityInfection):
     '''A buffalo becoming infected from 'lost_immunity_true'.'''
     def is_valid(self):
         return self.buffalo.immune_status == 'lost_immunity_true'
@@ -215,7 +215,7 @@ class LostImmunityTrueInfection(_LostImmunityInfection):
 events_by_immune_status['lost_immunity_true'].add(LostImmunityTrueInfection)
 
 
-class RecoveredFalseInfection(_LostImmunityInfection):
+class RecoveredFalseInfection(LostImmunityInfection):
     '''A buffalo becoming infected from 'recovered_false'.'''
     def is_valid(self):
         return self.buffalo.immune_status == 'recovered_false'
@@ -231,8 +231,8 @@ class RecoveredFalseInfection(_LostImmunityInfection):
 events_by_immune_status['recovered_false'].add(RecoveredFalseInfection)
 
 
-class _AntibodyLoss(Event):
-    '''A buffalo losing apparent antibodies.'''
+class AntibodyLoss(Event):
+    '''Base class for a buffalo losing apparent antibodies.'''
     def do(self):
         if self.buffalo.herd.rvs.probability_lost_immunity_true.rvs() == 1:
             self.buffalo.change_immune_status_to('lost_immunity_true')
@@ -244,7 +244,7 @@ class _AntibodyLoss(Event):
                 + self.buffalo.herd.rvs.antibody_loss.rvs())
 
 
-class RecoveredTrueAntibodyLoss(_AntibodyLoss):
+class RecoveredTrueAntibodyLoss(AntibodyLoss):
     '''A buffalo losing apparent antibodies from 'recovered_true'.'''
     def is_valid(self):
         return self.buffalo.immune_status == 'recovered_true'
@@ -252,7 +252,7 @@ class RecoveredTrueAntibodyLoss(_AntibodyLoss):
 events_by_immune_status['recovered_true'].add(RecoveredTrueAntibodyLoss)
 
 
-class RecoveredFalseAntibodyLoss(_AntibodyLoss):
+class RecoveredFalseAntibodyLoss(AntibodyLoss):
     '''A buffalo losing apparent antibodies from 'recovered_false'.'''
     def is_valid(self):
         return self.buffalo.immune_status == 'recovered_false'
@@ -268,8 +268,8 @@ class RecoveredFalseAntibodyLoss(_AntibodyLoss):
 events_by_immune_status['recovered_false'].add(RecoveredFalseAntibodyLoss)
 
 
-class _AntibodyGain(Event):
-    '''A buffalo gaining apparent antibodies.'''
+class AntibodyGain(Event):
+    '''Base class for a buffalo gaining apparent antibodies.'''
     def do(self):
         if self.buffalo.herd.rvs.probability_recovered_true.rvs() == 1:
             self.buffalo.change_immune_status_to('recovered_true')
@@ -281,7 +281,7 @@ class _AntibodyGain(Event):
                 + self.buffalo.herd.rvs.antibody_gain.rvs())
 
 
-class LostImmunityTrueAntibodyGain(_AntibodyGain):
+class LostImmunityTrueAntibodyGain(AntibodyGain):
     '''A buffalo gaining apparent antibodies from 'lost_immunity_true'.'''
     def is_valid(self):
         return self.buffalo.immune_status == 'lost_immunity_true'
@@ -297,7 +297,7 @@ class LostImmunityTrueAntibodyGain(_AntibodyGain):
 events_by_immune_status['lost_immunity_true'].add(LostImmunityTrueAntibodyGain)
 
 
-class LostImmunityFalseAntibodyGain(_AntibodyGain):
+class LostImmunityFalseAntibodyGain(AntibodyGain):
     '''A buffalo gaining apparent antibodies from 'lost_immunity_false'.'''
     def is_valid(self):
         return self.buffalo.immune_status == 'lost_immunity_false'
