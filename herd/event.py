@@ -167,7 +167,7 @@ class Recovery(Event):
         if self.buffalo.herd.rvs.probability_carrier.rvs() == 1:
             self.buffalo.change_immune_status_to('carrier')
         else:
-            self.buffalo.change_immune_status_to('recovered')
+            self.buffalo.change_immune_status_to('recovered_true')
 
     def sample_time(self):
         return (self.buffalo.herd.time
@@ -182,7 +182,7 @@ class CarrierRecovery(Event):
         return self.buffalo.immune_status == 'carrier'
 
     def do(self):
-        self.buffalo.change_immune_status_to('recovered')
+        self.buffalo.change_immune_status_to('recovered_true')
 
     def sample_time(self):
         return (self.buffalo.herd.time
@@ -191,79 +191,117 @@ class CarrierRecovery(Event):
 events_by_immune_status['carrier'].add(CarrierRecovery)
 
 
-class RecoveredInfection(_Infection):
-    '''A buffalo becoming infected from 'recovered'.'''
-    def is_valid(self):
-        return self.buffalo.immune_status == 'recovered'
-
-    def do(self):
-        # Immune status 'recovered' can change by either
-        # `RecoveredInfection()` or `AntibodyLoss()`.
-        # Remove the one that didn't happen so it doesn't stay
-        # in the queue.
-        self.remove_event(AntibodyLoss)
-        super().do(self)
-
+class _LostImmunityInfection(_Infection):
+    '''A buffalo becoming infected from 'lost_immunity_true'
+    or 'recovered_false'.'''
     def get_force_of_infection(self):
-        return (self.buffalo.herd.params.susceptibility_recovered
+        return (self.buffalo.herd.params.lost_immunity_susceptibility
                 * super().get_force_of_infection())
 
-events_by_immune_status['recovered'].add(RecoveredInfection)
 
-
-class AntibodyLoss(Event):
+class LostImmunityTrueInfection(_LostImmunityInfection):
+    '''A buffalo becoming infected from 'lost_immunity_true'.'''
     def is_valid(self):
-        return self.buffalo.immune_status == 'recovered'
+        return self.buffalo.immune_status == 'lost_immunity_true'
 
     def do(self):
-        # Immune status 'recovered' can change by either
-        # `RecoveredInfection()` or `AntibodyLoss()`.
+        # Immune status 'lost_immunity_true' can change by either
+        # `LostImmunityTrueInfection()` or `LostImmunityTrueAntibodyGain()`.
         # Remove the one that didn't happen so it doesn't stay
         # in the queue.
-        self.remove_event(RecoveredInfection)
-        self.buffalo.change_immune_status_to('lost_immunity')
+        self.remove_event(LostImmunityTrueAntibodyGain)
+        super().do()
+
+events_by_immune_status['lost_immunity_true'].add(LostImmunityTrueInfection)
+
+
+class RecoveredFalseInfection(_LostImmunityInfection):
+    '''A buffalo becoming infected from 'recovered_false'.'''
+    def is_valid(self):
+        return self.buffalo.immune_status == 'recovered_false'
+
+    def do(self):
+        # Immune status 'recovered_false' can change by either
+        # `RecoveredFalseInfection()` or `RecoveredFalseAntibodyLoss()`.
+        # Remove the one that didn't happen so it doesn't stay
+        # in the queue.
+        self.remove_event(RecoveredFalseAntibodyLoss)
+        super().do()
+
+events_by_immune_status['recovered_false'].add(RecoveredFalseInfection)
+
+
+class _AntibodyLoss(Event):
+    '''A buffalo losing apparent antibodies.'''
+    def do(self):
+        if self.buffalo.herd.rvs.probability_lost_immunity_true.rvs() == 1:
+            self.buffalo.change_immune_status_to('lost_immunity_true')
+        else:
+            self.buffalo.change_immune_status_to('lost_immunity_false')
 
     def sample_time(self):
         return (self.buffalo.herd.time
                 + self.buffalo.herd.rvs.antibody_loss.rvs())
 
-events_by_immune_status['recovered'].add(AntibodyLoss)
 
-
-class LostImmunityInfection(_Infection):
-    '''A buffalo becoming infected from 'lost_immunity'.'''
+class RecoveredTrueAntibodyLoss(_AntibodyLoss):
+    '''A buffalo losing apparent antibodies from 'recovered_true'.'''
     def is_valid(self):
-        return self.buffalo.immune_status == 'lost_immunity'
+        return self.buffalo.immune_status == 'recovered_true'
+
+events_by_immune_status['recovered_true'].add(RecoveredTrueAntibodyLoss)
+
+
+class RecoveredFalseAntibodyLoss(_AntibodyLoss):
+    '''A buffalo losing apparent antibodies from 'recovered_false'.'''
+    def is_valid(self):
+        return self.buffalo.immune_status == 'recovered_false'
 
     def do(self):
-        # Immune status 'lost_immunity' can change by either
-        # `LostImmunityInfection()` or `AntibodyGain()`.
+        # Immune status 'recovered_false' can change by either
+        # `RecoveredFalseInfection()` or `RecoveredFalseAntibodyLoss()`.
         # Remove the one that didn't happen so it doesn't stay
         # in the queue.
-        self.remove_event(AntibodyGain)
-        super().do(self)
+        self.remove_event(RecoveredFalseInfection)
+        super().do()
 
-    def get_force_of_infection(self):
-        return (self.buffalo.herd.params.susceptibility_lost_immunity
-                * super().get_force_of_infection())
-
-events_by_immune_status['lost_immunity'].add(LostImmunityInfection)
+events_by_immune_status['recovered_false'].add(RecoveredFalseAntibodyLoss)
 
 
-class AntibodyGain(Event):
-    def is_valid(self):
-        return self.buffalo.immune_status == 'lost_immunity'
-
+class _AntibodyGain(Event):
+    '''A buffalo gaining apparent antibodies.'''
     def do(self):
-        # Immune status 'lost_immunity' can change by either
-        # `LostImmunityInfection()` or `AntibodyGain()`.
-        # Remove the one that didn't happen so it doesn't stay
-        # in the queue.
-        self.remove_event(LostImmunityInfection)
-        self.buffalo.change_immune_status_to('recovered')
+        if self.buffalo.herd.rvs.probability_recovered_true.rvs() == 1:
+            self.buffalo.change_immune_status_to('recovered_true')
+        else:
+            self.buffalo.change_immune_status_to('recovered_false')
 
     def sample_time(self):
         return (self.buffalo.herd.time
                 + self.buffalo.herd.rvs.antibody_gain.rvs())
 
-events_by_immune_status['lost_immunity'].add(AntibodyGain)
+
+class LostImmunityTrueAntibodyGain(_AntibodyGain):
+    '''A buffalo gaining apparent antibodies from 'lost_immunity_true'.'''
+    def is_valid(self):
+        return self.buffalo.immune_status == 'lost_immunity_true'
+
+    def do(self):
+        # Immune status 'lost_immunity_true' can change by either
+        # `LostImmunityTrueInfection()` or `LostImmunityTrueAntibodyGain()`.
+        # Remove the one that didn't happen so it doesn't stay
+        # in the queue.
+        self.remove_event(LostImmunityTrueInfection)
+        super().do()
+
+events_by_immune_status['lost_immunity_true'].add(LostImmunityTrueAntibodyGain)
+
+
+class LostImmunityFalseAntibodyGain(_AntibodyGain):
+    '''A buffalo gaining apparent antibodies from 'lost_immunity_false'.'''
+    def is_valid(self):
+        return self.buffalo.immune_status == 'lost_immunity_false'
+
+events_by_immune_status['lost_immunity_false'].add(
+    LostImmunityFalseAntibodyGain
+)

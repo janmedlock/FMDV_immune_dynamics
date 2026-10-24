@@ -27,7 +27,7 @@ class Parameters:
             date_min = Timestamp(year=2014, month=3, day=5)
             # Convert to years, with January 1 at 0.
             self.start_time = (date_min.dayofyear - 1) / 365
-            self.susceptibility_lost_immunity = 1
+            self.lost_immunity_susceptibility = 1
             if self.sample_precision:
                 precision = precisions.sample(self.SAT, seed)
             if not self.sample_precision:

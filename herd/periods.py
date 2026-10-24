@@ -1,6 +1,5 @@
 import numpy
 
-
 # Periodic parameters should append their periods.
 periods = []
 
