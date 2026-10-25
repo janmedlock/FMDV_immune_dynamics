@@ -6,7 +6,8 @@ from .rv import RV
 
 class gen(RV):
     '''Waiting time to gain of antibodies.'''
-    def __init__(self, parameters, *args, **kwargs):
+    def __init__(self, parameters, seed=None):
+        super().__init__(seed=seed)
         self.antibody_gain_hazard = parameters.antibody_gain_hazard
         assert self.antibody_gain_hazard >= 0
         if self.antibody_gain_hazard > 0:

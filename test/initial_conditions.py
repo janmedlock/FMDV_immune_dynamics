@@ -34,10 +34,10 @@ def plot_probability(ICs, ages, ax):
     ax.set_ylabel('density')
 
 
-def plot_samples(ICs, ages, ax, seed=1):
+def plot_samples(ICs, ages, ax):
     '''For a sample initial condition,
     plot the number in each class vs. age.'''
-    samples = ICs.rvs(random_state=seed)
+    samples = ICs.rvs()
     bins = ages
     left = bins[:-1]
     width = ages[1] - ages[0]
@@ -50,9 +50,9 @@ def plot_samples(ICs, ages, ax, seed=1):
     ax.set_ylabel('count in\nsample')
 
 
-def plot_ICs(SAT):
+def plot_ICs(SAT, seed=1):
     parameters = herd.Parameters(SAT=SAT)
-    ICs = herd.initial_conditions.gen(parameters)
+    ICs = herd.initial_conditions.gen(parameters, seed=seed)
     ages = herd.utility.arange(0, 20, 0.1, endpoint=True)
     plot_fcns = (plot_probability_constant_birth,
                  plot_conditional_probability,

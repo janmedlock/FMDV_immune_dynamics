@@ -6,7 +6,8 @@ from .rv import RV
 class gen(RV):
     '''Gamma-distributed waiting time to recovery from carrier state with rate
     carrier_recovery_mean and shape carrier_recovery_shape.'''
-    def __init__(self, parameters, *args, **kwargs):
+    def __init__(self, parameters, seed=None):
+        super().__init__(seed=seed)
         self.carrier_recovery_mean = parameters.carrier_recovery_mean
         self.carrier_recovery_shape = parameters.carrier_recovery_shape
         scale = self.carrier_recovery_mean / self.carrier_recovery_shape

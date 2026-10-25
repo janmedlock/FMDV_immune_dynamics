@@ -6,14 +6,15 @@ from .rv import RV
 
 
 class gen(RV):
-    def __init__(self, parameters, *args, **kwargs):
+    def __init__(self, parameters, *args, seed=None, **kwargs):
+        super().__init__(seed=seed)
         self._density, self._ages = find_stable_age_structure(parameters,
                                                               *args, **kwargs)
         self._proportion = self._density / self._density.sum()
         self._age_rv = rv_discrete(values=(self._ages, self._proportion))
 
-    def rvs(self, size=None, random_state=None):
-        return self._age_rv.rvs(size=size, random_state=random_state)
+    def rvs(self, size=None):
+        return self._age_rv.rvs(size=size, random_state=self.rng)
 
     def pdf(self, x):
         return numpy.interp(x, self._ages, self._density,

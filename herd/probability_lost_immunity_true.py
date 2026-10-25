@@ -6,7 +6,8 @@ from .rv import RV
 class gen(RV):
     '''Whether losing apparent antibody leads to having true not antibodies
     is a Bernoulli RV.'''
-    def __init__(self, parameters, *args, **kwargs):
+    def __init__(self, parameters, seed=None):
+        super().__init__(seed=seed)
         self.probability_lost_immunity_true \
             = parameters.precision_lost_immunity
         distn = bernoulli(self.probability_lost_immunity_true)

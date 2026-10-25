@@ -7,7 +7,8 @@ class gen(RV):
     '''Time to waning of maternal immunity is gamma distributed
     with rate maternal_immunity_duration_mean and shape
     maternal_immunity_duration_shape.'''
-    def __init__(self, parameters, *args, **kwargs):
+    def __init__(self, parameters, seed=None):
+        super().__init__(seed=seed)
         self.maternal_immunity_duration_mean \
             = parameters.maternal_immunity_duration_mean
         self.maternal_immunity_duration_shape \

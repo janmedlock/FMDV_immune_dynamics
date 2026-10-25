@@ -11,8 +11,9 @@ class gen:
     '''This assumes that the hazard of infection is constant in time,
     not periodic as it is with a periodic birth pulse.'''
 
-    def __init__(self, parameters, debug=False):
+    def __init__(self, parameters, seed=None, debug=False):
         self.parameters = parameters
+        self.rng = numpy.random.default_rng(seed)
         # Reuse these in case we call pdf() or rvs() repeatedly.
         # TODO: Fix
         if True:
@@ -36,7 +37,7 @@ class gen:
             self.immune_status_pdf = (
                 immune_status.probability.Interpolant(self.parameters,
                                                       debug=debug))
-        self.ages = age_structure.gen(self.parameters)
+        self.ages = age_structure.gen(self.parameters, seed=self.rng)
 
     def immune_status_conditional_pdf(self, ages):
         '''The probability of being in each immune state vs. `ages`,
@@ -48,30 +49,29 @@ class gen:
         return self.immune_status_conditional_pdf(age).multiply(
             self.ages.pdf(age), axis='index')
 
-    def rvs(self, size=None, random_state=None):
+    def rvs(self, size=None):
         if size is None:
             size = self.parameters.population_size
-        rng = numpy.random.default_rng(random_state)
         # Pick `size` random ages.
-        ages = self.ages.rvs(size=size, random_state=rng)
+        ages = self.ages.rvs(size=size)
         # Determine the immune status for each age.
         immune_status_probability = self.immune_status_conditional_pdf(ages)
         # `immune_status_probability.sum(axis='columns')`
-        # might be slightly above 1 due to roundoff
-        # errors, which breaks `rng.multinomial()`.
+        # might be slightly different than 1 due to roundoff
+        # errors, which breaks `rng.choice()`.
         while True:
             totals = immune_status_probability.sum(axis='columns')
-            over = totals > 1
-            if not over.any():
+            mask = ~numpy.isclose(totals, 1)
+            if not mask.any():
                 break
-            immune_status_probability[over] = (
-                immune_status_probability[over].divide(totals[over],
+            immune_status_probability[mask] = (
+                immune_status_probability[mask].divide(totals[mask],
                                                        axis='index')
             )
         # Randomly pick an immune status for each row.
         immune_status = immune_status_probability.columns
         dtype = pandas.CategoricalDtype(immune_status, ordered=True)
         return immune_status_probability.agg(
-            lambda p: rng.choice(immune_status, p=p),
+            lambda p: self.rng.choice(immune_status, p=p),
             axis='columns'
         ).astype(dtype)

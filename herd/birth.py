@@ -32,7 +32,8 @@ def get_gap_size_from_seasonal_coefficient_of_variation(c_v):
 
 
 class gen(RV):
-    def __init__(self, parameters, *args, _scaling=None, **kwargs):
+    def __init__(self, parameters, *args, seed=None, _scaling=None, **kwargs):
+        super().__init__(seed=seed)
         self.peak_time = parameters.birth_peak_time
         self.seasonal_coefficient_of_variation = (
             parameters.birth_seasonal_coefficient_of_variation)
@@ -174,10 +175,8 @@ class gen(RV):
     def isf(self, q, time0, age0):
         return self.ppf(1 - q, time0, age0)
 
-    def rvs(self, time0, age0, size=None, random_state=None):
-        rng = numpy.random.default_rng(random_state)
-        U = rng.random(size=None)
-        return self.ppf(U, time0, age0)
+    def rvs(self, time0, age0, size=None):
+        return self.ppf(self.rng.random(size=size), time0, age0)
 
 
 class _ParametersNoSeasonality:

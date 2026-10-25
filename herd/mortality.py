@@ -18,8 +18,8 @@ class gen(RV):
         {Interval(*interval, closed='left'): value
          for (interval, value) in _ANNUAL_SURVIVAL.items()}).sort_index()
 
-    def __init__(self, parameters):
-        pass
+    def __init__(self, parameters, seed=None):
+        super().__init__(seed=seed)
 
     def hazard(self, age):
         return -numpy.log(numpy.asarray(self._annual_survival[age]))
@@ -71,10 +71,8 @@ class gen(RV):
         '''Probability density function.'''
         return numpy.exp(self.logpdf(age))
 
-    def rvs(self, size=None, random_state=None):
-        rng = numpy.random.default_rng(random_state)
-        U = rng.random(size=size)
-        return self.ppf(U)
+    def rvs(self, size=None):
+        return self.ppf(self.rng.random(size=size))
 
 
 class _Parameters:

@@ -15,12 +15,12 @@ class Herd(set):
     simulate.'''
     def __init__(self, params=None, debug=False, seed=None,
                  _max_samples=100):
+        rng = numpy.random.default_rng(seed)
         if params is None:
-            params = Parameters()
+            params = Parameters(seed=rng)
         self.params = params
         self.debug = debug
-        self.rng = numpy.random.default_rng(seed)
-        self.rvs = RandomVariables(self.params)
+        self.rvs = RandomVariables(self.params, seed=rng)
         self.time = self.params.start_time
         self.events = HerdEvents()
         self.by_immune_status = {s: set() for s in immune_statuses}
@@ -30,8 +30,7 @@ class Herd(set):
         self.number_infectious = self.number_carrier = 0
         # Sample until there are some infected hosts.
         for _ in range(_max_samples):
-            age_immune_status = self.rvs.initial_conditions.rvs(
-                random_state=self.rng)
+            age_immune_status = self.rvs.initial_conditions.rvs()
             is_infected = age_immune_status.isin(
                 {'exposed', 'infectious', 'carrier'}
             )

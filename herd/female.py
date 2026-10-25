@@ -5,7 +5,8 @@ from .rv import RV
 
 class gen(RV):
     '''Whether an offspring is female is a Bernoulli RV.'''
-    def __init__(self, parameters, *args, **kwargs):
+    def __init__(self, parameters, seed=None):
+        super().__init__(seed=seed)
         self.female_probability_at_birth \
             = parameters.female_probability_at_birth
         distn = bernoulli(self.female_probability_at_birth)
