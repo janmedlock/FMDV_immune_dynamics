@@ -7,9 +7,9 @@ import baseline
 import common
 import h5
 import herd
+import logging_
 import population_size as population_size_
 import susceptibility
-
 
 store_path = pathlib.Path(__file__).with_suffix('.h5')
 
@@ -72,7 +72,7 @@ def run(SAT, lost_immunity_susceptibility, population_size, nruns, store,
         stored = True
     elif not copy_only:
         parameters = herd.Parameters(**parameters_kwds)
-        logging_prefix = common.get_logging_prefix(**parameters_kwds)
+        logging_prefix = logging_.get_prefix(**parameters_kwds)
         chunks = baseline.run_many_chunked(parameters, nruns, *args,
                                            logging_prefix=logging_prefix,
                                            **kwargs)

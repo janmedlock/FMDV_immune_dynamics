@@ -12,8 +12,8 @@ import baseline
 import common
 import h5
 import herd
+import logging_
 import plotting
-
 
 rc = plotting.rc | plotting.rc_text_small | {
     'figure.figsize': (plotting.WIDTH_MAXIMUM['double_column'], 4),
@@ -62,7 +62,7 @@ def _run(module, SAT, val, nruns, store, *args, **kwargs):
         _copy_baseline(store, nruns, **parameters_kwds)
     else:
         parameters = herd.Parameters(**parameters_kwds)
-        logging_prefix = common.get_logging_prefix(**parameters_kwds)
+        logging_prefix = logging_.get_prefix(**parameters_kwds)
         chunks = baseline.run_many_chunked(parameters, nruns, *args,
                                            logging_prefix=logging_prefix,
                                            **kwargs)

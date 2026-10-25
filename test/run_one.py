@@ -27,7 +27,7 @@ if __name__ == '__main__':
 
     p = herd.Parameters(SAT=SAT)
     t0 = time.time()
-    data = baseline.run_one(p, SEED, debug=DEBUG)
+    data = baseline.run_one(p, seed=SEED, debug=DEBUG)
     t = time.time() - t0
     print(f'Run time: {t} seconds.')
 

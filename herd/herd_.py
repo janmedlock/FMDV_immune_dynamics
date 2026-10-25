@@ -13,21 +13,13 @@ from .random_variables import RandomVariables
 class Herd(set):
     '''A herd of buffaloes, the things that can happen to them, and code to
     simulate.'''
-    def __init__(self, params=None, debug=False, run_number=None, seed=None,
-                 logging_prefix=None):
+    def __init__(self, params=None, debug=False, seed=None):
         if params is None:
             params = Parameters()
         self.params = params
         self.debug = debug
-        self.run_number = run_number
-        if (seed is None) and (run_number is not None):
-            seed = run_number
         if seed is not None:
             numpy.random.seed(seed)
-        if logging_prefix is None:
-            self.logging_prefix = ''
-        else:
-            self.logging_prefix = logging_prefix + ', '
         self.rvs = RandomVariables(self.params)
         self.time = self.params.start_time
         self.events = HerdEvents()
@@ -111,18 +103,21 @@ class Herd(set):
         else:
             self.time = self.params.start_time + tmax
 
-    def run(self, tmax):
+    def run(self, tmax,
+            print_duration=False, logging_prefix=None):
         result = [self.get_stats()]
         while self.time < self.params.start_time + tmax:
             self.step(tmax)
             result.append(self.get_stats())
             if self.stop():
                 break
-        if self.run_number is not None:
+        if print_duration:
+            msg_prefix = (
+                '' if logging_prefix is None
+                else logging_prefix + ': '
+            )
             t_last = result[-1][0] - self.params.start_time
-            print(f'{self.logging_prefix}'
-                  + f'simulation #{self.run_number}'
-                  + f' ended after {t_last:g} year.')
+            print(msg_prefix + f'ended after {t_last:g} year')
         result = DataFrame.from_dict(dict(result),
                                      orient='index',
                                      columns=immune_statuses)

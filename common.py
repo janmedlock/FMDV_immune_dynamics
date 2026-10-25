@@ -42,11 +42,6 @@ def prepend_index_levels(dfr, **levels):
     insert_index_levels(dfr, 0, **levels)
 
 
-def get_logging_prefix(**kwds):
-    return ', '.join(f'{key}={val}'
-                     for (key, val) in kwds.items())
-
-
 def get_infected(obj):
     '''Get the number of infected at each time.'''
     # Sum over columns for a `pandas.DataFrame()`,
