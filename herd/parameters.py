@@ -91,7 +91,7 @@ class Parameters:
                 self.antibody_gain_hazard = 0.004176835549525 * 365
             else:
                 raise ValueError(f'Unknown {SAT=}!')
-        self.set(seed=seed, **kwds)
+        self.set(**kwds)
 
     def _warn_if_sample_precision(self):
         if self.sample_precision:
@@ -109,7 +109,7 @@ class Parameters:
     def _set_precision(self, precision):
         self._set_attrs_from_series('precision_', precision)
 
-    def set(self, seed=None, **kwds):
+    def set(self, **kwds):
         for (key, val) in kwds.items():
             setattr(self, key, val)
 
