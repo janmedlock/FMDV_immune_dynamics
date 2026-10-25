@@ -22,10 +22,12 @@ class gen:
             from ..immune_statuses import immune_statuses
 
             def immune_status_conditional_pdf(ages):
-                # Each of `immune_statuses` equally likely for all `ages`
-                return pandas.DataFrame(1. / len(immune_statuses),
-                                        index=ages,
-                                        columns=immune_statuses)
+                pdf = pandas.DataFrame(0.,
+                                       index=ages,
+                                       columns=immune_statuses)
+                pdf['infectious'] = 0.05
+                pdf['susceptible'] = 1. - pdf.sum(axis='columns')
+                return pdf
 
             warnings.warn('Fake `initial_conditions`!')
             self.immune_status_pdf = immune_status_conditional_pdf
