@@ -1,4 +1,4 @@
-from . import events
+from . import events, immune_statuses
 
 
 class Buffalo:
@@ -6,7 +6,13 @@ class Buffalo:
 
     # The immune statuses that give mom antibodies
     # that she passes on to her calves.
-    has_antibodies = frozenset({'carrier', 'recovered'})
+    has_antibodies = frozenset({
+        'carrier',
+        'recovered_true',
+        'lost_immunity_false',
+    })
+    assert has_antibodies.issubset(
+        immune_statuses.immune_statuses)
 
     def __init__(self, herd, immune_status='maternal_immunity', age=0):
         self.herd = herd
@@ -16,17 +22,11 @@ class Buffalo:
         self.identifier = next(self.herd.identifiers)
         self.events = events.BuffaloEvents(self)
         if self.herd.debug:
-            if age == 0:
-                print('t = {}: birth of #{} with status {}'.format(
-                    self.herd.time,
-                    self.identifier,
-                    immune_status))
-            else:
-                print('t = {}: arrival of #{} at age {} with status {}'.format(
-                    self.herd.time,
-                    self.identifier,
-                    age,
-                    immune_status))
+            print(f't={self.herd.time:g}:'
+                  + ' ' + ('birth' if age == 0 else 'arrival')
+                  + f' of #{self.identifier}'
+                  + (f' at {age=:g}' if age > 0 else '')
+                  + f' with {immune_status=}')
 
     @property
     def age(self):
