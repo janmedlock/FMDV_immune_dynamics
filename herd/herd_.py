@@ -119,10 +119,10 @@ class Herd(set):
             if self.stop():
                 break
         if self.run_number is not None:
-            t_last = result[-1][0]
-            print('{}simulation #{} ended after {:g} days.'.format(
-                self.logging_prefix, self.run_number,
-                365 * (t_last - self.params.start_time)))
+            t_last = result[-1][0] - self.params.start_time
+            print(f'{self.logging_prefix}'
+                  + f'simulation #{self.run_number}'
+                  + f' ended after {t_last:g} year.')
         result = DataFrame.from_dict(dict(result),
                                      orient='index',
                                      columns=immune_statuses)
