@@ -2,12 +2,12 @@ import numpy
 from scipy import optimize
 
 from . import periods
-# Import in `gen()` to avoid an import loop.
+# Import in `gen()` to avoid an import loop
 # from .floquet import find_birth_scaling
 from .rv import RV
 
 # The code below is not tested at all for `period != 1`!
-period = 1
+period = 1  # Units: year
 periods.periods.append(period)
 
 
@@ -33,7 +33,7 @@ def get_gap_size_from_seasonal_coefficient_of_variation(c_v):
 
 class gen(RV):
     def __init__(self, parameters, *args, _scaling=None, **kwargs):
-        self.peak_time_of_year = parameters.birth_peak_time_of_year
+        self.peak_time = parameters.birth_peak_time
         self.seasonal_coefficient_of_variation = (
             parameters.birth_seasonal_coefficient_of_variation)
         if self.seasonal_coefficient_of_variation < 1 / numpy.sqrt(3):
@@ -58,7 +58,7 @@ class gen(RV):
         self.ppf = numpy.vectorize(self._ppf_single, otypes='d')
 
     def __repr__(self):
-        return super().__repr__(('peak_time_of_year',
+        return super().__repr__(('peak_time',
                                  'seasonal_coefficient_of_variation'))
 
     def hazard(self, time, age, out=None):
@@ -67,10 +67,10 @@ class gen(RV):
         if out is None:
             out = numpy.empty(time.shape)
         # Without building intermediate arrays, compute
-        # `tau = fracpart(time - self.peak_time_of_year)`.
-        out[()] = time - self.peak_time_of_year
+        # `tau = fracpart(time - self.peak_time)`.
+        out[()] = time - self.peak_time
         fracpart(out, out=out)
-        # Now out = fracpart(time - self.peak_time_of_year)
+        # Now out = fracpart(time - self.peak_time)
         #         = tau.
         # Without building intermediate arrays, compute
         # `out = (self._alpha
@@ -97,8 +97,8 @@ class gen(RV):
 
     def logsf(self, time, time0, age0):
         # age0 is the age at time = 0, i.e. t = time0.
-        c = time0 + numpy.clip(4 - age0, 0, numpy.inf) - self.peak_time_of_year
-        d = time0 + time - self.peak_time_of_year
+        c = time0 + numpy.clip(4 - age0, 0, numpy.inf) - self.peak_time
+        d = time0 + time - self.peak_time
         H0 = numpy.floor(d) - numpy.floor(c) - 1
         if self._beta < 1:
             H1 = numpy.where(
@@ -187,7 +187,7 @@ class _ParametersNoSeasonality:
         self.birth_seasonal_coefficient_of_variation = 0
         # The value of these parameters don't matter when the seasonal
         # variation is 0, but they do need to be set.
-        self.birth_peak_time_of_year = self.start_time = 0
+        self.birth_peak_time = self.start_time = 0
 
 
 def hazard_no_seasonality(female_probability_at_birth, age,

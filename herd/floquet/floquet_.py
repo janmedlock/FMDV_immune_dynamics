@@ -105,11 +105,11 @@ class _CacheParameters(parameters.Parameters):
         # of the same number, e.g. `float(0)` and `int(0)`.
         self.birth_seasonal_coefficient_of_variation = float(
             params.birth_seasonal_coefficient_of_variation)
-        # Normalize `params.birth_peak_time_of_year` by making
+        # Normalize `params.birth_peak_time` by making
         # it relative to `params.start_time` and then modulo
         # `period` so that it is in [0, period).
-        self.birth_peak_time_of_year = float(
-            (params.birth_peak_time_of_year - params.start_time)
+        self.birth_peak_time = float(
+            (params.birth_peak_time - params.start_time)
             % periods.get_period())
         self.start_time = float(0)
         self.female_probability_at_birth = float(

@@ -2,9 +2,11 @@ import copy
 import warnings
 
 import numpy
-from pandas import Timestamp
+import pandas
 
 from . import precisions
+
+START_DATE = pandas.Timestamp('2014-03-05')
 
 
 class Parameters:
@@ -14,19 +16,25 @@ class Parameters:
         self.SAT = SAT
         self.sample_precision = sample_precision
         if _set_defaults:
+            self.start_time = 0.  # Units: year
             self.population_size = 1000
             self.female_probability_at_birth = 0.5
-            self.birth_peak_time_of_year = 0  # January 01.
+            # January 1 on or after `START_DATE`
+            birth_peak_date = (
+                pandas.offsets.YearBegin().rollforward(START_DATE)
+                + pandas.DateOffset(month=1, day=1)
+            )
+            # The duration of the year starting on `START_DATE`
+            year = START_DATE + pandas.DateOffset(years=1) - START_DATE
+            self.birth_peak_time = (
+                (birth_peak_date - START_DATE) / year
+            )  # Units: year
             # self.birth_seasonal_coefficient_of_variation = 0.505  # 1st year.
             # self.birth_seasonal_coefficient_of_variation = 0.984  # 2nd year.
             self.birth_seasonal_coefficient_of_variation = 0.613  # Both years.
             # Duration in M before moving to S.
             self.maternal_immunity_duration_mean = 0.37
             self.maternal_immunity_duration_shape = 1.19
-            # The first day is 2014 March 05.
-            date_min = Timestamp(year=2014, month=3, day=5)
-            # Convert to years, with January 1 at 0.
-            self.start_time = (date_min.dayofyear - 1) / 365
             self.lost_immunity_susceptibility = 1
             if self.sample_precision:
                 precision = precisions.sample(self.SAT, seed)

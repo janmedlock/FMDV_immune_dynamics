@@ -279,7 +279,7 @@ class _CacheParameters(parameters.Parameters):
         # of the same number, e.g. `float(0)` and `int(0)`.
         attrs = {'antibody_gain_hazard',
                  'antibody_loss_hazard',
-                 'birth_peak_time_of_year',
+                 'birth_peak_time',
                  'birth_seasonal_coefficient_of_variation',
                  'carrier_recovery_mean',
                  'carrier_recovery_shape',
