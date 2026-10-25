@@ -6,7 +6,6 @@ import baseline
 import common
 import herd
 
-
 SEED = 0xa70a_8239
 
 store_path = pathlib.Path(__file__).with_suffix('.h5')

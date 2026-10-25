@@ -4,9 +4,7 @@
 import matplotlib.pyplot
 import numpy
 
-from context import common
-from context import herd
-from context import plotting
+from context import common, herd, plotting
 import herd.initial_conditions
 import herd.utility
 
@@ -36,16 +34,16 @@ def plot_probability(ICs, ages, ax):
     ax.set_ylabel('density')
 
 
-def plot_samples(ICs, ages, ax):
+def plot_samples(ICs, ages, ax, seed=1):
     '''For a sample initial condition,
     plot the number in each class vs. age.'''
-    numpy.random.seed(1)  # Make `ICs.rvs()` reproducible.
-    samples = ICs.rvs()
+    samples = ICs.rvs(random_state=seed)
     bins = ages
     left = bins[:-1]
     width = ages[1] - ages[0]
     bottom = numpy.zeros_like(left)
-    for (immune_status, ages_in_immune_status) in samples.items():
+    grouper = samples.index.groupby(samples)
+    for ages_in_immune_status in grouper.values():
         (height, _) = numpy.histogram(ages_in_immune_status, bins=bins)
         ax.bar(left, height, width, bottom, align='edge')
         bottom += height
@@ -56,11 +54,12 @@ def plot_ICs(SAT):
     parameters = herd.Parameters(SAT=SAT)
     ICs = herd.initial_conditions.gen(parameters)
     ages = herd.utility.arange(0, 20, 0.1, endpoint=True)
-    (fig, axes) = matplotlib.pyplot.subplots(4, 1, sharex=True)
     plot_fcns = (plot_probability_constant_birth,
                  plot_conditional_probability,
                  plot_probability,
                  plot_samples)
+    (fig, axes) = matplotlib.pyplot.subplots(len(plot_fcns), 1,
+                                             sharex=True)
     for (ax, plot_fcn) in zip(axes, plot_fcns):
         plot_fcn(ICs, ages, ax)
     axes[-1].set_xlabel(f'age ({common.TIME_UNIT})')

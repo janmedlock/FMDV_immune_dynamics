@@ -5,6 +5,7 @@ import itertools
 import pathlib
 
 import joblib
+import numpy
 import pandas
 
 import common
@@ -21,7 +22,7 @@ def _save_result(store, result):
                        infected_daily=True, extinction_time=True)
 
 
-def seed_cache(parameters):
+def fill_cache(parameters):
     '''Populate the cache.'''
     herd.RandomVariables(parameters)
 
@@ -43,22 +44,24 @@ def run_one(parameters, *args, tmax=None,
 
 def run_many_chunked(parameters, nruns, *args,
                      chunksize=100, n_jobs=-1,
-                     debug=False, print_duration=None, **kwargs):
+                     debug=False, print_duration=None, seed=None,
+                     **kwargs):
     '''Generator to return chunks of many simulation results.'''
     if chunksize < 1:
         chunksize = nruns
     if print_duration is None:
         print_duration = not debug
-    seed_cache(parameters)
+    rngs = numpy.random.default_rng(seed).spawn(nruns)
+    fill_cache(parameters)
     with joblib.Parallel(n_jobs=n_jobs,
                          return_as='generator') as parallel:
         results = parallel(
             joblib.delayed(run_one)(
                 parameters, *args,
                 debug=debug, print_duration=print_duration,
-                run_number=run_number, **kwargs
+                seed=rng, run_number=run_number, **kwargs
             )
-            for run_number in range(nruns)
+            for (run_number, rng) in enumerate(rngs)
         )
         chunker = itertools.batched(results, chunksize)
         for (chunk_number, chunk) in enumerate(chunker):

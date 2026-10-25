@@ -1,6 +1,7 @@
 '''Initial conditions.'''
 
-from scipy.stats import multinomial
+import numpy
+import pandas
 
 from .. import age_structure
 from . import immune_status
@@ -47,28 +48,30 @@ class gen:
         return self.immune_status_conditional_pdf(age).multiply(
             self.ages.pdf(age), axis='index')
 
-    def rvs(self, size=None):
+    def rvs(self, size=None, random_state=None):
         if size is None:
             size = self.parameters.population_size
+        rng = numpy.random.default_rng(random_state)
         # Pick `size` random ages.
-        ages = self.ages.rvs(size=size)
+        ages = self.ages.rvs(size=size, random_state=rng)
         # Determine the immune status for each age.
         immune_status_probability = self.immune_status_conditional_pdf(ages)
-        immune_statuses = immune_status_probability.columns
-        immune_status_ages = {k: [] for k in immune_statuses}
-        # `scipy.stats.multinomial.rvs()` can't handle multiple `p`s,
-        # so we need to loop.
-        for (age, p) in immune_status_probability.iterrows():
-            # `p.sum()` might be slightly above 1 due to roundoff
-            # errors, which breaks `multinomial.rvs()`.
-            while (s := p.sum()) > 1:
-                p = p / s
-            # Randomly pick an immune status.
-            rv = multinomial.rvs(1, p)
-            # `rv` is an array with `1` in the position
-            # picked and `0`s in the remaining positions.
-            # Convert that to the name.
-            s = immune_statuses[rv == 1][0]
-            # Add this `age` to the status list.
-            immune_status_ages[s].append(age)
-        return immune_status_ages
+        # `immune_status_probability.sum(axis='columns')`
+        # might be slightly above 1 due to roundoff
+        # errors, which breaks `rng.multinomial()`.
+        while True:
+            totals = immune_status_probability.sum(axis='columns')
+            over = totals > 1
+            if not over.any():
+                break
+            immune_status_probability[over] = (
+                immune_status_probability[over].divide(totals[over],
+                                                       axis='index')
+            )
+        # Randomly pick an immune status for each row.
+        immune_status = immune_status_probability.columns
+        dtype = pandas.CategoricalDtype(immune_status, ordered=True)
+        return immune_status_probability.agg(
+            lambda p: rng.choice(immune_status, p=p),
+            axis='columns'
+        ).astype(dtype)

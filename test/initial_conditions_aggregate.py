@@ -44,7 +44,7 @@ def sum_over_immune_state(X):
 
 def plot_integral_over_age(p):
     P = integrate_over_age(p)
-    (fig, ax) = matplotlib.pyplot.subplots(constrained_layout=True)
+    (_, ax) = matplotlib.pyplot.subplots(constrained_layout=True)
     y = P / P.sum()
     x = range(len(y.columns))
     bottom = numpy.zeros(len(y.columns))

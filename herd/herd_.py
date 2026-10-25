@@ -13,13 +13,13 @@ from .random_variables import RandomVariables
 class Herd(set):
     '''A herd of buffaloes, the things that can happen to them, and code to
     simulate.'''
-    def __init__(self, params=None, debug=False, seed=None):
+    def __init__(self, params=None, debug=False, seed=None,
+                 _max_samples=100):
         if params is None:
             params = Parameters()
         self.params = params
         self.debug = debug
-        if seed is not None:
-            numpy.random.seed(seed)
+        self.rng = numpy.random.default_rng(seed)
         self.rvs = RandomVariables(self.params)
         self.time = self.params.start_time
         self.events = HerdEvents()
@@ -29,17 +29,20 @@ class Herd(set):
         # susceptible `Buffalo()`.
         self.number_infectious = self.number_carrier = 0
         # Sample until there are some infected hosts.
-        while True:
-            immune_status_ages = self.rvs.initial_conditions.rvs()
-            infected = sum(len(immune_status_ages[s])
-                           for s in ('exposed', 'infectious', 'carrier'))
-            if infected > 0:
+        for _ in range(_max_samples):
+            age_immune_status = self.rvs.initial_conditions.rvs(
+                random_state=self.rng)
+            is_infected = age_immune_status.isin(
+                {'exposed', 'infectious', 'carrier'}
+            )
+            if is_infected.any() > 0:
                 break
             else:
                 print('No infected hosts! Resampling!')
-        for (immune_status, ages) in immune_status_ages.items():
-            for age in ages:
-                self.add(Buffalo(self, immune_status, age))
+        else:
+            raise RuntimeError(f'No infected hosts after {_max_samples=}!')
+        for (age, immune_status) in age_immune_status.items():
+            self.add(Buffalo(self, immune_status, age))
 
     def immune_status_add(self, b):
         self.by_immune_status[b.immune_status].add(b)

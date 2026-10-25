@@ -71,8 +71,9 @@ class gen(RV):
         '''Probability density function.'''
         return numpy.exp(self.logpdf(age))
 
-    def rvs(self, size=None):
-        U = numpy.random.random_sample(size=size)
+    def rvs(self, size=None, random_state=None):
+        rng = numpy.random.default_rng(random_state)
+        U = rng.random(size=size)
         return self.ppf(U)
 
 

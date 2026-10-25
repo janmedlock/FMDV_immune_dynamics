@@ -1,8 +1,8 @@
 import numpy
 from scipy.stats import rv_discrete
 
-from .rv import RV
 from .floquet import find_stable_age_structure
+from .rv import RV
 
 
 class gen(RV):
@@ -10,12 +10,10 @@ class gen(RV):
         self._density, self._ages = find_stable_age_structure(parameters,
                                                               *args, **kwargs)
         self._proportion = self._density / self._density.sum()
-        self._quantilerv = rv_discrete(
-            values = (range(len(self._proportion)), self._proportion),
-            *args, **kwargs)
+        self._age_rv = rv_discrete(values=(self._ages, self._proportion))
 
-    def rvs(self, *args, **kwargs):
-        return self._ages[self._quantilerv.rvs(*args, **kwargs)].squeeze()
+    def rvs(self, size=None, random_state=None):
+        return self._age_rv.rvs(size=size, random_state=random_state)
 
     def pdf(self, x):
         return numpy.interp(x, self._ages, self._density,

@@ -174,8 +174,9 @@ class gen(RV):
     def isf(self, q, time0, age0):
         return self.ppf(1 - q, time0, age0)
 
-    def rvs(self, time0, age0, size=None):
-        U = numpy.random.random_sample(size=size)
+    def rvs(self, time0, age0, size=None, random_state=None):
+        rng = numpy.random.default_rng(random_state)
+        U = rng.random(size=None)
         return self.ppf(U, time0, age0)
 
 
