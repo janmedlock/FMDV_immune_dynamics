@@ -18,8 +18,7 @@ class Buffalo:
         self.herd = herd
         self.immune_status = immune_status
         self.birth_date = self.herd.time - age
-        female = self.herd.rvs.female.rvs()
-        self.sex = 'female' if female else 'male'
+        self.sex = 'female' if self.herd.rvs.female.rvs() else 'male'
         self.identifier = next(self.herd.identifiers)
         self.events = events.BuffaloEvents(self)
         if self.herd.debug:

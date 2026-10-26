@@ -15,7 +15,6 @@ import herd.initial_conditions
 import herd.utility
 import plotting
 
-
 rc = (
     plotting.rc
     | plotting.SupplementalMaterials.rc
@@ -106,7 +105,7 @@ plot_fcns = (
 
 def plot_SAT(axes, SAT, ages):
     parameters = herd.Parameters(SAT=SAT)
-    ICs = herd.initial_conditions.gen(parameters)
+    ICs = herd.initial_conditions.RV(parameters)
     for (ax, plot_fcn) in zip(axes, plot_fcns):
         plot_fcn(ICs, ages, ax)
     for ax in axes:

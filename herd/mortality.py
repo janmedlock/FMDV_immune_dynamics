@@ -1,7 +1,7 @@
 import numpy
 from pandas import Interval, Series
 
-from .rv import RV
+from . import rv
 
 # {(a, b): s} is the annual survival for ages [a, b).
 _ANNUAL_SURVIVAL = {
@@ -12,7 +12,7 @@ _ANNUAL_SURVIVAL = {
 }
 
 
-class gen(RV):
+class RV(rv.RV):
     # Convert to pandas.Interval()'s for convenience.
     _annual_survival = Series(
         {Interval(*interval, closed='left'): value
@@ -84,4 +84,4 @@ class _Parameters:
 
 def sf(age):
     '''The survival function.'''
-    return gen(_Parameters()).sf(age)
+    return RV(_Parameters()).sf(age)

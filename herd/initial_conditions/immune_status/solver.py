@@ -9,8 +9,8 @@ import pandas
 import scipy
 
 from ... import (antibody_gain, antibody_loss, birth, buffalo,
-                 carrier_recovery, maternal_immunity_waning, mortality,
-                 parameters, progression, recovery, utility)
+                 maternal_immunity_waning, mortality, parameters,
+                 progression, recovery, recovery_to_carrier, utility)
 from . import blocks
 
 
@@ -30,9 +30,9 @@ class _Params:
         self.length_pde = length_pde
         # Get the pdf for these random variables.
         rndvrs_pdf = {
-            'progression': progression.gen(params),
-            'recovery': recovery.gen(params),
-            'carrier_recovery': carrier_recovery.gen(params),
+            'progression': progression.RV(params),
+            'recovery': recovery.RV(params),
+            'recovery_to_carrier': recovery_to_carrier.RV(params),
         }
         pdf = {k: self._get_pdf(RV, ages)
                for (k, RV) in rndvrs_pdf.items()}
@@ -40,7 +40,7 @@ class _Params:
         # Get the survival for these random variables.
         rndvrs_survival = {
             **rndvrs_pdf,  # The entries in `rndvrs_pdf`.
-            'mortality': mortality.gen(params),
+            'mortality': mortality.RV(params),
         }
         survival = {k: RV.sf(ages)
                     for (k, RV) in rndvrs_survival.items()}
@@ -48,17 +48,18 @@ class _Params:
         # Get the hazard for these RVs.
         rndvrs_hazard = {
             'mortality': rndvrs_survival['mortality'],
-            'maternal_immunity_waning': maternal_immunity_waning.gen(params),
-            'antibody_gain': antibody_gain.gen(params),
-            'antibody_loss': antibody_loss.gen(params),
+            'maternal_immunity_waning': maternal_immunity_waning.RV(params),
+            'antibody_gain': antibody_gain.RV(params),
+            'antibody_loss': antibody_loss.RV(params),
         }
         hazard = {k: rndvr.hazard(ages_mid)
                   for (k, rndvr) in rndvrs_hazard.items()}
         hazard['infection'] = 1  # Dummy value. Set on calls to `solve_step()`.
         # Other parameters.
         self.hazard = _rec_fromkwds(**hazard)
-        self.female_probability_at_birth = params.female_probability_at_birth
-        self.probability_carrier = params.probability_carrier
+        self.female_probability = params.female_probability
+        self.recovery_to_carrier_probability \
+            = params.recovery_to_carrier_probability
         self.transmission_rate = params.transmission_rate
         self.carrier_transmission_rate = params.carrier_transmission_rate
         self.lost_immunity_susceptibility = params.lost_immunity_susceptibility
@@ -80,13 +81,12 @@ class _Params:
         return pdf
 
     def _hazard_birth(self, ages):
-        hazard = birth.hazard_no_seasonality(
-            self.female_probability_at_birth, ages)
+        hazard = birth.hazard_no_seasonality(self.female_probability, ages)
         # Scale so that the population growth rate is 0.
         hazard /= scipy.integrate.trapezoid(
             hazard * self.survival.mortality, ages
         )
-        hazard *= self.female_probability_at_birth
+        hazard *= self.female_probability
         return hazard
 
 
@@ -277,24 +277,24 @@ class _CacheParameters(parameters.Parameters):
         # floats, so explicitly convert them so the cache doesn't
         # get duplicated keys for the float and int representation
         # of the same number, e.g. `float(0)` and `int(0)`.
-        attrs = {'antibody_gain_hazard',
+        attrs = ('antibody_gain_hazard',
                  'antibody_loss_hazard',
                  'birth_peak_time',
                  'birth_seasonal_coefficient_of_variation',
                  'carrier_recovery_mean',
                  'carrier_recovery_shape',
                  'carrier_transmission_rate',
-                 'female_probability_at_birth',
+                 'female_probability',
                  'lost_immunity_susceptibility',
                  'maternal_immunity_duration_mean',
                  'maternal_immunity_duration_shape',
-                 'probability_carrier',
                  'progression_mean',
                  'progression_shape',
                  'recovery_mean',
                  'recovery_shape',
+                 'recovery_to_carrier_probability',
                  'start_time',
-                 'transmission_rate'}
+                 'transmission_rate')
         for attr in attrs:
             setattr(self, attr, float(getattr(params, attr)))
 

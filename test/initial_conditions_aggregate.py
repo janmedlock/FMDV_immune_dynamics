@@ -24,7 +24,7 @@ def get_solutions(params):
     ages = herd.utility.arange(0, 20, 0.005, endpoint=True)
     p = {}
     for (SAT, params_SAT) in params.items():
-        ICs = herd.initial_conditions.gen(params_SAT)
+        ICs = herd.initial_conditions.RV(params_SAT)
         p[SAT] = ICs.immune_status_pdf(ages)
     return pandas.concat(p, axis='columns')
 

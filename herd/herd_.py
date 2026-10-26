@@ -21,6 +21,8 @@ class Herd(set):
         self.params = params
         self.debug = debug
         self.rvs = RandomVariables(self.params, seed=rng)
+        self._has_carrier_transmission = (
+            self.params.carrier_transmission_rate > 0)
         self.time = self.params.start_time
         self.events = HerdEvents()
         self.by_immune_status = {s: set() for s in immune_statuses}
@@ -66,8 +68,8 @@ class Herd(set):
         if number_infectious_new != self.number_infectious:
             self.number_infectious = number_infectious_new
             updated = True
-        if self.rvs.carrier_transmission_rate > 0:
-            # This only matters if the carrier transmission rate is non-zero.
+        if self._has_carrier_transmission:
+            # This only matters if the carrier transmission rate is positive.
             number_carrier_new = len(self.by_immune_status['carrier'])
             if number_carrier_new != self.number_carrier:
                 self.number_carrier = number_carrier_new

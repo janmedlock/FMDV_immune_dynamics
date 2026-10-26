@@ -4,8 +4,8 @@ for the density u(t, a) of buffalo of age a at time t is
 u(t, 0) = \int_0^{inf} b(t, a) u(t, a) da
 u(0, a) = u_0(a).
 The birth rate `b(t, a)`, which is the product of
-`female_probability_at_birth` and `birth.gen.hazard(t, a)` in our
-model, is periodic in `t` with period T = 1 year.
+`female_probability` and `birth.RV.hazard(t, a)` in our model,
+is periodic in `t` with period T = 1 year.
 
 After discretizing in age, the monodromy matrix Phi(T) is the
 fundamental solution of the PDEs after one period, starting from the
@@ -83,7 +83,7 @@ class Solver:
         t_start = self.params.start_time
         t_end = t_start + periods.get_period()
         self._t = utility.arange(t_start, t_end, step, endpoint=True)
-        mortality_rv = mortality.gen(self.params)
+        mortality_rv = mortality.RV(self.params)
         self._init_crank_nicolson(step, mortality_rv)
         self._init_births(step)
 
@@ -101,10 +101,10 @@ class Solver:
         u_0^n = (v * b^n) @ u^n,
         with
         v = da * [0.5, 1, 1, ..., 1, 1, 0.5].
-        Put `female_probability_at_birth` in there, too, for
-        simplicity & efficiency.'''
+        Put `female_probability` in there, too,
+        for simplicity & efficiency.'''
         self._v_trapezoid = numpy.empty(self.ages.shape[0])
-        self._v_trapezoid[:] = self.params.female_probability_at_birth * step
+        self._v_trapezoid[:] = self.params.female_probability * step
         self._v_trapezoid[[0, -1]] /= 2
 
     def _step_births(self, t_n, solution, birth_rate, temp):
@@ -177,6 +177,6 @@ class Solver:
         solution = _Solution(self._order,
                              (self.ages.shape[0], self.ages.shape[0]))
         # Set up birth rate.
-        birth_rv = birth.gen(self.params, _scaling=birth_scaling)
+        birth_rv = birth.RV(self.params, _scaling=birth_scaling)
         temp = numpy.empty(self.ages.shape[0])
         return self._iterate(solution, birth_rv.hazard, temp)

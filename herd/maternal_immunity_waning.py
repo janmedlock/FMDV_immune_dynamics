@@ -1,9 +1,9 @@
 from scipy.stats import gamma
 
-from .rv import RV
+from . import rv
 
 
-class gen(RV):
+class RV(rv.RV):
     '''Time to waning of maternal immunity is gamma distributed
     with rate maternal_immunity_duration_mean and shape
     maternal_immunity_duration_shape.'''

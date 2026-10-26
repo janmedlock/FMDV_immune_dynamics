@@ -1,24 +1,23 @@
 import copy
 import warnings
 
-import numpy
 import pandas
 
-from . import precisions
+from . import antibody_precisions
 
 START_DATE = pandas.Timestamp('2014-03-05')
 
 
 class Parameters:
-    def __init__(self, SAT=1, sample_precision=False, seed=None,
+    def __init__(self, SAT=1, sample_antibody_precisions=False, seed=None,
                  _set_defaults=True, **kwds):
         'Initialize with default values.'
         self.SAT = SAT
-        self.sample_precision = sample_precision
+        self.sample_antibody_precisions = sample_antibody_precisions
         if _set_defaults:
             self.start_time = 0.  # Units: year
             self.population_size = 1000
-            self.female_probability_at_birth = 0.5
+            self.female_probability = 0.5
             # January 1 on or after `START_DATE`
             birth_peak_date = (
                 pandas.offsets.YearBegin().rollforward(START_DATE)
@@ -36,11 +35,6 @@ class Parameters:
             self.maternal_immunity_duration_mean = 0.37
             self.maternal_immunity_duration_shape = 1.19
             self.lost_immunity_susceptibility = 1
-            if self.sample_precision:
-                precision = precisions.sample(self.SAT, seed)
-            if not self.sample_precision:
-                precision = precisions.estimate(self.SAT)
-            self._set_precision(precision)
             if self.SAT == 1:
                 self.progression_mean = 0.5 / 365
                 self.progression_shape = 1.2
@@ -48,7 +42,7 @@ class Parameters:
                 self.recovery_shape = 11.8
                 self.transmission_rate = 2.8 * 365
                 # Proportion leaving I that become C.
-                self.probability_carrier = 0.90
+                self.recovery_to_carrier_probability = 0.90
                 # Duration in C before leaving to R.
                 self.carrier_recovery_mean = 243 / 365
                 self.carrier_recovery_shape = 3.2
@@ -64,7 +58,7 @@ class Parameters:
                 self.recovery_shape = 8.7
                 self.transmission_rate = 1.6 * 365
                 # Proportion leaving I that become C.
-                self.probability_carrier = 0.44
+                self.recovery_to_carrier_probability = 0.44
                 # Duration in C before leaving to R.
                 self.carrier_recovery_mean = 180 / 365
                 self.carrier_recovery_shape = 3.2
@@ -80,7 +74,7 @@ class Parameters:
                 self.recovery_shape = 11.8
                 self.transmission_rate = 1.2 * 365
                 # Proportion leaving I that become C.
-                self.probability_carrier = 0.67
+                self.recovery_to_carrier_probability = 0.67
                 # Duration in C before leaving to R.
                 self.carrier_recovery_mean = 174 / 365
                 self.carrier_recovery_shape = 3.2
@@ -91,23 +85,20 @@ class Parameters:
                 self.antibody_gain_hazard = 0.004176835549525 * 365
             else:
                 raise ValueError(f'Unknown {SAT=}!')
+            self._set_antibody_precisions(seed)
         self.set(**kwds)
 
-    def _warn_if_sample_precision(self):
-        if self.sample_precision:
-            warnings.warn('`.precision` not resampled!')
+    def _get_antibody_precisions(self, seed):
+        if self.sample_antibody_precisions:
+            return antibody_precisions.sample(self.SAT, seed)
+        return antibody_precisions.estimate(self.SAT)
 
-    def _set_attrs_from_series(self, prefix, ser):
-        for (key, val) in ser.items():
-            attr = f'{prefix}{key}'
-            if hasattr(self, attr):
-                cur = getattr(self, attr, val)
-                if not numpy.isclose(val, cur):
-                    warnings.warn(f'Overwriting {attr}={cur} with {val}')
-            setattr(self, attr, float(val))
-
-    def _set_precision(self, precision):
-        self._set_attrs_from_series('precision_', precision)
+    def _set_antibody_precisions(self, seed):
+        antibody_precision = self._get_antibody_precisions(seed)
+        self.antibody_gain_to_recovered_true_probability \
+            = float(antibody_precision['recovered'])
+        self.antibody_loss_to_lost_immunity_true_probability \
+            = float(antibody_precision['lost_immunity'])
 
     def set(self, **kwds):
         for (key, val) in kwds.items():
@@ -122,6 +113,10 @@ class Parameters:
             for k in sorted(params)
         )
         return f'<{clsname}: {{{paramreprs}}}>'
+
+    def _warn_if_sample_antibody_precisions(self):
+        if self.sample_antibody_precisions:
+            warnings.warn('Antibody precisions not resampled!')
 
     @classmethod
     def from_repr(cls, r_, set_defaults=True):
@@ -147,12 +142,12 @@ class Parameters:
             if int(v) == v:
                 v = int(v)
             setattr(p, k, v)
-        p._warn_if_sample_precision()
+        p._warn_if_sample_antibody_precisions()
         return p
 
     def copy(self):
         new = copy.copy(self)
-        new._warn_if_sample_precision()
+        new._warn_if_sample_antibody_precisions()
         return new
 
     def merge(self, **kwds):

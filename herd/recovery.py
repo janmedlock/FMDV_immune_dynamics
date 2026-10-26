@@ -1,9 +1,9 @@
 from scipy.stats import gamma
 
-from .rv import RV
+from . import rv
 
 
-class gen(RV):
+class RV(rv.RV):
     '''Gamma-distributed waiting time to recovery with rate
     recovery_mean and shape recovery_shape.'''
     def __init__(self, parameters, seed=None):

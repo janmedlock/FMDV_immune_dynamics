@@ -1,9 +1,9 @@
 from scipy.stats import gamma
 
-from .rv import RV
+from . import rv
 
 
-class gen(RV):
+class RV(rv.RV):
     '''Gamma-distributed progression period with rate
     progression_mean and shape progression_shape.'''
     def __init__(self, parameters, seed=None):

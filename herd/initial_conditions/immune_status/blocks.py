@@ -215,8 +215,9 @@ class BlockI(_BlockPDE):
 
 class BlockC(_BlockPDE):
     def set_A_CI(self):
-        self.A_X['I'] = self._get_A_XY_PDE(self.params.probability_carrier
-                                           * self.params.pdf.recovery)
+        self.A_X['I'] = self._get_A_XY_PDE(
+            self.params.recovery_to_carrier_probability
+            * self.params.pdf.recovery)
 
     def set_A_CC(self):
         self.A_X['C'] = self._get_A_XX()
@@ -228,7 +229,7 @@ class BlockC(_BlockPDE):
 class BlockR(_BlockODE):
     def set_A_RI(self):
         self.A_X['I'] = self._get_A_XY_PDE(
-            (1 - self.params.probability_carrier)
+            (1 - self.params.recovery_to_carrier_probability)
             * self.params.pdf.recovery)
 
     def set_A_RC(self):

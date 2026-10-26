@@ -52,7 +52,7 @@ def plot_samples(ICs, ages, ax):
 
 def plot_ICs(SAT, seed=1):
     parameters = herd.Parameters(SAT=SAT)
-    ICs = herd.initial_conditions.gen(parameters, seed=seed)
+    ICs = herd.initial_conditions.RV(parameters, seed=seed)
     ages = herd.utility.arange(0, 20, 0.1, endpoint=True)
     plot_fcns = (plot_probability_constant_birth,
                  plot_conditional_probability,

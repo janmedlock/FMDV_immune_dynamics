@@ -1,4 +1,4 @@
-'''Handle precisions for 'recovered' and 'lost_immunity'.'''
+'''Handle antibody precisions for 'recovered' and 'lost_immunity'.'''
 
 import pandas
 

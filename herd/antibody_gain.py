@@ -1,10 +1,10 @@
 import numpy
 from scipy.stats import expon
 
-from .rv import RV
+from . import rv
 
 
-class gen(RV):
+class RV(rv.RV):
     '''Waiting time to gain of antibodies is exponential distributed.'''
     def __init__(self, parameters, seed=None):
         super().__init__(seed=seed)

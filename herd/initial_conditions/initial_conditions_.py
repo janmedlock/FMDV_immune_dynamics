@@ -7,7 +7,7 @@ from .. import age_structure
 from . import immune_status
 
 
-class gen:
+class RV:
     '''This assumes that the hazard of infection is constant in time,
     not periodic as it is with a periodic birth pulse.'''
 
@@ -37,7 +37,7 @@ class gen:
             self.immune_status_pdf = (
                 immune_status.probability.Interpolant(self.parameters,
                                                       debug=debug))
-        self.ages = age_structure.gen(self.parameters, seed=self.rng)
+        self.ages = age_structure.RV(self.parameters, seed=self.rng)
 
     def immune_status_conditional_pdf(self, ages):
         '''The probability of being in each immune state vs. `ages`,

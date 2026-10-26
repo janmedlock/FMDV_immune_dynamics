@@ -21,7 +21,7 @@ N_JOBS = 1  # This seems to be faster sequentially.
 def get_age_structure(ages, start_time):
     parameters = herd.Parameters()
     parameters.start_time = start_time
-    return herd.age_structure.gen(parameters).pdf(ages)
+    return herd.age_structure.RV(parameters).pdf(ages)
 
 
 def get_age_structures(ages, start_times):
@@ -38,8 +38,9 @@ def plot_age_structures(age_structures):
     )
     (fig, ax) = matplotlib.pyplot.subplots()
     for (start_time, age_structure) in zip(start_times, age_structures):
+        month = 12 * start_time
         ax.plot(ages, age_structure,
-                label='{:g} months'.format(12 * start_time),
+                label=f'{month:g} months',
                 alpha=0.7)
     ax.plot(ages, herd.mortality.sf(ages) / mortality_sf_scale,
             label='scaled mortality survival',

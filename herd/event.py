@@ -151,7 +151,7 @@ class Recovery(_TimeSinceEntryDependent, Event):
         return self.buffalo.immune_status == 'infectious'
 
     def do(self):
-        if self.buffalo.herd.rvs.probability_carrier.rvs():
+        if self.buffalo.herd.rvs.recovery_to_carrier.rvs():
             self.buffalo.change_immune_status_to('carrier')
         else:
             self.buffalo.change_immune_status_to('recovered_true')
@@ -181,7 +181,7 @@ events_by_immune_status['carrier'].add(CarrierRecovery)
 class _AntibodyLoss(Event):
     '''Base class for a buffalo losing apparent antibodies.'''
     def do(self):
-        if self.buffalo.herd.rvs.probability_lost_immunity_true.rvs():
+        if self.buffalo.herd.rvs.antibody_loss_to_lost_immunity_true.rvs():
             self.buffalo.change_immune_status_to('lost_immunity_true')
         else:
             self.buffalo.change_immune_status_to('lost_immunity_false')
@@ -218,8 +218,7 @@ events_by_immune_status['recovered_false'].add(RecoveredFalseAntibodyLoss)
 class _AntibodyGain(Event):
     '''Base class for a buffalo gaining apparent antibodies.'''
     def do(self):
-        recovered_true = self.buffalo.herd.rvs.probability_recovered_true.rvs()
-        if recovered_true:
+        if self.buffalo.herd.rvs.antibody_gain_to_recovered_true.rvs():
             self.buffalo.change_immune_status_to('recovered_true')
         else:
             self.buffalo.change_immune_status_to('recovered_false')
@@ -257,23 +256,27 @@ events_by_immune_status['lost_immunity_false'].add(
 
 class Infection(Event):
     '''Base class for a buffalo becoming infected.'''
+    def __init__(self, buffalo, susceptibility=1):
+        self.susceptibility = susceptibility
+        super().__init__(buffalo)
+
     def do(self):
         self.buffalo.change_immune_status_to('exposed')
-
-    def force_of_infection(self):
-        return ((self.buffalo.herd.rvs.transmission_rate
-                 * self.buffalo.herd.number_infectious)
-                + (self.buffalo.herd.rvs.carrier_transmission_rate
-                   * self.buffalo.herd.number_carrier))
 
     def sample_waiting_time(self):
         return self.sample_waiting_time_from(
             self.buffalo.herd.rvs.infection,
-            self.force_of_infection())
+            self.buffalo.herd.number_infectious,
+            self.buffalo.herd.number_carrier,
+            self.susceptibility)
 
 
 class SusceptibleInfection(Infection):
     '''A buffalo becoming infected from 'susceptible'.'''
+    def __init__(self, buffalo):
+        susceptibility = 1
+        super().__init__(buffalo, susceptibility)
+
     def is_valid(self):
         return self.buffalo.immune_status == 'susceptible'
 
@@ -286,9 +289,9 @@ events_by_immune_status['susceptible'].add(SusceptibleInfection)
 class _LostImmunityInfection(Infection):
     '''Base class for a buffalo becoming infected from
     'lost_immunity_true' or 'recovered_false'.'''
-    def force_of_infection(self):
-        return (self.buffalo.herd.params.lost_immunity_susceptibility
-                * super().force_of_infection())
+    def __init__(self, buffalo):
+        susceptibility = buffalo.herd.params.lost_immunity_susceptibility
+        super().__init__(buffalo, susceptibility)
 
 
 class LostImmunityTrueInfection(_LostImmunityInfection):

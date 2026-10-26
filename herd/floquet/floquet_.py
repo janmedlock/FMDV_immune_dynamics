@@ -112,8 +112,7 @@ class _CacheParameters(parameters.Parameters):
             (params.birth_peak_time - params.start_time)
             % periods.get_period())
         self.start_time = float(0)
-        self.female_probability_at_birth = float(
-            params.female_probability_at_birth)
+        self.female_probability = float(params.female_probability)
 
 
 # Wrapper to call cached version, `_find_birth_scaling()`.
@@ -139,5 +138,5 @@ def find_stable_age_structure(params,
                                              step, age_max)
     r, v, ages = _find_dominant_eigen(_birth_scaling, cache_params,
                                       step, age_max)
-    assert numpy.isclose(r, 0), 'Nonzero growth rate r={:g}.'.format(r)
+    assert numpy.isclose(r, 0), f'Nonzero growth rate r={r:g}.'
     return (v, ages)

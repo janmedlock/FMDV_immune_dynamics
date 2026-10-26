@@ -1,11 +1,11 @@
 import numpy
 from scipy.stats import rv_discrete
 
+from . import rv
 from .floquet import find_stable_age_structure
-from .rv import RV
 
 
-class gen(RV):
+class RV(rv.RV):
     def __init__(self, parameters, *args, seed=None, **kwargs):
         super().__init__(seed=seed)
         self._density, self._ages = find_stable_age_structure(parameters,

@@ -1,11 +1,10 @@
 import numpy
 
-from . import (antibody_gain, antibody_loss, birth, carrier_recovery,
-               carrier_transmission_rate, female, infection,
+from . import (antibody_gain, antibody_gain_to_recovered_true,
+               antibody_loss, antibody_loss_to_lost_immunity_true,
+               birth, carrier_recovery, female, infection,
                initial_conditions, maternal_immunity_waning, mortality,
-               probability_carrier, probability_lost_immunity_true,
-               probability_recovered_true, progression, recovery,
-               transmission_rate)
+               progression, recovery, recovery_to_carrier)
 from .parameters import Parameters
 
 
@@ -15,26 +14,23 @@ class RandomVariables:
         if params is None:
             params = Parameters(seed=rng)
         self.parameters = params
-        self.antibody_gain = antibody_gain.gen(params, seed=rng)
-        self.antibody_loss = antibody_loss.gen(params, seed=rng)
-        self.birth = birth.gen(params, seed=rng)
-        self.carrier_recovery = carrier_recovery.gen(params, seed=rng)
-        self.carrier_transmission_rate = carrier_transmission_rate.gen(
-            params, seed=rng)
-        self.female = female.gen(params, seed=rng)
-        self.infection = infection.gen(params, seed=rng)
-        self.initial_conditions = initial_conditions.gen(params, seed=rng)
-        self.maternal_immunity_waning = maternal_immunity_waning.gen(params,
-                                                                     seed=rng)
-        self.mortality = mortality.gen(params, seed=rng)
-        self.probability_carrier = probability_carrier.gen(params, seed=rng)
-        self.probability_lost_immunity_true \
-            = probability_lost_immunity_true.gen(params, seed=rng)
-        self.probability_recovered_true \
-            = probability_recovered_true.gen(params, seed=rng)
-        self.progression = progression.gen(params, seed=rng)
-        self.recovery = recovery.gen(params, seed=rng)
-        self.transmission_rate = transmission_rate.gen(params, seed=rng)
+        self.antibody_gain = antibody_gain.RV(params, seed=rng)
+        self.antibody_gain_to_recovered_true \
+            = antibody_gain_to_recovered_true.RV(params, seed=rng)
+        self.antibody_loss = antibody_loss.RV(params, seed=rng)
+        self.antibody_loss_to_lost_immunity_true \
+            = antibody_loss_to_lost_immunity_true.RV(params, seed=rng)
+        self.birth = birth.RV(params, seed=rng)
+        self.carrier_recovery = carrier_recovery.RV(params, seed=rng)
+        self.female = female.RV(params, seed=rng)
+        self.infection = infection.RV(params, seed=rng)
+        self.initial_conditions = initial_conditions.RV(params, seed=rng)
+        self.maternal_immunity_waning = maternal_immunity_waning.RV(params,
+                                                                    seed=rng)
+        self.mortality = mortality.RV(params, seed=rng)
+        self.recovery_to_carrier = recovery_to_carrier.RV(params, seed=rng)
+        self.progression = progression.RV(params, seed=rng)
+        self.recovery = recovery.RV(params, seed=rng)
 
     def __repr__(self):
         'Make instances print nicely.'

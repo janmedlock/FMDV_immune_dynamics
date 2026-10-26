@@ -1,10 +1,8 @@
 import numpy
 from scipy import optimize
 
-from . import periods
-# Import in `gen()` to avoid an import loop
-# from .floquet import find_birth_scaling
-from .rv import RV
+from . import periods, rv
+from .floquet import find_birth_scaling
 
 # The code below is not tested at all for `period != 1`!
 period = 1  # Units: year
@@ -31,7 +29,7 @@ def get_gap_size_from_seasonal_coefficient_of_variation(c_v):
         return 12 * (1 - 4 / 3 / (1 + c_v ** 2))
 
 
-class gen(RV):
+class RV(rv.RV):
     def __init__(self, parameters, *args, seed=None, _scaling=None, **kwargs):
         super().__init__(seed=seed)
         self.peak_time = parameters.birth_peak_time
@@ -50,8 +48,6 @@ class gen(RV):
             self._beta = (3 / 4
                           * (1 + self.seasonal_coefficient_of_variation ** 2))
         if _scaling is None:
-            # Import here to avoid an import loop.
-            from .floquet import find_birth_scaling
             _scaling = find_birth_scaling(parameters,
                                           *args,
                                           **kwargs)
@@ -182,20 +178,20 @@ class gen(RV):
 class _ParametersNoSeasonality:
     '''Dummy parameters for the birth random variable without seasonal
     variation.'''
-    def __init__(self, female_probability_at_birth):
-        self.female_probability_at_birth = female_probability_at_birth
+    def __init__(self, female_probability):
+        self.female_probability = female_probability
         self.birth_seasonal_coefficient_of_variation = 0
         # The value of these parameters don't matter when the seasonal
         # variation is 0, but they do need to be set.
         self.birth_peak_time = self.start_time = 0
 
 
-def hazard_no_seasonality(female_probability_at_birth, age,
+def hazard_no_seasonality(female_probability, age,
                           *args, out=None, **kwargs):
     '''The hazard without seasonal variation.'''
-    params = _ParametersNoSeasonality(female_probability_at_birth)
-    rndvr = gen(params, *args, **kwargs)
+    params = _ParametersNoSeasonality(female_probability)
+    rv = RV(params, *args, **kwargs)
     # The value of `time` doesn't matter when the seasonal variation
     # is 0.
     time = 0
-    return rndvr.hazard(time, age, out=out)
+    return rv.hazard(time, age, out=out)
