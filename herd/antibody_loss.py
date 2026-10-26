@@ -5,7 +5,7 @@ from .rv import RV
 
 
 class gen(RV):
-    '''Waiting time to loss of antibodies.'''
+    '''Waiting time to loss of antibodies is exponential distributed.'''
     def __init__(self, parameters, seed=None):
         super().__init__(seed=seed)
         self.antibody_loss_hazard = parameters.antibody_loss_hazard
