@@ -83,11 +83,11 @@ class Herd(_SortedTimeList):
         '''Get the next event. Returns `None` if there are no events.'''
         try:
             infections_next = self._infections[0]
-        except IndexError:
-            return self[0]  # This could raise `IndexError`
+        except IndexError:  # `self._infections` is empty
+            return self[0]  # This raises `IndexError` if `self` is empty
         try:
             other_next = self[0]
-        except IndexError:
+        except IndexError:  # `self` is empty
             return infections_next
         return min(infections_next, other_next, key=self.key)
 
