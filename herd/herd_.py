@@ -89,22 +89,17 @@ class Herd(set):
 
     def step(self, tmax=numpy.inf):
         self.update_infection_times()
-        try:
-            event = next(self.events)
-        except StopIteration:  # No events
-            pass
-        else:
-            if event.time <= tmax:
-                if self.debug:
-                    print(event)
-                # Make sure the simulation is moving *forward* in time.
-                assert ((event.time >= self.time)
-                        | numpy.isclose(event.time, self.time))
-                self.time = event.time
-                event()
-                return
-        # There are no events or `event.time > tmax`
-        self.time = tmax
+        event = next(self.events, None)
+        if (event is not None) and (event.time <= tmax):
+            if self.debug:
+                print(event)
+            # Make sure the simulation is moving *forward* in time.
+            assert ((event.time >= self.time)
+                    | numpy.isclose(event.time, self.time))
+            self.time = event.time
+            event()
+        else:  # There are no events or `event.time > tmax`
+            self.time = tmax
 
     def run(self, tmax, print_duration=False, logging_prefix=None,
             _to_dataframe=True):
