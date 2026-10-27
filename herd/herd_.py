@@ -59,17 +59,20 @@ class Herd(set):
         '''Calculate the number of infectious and carrier buffalo,
         then, if these are different than previous, update
         the infection times for susceptible buffalo.'''
-        updated = False
+        needs_update = False
         number_infectious_new = len(self.by_immune_status['infectious'])
         if number_infectious_new != self.number_infectious:
             self.number_infectious = number_infectious_new
-            updated = True
+            needs_update = True
         number_carrier_new = len(self.by_immune_status['carrier'])
         if number_carrier_new != self.number_carrier:
             self.number_carrier = number_carrier_new
-            updated = True
-        if updated:
-            self.events.update_infection_times()
+            needs_update = True
+        if needs_update:
+            infections = self.events.infections
+            for infection in infections:
+                infection.time = infection.sample_time()
+            self.events.infections = infections
 
     def get_stats(self):
         stats = [len(self.by_immune_status[s])
@@ -88,20 +91,18 @@ class Herd(set):
         self.update_infection_times()
         try:
             event = self.events.get_next()
-        except IndexError:
-            pass  # No events
-        else:
-            if event.time <= tmax:
-                if self.debug:
-                    print(event)
-                # Make sure the simulation is moving *forward* in time.
-                assert ((event.time >= self.time)
-                        | numpy.isclose(event.time, self.time))
-                self.time = event.time
-                event()
-                return
-        # Either there are no events or `event.time > tmax`
-        self.time = tmax
+        except IndexError:  # No events
+            event = None
+        if (event is not None) and (event.time <= tmax):
+            if self.debug:
+                print(event)
+            # Make sure the simulation is moving *forward* in time.
+            assert ((event.time >= self.time)
+                    | numpy.isclose(event.time, self.time))
+            self.time = event.time
+            event()
+        else:  # There are no events or `event.time > tmax`
+            self.time = tmax
 
     def run(self, tmax, print_duration=False, logging_prefix=None,
             _to_dataframe=True):

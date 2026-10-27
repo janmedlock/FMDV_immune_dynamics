@@ -16,13 +16,13 @@ class Buffalo(set):
         super().__init__()
         self.herd_events = buffalo.herd.events
 
-    def add(self, event_):
-        super().add(event_)
-        self.herd_events.add(event_)
+    def add(self, event):
+        super().add(event)
+        self.herd_events.add(event)
 
-    def remove(self, event_):
-        super().remove(event_)
-        self.herd_events.remove(event_)
+    def remove(self, event):
+        super().remove(event)
+        self.herd_events.remove(event)
 
     def update(self, *others):
         for iterable in others:
@@ -32,8 +32,8 @@ class Buffalo(set):
             self.herd_events.update(iterable_h)
 
     def clear(self):
-        for event_ in self:
-            self.herd_events.remove(event_)
+        for event in self:
+            self.herd_events.remove(event)
         super().clear()
 
 
@@ -50,26 +50,27 @@ class Herd(_SortedTimeList):
     # one with minimum time can be found efficiently.
     # `Infection()` events are stored separately in `._infections`
     # because they need to be updated frequently.
+
     def __init__(self):
         super().__init__()
         self._infections = _SortedTimeList()
 
     @staticmethod
-    def _is_infection(event_):
-        '''Test whether `event_` is an `Infection()`.'''
-        return isinstance(event_, infection.Infection)
+    def _is_infection(event):
+        '''Test whether `event` is an `Infection()`.'''
+        return isinstance(event, infection.Infection)
 
-    def add(self, event_):
-        if self._is_infection(event_):
-            self._infections.add(event_)
+    def add(self, event):
+        if self._is_infection(event):
+            self._infections.add(event)
         else:
-            super().add(event_)
+            super().add(event)
 
-    def remove(self, event_):
-        if self._is_infection(event_):
-            self._infections.remove(event_)
+    def remove(self, event):
+        if self._is_infection(event):
+            self._infections.remove(event)
         else:
-            super().remove(event_)
+            super().remove(event)
 
     def update(self, *others):
         for iterable in others:
@@ -80,15 +81,18 @@ class Herd(_SortedTimeList):
                 else:
                     super().update(group)
 
-    def update_infection_times(self):
-        '''Update the infection events.'''
+    def _infections_get(self):
         # `sortedcontainers.SortedKeyList()` requires the items' key
-        # values not change while they are stored.
-        infections = tuple(self._infections)
+        # values not change while they are stored
+        return tuple(self._infections)
+
+    def _infections_set(self, infections):
         self._infections.clear()
-        for infection_ in infections:
-            infection_.time = infection_.sample_time()
         self._infections.update(infections)
+
+    # This descriptor is used by `.herd_.update_infection_times()`
+    infections = property(_infections_get, _infections_set,
+                          doc='The infection events.')
 
     def get_next(self):
         '''Get the next event. Raises `IndexError` if there are no events.'''
