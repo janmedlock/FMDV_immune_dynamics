@@ -8,8 +8,8 @@ class RV(rv.RV):
     is a Bernoulli RV.'''
     def __init__(self, parameters, seed=None):
         super().__init__(seed=seed)
-        self.antibody_loss_to_lost_immunity_true_probability \
-            = parameters.antibody_loss_to_lost_immunity_true_probability
+        self.antibody_loss_to_lost_immunity_true_probability = (
+            parameters.antibody_loss_to_lost_immunity_true_probability)
         distn = bernoulli(self.antibody_loss_to_lost_immunity_true_probability)
         super()._copyattrs(distn)
 

@@ -15,7 +15,6 @@ class Parameters:
         self.SAT = SAT
         self.sample_antibody_precisions = sample_antibody_precisions
         if _set_defaults:
-            self.start_time = 0.  # Units: year
             self.population_size = 1000
             self.female_probability = 0.5
             # January 1 on or after `START_DATE`
@@ -95,10 +94,10 @@ class Parameters:
 
     def _set_antibody_precisions(self, seed):
         antibody_precision = self._get_antibody_precisions(seed)
-        self.antibody_gain_to_recovered_true_probability \
-            = float(antibody_precision['recovered'])
-        self.antibody_loss_to_lost_immunity_true_probability \
-            = float(antibody_precision['lost_immunity'])
+        self.antibody_gain_to_recovered_true_probability = float(
+            antibody_precision['recovered'])
+        self.antibody_loss_to_lost_immunity_true_probability = float(
+            antibody_precision['lost_immunity'])
 
     def set(self, **kwds):
         for (key, val) in kwds.items():

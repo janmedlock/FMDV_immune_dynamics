@@ -21,7 +21,7 @@ class RV:
 
             import pandas
 
-            from ..immune_statuses import immune_statuses
+            from ..immune_status import immune_statuses
 
             def immune_status_conditional_pdf(ages):
                 pdf = pandas.DataFrame(0.,
@@ -69,9 +69,9 @@ class RV:
                                                        axis='index')
             )
         # Randomly pick an immune status for each row.
-        immune_status = immune_status_probability.columns
-        dtype = pandas.CategoricalDtype(immune_status, ordered=True)
+        immune_status_ = immune_status_probability.columns
+        dtype = pandas.CategoricalDtype(immune_status_, ordered=True)
         return immune_status_probability.agg(
-            lambda p: self.rng.choice(immune_status, p=p),
+            lambda p: self.rng.choice(immune_status_, p=p),
             axis='columns'
         ).astype(dtype)

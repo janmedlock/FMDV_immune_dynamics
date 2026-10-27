@@ -1,7 +1,7 @@
 import numpy
-from pandas import Interval, Series
+import pandas
 
-from . import rv
+from . import event, rv
 
 # {(a, b): s} is the annual survival for ages [a, b).
 _ANNUAL_SURVIVAL = {
@@ -14,8 +14,8 @@ _ANNUAL_SURVIVAL = {
 
 class RV(rv.RV):
     # Convert to pandas.Interval()'s for convenience.
-    _annual_survival = Series(
-        {Interval(*interval, closed='left'): value
+    _annual_survival = pandas.Series(
+        {pandas.Interval(*interval, closed='left'): value
          for (interval, value) in _ANNUAL_SURVIVAL.items()}).sort_index()
 
     def __init__(self, parameters, seed=None):
@@ -73,6 +73,17 @@ class RV(rv.RV):
 
     def rvs(self, size=None):
         return self.ppf(self.rng.random(size=size))
+
+
+class Mortality(event.ForAll, event.AgeDependent):
+    '''A buffalo dying.'''
+    def do(self):
+        self.buffalo.die()
+
+    def sample_waiting_time(self, initializing_herd=False):
+        return self.sample_waiting_time_from(
+            self.buffalo.herd.rvs.mortality,
+            initializing_herd)
 
 
 class _Parameters:

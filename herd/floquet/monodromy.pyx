@@ -149,9 +149,8 @@ cdef class Solver:
         self.ages = utility.arange(0, age_max, step, endpoint=True)
         # The memoryview will be convenient...
         self._ages = self.ages
-        t_start = self.params.start_time
-        t_end = t_start + periods.get_period()
-        self._t = utility.arange(t_start, t_end, step, endpoint=True)
+        period = periods.get_period()
+        self._t = utility.arange(0, period, step, endpoint=True)
         mortality_rv = mortality.RV(self.params)
         self._init_crank_nicolson(step, mortality_rv)
         self._init_births(step)
@@ -310,7 +309,6 @@ cdef class Solver:
             _Solution solution
             object birth_rv
             numpy.ndarray temp
-            double start_time
         # The fundamental solution is an `n_ages` x `n_ages` matrix.
         # One matrix for the current time step, plus one for each
         # order of the solver.

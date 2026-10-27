@@ -1,25 +1,20 @@
 '''Data structures to manage events.'''
 
-from itertools import tee
-from operator import attrgetter
+import itertools
+import operator
 
-from sortedcontainers import SortedKeyList
+import sortedcontainers
 
-from . import event
+from . import infection
 
 
-class BuffaloEvents(set):
+class Buffalo(set):
     '''Container to hold all events that can happen to a buffalo.
     Actions on these are copied to `buffalo.herd.events`
     so the next herd event can be found efficiently.'''
     def __init__(self, buffalo):
         super().__init__()
         self.herd_events = buffalo.herd.events
-        # Add all the events that can happen to this buffalo.
-        self.add(event.Mortality(buffalo))
-        if buffalo.sex == 'female':
-            self.add(event.Birth(buffalo))
-        self.add_events_for_immune_status(buffalo, buffalo.immune_status)
 
     def add(self, event_):
         super().add(event_)
@@ -32,7 +27,7 @@ class BuffaloEvents(set):
     def update(self, *others):
         for iterable in others:
             # Make 2 copies in case `iterable` is an iterator.
-            iterable_b, iterable_h = tee(iterable, 2)
+            iterable_b, iterable_h = itertools.tee(iterable, 2)
             super().update(iterable_b)
             self.herd_events.update(iterable_h)
 
@@ -41,59 +36,69 @@ class BuffaloEvents(set):
             self.herd_events.remove(event_)
         super().clear()
 
-    def add_events_for_immune_status(self, buffalo, immune_status):
-        for Event in event.events_by_immune_status[immune_status]:
-            self.add(Event(buffalo))
+
+class _SortedTimeList(sortedcontainers.SortedKeyList):
+    '''Sort items in order by the value of their `.time` attribute.'''
+    def __init__(self):
+        super().__init__(key=operator.attrgetter('time'))
 
 
-class HerdEvents(SortedKeyList):
+class Herd(_SortedTimeList):
     '''Container to hold all events that can happen in the herd.'''
     # The `Event()`s are stored sorted by their time so that the
     # one with minimum time can be found efficiently.
-    # `Infection()` events are stored in the `infections` attribute
-    # since they need to be updated frequently.
-
-    # The key function used to sort `Event()`s by their `time` attribute.
-    _get_time = attrgetter('time')
-
+    # `Infection()` events are stored separately in `._infections`
+    # because they need to be updated frequently.
     def __init__(self):
-        super().__init__(key=self._get_time)
-        self._infections = set()
+        super().__init__()
+        self._infections = _SortedTimeList()
 
     @staticmethod
     def _is_infection(event_):
-        '''Test whether `event_` is an `event.Infection()`.'''
-        return isinstance(event_, event.Infection)
+        '''Test whether `event_` is an `Infection()`.'''
+        return isinstance(event_, infection.Infection)
 
     def add(self, event_):
-        super().add(event_)
         if self._is_infection(event_):
             self._infections.add(event_)
+        else:
+            super().add(event_)
 
     def remove(self, event_):
-        super().remove(event_)
         if self._is_infection(event_):
             self._infections.remove(event_)
+        else:
+            super().remove(event_)
 
     def update(self, *others):
         for iterable in others:
-            # Make 2 copies in case `iterable` is an iterator.
-            iterable_s, iterable_i = tee(iterable)
-            super().update(iterable_s)
-            self._infections.update(filter(self._is_infection,
-                                           iterable_i))
+            grouper = itertools.groupby(iterable, self._is_infection)
+            for (is_infection, group) in grouper:
+                if is_infection:
+                    self._infections.update(group)
+                else:
+                    super().update(group)
 
     def get_next(self):
-        '''Get the next event.  Returns `None` if there are no events.'''
+        '''Get the next event. Returns `None` if there are no events.'''
         try:
-            return self[0]
+            infections_next = self._infections[0]
         except IndexError:
-            return None
+            return self[0]  # This could raise `IndexError`
+        try:
+            other_next = self[0]
+        except IndexError:
+            return infections_next
+        return min(infections_next, other_next, key=self.key)
 
     def update_infection_times(self):
         '''Update the infection events.'''
-        # Use the `super()` versions here to avoid changing `self._infections`.
-        for infection in self._infections:
-            super().remove(infection)
-            infection.time = infection.sample_time()
-        super().update(self._infections)
+        # `sortedcontainers.SortedKeyList()` requires the order of the
+        # items not chage while the items are stored, so we must take
+        # all the items out, update their times, then put them back
+        # in.
+        infections = tuple(self._infections)
+        self._infections.clear()
+        for infection_ in infections:
+            infection_.time = infection_.sample_time()
+        self._infections.update(infections)

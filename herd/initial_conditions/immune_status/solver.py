@@ -8,10 +8,16 @@ import numpy.lib.recfunctions
 import pandas
 import scipy
 
-from ... import (antibody_gain, antibody_loss, birth, buffalo,
-                 maternal_immunity_waning, mortality, parameters,
-                 progression, recovery, recovery_to_carrier, utility)
+from ... import (antibody_gain, antibody_loss, birth, immune_status,
+                 maternal_immunity_waning, mortality, parameters, progression,
+                 recovery, recovery_to_carrier, utility)
 from . import blocks
+
+_offspring_have_maternal_immunity = [
+    mother
+    for (mother, offspring) in immune_status.birth_immune_status.items()
+    if offspring == 'maternal_immunity'
+]
 
 
 def _rec_fromkwds(**kwds):
@@ -58,8 +64,8 @@ class _Params:
         # Other parameters.
         self.hazard = _rec_fromkwds(**hazard)
         self.female_probability = params.female_probability
-        self.recovery_to_carrier_probability \
-            = params.recovery_to_carrier_probability
+        self.recovery_to_carrier_probability = (
+            params.recovery_to_carrier_probability)
         self.transmission_rate = params.transmission_rate
         self.carrier_transmission_rate = params.carrier_transmission_rate
         self.lost_immunity_susceptibility = params.lost_immunity_susceptibility
@@ -198,8 +204,8 @@ class Solver:
         cols = pandas.CategoricalIndex(P.columns,
                                        blocks.NAMES.values(),
                                        ordered=True)
-        P = P.set_axis(cols, axis='columns') \
-             .sort_index(axis='columns')
+        P = (P.set_axis(cols, axis='columns')
+             .sort_index(axis='columns'))
         return P
 
     def get_hazard_infection(self, P):
@@ -223,10 +229,10 @@ class Solver:
         # The birth rate from moms in each immune status and age.
         births = P.mul(self.params.hazard_birth,
                        axis='index')
-        # The birth rate from moms in each immune status.
+        # The birth rate from mothers in each immune status.
         births_total = births.apply(scipy.integrate.trapezoid,
                                     args=(self.ages, ))
-        imm = (births_total[list(buffalo.Buffalo.has_antibodies)].sum()
+        imm = (births_total[_offspring_have_maternal_immunity].sum()
                / births_total.sum())
         assert (imm >= 0) | numpy.isclose(imm, 0)
         imm = numpy.clip(imm, 0, None)
@@ -293,7 +299,6 @@ class _CacheParameters(parameters.Parameters):
                  'recovery_mean',
                  'recovery_shape',
                  'recovery_to_carrier_probability',
-                 'start_time',
                  'transmission_rate')
         for attr in attrs:
             setattr(self, attr, float(getattr(params, attr)))

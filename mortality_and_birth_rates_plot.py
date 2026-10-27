@@ -83,7 +83,7 @@ class Base(metaclass=abc.ABCMeta):
 class Mortality(Base):
     x_label = 'Age (year)'
     y_label = r'Mortality rate (year$^{-1}$)'
-    x_lim = [0, 20]
+    x_lim = (0, 20)
     x_major_multiple = 4
     x_minor_ndivs = 4
     y_major_multiple = 0.2
@@ -97,14 +97,14 @@ class Mortality(Base):
 class Birth(Base):
     x_label = 'Time (year)'
     y_label = r'Birth rate (year$^{-1}$)'
-    x_lim = [0, 2]
+    x_lim = (0, 2)
     x_major_multiple = 1
     x_minor_ndivs = 2
     y_major_multiple = 1
 
     @classmethod
     def plot_rate(cls, axes, time, **kwds):
-        rate = cls.rvs.birth.hazard(time + cls.parameters.start_time, 4)
+        rate = cls.rvs.birth.hazard(time, 4)
         axes.plot(time, rate, **kwds)
 
 

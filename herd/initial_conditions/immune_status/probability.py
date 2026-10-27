@@ -16,11 +16,11 @@ class Interpolant:
         # Interpolate `self._probability` to `age`.
         ages = numpy.atleast_1d(age)
         # For some reason, duplicates may be present after `.union()`.
-        index = self._probability.index.union(ages) \
-                                       .drop_duplicates()
-        prob = self._probability.reindex(index) \
-                                .interpolate() \
-                                .loc[age]
+        index = (self._probability.index.union(ages)
+                 .drop_duplicates())
+        prob = (self._probability.reindex(index)
+                .interpolate()
+                .loc[age])
         assert prob.shape[:-1] == numpy.shape(age)
         return prob
 

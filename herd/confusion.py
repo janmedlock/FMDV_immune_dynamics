@@ -96,11 +96,11 @@ def _score(confusion, score_name, by):
     count = 'count'
     while count in {case_, observed}:  # Ensure the column name is unique
         count += '_'
-    dfr = confusion.melt(value_name=count, ignore_index=False) \
-                   .reset_index()
+    dfr = (confusion.melt(value_name=count, ignore_index=False)
+           .reset_index())
     index_name = _score_index_name(score_name, case_, observed)
-    index = confusion.index.union(confusion.columns, sort=False) \
-                           .rename(index_name)
+    index = (confusion.index.union(confusion.columns, sort=False)
+             .rename(index_name))
     score = pandas.Series(
         scorer(dfr[case_], dfr[observed], sample_weight=dfr[count],
                labels=index, average=None),

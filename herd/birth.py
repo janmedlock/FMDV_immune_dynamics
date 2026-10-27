@@ -1,8 +1,7 @@
 import numpy
-from scipy import optimize
+import scipy
 
-from . import periods, rv
-from .floquet import find_birth_scaling
+from . import event, floquet, periods, rv
 
 # The code below is not tested at all for `period != 1`!
 period = 1  # Units: year
@@ -48,9 +47,8 @@ class RV(rv.RV):
             self._beta = (3 / 4
                           * (1 + self.seasonal_coefficient_of_variation ** 2))
         if _scaling is None:
-            _scaling = find_birth_scaling(parameters,
-                                          *args,
-                                          **kwargs)
+            _scaling = floquet.find_birth_scaling(parameters,
+                                                  *args, **kwargs)
         self._scaling = _scaling
         self.ppf = numpy.vectorize(self._ppf_single, otypes='d')
 
@@ -165,8 +163,8 @@ class RV(rv.RV):
                 left = right
                 right *= factor
             # ppf(right) > q.
-            return optimize.brentq(self._ppf_to_solve,
-                                   left, right, args=(time0, age0, q))
+            return scipy.optimize.brentq(self._ppf_to_solve,
+                                         left, right, args=(time0, age0, q))
 
     def isf(self, q, time0, age0):
         return self.ppf(1 - q, time0, age0)
@@ -175,15 +173,29 @@ class RV(rv.RV):
         return self.ppf(self.rng.random(size=size), time0, age0)
 
 
+class Birth(event.ForSex, event.Memoryless, sex='female'):
+    '''A buffalo giving birth.'''
+    def do(self):
+        self.buffalo.give_birth()
+        # Add next birth.
+        self.time = self.sample_time()
+        self.buffalo.events.add(self)
+
+    def sample_waiting_time(self, initializing_herd=False):
+        return self.sample_waiting_time_from(
+            self.buffalo.herd.rvs.birth,
+            self.buffalo.herd.time, self.buffalo.age)
+
+
 class _ParametersNoSeasonality:
     '''Dummy parameters for the birth random variable without seasonal
     variation.'''
     def __init__(self, female_probability):
         self.female_probability = female_probability
         self.birth_seasonal_coefficient_of_variation = 0
-        # The value of these parameters don't matter when the seasonal
-        # variation is 0, but they do need to be set.
-        self.birth_peak_time = self.start_time = 0
+        # The value of `.birth_peak_time` doesn't matter when the
+        # seasonal variation is 0, but it must be set.
+        self.birth_peak_time = 0
 
 
 def hazard_no_seasonality(female_probability, age,

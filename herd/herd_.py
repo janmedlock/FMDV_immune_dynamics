@@ -1,13 +1,9 @@
-from itertools import count
+import itertools
 
 import numpy
-from pandas import DataFrame
+import pandas
 
-from .buffalo import Buffalo
-from .events import HerdEvents
-from .immune_statuses import immune_statuses
-from .parameters import Parameters
-from .random_variables import RandomVariables
+from . import buffalo, events, immune_status, parameters, random_variables
 
 
 class Herd(set):
@@ -17,18 +13,19 @@ class Herd(set):
                  _max_samples=100):
         rng = numpy.random.default_rng(seed)
         if params is None:
-            params = Parameters(seed=rng)
+            params = parameters.Parameters(seed=rng)
         self.params = params
         self.debug = debug
-        self.rvs = RandomVariables(self.params, seed=rng)
-        self._has_carrier_transmission = (
+        self.rvs = random_variables.RandomVariables(self.params, seed=rng)
+        self.has_carrier_transmission = (
             self.params.carrier_transmission_rate > 0)
-        self.time = self.params.start_time
-        self.events = HerdEvents()
-        self.by_immune_status = {s: set() for s in immune_statuses}
-        self.identifiers = count(0)
+        self.time = 0
+        self.events = events.Herd()
+        self.by_immune_status = {s: set()
+                                 for s in immune_status.immune_statuses}
+        self.identifiers = itertools.count(0)
         # These need to be defined before initializing
-        # susceptible `Buffalo()`.
+        # susceptible `buffalo.Buffalo()`.
         self.number_infectious = self.number_carrier = 0
         # Sample until there are some infected hosts.
         for _ in range(_max_samples):
@@ -42,8 +39,9 @@ class Herd(set):
                 print('No infected hosts! Resampling!')
         else:
             raise RuntimeError(f'No infected hosts after {_max_samples=}!')
-        for (age, immune_status) in age_immune_status.items():
-            self.add(Buffalo(self, immune_status, age))
+        for (age, immune_status_) in age_immune_status.items():
+            self.add(buffalo.Buffalo(self, immune_status_, age,
+                                     initializing_herd=True))
 
     def immune_status_add(self, b):
         self.by_immune_status[b.immune_status].add(b)
@@ -68,7 +66,7 @@ class Herd(set):
         if number_infectious_new != self.number_infectious:
             self.number_infectious = number_infectious_new
             updated = True
-        if self._has_carrier_transmission:
+        if self.has_carrier_transmission:
             # This only matters if the carrier transmission rate is positive.
             number_carrier_new = len(self.by_immune_status['carrier'])
             if number_carrier_new != self.number_carrier:
@@ -79,56 +77,58 @@ class Herd(set):
 
     def get_stats(self):
         stats = [len(self.by_immune_status[s])
-                 for s in immune_statuses]
+                 for s in immune_status.immune_statuses]
         return (self.time, stats)
-
-    _INFECTED = frozenset({'exposed', 'infectious', 'carrier'})
 
     @property
     def number_infected(self):
         return sum(len(self.by_immune_status[s])
-                   for s in self._INFECTED)
+                   for s in immune_status.infected)
 
     def stop(self):
         return (self.number_infected == 0)
 
     def step(self, tmax=numpy.inf):
         self.update_infection_times()
-        event = self.events.get_next()
-        if ((event is not None)
-            and (event.time < self.params.start_time + tmax)):
-            if self.debug:
-                print(event)
-            # Make sure the simulation is moving *forward* in time.
-            assert ((event.time >= self.time)
-                    | numpy.isclose(event.time, self.time))
-            self.time = event.time
-            event()
+        try:
+            event = self.events.get_next()
+        except IndexError:
+            pass  # No events
         else:
-            self.time = self.params.start_time + tmax
+            if event.time <= tmax:
+                if self.debug:
+                    print(event)
+                # Make sure the simulation is moving *forward* in time.
+                assert ((event.time >= self.time)
+                        | numpy.isclose(event.time, self.time))
+                self.time = event.time
+                event()
+                return
+        # Either there are no events or `event.time > tmax`
+        self.time = tmax
 
-    def run(self, tmax,
-            print_duration=False, logging_prefix=None):
-        result = [self.get_stats()]
-        while self.time < self.params.start_time + tmax:
-            self.step(tmax)
+    def run(self, tmax, print_duration=False, logging_prefix=None,
+            _to_dataframe=True):
+        result = []
+        while True:
             result.append(self.get_stats())
-            if self.stop():
+            if (self.time == tmax) or self.stop():
                 break
+            self.step(tmax)
         if print_duration:
-            msg_prefix = (
-                '' if logging_prefix is None
-                else logging_prefix + ': '
-            )
-            t_last = result[-1][0] - self.params.start_time
+            msg_prefix = ('' if logging_prefix is None
+                          else logging_prefix + ': ')
+            t_last = result[-1][0]
             print(msg_prefix + f'ended after {t_last:g} year')
-        result = DataFrame.from_dict(dict(result),
-                                     orient='index',
-                                     columns=immune_statuses)
+        if not _to_dataframe:
+            return result
+        result = pandas.DataFrame.from_dict(
+            dict(result), orient='index',
+            columns=immune_status.immune_statuses)
         result.index.name = 'time'
         result.columns.name = 'status'
         return result
 
     def find_extinction_time(self, tmax):
-        result = self.run(tmax)
+        result = self.run(tmax, _to_dataframe=False)
         return result[-1][0]

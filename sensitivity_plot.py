@@ -50,10 +50,10 @@ def plot_persistence(extinction_times, save=True, show=False):
                     nrows, ncols,
                     sharex='col', sharey='row',
                 )
-            vals = extinction_time.index \
-                                  .get_level_values(module.var) \
-                                  .unique() \
-                                  .sort_values()
+            vals = (extinction_time.index
+                    .get_level_values(module.var)
+                    .unique()
+                    .sort_values())
             for ((SAT, group), ax) in zip(grouper, axes[:, col]):
                 persistence = (
                     group.groupby(module.var)

@@ -1,6 +1,6 @@
-from scipy.stats import gamma
+import scipy
 
-from . import rv
+from . import event, rv
 
 
 class RV(rv.RV):
@@ -11,8 +11,20 @@ class RV(rv.RV):
         self.progression_mean = parameters.progression_mean
         self.progression_shape = parameters.progression_shape
         scale = self.progression_mean / self.progression_shape
-        distn = gamma(self.progression_shape, scale=scale)
+        distn = scipy.stats.gamma(self.progression_shape, scale=scale)
         super()._copyattrs(distn)
 
     def __repr__(self):
         return super().__repr__(('progression_mean', 'progression_shape'))
+
+
+class Progression(event.ForImmuneStatus, event.TimeSinceEntryDependent,
+                  immune_status='exposed'):
+    '''A buffalo becoming infectious.'''
+    def do(self):
+        self.buffalo.change_immune_status_to('infectious')
+
+    def sample_waiting_time(self, initializing_herd=False):
+        return self.sample_waiting_time_from(
+            self.buffalo.herd.rvs.progression,
+            initializing_herd)

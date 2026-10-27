@@ -26,8 +26,7 @@ def estimate(model, theta_0,
         if global_kwds is None:
             global_kwds = {}
         # Merge `kwds` into `global_kwds['minimizer_kwargs']`.
-        global_kwds.setdefault('minimizer_kwargs', {}) \
-                   .update(kwds)
+        global_kwds.setdefault('minimizer_kwargs', {}).update(kwds)
         global_kwds['pool'] = pool
         # `global_kwds` is the `kwds` for `_minimizer_global()`.
         kwds = global_kwds

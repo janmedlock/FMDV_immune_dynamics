@@ -1,0 +1,3 @@
+sexes = (
+    'female', 'male',
+)

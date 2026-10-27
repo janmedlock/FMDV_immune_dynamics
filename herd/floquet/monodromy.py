@@ -80,9 +80,8 @@ class Solver:
     def __init__(self, params, step, age_max):
         self.params = params
         self.ages = utility.arange(0, age_max, step, endpoint=True)
-        t_start = self.params.start_time
-        t_end = t_start + periods.get_period()
-        self._t = utility.arange(t_start, t_end, step, endpoint=True)
+        period = periods.get_period()
+        self._t = utility.arange(0, period, step, endpoint=True)
         mortality_rv = mortality.RV(self.params)
         self._init_crank_nicolson(step, mortality_rv)
         self._init_births(step)

@@ -1,6 +1,6 @@
-from scipy.stats import gamma
+import scipy
 
-from . import rv
+from . import event, rv
 
 
 class RV(rv.RV):
@@ -11,9 +11,21 @@ class RV(rv.RV):
         self.carrier_recovery_mean = parameters.carrier_recovery_mean
         self.carrier_recovery_shape = parameters.carrier_recovery_shape
         scale = self.carrier_recovery_mean / self.carrier_recovery_shape
-        distn = gamma(self.carrier_recovery_shape, scale=scale)
+        distn = scipy.stats.gamma(self.carrier_recovery_shape, scale=scale)
         super()._copyattrs(distn)
 
     def __repr__(self):
         return super().__repr__(('carrier_recovery_mean',
                                  'carrier_recovery_shape'))
+
+
+class CarrierRecovery(event.ForImmuneStatus, event.TimeSinceEntryDependent,
+                      immune_status='carrier'):
+    '''A buffalo recovering from carrier infected.'''
+    def do(self):
+        self.buffalo.change_immune_status_to('recovered_true')
+
+    def sample_waiting_time(self, initializing_herd=False):
+        return self.sample_waiting_time_from(
+            self.buffalo.herd.rvs.carrier_recovery,
+            initializing_herd)

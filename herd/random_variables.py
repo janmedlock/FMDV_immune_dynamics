@@ -15,11 +15,11 @@ class RandomVariables:
             params = Parameters(seed=rng)
         self.parameters = params
         self.antibody_gain = antibody_gain.RV(params, seed=rng)
-        self.antibody_gain_to_recovered_true \
-            = antibody_gain_to_recovered_true.RV(params, seed=rng)
+        self.antibody_gain_to_recovered_true = (
+            antibody_gain_to_recovered_true.RV(params, seed=rng))
         self.antibody_loss = antibody_loss.RV(params, seed=rng)
-        self.antibody_loss_to_lost_immunity_true \
-            = antibody_loss_to_lost_immunity_true.RV(params, seed=rng)
+        self.antibody_loss_to_lost_immunity_true = (
+            antibody_loss_to_lost_immunity_true.RV(params, seed=rng))
         self.birth = birth.RV(params, seed=rng)
         self.carrier_recovery = carrier_recovery.RV(params, seed=rng)
         self.female = female.RV(params, seed=rng)

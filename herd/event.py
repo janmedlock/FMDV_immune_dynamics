@@ -1,59 +1,60 @@
-'''Events that can happen to a buffalo.'''
+'''Base class and helpers for events that can happen to a buffalo.'''
 
-from abc import ABC, abstractmethod
+import abc
+import inspect
+import warnings
 
-from .immune_statuses import immune_statuses
+from .immune_status import immune_statuses
+from .sex import sexes
 
-# Events that can happen to each immune status.
-events_by_immune_status = {
-    immune_status: set()
-    for immune_status in immune_statuses
-}
+# `Event()`s are added to these sets when those events are defined,
+# throught the `.__init_subclass__()` of the mixins `For*()`
+events_for_all = set()
+# `Event()`s that can happen to each sex.
+events_for_sex = {sex: set() for sex in sexes}
+# `Event()`s that can happen to each immune status.
+events_for_immune_status = {immune_status: set()
+                            for immune_status in immune_statuses}
 
 
-class Event(ABC):
+class Event(metaclass=abc.ABCMeta):
     '''Parent class for events that happen to a buffalo.'''
-    @abstractmethod
+    @abc.abstractmethod
     def is_valid(self):
         '''Check whether the buffalo is valid to have the event.
         Subclasses must define this method.'''
 
-    @abstractmethod
+    @abc.abstractmethod
     def do(self):
         '''Execute the event.
         Subclasses must define this method.'''
 
-    @abstractmethod
-    def sample_waiting_time(self):
+    @abc.abstractmethod
+    def sample_waiting_time_from(self, rv, *args,
+                                 initializing_herd=False, **kwds):
+        '''Helper for sample_waiting_time.
+        Subclasses must define this method'''
+
+    @abc.abstractmethod
+    def sample_waiting_time(self, initializing_herd=False):
         '''Generate a random sample waiting time for the event.
         Subclasses must define this method.'''
 
-    def __init__(self, buffalo):
+    def __init__(self, buffalo, initializing_herd=False):
         self.buffalo = buffalo
         assert self.is_valid()
-        self.time = self.sample_time()
+        self.time = self.sample_time(initializing_herd)
 
     def __call__(self):
         assert self.is_valid()
         self.buffalo.events.remove(self)
         self.do()
 
-    @staticmethod
-    def sample_waiting_time_from(rv, *args, **kwds):
-        '''Helper for sample_waiting_time.'''
-        return rv.rvs(*args, **kwds)
-
-    def sample_time(self):
+    def sample_time(self, initializing_herd=False):
         '''Generate a random sample time for the event.'''
-        return self.buffalo.herd.time + self.sample_waiting_time()
-
-    def remove_event(self, cls):
-        for e in self.buffalo.events:
-            if isinstance(e, cls):
-                self.buffalo.events.remove(e)
-                break
-        else:
-            raise RuntimeError(f'Missing {cls.__name__}() event!')
+        return (
+            self.buffalo.herd.time
+            + self.sample_waiting_time(initializing_herd))
 
     def __repr__(self):
         return (
@@ -63,8 +64,17 @@ class Event(ABC):
         )
 
 
-class _AgeDependent:
-    '''A mixin for `Event()` with waiting times dependent on only age.'''
+class Memoryless(Event):
+    '''An `Event()` with memoryless waiting times.'''
+    def sample_waiting_time_from(self, rv, *args,
+                                 initializing_herd=False, **kwds):
+        '''Helper for sample_waiting_time.'''
+        assert not initializing_herd
+        return rv.rvs(*args, **kwds)
+
+
+class AgeDependent(Event):
+    '''An `Event()` with waiting times dependent on only age.'''
     def sample_age(self, rv, max_samples=10_000):
         '''Get a sample age that is at least the buffalo's current age.'''
         for _ in range(max_samples):
@@ -73,254 +83,72 @@ class _AgeDependent:
                 return age
         raise ValueError(f'Resampling failed after {max_samples=}!')
 
-    def sample_waiting_time_from(self, rv):
-        if self.buffalo.age == 0:
-            return rv.rvs()
-        return self.sample_age(rv) - self.buffalo.age
+    def sample_waiting_time_from(self, rv, initializing_herd=False):
+        if initializing_herd:
+            return self.sample_age(rv) - self.buffalo.age
+        return rv.rvs()
 
 
-class _TimeSinceEntryDependent:
-    '''A mixin for `Event()` with waiting times dependent on only time
-    since entry.'''
-    # TODO
+class TimeSinceEntryDependent(Event):
+    '''An `Event()` with waiting times dependent on only time since entry.'''
+    def sample_waiting_time_from(self, rv, initializing_herd=False):
+        if initializing_herd:
+            # TODO: Fix
+            msg = ('`TimeSinceEntryDependent.sample_waiting_time_from'
+                   + '(..., initializing_herd=True)` not implemented.')
+            warnings.warn(msg)
+        return rv.rvs()
 
 
-class Birth(Event):
-    '''A buffalo giving birth.'''
-    def is_valid(self):
-        return self.buffalo.sex == 'female'
-
-    def do(self):
-        self.buffalo.give_birth()
-        # Add next birth.
-        self.time = self.sample_time()
-        self.buffalo.events.add(self)
-
-    def sample_waiting_time(self):
-        return self.sample_waiting_time_from(
-            self.buffalo.herd.rvs.birth,
-            self.buffalo.herd.time, self.buffalo.age)
-
-
-class Mortality(_AgeDependent, Event):
-    '''A buffalo dying.'''
-    def is_valid(self):
-        return True  # All buffalo can die.
-
-    def do(self):
-        self.buffalo.die()
-
-    def sample_waiting_time(self):
-        return self.sample_waiting_time_from(
-            self.buffalo.herd.rvs.mortality)
-
-
-class MaternalImmunityWaning(_AgeDependent, Event):
-    '''A buffalo losing maternal immunity.'''
-    def is_valid(self):
-        return self.buffalo.immune_status == 'maternal_immunity'
-
-    def do(self):
-        self.buffalo.change_immune_status_to('susceptible')
-
-    def sample_waiting_time(self):
-        return self.sample_waiting_time_from(
-            self.buffalo.herd.rvs.maternal_immunity_waning)
-
-events_by_immune_status['maternal_immunity'].add(MaternalImmunityWaning)
-
-
-class Progression(_TimeSinceEntryDependent, Event):
-    '''A buffalo becoming infectious.'''
-    def is_valid(self):
-        return self.buffalo.immune_status == 'exposed'
-
-    def do(self):
-        self.buffalo.change_immune_status_to('infectious')
-
-    def sample_waiting_time(self):
-        return self.sample_waiting_time_from(
-            self.buffalo.herd.rvs.progression)
-
-events_by_immune_status['exposed'].add(Progression)
-
-
-class Recovery(_TimeSinceEntryDependent, Event):
-    '''A buffalo recovering from acute infection.'''
-    def is_valid(self):
-        return self.buffalo.immune_status == 'infectious'
-
-    def do(self):
-        if self.buffalo.herd.rvs.recovery_to_carrier.rvs():
-            self.buffalo.change_immune_status_to('carrier')
-        else:
-            self.buffalo.change_immune_status_to('recovered_true')
-
-    def sample_waiting_time(self):
-        return self.sample_waiting_time_from(
-            self.buffalo.herd.rvs.recovery)
-
-events_by_immune_status['infectious'].add(Recovery)
-
-
-class CarrierRecovery(_TimeSinceEntryDependent, Event):
-    '''A buffalo recovering from carrier infected.'''
-    def is_valid(self):
-        return self.buffalo.immune_status == 'carrier'
-
-    def do(self):
-        self.buffalo.change_immune_status_to('recovered_true')
-
-    def sample_waiting_time(self):
-        return self.sample_waiting_time_from(
-            self.buffalo.herd.rvs.carrier_recovery)
-
-events_by_immune_status['carrier'].add(CarrierRecovery)
-
-
-class _AntibodyLoss(Event):
-    '''Base class for a buffalo losing apparent antibodies.'''
-    def do(self):
-        if self.buffalo.herd.rvs.antibody_loss_to_lost_immunity_true.rvs():
-            self.buffalo.change_immune_status_to('lost_immunity_true')
-        else:
-            self.buffalo.change_immune_status_to('lost_immunity_false')
-
-    def sample_waiting_time(self):
-        return self.sample_waiting_time_from(
-            self.buffalo.herd.rvs.antibody_loss)
-
-
-class RecoveredTrueAntibodyLoss(_AntibodyLoss):
-    '''A buffalo losing apparent antibodies from 'recovered_true'.'''
-    def is_valid(self):
-        return self.buffalo.immune_status == 'recovered_true'
-
-events_by_immune_status['recovered_true'].add(RecoveredTrueAntibodyLoss)
-
-
-class RecoveredFalseAntibodyLoss(_AntibodyLoss):
-    '''A buffalo losing apparent antibodies from 'recovered_false'.'''
-    def is_valid(self):
-        return self.buffalo.immune_status == 'recovered_false'
-
-    def do(self):
-        # Immune status 'recovered_false' can change by either
-        # `RecoveredFalseInfection()` or `RecoveredFalseAntibodyLoss()`.
-        # Remove the one that didn't happen so it doesn't stay
-        # in the queue.
-        self.remove_event(RecoveredFalseInfection)
-        super().do()
-
-events_by_immune_status['recovered_false'].add(RecoveredFalseAntibodyLoss)
-
-
-class _AntibodyGain(Event):
-    '''Base class for a buffalo gaining apparent antibodies.'''
-    def do(self):
-        if self.buffalo.herd.rvs.antibody_gain_to_recovered_true.rvs():
-            self.buffalo.change_immune_status_to('recovered_true')
-        else:
-            self.buffalo.change_immune_status_to('recovered_false')
-
-    def sample_waiting_time(self):
-        return self.sample_waiting_time_from(
-            self.buffalo.herd.rvs.antibody_gain)
-
-
-class LostImmunityTrueAntibodyGain(_AntibodyGain):
-    '''A buffalo gaining apparent antibodies from 'lost_immunity_true'.'''
-    def is_valid(self):
-        return self.buffalo.immune_status == 'lost_immunity_true'
-
-    def do(self):
-        # Immune status 'lost_immunity_true' can change by either
-        # `LostImmunityTrueInfection()` or `LostImmunityTrueAntibodyGain()`.
-        # Remove the one that didn't happen so it doesn't stay
-        # in the queue.
-        self.remove_event(LostImmunityTrueInfection)
-        super().do()
-
-events_by_immune_status['lost_immunity_true'].add(LostImmunityTrueAntibodyGain)
-
-
-class LostImmunityFalseAntibodyGain(_AntibodyGain):
-    '''A buffalo gaining apparent antibodies from 'lost_immunity_false'.'''
-    def is_valid(self):
-        return self.buffalo.immune_status == 'lost_immunity_false'
-
-events_by_immune_status['lost_immunity_false'].add(
-    LostImmunityFalseAntibodyGain
-)
-
-
-class Infection(Event):
-    '''Base class for a buffalo becoming infected.'''
-    def __init__(self, buffalo, susceptibility=1):
-        self.susceptibility = susceptibility
-        super().__init__(buffalo)
-
-    def do(self):
-        self.buffalo.change_immune_status_to('exposed')
-
-    def sample_waiting_time(self):
-        return self.sample_waiting_time_from(
-            self.buffalo.herd.rvs.infection,
-            self.buffalo.herd.number_infectious,
-            self.buffalo.herd.number_carrier,
-            self.susceptibility)
-
-
-class SusceptibleInfection(Infection):
-    '''A buffalo becoming infected from 'susceptible'.'''
-    def __init__(self, buffalo):
-        susceptibility = 1
-        super().__init__(buffalo, susceptibility)
+class ForAll:
+    '''Mixin for an event that is valid for all buffalo.'''
+    @classmethod
+    def __init_subclass__(cls, **kwds):
+        super().__init_subclass__(**kwds)
+        if not inspect.isabstract(cls):
+            events_for_all.add(cls)
 
     def is_valid(self):
-        return self.buffalo.immune_status == 'susceptible'
-
-    def do(self):
-        self.buffalo.change_immune_status_to('exposed')
-
-events_by_immune_status['susceptible'].add(SusceptibleInfection)
+        return True
 
 
-class _LostImmunityInfection(Infection):
-    '''Base class for a buffalo becoming infected from
-    'lost_immunity_true' or 'recovered_false'.'''
-    def __init__(self, buffalo):
-        susceptibility = buffalo.herd.params.lost_immunity_susceptibility
-        super().__init__(buffalo, susceptibility)
+class ForSex:
+    '''Mixin for an event that is valid for one sex.'''
+    @classmethod
+    def __init_subclass__(cls, sex, **kwds):
+        super().__init_subclass__(**kwds)
+        cls.sex = sex
+        if not inspect.isabstract(cls):
+            events_for_sex[cls.sex].add(cls)
 
-
-class LostImmunityTrueInfection(_LostImmunityInfection):
-    '''A buffalo becoming infected from 'lost_immunity_true'.'''
     def is_valid(self):
-        return self.buffalo.immune_status == 'lost_immunity_true'
-
-    def do(self):
-        # Immune status 'lost_immunity_true' can change by either
-        # `LostImmunityTrueInfection()` or `LostImmunityTrueAntibodyGain()`.
-        # Remove the one that didn't happen so it doesn't stay
-        # in the queue.
-        self.remove_event(LostImmunityTrueAntibodyGain)
-        super().do()
-
-events_by_immune_status['lost_immunity_true'].add(LostImmunityTrueInfection)
+        return self.buffalo.sex == self.sex
 
 
-class RecoveredFalseInfection(_LostImmunityInfection):
-    '''A buffalo becoming infected from 'recovered_false'.'''
+class ForImmuneStatus:
+    '''Mixin for an event that is valid for one immune status.'''
+    @classmethod
+    def __init_subclass__(cls, immune_status, **kwds):
+        super().__init_subclass__(**kwds)
+        cls.immune_status = immune_status
+        if not inspect.isabstract(cls):
+            events_for_immune_status[cls.immune_status].add(cls)
+
     def is_valid(self):
-        return self.buffalo.immune_status == 'recovered_false'
+        return self.buffalo.immune_status == self.immune_status
 
-    def do(self):
-        # Immune status 'recovered_false' can change by either
-        # `RecoveredFalseInfection()` or `RecoveredFalseAntibodyLoss()`.
-        # Remove the one that didn't happen so it doesn't stay
-        # in the queue.
-        self.remove_event(RecoveredFalseAntibodyLoss)
-        super().do()
 
-events_by_immune_status['recovered_false'].add(RecoveredFalseInfection)
+class ForImmuneStatuses:
+    '''Mixin for an event that is valid for some immune statuses.'''
+    @classmethod
+    def __init_subclass__(cls, immune_statuses, **kwds):
+        super().__init_subclass__(**kwds)
+        cls.immune_statuses = frozenset(immune_statuses)
+        if not inspect.isabstract(cls):
+            for immune_status in cls.immune_statuses:
+                events_for_immune_status[immune_status].add(cls)
+
+    def is_valid(self):
+        return self.buffalo.immune_status in self.immune_statuses
+
+
