@@ -94,10 +94,16 @@ class Herd(_SortedTimeList):
     infections = property(_infections_get, _infections_set,
                           doc='The infection events.')
 
-    def get_next(self):
-        '''Get the next event. Raises `IndexError` if there are no events.'''
+    def __next__(self):
+        '''The next event.'''
         try:
+            # From the first elements of each non-empty list, returns
+            # the one that has minimal time. Raises `ValueError` if
+            # both lists are empty.
             return min(itertools.chain(self[:1], self._infections[:1]),
                        key=self.key)
         except ValueError:
-            raise IndexError
+            raise StopIteration
+
+    def __iter__(self):
+        return self
