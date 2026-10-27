@@ -39,8 +39,9 @@ class Buffalo(set):
 
 class _SortedTimeList(sortedcontainers.SortedKeyList):
     '''Sort items in order by the value of their `.time` attribute.'''
-    def __init__(self):
-        super().__init__(key=operator.attrgetter('time'))
+    def __init__(self, *args, **kwds):
+        super().__init__(*args, **kwds,
+                         key=operator.attrgetter('time'))
 
 
 class Herd(_SortedTimeList):
@@ -79,26 +80,20 @@ class Herd(_SortedTimeList):
                 else:
                     super().update(group)
 
-    def get_next(self):
-        '''Get the next event. Returns `None` if there are no events.'''
-        try:
-            infections_next = self._infections[0]
-        except IndexError:  # `self._infections` is empty
-            return self[0]  # This raises `IndexError` if `self` is empty
-        try:
-            other_next = self[0]
-        except IndexError:  # `self` is empty
-            return infections_next
-        return min(infections_next, other_next, key=self.key)
-
     def update_infection_times(self):
         '''Update the infection events.'''
-        # `sortedcontainers.SortedKeyList()` requires the order of the
-        # items not chage while the items are stored, so we must take
-        # all the items out, update their times, then put them back
-        # in.
+        # `sortedcontainers.SortedKeyList()` requires the items' key
+        # values not change while they are stored.
         infections = tuple(self._infections)
         self._infections.clear()
         for infection_ in infections:
             infection_.time = infection_.sample_time()
         self._infections.update(infections)
+
+    def get_next(self):
+        '''Get the next event. Raises `IndexError` if there are no events.'''
+        try:
+            return min(itertools.chain(self[:1], self._infections[:1]),
+                       key=self.key)
+        except ValueError:
+            raise IndexError
