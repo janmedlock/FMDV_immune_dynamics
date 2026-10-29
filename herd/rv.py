@@ -71,4 +71,5 @@ class RandomVariables:
         if parameters is None:
             parameters = Parameters(seed=rng)
         for rv in _rvs:
+            assert not hasattr(self, rv.name)
             setattr(self, rv.name, rv(parameters, seed=rng))

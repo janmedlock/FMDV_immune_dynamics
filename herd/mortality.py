@@ -15,25 +15,22 @@ _ANNUAL_SURVIVAL = {
 class RV(rv.RV):
     name = 'mortality'
 
-    # Convert to pandas.Interval()'s for convenience.
+    # Convert to `pandas.IntervalIndex()` for convenience.
     _annual_survival = pandas.Series(
-        {pandas.Interval(*interval, closed='left'): value
-         for (interval, value) in _ANNUAL_SURVIVAL.items()}).sort_index()
+        _ANNUAL_SURVIVAL.values(),
+        index=pandas.IntervalIndex.from_tuples(_ANNUAL_SURVIVAL.keys(),
+                                               closed='left')
+    )
 
     def hazard(self, age):
         return -numpy.log(numpy.asarray(self._annual_survival[age]))
 
     def logsf(self, age):
         '''Logarithm of the survival function.'''
-        logsf = numpy.zeros(numpy.shape(age))
-        for (interval, value) in self._annual_survival.items():
-            a = numpy.clip(age, interval.left, interval.right)
-            # (a - interval.left) is
-            # 0 if age <= interval.left,
-            # (interval.right - interval.left) if age >= interval.right,
-            # (age - interval.left) otherwise.
-            logsf += (a - interval.left) * numpy.log(value)
-        return logsf
+        intervals = self._annual_survival.index
+        # `t` is the amount time lived in each age interval
+        t = numpy.clip(age - intervals.left, 0, intervals.length)
+        return (t * numpy.log(self._annual_survival)).sum()
 
     def sf(self, age):
         '''Survival function.'''
