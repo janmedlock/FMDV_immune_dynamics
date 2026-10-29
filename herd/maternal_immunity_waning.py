@@ -15,8 +15,8 @@ class RV(rv.ScipyRV):
         return scipy.stats.gamma(shape, scale=scale)
 
 
-class Event(event.ForImmuneStatusMixin,
-            event.AgeDependentEvent):
+class MaternalImmunityWaning(event.ForImmuneStatusMixin,
+                             event.AgeDependentEvent):
     '''A buffalo losing maternal immunity.'''
 
     waiting_time = RV.name

@@ -23,7 +23,7 @@ class RV(rv.RV):
         return self.rng.exponential(scale)
 
 
-class Event(event.MemorylessEvent):
+class Infection(event.MemorylessEvent):
     '''Base class for a buffalo becoming infected.'''
 
     waiting_time = RV.name
@@ -42,8 +42,8 @@ class Event(event.MemorylessEvent):
                                      self.susceptibility)
 
 
-class PrimaryEvent(event.ForImmuneStatusMixin,
-                   Event):
+class PrimaryInfection(event.ForImmuneStatusMixin,
+                       Infection):
     '''A buffalo becoming infected from 'susceptible'.'''
 
     immune_status = 'susceptible'
@@ -53,8 +53,8 @@ class PrimaryEvent(event.ForImmuneStatusMixin,
                          initializing_herd=initializing_herd)
 
 
-class SecondaryEvent(event.ForImmuneStatusesMixin,
-                     Event):
+class SecondaryInfection(event.ForImmuneStatusesMixin,
+                         Infection):
     '''A buffalo becoming infected from 'lost_immunity_true'
     or 'recovered_false'.'''
 

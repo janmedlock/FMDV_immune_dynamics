@@ -14,7 +14,7 @@ class RV(rv.RV):
     name = 'initial_conditions'
 
     def __init__(self, parameters, seed=None, debug=False):
-        super().__init__(parameters, seed)
+        super().__init__(parameters, seed=seed)
         self.population_size = parameters.population_size
         # Reuse these in case we call pdf() or rvs() repeatedly.
         # TODO: Fix

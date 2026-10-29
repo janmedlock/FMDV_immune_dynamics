@@ -14,8 +14,8 @@ class RV(rv.ScipyRV):
         return scipy.stats.expon(scale=scale)
 
 
-class Event(event.ForImmuneStatusesMixin,
-            event.MemorylessEvent):
+class AntibodyGain(event.ForImmuneStatusesMixin,
+                   event.MemorylessEvent):
     '''A buffalo gaining apparent antibodies.'''
 
     waiting_time = RV.name

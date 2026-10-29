@@ -92,7 +92,7 @@ class HerdEvents(_SortedEventList):
 
     @staticmethod
     def _is_infection(event):
-        return isinstance(event, infection.Event)
+        return isinstance(event, infection.Infection)
 
     def add(self, event):
         if self._is_infection(event):

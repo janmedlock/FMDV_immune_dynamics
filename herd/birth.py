@@ -172,7 +172,7 @@ class RV(rv.RV):
         return self.ppf(self.rng.random(size=size), time0, age0)
 
 
-class Event(event.ForSexMixin,
+class Birth(event.ForSexMixin,
             event.MemorylessEvent):
     '''A buffalo giving birth.'''
 

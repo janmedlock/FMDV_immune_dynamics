@@ -1,9 +1,10 @@
 import abc
+import collections
+import functools
 import inspect
 
 import numpy
-
-from .parameters import Parameters
+import scipy.stats.sampling
 
 # Non-abstract subclasses of `RV()` are added to this list when they
 # are defined
@@ -48,28 +49,50 @@ class ScipyRV(RV, metaclass=abc.ABCMeta):
     def __init__(self, parameters, seed=None):
         super().__init__(parameters, seed=seed)
         self._rv = self.rv(parameters)
-
-    def rvs(self, *args, **kwds):
-        return self._rv.rvs(*args, random_state=self.rng, **kwds)
+        self._rv.random_state = self.rng
 
     def __getattr__(self, name):
         '''Try to get the attribute from the `scipy.stats` random variable.'''
         try:
             return getattr(self._rv, name)
         except AttributeError:
-            raise AttributeError from None
+            pass
+        raise AttributeError(
+            f"'{type(self).__name__}' object has no attribute '{name}'")
 
     def hazard(self, age):
         return numpy.exp(self.logpdf(age) - self.logsf(age))
 
 
+class TimeSinceEntryMixin:
+    '''A mixin for waiting times to build `.time_since_entry`,
+    used by `.event.TimeSinceEntryDependentEvent()`.'''
+
+    # An object with a `.logpdf` attribute for
+    # `scipy.stats.sampling.NumericalInversePolynomial()`
+    # in `._build_time_since_entry_rv()`
+    _TimeSinceEntryDist = collections.namedtuple('TimeSinceEntryDist',
+                                                 ('logpdf',))
+
+    @functools.cached_property  # Build on first use
+    def time_since_entry(self):
+        r'''Build a random variable for time since entry from a
+        waiting time. At equilibrium, the PDF of times since entry
+        given the event has not yet occurred is S(t) / mu, where S(t)
+        is the survival of the waiting time and mu is the mean waiting
+        time. That is, it's proportional to S(t).'''
+        # The normalizing constant is unnecessary
+        time_since_entry_logpdf = self.logsf
+        return scipy.stats.sampling.NumericalInversePolynomial(
+            self._TimeSinceEntryDist(logpdf=time_since_entry_logpdf),
+            domain=self.support(), random_state=self.rng)
+
+
 class RandomVariables:
     '''The random variables for the simulation.'''
 
-    def __init__(self, parameters=None, seed=None):
+    def __init__(self, parameters, seed=None):
         rng = numpy.random.default_rng(seed)
-        if parameters is None:
-            parameters = Parameters(seed=rng)
         for rv in _rvs:
             assert not hasattr(self, rv.name)
             setattr(self, rv.name, rv(parameters, seed=rng))

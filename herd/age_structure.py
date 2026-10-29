@@ -13,10 +13,11 @@ class RV(rv.RV):
             parameters, **kwds)
         self._proportion = self._density / self._density.sum()
         self._age_rv = scipy.stats.rv_discrete(
-            values=(self._ages, self._proportion))
+            values=(self._ages, self._proportion),
+            seed=self.rng)
 
     def rvs(self, size=None):
-        return self._age_rv.rvs(size=size, random_state=self.rng)
+        return self._age_rv.rvs(size=size)
 
     def pdf(self, x):
         return numpy.interp(x, self._ages, self._density, left=0, right=0)

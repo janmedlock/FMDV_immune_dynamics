@@ -3,7 +3,8 @@ import scipy
 from . import event, recovery_to_carrier, rv
 
 
-class RV(rv.ScipyRV):
+class RV(rv.TimeSinceEntryMixin,
+         rv.ScipyRV):
     '''The waiting time to recovery.'''
 
     name = 'recovery'
@@ -15,8 +16,8 @@ class RV(rv.ScipyRV):
         return scipy.stats.gamma(shape, scale=scale)
 
 
-class Event(event.ForImmuneStatusMixin,
-            event.TimeSinceEntryDependentEvent):
+class Recovery(event.ForImmuneStatusMixin,
+               event.TimeSinceEntryDependentEvent):
     '''A buffalo recovering from acute infection.'''
 
     waiting_time = RV.name
