@@ -29,32 +29,31 @@ def get_gap_size_from_seasonal_coefficient_of_variation(c_v):
 
 
 class RV(rv.RV):
-    def __init__(self, parameters, *args, seed=None, _scaling=None, **kwargs):
-        super().__init__(seed=seed)
-        self.peak_time = parameters.birth_peak_time
-        self.seasonal_coefficient_of_variation = (
+    name = 'birth'
+
+    def __init__(self, parameters, seed=None, _scaling=None, **kwds):
+        super().__init__(parameters, seed=seed)
+        self.birth_peak_time = parameters.birth_peak_time
+        self.birth_seasonal_coefficient_of_variation = (
             parameters.birth_seasonal_coefficient_of_variation)
-        if self.seasonal_coefficient_of_variation < 1 / numpy.sqrt(3):
+        if self.birth_seasonal_coefficient_of_variation < 1 / numpy.sqrt(3):
             self._alpha = (1 + numpy.sqrt(3)
-                           * self.seasonal_coefficient_of_variation)
+                           * self.birth_seasonal_coefficient_of_variation)
             self._beta = (2 * numpy.sqrt(3)
-                          * self.seasonal_coefficient_of_variation
+                          * self.birth_seasonal_coefficient_of_variation
                           / (1 + numpy.sqrt(3)
-                             * self.seasonal_coefficient_of_variation))
+                             * self.birth_seasonal_coefficient_of_variation))
         else:
-            self._alpha = (3 / 2
-                           * (1 + self.seasonal_coefficient_of_variation ** 2))
-            self._beta = (3 / 4
-                          * (1 + self.seasonal_coefficient_of_variation ** 2))
+            self._alpha = (
+                3 / 2
+                * (1 + self.birth_seasonal_coefficient_of_variation ** 2))
+            self._beta = (
+                3 / 4
+                * (1 + self.birth_seasonal_coefficient_of_variation ** 2))
         if _scaling is None:
-            _scaling = floquet.find_birth_scaling(parameters,
-                                                  *args, **kwargs)
+            _scaling = floquet.find_birth_scaling(parameters, **kwds)
         self._scaling = _scaling
         self.ppf = numpy.vectorize(self._ppf_single, otypes='d')
-
-    def __repr__(self):
-        return super().__repr__(('peak_time',
-                                 'seasonal_coefficient_of_variation'))
 
     def hazard(self, time, age, out=None):
         # age is the age at t = time.
@@ -62,10 +61,10 @@ class RV(rv.RV):
         if out is None:
             out = numpy.empty(time.shape)
         # Without building intermediate arrays, compute
-        # `tau = fracpart(time - self.peak_time)`.
-        out[()] = time - self.peak_time
+        # `tau = fracpart(time - self.birth_peak_time)`.
+        out[()] = time - self.birth_peak_time
         fracpart(out, out=out)
-        # Now out = fracpart(time - self.peak_time)
+        # Now out = fracpart(time - self.birth_peak_time)
         #         = tau.
         # Without building intermediate arrays, compute
         # `out = (self._alpha
@@ -92,8 +91,8 @@ class RV(rv.RV):
 
     def logsf(self, time, time0, age0):
         # age0 is the age at time = 0, i.e. t = time0.
-        c = time0 + numpy.clip(4 - age0, 0, numpy.inf) - self.peak_time
-        d = time0 + time - self.peak_time
+        c = time0 + numpy.clip(4 - age0, 0, numpy.inf) - self.birth_peak_time
+        d = time0 + time - self.birth_peak_time
         H0 = numpy.floor(d) - numpy.floor(c) - 1
         if self._beta < 1:
             H1 = numpy.where(
@@ -173,8 +172,14 @@ class RV(rv.RV):
         return self.ppf(self.rng.random(size=size), time0, age0)
 
 
-class Birth(event.ForSex, event.Memoryless, sex='female'):
+class Event(event.ForSexMixin,
+            event.MemorylessEvent):
     '''A buffalo giving birth.'''
+
+    waiting_time = RV.name
+
+    sex = 'female'
+
     def do(self):
         self.buffalo.give_birth()
         # Add next birth.
@@ -182,9 +187,9 @@ class Birth(event.ForSex, event.Memoryless, sex='female'):
         self.buffalo.events.add(self)
 
     def sample_waiting_time(self, initializing_herd=False):
-        return self.sample_waiting_time_from(
-            self.buffalo.herd.rvs.birth,
-            self.buffalo.herd.time, self.buffalo.age)
+        '''Generate a random sample waiting time for the event.'''
+        return self.waiting_time.rvs(self.buffalo.herd.time,
+                                     self.buffalo.age)
 
 
 class _ParametersNoSeasonality:

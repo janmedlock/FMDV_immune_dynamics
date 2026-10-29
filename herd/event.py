@@ -1,58 +1,89 @@
 '''Base class and helpers for events that can happen to a buffalo.'''
 
 import abc
+import functools
 import inspect
+import itertools
 import warnings
+
+import numpy
+import scipy.stats.sampling
 
 from .immune_status import immune_statuses
 from .sex import sexes
 
-# `Event()`s are added to these sets when those events are defined
-# by the mixins `ForAll()`, `ForSex()`, `ForImmuneStatus()`, and
-# `ForImmuneStatuses()`
-events_for_all = set()
+# Subclasses of `Event()` are added to these sets when those events are
+# defined by `ForAllMixin()`, `ForSexMixin()`,
+# `ForImmuneStatusMixin()`, and `ForImmuneStatusesMixin()`.
+# `Event()`s that can happen to any buffalo.
+_events_for_all = set()
 # `Event()`s that can happen to each sex.
-events_for_sex = {sex: set() for sex in sexes}
+_events_for_sex = {sex: set() for sex in sexes}
 # `Event()`s that can happen to each immune status.
-events_for_immune_status = {immune_status: set()
-                            for immune_status in immune_statuses}
+_events_for_immune_status = {immune_status: set()
+                             for immune_status in immune_statuses}
+
+
+def get_events_for(buffalo):
+    '''Get all the types of events that can happen to `buffalo`.'''
+    return _events_for_all.union(
+        _events_for_sex[buffalo.sex],
+        _events_for_immune_status[buffalo.immune_status])
+
+
+def get_events_for_immune_status(immune_status):
+    '''Get the types of events that can happen to `immune_status`.'''
+    return _events_for_immune_status[immune_status]
+
+
+def _union_of_events_for():
+    '''Get the union of all the events in `_events_for_*`.'''
+    return functools.reduce(set.union,
+                            itertools.chain.from_iterable(
+                                d.values()
+                                for d in (_events_for_sex,
+                                          _events_for_immune_status)),
+                            initial=_events_for_all)
 
 
 class Event(metaclass=abc.ABCMeta):
     '''Parent class for events that happen to a buffalo.'''
+    @property
+    @abc.abstractmethod
+    def waiting_time(self):
+        '''The name of the waiting time in
+        `.rv.RandomVariables()`. Subclasses must define this
+        attribute.'''
+
     @abc.abstractmethod
     def do(self):
         '''Execute the event. Subclasses must define this method.'''
 
     @abc.abstractmethod
     def sample_waiting_time(self, initializing_herd=False):
-        '''Generate a random sample waiting time for the event.
-        Subclasses must define this method.'''
+        '''Generate a random sample waiting time for the event.  This
+        is defined by the subclasses `Memoryless()`, `AgeDependent()`,
+        and `TimeSinceEntryDependent()`.'''
 
     @abc.abstractmethod
     def is_valid(self):
         '''Check whether the buffalo is valid to have the event. This
-        is defined by the the mixins `ForAll()`, `ForSex()`,
-        `ForImmuneStatus()`, and # `ForImmuneStatuses()`.'''
-
-    @abc.abstractmethod
-    def sample_waiting_time_from(self, rv, *args,
-                                 initializing_herd=False, **kwds):
-        '''Helper for sample_waiting_time. This is defined by the
-        subclassses `Memoryless()`, `AgeDependent()`, and
-        `TimeSinceEntryDependent`.'''
+        is defined by `ForAllMixin()`, `ForSexMixin()`,
+        `ForImmuneStatusMixin()`, and `ForImmuneStatusesMixin()`.'''
 
     @classmethod
     def __init_subclass__(cls, **kwds):
+        '''Verify that non-abstract `cls` was added to one of the
+        `_events_for_*`.'''
         super().__init_subclass__(**kwds)
         if not inspect.isabstract(cls):
-            union_of_events_for = events_for_all.union(
-                *events_for_sex.values(),
-                *events_for_immune_status.values())
-            assert cls in union_of_events_for
+            assert cls in _union_of_events_for(), \
+                f'`{cls}` not in any `_events_for_*`'
 
     def __init__(self, buffalo, initializing_herd=False):
         self.buffalo = buffalo
+        self.waiting_time = getattr(self.buffalo.herd.rvs,
+                                    self.waiting_time)
         assert self.is_valid()
         self.time = self.sample_time(initializing_herd)
 
@@ -68,95 +99,135 @@ class Event(metaclass=abc.ABCMeta):
             + self.sample_waiting_time(initializing_herd))
 
     def __repr__(self):
-        return (
-            f't={self.time:g}: '
-            + self.__class__.__name__
-            + f' of #{self.buffalo.identifier}'
-        )
+        return f't={self.time:g}: {self.name} of #{self.buffalo.identifier}'
 
 
-class Memoryless(Event):
+class MemorylessEvent(Event):
     '''An `Event()` with memoryless waiting times.'''
-    def sample_waiting_time_from(self, rv, *args,
-                                 initializing_herd=False, **kwds):
-        '''Helper for sample_waiting_time.'''
-        assert not initializing_herd
-        return rv.rvs(*args, **kwds)
+
+    def sample_waiting_time(self, initializing_herd=False):
+        '''Generate a random sample waiting time for the event.'''
+        return self.waiting_time.rvs()
 
 
-class AgeDependent(Event):
+class AgeDependentEvent(Event):
     '''An `Event()` with waiting times dependent on only age.'''
-    def sample_age(self, rv, max_samples=10_000):
+    def sample_age(self, max_samples=10_000):
         '''Get a sample age that is at least the buffalo's current age.'''
         for _ in range(max_samples):
-            age = rv.rvs()
+            age = self.waiting_time.rvs()
             if age >= self.buffalo.age:
                 return age
         raise ValueError(f'Resampling failed after {max_samples=}!')
 
-    def sample_waiting_time_from(self, rv, initializing_herd=False):
+    def sample_waiting_time(self, initializing_herd=False):
+        '''Generate a random sample waiting time for the event.'''
         if initializing_herd:
-            return self.sample_age(rv) - self.buffalo.age
-        return rv.rvs()
+            return self.sample_age() - self.buffalo.age
+        return self.waiting_time.rvs()
 
 
-class TimeSinceEntryDependent(Event):
+class _TimeSinceEntryRV:
+    r'''A random variable for time since entry, built from
+    `waiting_time`. At equilibrium, the PDF of times since entry is
+    S(z) / mu, where S(z) is the survival of the waiting time and
+    mu is the mean waiting time. That is, it's proportional to S(z)
+    and then must be normalized by \int_0^{\infty} S(z) dz = mu.'''
+    # TODO: How do I make this a singleton?
+    def __init__(self, waiting_time):
+        mean = waiting_time.mean()
+        self.logpdf = self._get_logpdf(waiting_time, mean)
+        rv = scipy.stats.sampling.NumericalInversePolynomial(
+            self, domain=waiting_time.support(), center=mean)
+        self.rvs = rv.rvs
+
+    @staticmethod
+    def _get_logpdf(waiting_time, mean):
+        log_mean = numpy.log(mean)
+        def logpdf(z):
+            return waiting_time.logsf(z) - log_mean
+        return logpdf
+
+
+class TimeSinceEntryDependentEvent(Event):
     '''An `Event()` with waiting times dependent on only time since entry.'''
-    def sample_waiting_time_from(self, rv, initializing_herd=False):
+    def sample_time_since_entry(self):
+        raise NotImplementedError
+
+    def sample_waiting_time(self, initializing_herd=False):
         if initializing_herd:
             # TODO: Fix
-            msg = ('`TimeSinceEntryDependent.sample_waiting_time_from'
-                   + '(..., initializing_herd=True)` not implemented.')
+            msg = ('`TimeSinceEntryDependent.sample_waiting_time'
+                   + '(initializing_herd=True)` not implemented.')
             warnings.warn(msg)
-        return rv.rvs()
+        return self.waiting_time.rvs()
 
 
-class ForAll:
+class ForAllMixin:
     '''Mixin for an event that is valid for all buffalo.'''
     @classmethod
     def __init_subclass__(cls, **kwds):
+        '''Add non-abstract `cls` to `_events_for_all`.'''
         if not inspect.isabstract(cls):
-            events_for_all.add(cls)
+            _events_for_all.add(cls)
         super().__init_subclass__(**kwds)
 
     def is_valid(self):
         return True
 
 
-class ForSex:
+class ForSexMixin(metaclass=abc.ABCMeta):
     '''Mixin for an event that is valid for one sex.'''
+    @property
+    @abc.abstractmethod
+    def sex(self):
+        '''Sex for which this event is valid.'''
+
     @classmethod
-    def __init_subclass__(cls, sex, **kwds):
-        cls.sex = sex
+    def __init_subclass__(cls, **kwds):
+        '''Add non-abstract `cls` to `_events_for_sex[cls.sex]`.'''
         if not inspect.isabstract(cls):
-            events_for_sex[cls.sex].add(cls)
+            _events_for_sex[cls.sex].add(cls)
         super().__init_subclass__(**kwds)
 
     def is_valid(self):
         return self.buffalo.sex == self.sex
 
 
-class ForImmuneStatus:
+class ForImmuneStatusMixin(metaclass=abc.ABCMeta):
     '''Mixin for an event that is valid for one immune status.'''
+    @property
+    @abc.abstractmethod
+    def immune_status(self):
+        '''Immune status for which this event is valid.'''
+
     @classmethod
-    def __init_subclass__(cls, immune_status, **kwds):
-        cls.immune_status = immune_status
+    def __init_subclass__(cls, **kwds):
+        '''Add non-abstract `cls` to
+        `_events_for_immune_status[cls.immune_status]`.'''
         if not inspect.isabstract(cls):
-            events_for_immune_status[cls.immune_status].add(cls)
+            _events_for_immune_status[cls.immune_status].add(cls)
         super().__init_subclass__(**kwds)
 
     def is_valid(self):
         return self.buffalo.immune_status == self.immune_status
 
 
-class ForImmuneStatuses:
+class ForImmuneStatusesMixin(metaclass=abc.ABCMeta):
     '''Mixin for an event that is valid for some immune statuses.'''
+    @property
+    @abc.abstractmethod
+    def immune_statuses(self):
+        '''Immune statuses for which this event is valid.'''
+
     @classmethod
-    def __init_subclass__(cls, immune_statuses, **kwds):
-        cls.immune_statuses = frozenset(immune_statuses)
+    def __init_subclass__(cls, **kwds):
+        '''Add non-abstract `cls` to
+        `_events_for_immune_status[immune_status]`
+        for `immune_status` in `cls.immune_statuses`.'''
         if not inspect.isabstract(cls):
             for immune_status in cls.immune_statuses:
-                events_for_immune_status[immune_status].add(cls)
+                _events_for_immune_status[immune_status].add(cls)
         super().__init_subclass__(**kwds)
 
     def is_valid(self):

@@ -3,34 +3,25 @@ import scipy
 from . import event, rv
 
 
-class RV(rv.RV):
-    '''Time to waning of maternal immunity is gamma distributed
-    with rate maternal_immunity_duration_mean and shape
-    maternal_immunity_duration_shape.'''
-    def __init__(self, parameters, seed=None):
-        super().__init__(seed=seed)
-        self.maternal_immunity_duration_mean = (
-            parameters.maternal_immunity_duration_mean)
-        self.maternal_immunity_duration_shape = (
-            parameters.maternal_immunity_duration_shape)
-        scale = (self.maternal_immunity_duration_mean
-                 / self.maternal_immunity_duration_shape)
-        dist = scipy.stats.gamma(self.maternal_immunity_duration_shape,
-                                 scale=scale)
-        super()._copyattrs(dist)
+class RV(rv.ScipyRV):
+    '''Time to waning of maternal immunity.'''
 
-    def __repr__(self):
-        return super().__repr__(('maternal_immunity_duration_mean',
-                                 'maternal_immunity_duration_shape'))
+    name = 'maternal_immunity_waning'
+
+    def rv(self, parameters):
+        shape = parameters.maternal_immunity_duration_shape
+        mean = parameters.maternal_immunity_duration_mean
+        scale = rv.gamma_scale_from_mean(mean, shape)
+        return scipy.stats.gamma(shape, scale=scale)
 
 
-class MaternalImmunityWaning(event.ForImmuneStatus, event.AgeDependent,
-                             immune_status='maternal_immunity'):
+class Event(event.ForImmuneStatusMixin,
+            event.AgeDependentEvent):
     '''A buffalo losing maternal immunity.'''
+
+    waiting_time = RV.name
+
+    immune_status = 'maternal_immunity'
+
     def do(self):
         self.buffalo.change_immune_status_to('susceptible')
-
-    def sample_waiting_time(self, initializing_herd=False):
-        return self.sample_waiting_time_from(
-            self.buffalo.herd.rvs.maternal_immunity_waning,
-            initializing_herd)

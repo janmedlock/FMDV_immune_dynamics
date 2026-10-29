@@ -1,15 +1,13 @@
-from scipy.stats import bernoulli
+import scipy
 
 from . import rv
 
 
-class RV(rv.RV):
-    '''Whether an offspring is female is a Bernoulli RV.'''
-    def __init__(self, parameters, seed=None):
-        super().__init__(seed=seed)
-        self.female_probability = parameters.female_probability
-        distn = bernoulli(self.female_probability)
-        super()._copyattrs(distn)
+class RV(rv.ScipyRV):
+    '''Whether an offspring is female.'''
 
-    def __repr__(self):
-        return super().__repr__(('female_probability', ))
+    name = 'female'
+
+    def rv(self, parameters):
+        p = parameters.female_probability
+        return scipy.stats.bernoulli(p)

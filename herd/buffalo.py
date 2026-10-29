@@ -1,4 +1,4 @@
-from . import event, events, immune_status
+from . import containers, event, female, immune_status
 
 
 class Buffalo:
@@ -8,24 +8,19 @@ class Buffalo:
         self.herd = herd
         self.immune_status = immune_status_
         self.birth_date = self.herd.time - age
-        self.sex = 'female' if self.herd.rvs.female.rvs() else 'male'
+        female_ = getattr(self.herd.rvs, female.RV.name)
+        self.sex = 'female' if female_.rvs() else 'male'
         self.identifier = next(self.herd.identifiers)
-        self.events = events.Buffalo(self)
-        self._add_events_on_init(initializing_herd)
+        self.events = containers.BuffaloEvents(self)
+        # Add an event of each type that can happen to this buffalo
+        for event_ in event.get_events_for(self):
+            self.events.add(event_(self, initializing_herd))
         if self.herd.debug:
             print(f't={self.herd.time:g}:'
                   + ' ' + ('birth' if age == 0 else 'arrival')
                   + f' of #{self.identifier}'
                   + (f' at {age=:g}' if age > 0 else '')
                   + f' with immune_status={immune_status_}')
-
-    def _add_events_on_init(self, initializing_herd):
-        '''Add an event of each type that can happen to this buffalo.'''
-        event_types = event.events_for_all.union(
-            event.events_for_sex[self.sex],
-            event.events_for_immune_status[self.immune_status])
-        for event_type in event_types:
-            self.events.add(event_type(self, initializing_herd))
 
     @property
     def age(self):
@@ -60,9 +55,9 @@ class Buffalo:
 
     def change_immune_status_to(self, immune_status_new):
         immune_status_old = self.immune_status
-        (event_types_old, event_types_new) = (
-            event.events_for_immune_status[immune_status]
-            for immune_status in (immune_status_old, immune_status_new))
+        (event_types_old, event_types_new) = map(
+            event.get_events_for_immune_status,
+            (immune_status_old, immune_status_new))
         self._remove_events_on_immune_status_change(event_types_old,
                                                     event_types_new)
         self.herd.immune_status_remove(self)

@@ -3,17 +3,19 @@
 import numpy
 import pandas
 
-from .. import age_structure
+from .. import age_structure, rv
 from . import immune_status
 
 
-class RV:
+class RV(rv.RV):
     '''This assumes that the hazard of infection is constant in time,
     not periodic as it is with a periodic birth pulse.'''
 
+    name = 'initial_conditions'
+
     def __init__(self, parameters, seed=None, debug=False):
-        self.parameters = parameters
-        self.rng = numpy.random.default_rng(seed)
+        super().__init__(parameters, seed)
+        self.population_size = parameters.population_size
         # Reuse these in case we call pdf() or rvs() repeatedly.
         # TODO: Fix
         if True:
@@ -35,9 +37,9 @@ class RV:
             self.immune_status_pdf = immune_status_conditional_pdf
         else:
             self.immune_status_pdf = (
-                immune_status.probability.Interpolant(self.parameters,
+                immune_status.probability.Interpolant(parameters,
                                                       debug=debug))
-        self.ages = age_structure.RV(self.parameters, seed=self.rng)
+        self.ages = age_structure.RV(parameters, seed=self.rng)
 
     def immune_status_conditional_pdf(self, ages):
         '''The probability of being in each immune state vs. `ages`,
@@ -51,7 +53,7 @@ class RV:
 
     def rvs(self, size=None):
         if size is None:
-            size = self.parameters.population_size
+            size = self.population_size
         # Pick `size` random ages.
         ages = self.ages.rvs(size=size)
         # Determine the immune status for each age.

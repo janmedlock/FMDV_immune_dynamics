@@ -13,13 +13,12 @@ _ANNUAL_SURVIVAL = {
 
 
 class RV(rv.RV):
+    name = 'mortality'
+
     # Convert to pandas.Interval()'s for convenience.
     _annual_survival = pandas.Series(
         {pandas.Interval(*interval, closed='left'): value
          for (interval, value) in _ANNUAL_SURVIVAL.items()}).sort_index()
-
-    def __init__(self, parameters, seed=None):
-        super().__init__(seed=seed)
 
     def hazard(self, age):
         return -numpy.log(numpy.asarray(self._annual_survival[age]))
@@ -75,15 +74,13 @@ class RV(rv.RV):
         return self.ppf(self.rng.random(size=size))
 
 
-class Mortality(event.ForAll, event.AgeDependent):
+class Event(event.ForAllMixin, event.AgeDependentEvent):
     '''A buffalo dying.'''
+
+    waiting_time = RV.name
+
     def do(self):
         self.buffalo.die()
-
-    def sample_waiting_time(self, initializing_herd=False):
-        return self.sample_waiting_time_from(
-            self.buffalo.herd.rvs.mortality,
-            initializing_herd)
 
 
 class _Parameters:

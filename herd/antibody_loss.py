@@ -1,35 +1,36 @@
-import numpy
 import scipy
 
-from . import event, rv
+from . import antibody_loss_to_lost_immunity_true, event, rv
 
 
-class RV(rv.RV):
-    '''Waiting time to loss of antibodies is exponential distributed.'''
-    def __init__(self, parameters, seed=None):
-        super().__init__(seed=seed)
-        self.antibody_loss_hazard = parameters.antibody_loss_hazard
-        assert self.antibody_loss_hazard >= 0
-        if self.antibody_loss_hazard > 0:
-            scale = 1 / self.antibody_loss_hazard
-        else:  # self.antibody_loss_hazard = 0
-            scale = numpy.inf
-        distn = scipy.stats.expon(scale=scale)
-        super()._copyattrs(distn)
+class RV(rv.ScipyRV):
+    '''Waiting time to loss of antibodies.'''
 
-    def __repr__(self):
-        return super().__repr__(('antibody_loss_hazard', ))
+    name = 'antibody_loss'
+
+    def rv(self, parameters):
+        rate = parameters.antibody_loss_hazard
+        scale = rv.expon_scale_from_rate(rate)
+        return scipy.stats.expon(scale=scale)
 
 
-class AntibodyLoss(event.ForImmuneStatuses, event.Memoryless,
-                   immune_statuses={'recovered_true', 'recovered_false'}):
+class Event(event.ForImmuneStatusesMixin,
+            event.MemorylessEvent):
     '''A buffalo losing apparent antibodies.'''
+
+    waiting_time = RV.name
+
+    immune_statuses = frozenset({'recovered_true',
+                                 'recovered_false'})
+
+    def __init__(self, buffalo, initializing_herd=False):
+        self.antibody_loss_to_lost_immunity_true = getattr(
+            buffalo.herd.rvs,
+            antibody_loss_to_lost_immunity_true.RV.name)
+        super().__init__(buffalo, initializing_herd=initializing_herd)
+
     def do(self):
-        if self.buffalo.herd.rvs.antibody_loss_to_lost_immunity_true.rvs():
+        if self.antibody_loss_to_lost_immunity_true.rvs():
             self.buffalo.change_immune_status_to('lost_immunity_true')
         else:
             self.buffalo.change_immune_status_to('lost_immunity_false')
-
-    def sample_waiting_time(self, initializing_herd=False):
-        return self.sample_waiting_time_from(
-            self.buffalo.herd.rvs.antibody_loss)

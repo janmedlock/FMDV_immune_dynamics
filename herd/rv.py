@@ -1,34 +1,74 @@
-import functools
+import abc
+import inspect
 
 import numpy
 
+from .parameters import Parameters
 
-def _set_random_state(rvs, random_state):
-    @functools.wraps(rvs)
-    def wrapped(*args, **kwds):
-        return rvs(*args, random_state=random_state, **kwds)
-    return wrapped
+# Non-abstract subclasses of `RV()` are added to this list when they
+# are defined
+_rvs = []
 
 
-class RV:
+def expon_scale_from_rate(rate):
+    '''Get the exponential scale from `rate`.'''
+    assert rate >= 0
+    return 1 / rate if rate > 0 else numpy.inf
+
+
+def gamma_scale_from_mean(mean, shape):
+    '''Get the gamma scale from `mean` and `shape`.'''
+    return mean / shape
+
+
+class RV(metaclass=abc.ABCMeta):
     '''A generic random variable.'''
-    def __init__(self, seed=None):
+    @property
+    @abc.abstractmethod
+    def name(self):
+        '''Name of the random variable for `.RandomVariables()`'''
+
+    @classmethod
+    def __init_subclass__(cls, **kwds):
+        '''Add non-abstract `cls` to `_rvs`.'''
+        super().__init_subclass__(**kwds)
+        if not inspect.isabstract(cls):
+            _rvs.append(cls)
+
+    def __init__(self, parameters, seed=None):
         self.rng = numpy.random.default_rng(seed)
 
-    def _copyattrs(self, obj):
-        for name in dir(obj):
-            if not name.startswith('__') and not hasattr(self, name):
-                val = getattr(obj, name)
-                if name == 'rvs':
-                    val = _set_random_state(val, self.rng)
-                setattr(self, name, val)
+
+class ScipyRV(RV, metaclass=abc.ABCMeta):
+    '''A random variable based on a random variable from `scipy.stats`.'''
+    @abc.abstractmethod
+    def rv(self, parameters):
+        '''Return the `scipy.stats` random variable.'''
+
+    def __init__(self, parameters, seed=None):
+        super().__init__(parameters, seed=seed)
+        self._rv = self.rv(parameters)
+
+    def rvs(self, *args, **kwds):
+        return self._rv.rvs(*args, random_state=self.rng, **kwds)
+
+    def __getattr__(self, name):
+        '''Try to get the attribute from the `scipy.stats` random variable.'''
+        try:
+            return getattr(self._rv, name)
+        except AttributeError:
+            raise AttributeError from None
 
     def hazard(self, age):
         return numpy.exp(self.logpdf(age) - self.logsf(age))
 
-    def __repr__(self, params=()):
-        clsname = f'{self.__module__}.{self.__class__.__name__}'
-        if len(params) == 0:
-            return f'<{clsname}>'
-        paramstr = ', '.join(f'{p} = {getattr(self, p)}' for p in params)
-        return f'<{clsname}: {paramstr}>'
+
+class RandomVariables:
+    '''The random variables for the simulation.'''
+
+    def __init__(self, parameters=None, seed=None):
+        rng = numpy.random.default_rng(seed)
+        if parameters is None:
+            parameters = Parameters(seed=rng)
+        for rv in _rvs:
+            setattr(self, rv.name, rv(parameters, seed=rng))

@@ -1,24 +1,25 @@
 import numpy
-from scipy.stats import rv_discrete
+import scipy
 
-from . import rv
-from .floquet import find_stable_age_structure
+from . import floquet, rv
 
 
 class RV(rv.RV):
-    def __init__(self, parameters, *args, seed=None, **kwargs):
-        super().__init__(seed=seed)
-        self._density, self._ages = find_stable_age_structure(parameters,
-                                                              *args, **kwargs)
+    name = 'age_structure'
+
+    def __init__(self, parameters, seed=None, **kwds):
+        super().__init__(parameters, seed=seed)
+        (self._density, self._ages) = floquet.find_stable_age_structure(
+            parameters, **kwds)
         self._proportion = self._density / self._density.sum()
-        self._age_rv = rv_discrete(values=(self._ages, self._proportion))
+        self._age_rv = scipy.stats.rv_discrete(
+            values=(self._ages, self._proportion))
 
     def rvs(self, size=None):
         return self._age_rv.rvs(size=size, random_state=self.rng)
 
     def pdf(self, x):
-        return numpy.interp(x, self._ages, self._density,
-                            left=0, right=0)
+        return numpy.interp(x, self._ages, self._density, left=0, right=0)
 
     def logpdf(self, x):
         return numpy.log(self.pdf(x))

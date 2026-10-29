@@ -3,22 +3,23 @@ import itertools
 import numpy
 import pandas
 
-from . import buffalo, events, immune_status, parameters, random_variables
+from . import buffalo, containers, immune_status, initial_conditions, rv
+from .parameters import Parameters
 
 
 class Herd(set):
     '''A herd of buffaloes, the things that can happen to them, and code to
     simulate.'''
-    def __init__(self, params=None, debug=False, seed=None,
+    def __init__(self, parameters=None, debug=False, seed=None,
                  _max_samples=100):
         rng = numpy.random.default_rng(seed)
-        if params is None:
-            params = parameters.Parameters(seed=rng)
-        self.params = params
+        if parameters is None:
+            parameters = Parameters(seed=rng)
+        self.parameters = parameters
         self.debug = debug
-        self.rvs = random_variables.RandomVariables(self.params, seed=rng)
+        self.rvs = rv.RandomVariables(self.parameters, seed=rng)
         self.time = 0
-        self.events = events.Herd()
+        self.events = containers.HerdEvents(seed=rng)
         self.by_immune_status = {s: set()
                                  for s in immune_status.immune_statuses}
         self.identifiers = itertools.count(0)
@@ -26,8 +27,10 @@ class Herd(set):
         # susceptible `buffalo.Buffalo()`.
         self.number_infectious = self.number_carrier = 0
         # Sample until there are some infected hosts.
+        initial_conditions_rv = getattr(self.rvs,
+                                        initial_conditions.RV.name)
         for _ in range(_max_samples):
-            age_immune_status = self.rvs.initial_conditions.rvs()
+            age_immune_status = initial_conditions_rv.rvs()
             is_infected = age_immune_status.isin(
                 {'exposed', 'infectious', 'carrier'}
             )
@@ -89,15 +92,15 @@ class Herd(set):
 
     def step(self, tmax=numpy.inf):
         self.update_infection_times()
-        event = next(self.events, None)
-        if (event is not None) and (event.time <= tmax):
+        event_next = self.events.next()
+        if (event_next is not None) and (event_next.time <= tmax):
             if self.debug:
-                print(event)
+                print(event_next)
             # Make sure the simulation is moving *forward* in time.
-            assert ((event.time >= self.time)
-                    | numpy.isclose(event.time, self.time))
-            self.time = event.time
-            event()
+            assert ((event_next.time >= self.time)
+                    | numpy.isclose(event_next.time, self.time))
+            self.time = event_next.time
+            event_next()
         else:  # There are no events or `event.time > tmax`
             self.time = tmax
 

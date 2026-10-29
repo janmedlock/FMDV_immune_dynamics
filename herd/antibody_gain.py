@@ -1,36 +1,36 @@
-import numpy
 import scipy
 
-from . import event, rv
+from . import antibody_gain_to_recovered_true, event, rv
 
 
-class RV(rv.RV):
-    '''Waiting time to gain of antibodies is exponential distributed.'''
-    def __init__(self, parameters, seed=None):
-        super().__init__(seed=seed)
-        self.antibody_gain_hazard = parameters.antibody_gain_hazard
-        assert self.antibody_gain_hazard >= 0
-        if self.antibody_gain_hazard > 0:
-            scale = 1 / self.antibody_gain_hazard
-        else:  # self.antibody_gain_hazard = 0
-            scale = numpy.inf
-        distn = scipy.stats.expon(scale=scale)
-        super()._copyattrs(distn)
+class RV(rv.ScipyRV):
+    '''Waiting time to gain of antibodies.'''
 
-    def __repr__(self):
-        return super().__repr__(('antibody_gain_hazard', ))
+    name = 'antibody_gain'
+
+    def rv(self, parameters):
+        rate = parameters.antibody_gain_hazard
+        scale = rv.expon_scale_from_rate(rate)
+        return scipy.stats.expon(scale=scale)
 
 
-class AntibodyGain(event.ForImmuneStatuses, event.Memoryless,
-                   immune_statuses={'lost_immunity_true',
-                                    'lost_immunity_false'}):
+class Event(event.ForImmuneStatusesMixin,
+            event.MemorylessEvent):
     '''A buffalo gaining apparent antibodies.'''
+
+    waiting_time = RV.name
+
+    immune_statuses = frozenset({'lost_immunity_true',
+                                 'lost_immunity_false'})
+
+    def __init__(self, buffalo, initializing_herd=False):
+        self.antibody_gain_to_recovered_true = getattr(
+            buffalo.herd.rvs,
+            antibody_gain_to_recovered_true.RV.name)
+        super().__init__(buffalo, initializing_herd=initializing_herd)
+
     def do(self):
-        if self.buffalo.herd.rvs.antibody_gain_to_recovered_true.rvs():
+        if self.antibody_gain_to_recovered_true.rvs():
             self.buffalo.change_immune_status_to('recovered_true')
         else:
             self.buffalo.change_immune_status_to('recovered_false')
-
-    def sample_waiting_time(self, initializing_herd=False):
-        return self.sample_waiting_time_from(
-            self.buffalo.herd.rvs.antibody_gain)
