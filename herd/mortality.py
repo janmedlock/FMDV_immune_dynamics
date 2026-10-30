@@ -12,7 +12,7 @@ _ANNUAL_SURVIVAL = {
 }
 
 
-class RV(rv.RV):
+class RV(rv.MemorylessWaitingTimeMixin, rv.RV):
     name = 'mortality'
 
     # Use `pandas.IntervalIndex()` for convenience
@@ -74,7 +74,7 @@ class RV(rv.RV):
         return self.ppf(self.rng.random(size=size))
 
 
-class Mortality(event.ForAllMixin, event.AgeDependentEvent):
+class Mortality(event.ForAllMixin, event.Event):
     '''A buffalo dying.'''
 
     waiting_time = RV.name

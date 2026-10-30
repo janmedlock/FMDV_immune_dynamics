@@ -4,7 +4,7 @@ from . import containers, event, female, immune_status
 class Buffalo:
     '''A single buffalo and the events that can occur to it.'''
 
-    def __init__(self, herd, immune_status_, age=0, initializing_herd=False):
+    def __init__(self, herd, immune_status_, age=0, at_equilibrium=False):
         self.herd = herd
         self.immune_status = immune_status_
         self.birth_date = self.herd.time - age
@@ -14,10 +14,10 @@ class Buffalo:
         self.events = containers.BuffaloEvents(self)
         # Add an event of each type that can happen to this buffalo
         for event_ in event.get_events_for(self):
-            self.events.add(event_(self, initializing_herd))
+            self.events.add(event_(self, at_equilibrium=at_equilibrium))
         if self.herd.debug:
-            print(f't={self.herd.time:g}:'
-                  + ' ' + ('birth' if age == 0 else 'arrival')
+            print(f't={self.herd.time:g}: '
+                  + ('birth' if age == 0 else 'arrival')
                   + f' of #{self.identifier}'
                   + (f' at {age=:g}' if age > 0 else '')
                   + f' with immune_status={immune_status_}')

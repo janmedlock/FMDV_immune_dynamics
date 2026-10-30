@@ -22,6 +22,28 @@ def gamma_scale_from_mean(mean, shape):
     return mean / shape
 
 
+def sample_until(rvs, target, *args, max_samples=10_000, **kwds):
+    '''Sample until `target()` is `True`.'''
+    for _ in range(max_samples):
+        val = rvs(*args, **kwds)
+        if target(val):
+            return val
+    raise ValueError(f'Sampling failed after {max_samples=}!')
+
+
+def _sample_nonnegative(rvs):
+    '''Decorator to sample until nonnegative.'''
+
+    def is_nonnegative(val):
+        return val >= 0
+
+    @functools.wraps(rvs)
+    def sample_nonnegative(*args, **kwds):
+        return sample_until(rvs, is_nonnegative, *args, **kwds)
+
+    return sample_nonnegative
+
+
 class RV(metaclass=abc.ABCMeta):
     '''A generic random variable.'''
     @property
@@ -64,9 +86,50 @@ class ScipyRV(RV, metaclass=abc.ABCMeta):
         return numpy.exp(self.logpdf(age) - self.logsf(age))
 
 
-class TimeSinceEntryMixin:
-    '''A mixin for waiting times to build `.time_since_entry`,
-    used by `.event.TimeSinceEntryDependentEvent()`.'''
+class WaitingTimeMixin(metaclass=abc.ABCMeta):
+    '''A mixin for waiting times.'''
+
+    @abc.abstractmethod
+    def _time_remaining_rvs(self, *args, **kwds):
+        '''Get a sample time remaining, used by
+        `.time_remaining()`. Subclasses must define this method.'''
+
+    # An object with a `.rvs()` method for `.time_remaining()`
+    _TimeRemaining = collections.namedtuple('WaitingTimeRemaining',
+                                            ('rvs',))
+
+    @functools.cached_property  # Build on first use
+    def time_remaining(self):
+        '''A random sampler for waiting time remaining given the event
+        has not yet occurred.'''
+        return self._TimeRemaining(rvs=self._time_remaining_rvs)
+
+
+class MemorylessWaitingTimeMixin(WaitingTimeMixin):
+    '''A mixin for memoryless waiting times to set the
+    `.time_remaining` sampler.'''
+
+    def _time_remaining_rvs(self, *args, **kwds):
+        '''A memoryless random variable is its own `.time_remaining`.'''
+        return self.rvs(*args, **kwds)
+
+
+class AgeDependentWaitingTimeMixin(WaitingTimeMixin):
+    '''A mixin for age-dependent waiting times to build the
+    `.time_remaining` sampler.'''
+
+    @_sample_nonnegative
+    def _time_remaining_rvs(self, *args, **kwds):
+        '''Get a sample time remaining.'''
+        # The result might here be negative,
+        # but the `sample_nonnegative()` decorator
+        # resamples to get a nonnegative result
+        return self.rvs(*args, **kwds) - self.buffalo.age
+
+
+class TimeSinceEntryDependentWaitingTimeMixin(WaitingTimeMixin):
+    '''A mixin for waiting times to build the `.time_remaining`
+    sampler.'''
 
     # An object with a `.logpdf` attribute for
     # `scipy.stats.sampling.NumericalInversePolynomial()`
@@ -76,7 +139,7 @@ class TimeSinceEntryMixin:
 
     @functools.cached_property  # Build on first use
     def time_since_entry(self):
-        r'''Build a random variable for time since entry from a
+        r'''Build a random sampler for time since entry from a
         waiting time. At equilibrium, the PDF of times since entry
         given the event has not yet occurred is S(t) / mu, where S(t)
         is the survival of the waiting time and mu is the mean waiting
@@ -86,6 +149,15 @@ class TimeSinceEntryMixin:
         return scipy.stats.sampling.NumericalInversePolynomial(
             self._TimeSinceEntryDist(logpdf=time_since_entry_logpdf),
             domain=self.support(), random_state=self.rng)
+
+    @_sample_nonnegative
+    def _time_remaining_rvs(self, *args, **kwds):
+        '''Get a sample time remaining.'''
+        # The result might here be negative,
+        # but the `sample_nonnegative()` decorator
+        # resamples to get a nonnegative result
+        return (self.rvs(*args, **kwds)
+                - self.time_since_entry.rvs(*args, **kwds))
 
 
 class RandomVariables:

@@ -3,7 +3,7 @@ import scipy
 from . import event, rv
 
 
-class RV(rv.ScipyRV):
+class RV(rv.TimeSinceEntryDependentWaitingTimeMixin, rv.ScipyRV):
     '''Time to waning of maternal immunity.'''
 
     name = 'maternal_immunity_waning'
@@ -15,8 +15,7 @@ class RV(rv.ScipyRV):
         return scipy.stats.gamma(shape, scale=scale)
 
 
-class MaternalImmunityWaning(event.ForImmuneStatusMixin,
-                             event.AgeDependentEvent):
+class MaternalImmunityWaning(event.ForImmuneStatusMixin, event.Event):
     '''A buffalo losing maternal immunity.'''
 
     waiting_time = RV.name

@@ -10,8 +10,7 @@ from .parameters import Parameters
 class Herd(set):
     '''A herd of buffaloes, the things that can happen to them, and code to
     simulate.'''
-    def __init__(self, parameters=None, debug=False, seed=None,
-                 _max_samples=100):
+    def __init__(self, parameters=None, debug=False, seed=None):
         rng = numpy.random.default_rng(seed)
         if parameters is None:
             parameters = Parameters(seed=rng)
@@ -26,23 +25,22 @@ class Herd(set):
         # These need to be defined before initializing
         # susceptible `buffalo.Buffalo()`.
         self.number_infectious = self.number_carrier = 0
-        # Sample until there are some infected hosts.
-        initial_conditions_rv = getattr(self.rvs,
-                                        initial_conditions.RV.name)
-        for _ in range(_max_samples):
-            age_immune_status = initial_conditions_rv.rvs()
-            is_infected = age_immune_status.isin(
-                {'exposed', 'infectious', 'carrier'}
-            )
-            if is_infected.any() > 0:
-                break
-            else:
-                print('No infected hosts! Resampling!')
-        else:
-            raise RuntimeError(f'No infected hosts after {_max_samples=}!')
+        age_immune_status = self._sample_initial_conditions()
         for (age, immune_status_) in age_immune_status.items():
             self.add(buffalo.Buffalo(self, immune_status_, age,
-                                     initializing_herd=True))
+                                     at_equilibrium=True))
+
+    def _sample_initial_conditions(self, max_samples=100):
+        '''Get a sample initial condition with some infected hosts.'''
+        initial_conditions_ = getattr(self.rvs,
+                                      initial_conditions.RV.name)
+
+        def has_infected(ser):
+            return ser.isin(immune_status.infected).any()
+
+        return rv.sample_until(initial_conditions_.rvs,
+                               has_infected,
+                               max_samples=max_samples)
 
     def immune_status_add(self, b):
         self.by_immune_status[b.immune_status].add(b)

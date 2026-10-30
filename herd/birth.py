@@ -28,7 +28,7 @@ def get_gap_size_from_seasonal_coefficient_of_variation(c_v):
         return 12 * (1 - 4 / 3 / (1 + c_v ** 2))
 
 
-class RV(rv.RV):
+class RV(rv.MemorylessWaitingTimeMixin, rv.RV):
     name = 'birth'
 
     def __init__(self, parameters, seed=None, _scaling=None, **kwds):
@@ -172,24 +172,24 @@ class RV(rv.RV):
         return self.ppf(self.rng.random(size=size), time0, age0)
 
 
-class Birth(event.ForSexMixin,
-            event.MemorylessEvent):
+class Birth(event.ForSexMixin, event.Event):
     '''A buffalo giving birth.'''
 
     waiting_time = RV.name
 
     sex = 'female'
 
+    @property
+    def waiting_time_rvs_args(self):
+        '''Arguments to pass to `.waiting_time.rvs()`.'''
+        return (self.buffalo.herd.time,
+                self.buffalo.age)
+
     def do(self):
         self.buffalo.give_birth()
         # Add next birth.
         self.time = self.sample_time()
         self.buffalo.events.add(self)
-
-    def sample_waiting_time(self, initializing_herd=False):
-        '''Generate a random sample waiting time for the event.'''
-        return self.waiting_time.rvs(self.buffalo.herd.time,
-                                     self.buffalo.age)
 
 
 class _ParametersNoSeasonality:

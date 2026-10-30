@@ -3,7 +3,7 @@ import scipy
 from . import antibody_loss_to_lost_immunity_true, event, rv
 
 
-class RV(rv.ScipyRV):
+class RV(rv.MemorylessWaitingTimeMixin, rv.ScipyRV):
     '''Waiting time to loss of antibodies.'''
 
     name = 'antibody_loss'
@@ -14,8 +14,7 @@ class RV(rv.ScipyRV):
         return scipy.stats.expon(scale=scale)
 
 
-class AntibodyLoss(event.ForImmuneStatusesMixin,
-                   event.MemorylessEvent):
+class AntibodyLoss(event.ForImmuneStatusesMixin, event.Event):
     '''A buffalo losing apparent antibodies.'''
 
     waiting_time = RV.name
@@ -23,11 +22,11 @@ class AntibodyLoss(event.ForImmuneStatusesMixin,
     immune_statuses = frozenset({'recovered_true',
                                  'recovered_false'})
 
-    def __init__(self, buffalo, initializing_herd=False):
+    def __init__(self, buffalo, at_equilibrium=False):
         self.antibody_loss_to_lost_immunity_true = getattr(
             buffalo.herd.rvs,
             antibody_loss_to_lost_immunity_true.RV.name)
-        super().__init__(buffalo, initializing_herd=initializing_herd)
+        super().__init__(buffalo, at_equilibrium=at_equilibrium)
 
     def do(self):
         if self.antibody_loss_to_lost_immunity_true.rvs():

@@ -3,8 +3,7 @@ import scipy
 from . import event, recovery_to_carrier, rv
 
 
-class RV(rv.TimeSinceEntryMixin,
-         rv.ScipyRV):
+class RV(rv.TimeSinceEntryDependentWaitingTimeMixin, rv.ScipyRV):
     '''The waiting time to recovery.'''
 
     name = 'recovery'
@@ -16,18 +15,17 @@ class RV(rv.TimeSinceEntryMixin,
         return scipy.stats.gamma(shape, scale=scale)
 
 
-class Recovery(event.ForImmuneStatusMixin,
-               event.TimeSinceEntryDependentEvent):
+class Recovery(event.ForImmuneStatusMixin, event.Event):
     '''A buffalo recovering from acute infection.'''
 
     waiting_time = RV.name
 
     immune_status = 'infectious'
 
-    def __init__(self, buffalo, initializing_herd=False):
+    def __init__(self, buffalo, at_equilibrium=False):
         self.recovery_to_carrier = getattr(buffalo.herd.rvs,
                                            recovery_to_carrier.RV.name)
-        super().__init__(buffalo, initializing_herd=initializing_herd)
+        super().__init__(buffalo, at_equilibrium=at_equilibrium)
 
     def do(self):
         if self.recovery_to_carrier.rvs():

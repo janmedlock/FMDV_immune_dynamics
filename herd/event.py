@@ -4,6 +4,7 @@ import abc
 import functools
 import inspect
 import itertools
+import types
 
 from .immune_status import immune_statuses
 from .sex import sexes
@@ -56,16 +57,15 @@ class Event(metaclass=abc.ABCMeta):
         '''Execute the event. Subclasses must define this method.'''
 
     @abc.abstractmethod
-    def sample_waiting_time(self, initializing_herd=False):
-        '''Generate a random sample waiting time for the event.  This
-        is defined by the subclasses `Memoryless()`, `AgeDependent()`,
-        and `TimeSinceEntryDependent()`.'''
-
-    @abc.abstractmethod
     def is_valid(self):
         '''Check whether the buffalo is valid to have the event. This
         is defined by `ForAllMixin()`, `ForSexMixin()`,
         `ForImmuneStatusMixin()`, and `ForImmuneStatusesMixin()`.'''
+
+    # Arguments to pass to `.waiting_time.rvs()`.
+    # Subclasses may ovewrite these, including with descriptors.
+    waiting_time_rvs_args = ()
+    waiting_time_rvs_kwds = types.MappingProxyType({})
 
     @classmethod
     def __init_subclass__(cls, **kwds):
@@ -76,7 +76,7 @@ class Event(metaclass=abc.ABCMeta):
             assert cls in _union_of_events_for(), \
                 f'`{cls}` not in any `_events_for_*`'
 
-    def __init__(self, buffalo, initializing_herd=False):
+    def __init__(self, buffalo, at_equilibrium=False):
         self.buffalo = buffalo
         # Set the instance attribute `.waiting_time`
         # to the waiting-time random variable
@@ -85,68 +85,30 @@ class Event(metaclass=abc.ABCMeta):
         self.waiting_time = getattr(self.buffalo.herd.rvs,
                                     self.waiting_time)
         assert self.is_valid()
-        self.time = self.sample_time(initializing_herd=initializing_herd)
+        self.time = self.sample_time(use_time_remaining=at_equilibrium)
 
     def __call__(self):
         assert self.is_valid()
         self.buffalo.events.remove(self)
         self.do()
 
-    def sample_time(self, initializing_herd=False):
+    def sample_waiting_time(self, use_time_remaining=False):
+        '''Generate a random sample waiting time for the event.'''
+        args = self.waiting_time_rvs_args
+        kwds = self.waiting_time_rvs_kwds
+        if use_time_remaining:
+            return self.waiting_time.time_remaining.rvs(*args, **kwds)
+        return self.waiting_time.rvs(*args, **kwds)
+
+    def sample_time(self, use_time_remaining=False):
         '''Generate a random sample time for the event.'''
-        return (
-            self.buffalo.herd.time
-            + self.sample_waiting_time(initializing_herd=initializing_herd))
+        return (self.buffalo.herd.time
+                + self.sample_waiting_time(
+                    use_time_remaining=use_time_remaining))
 
     def __repr__(self):
         return (f't={self.time:g}: '
                 + f'{type(self).__name__} of #{self.buffalo.identifier}')
-
-
-class MemorylessEvent(Event):
-    '''An `Event()` with memoryless waiting times.'''
-
-    def sample_waiting_time(self, initializing_herd=False):
-        '''Generate a random sample waiting time for the event.'''
-        return self.waiting_time.rvs()
-
-
-class AgeDependentEvent(Event):
-    '''An `Event()` with waiting times dependent on only age.'''
-    def sample_waiting_time_remaining(self, max_samples=10_000):
-        '''Get a sample waiting time remaining given the buffalo has
-        survived to its current age.'''
-        for _ in range(max_samples):
-            time_remaining = self.waiting_time.rvs() - self.buffalo.age
-            if time_remaining >= 0:
-                return time_remaining
-        raise ValueError(f'Resampling failed after {max_samples=}!')
-
-    def sample_waiting_time(self, initializing_herd=False):
-        '''Generate a random sample waiting time for the event.'''
-        if initializing_herd:
-            return self.sample_waiting_time_remaining()
-        return self.waiting_time.rvs()
-
-
-class TimeSinceEntryDependentEvent(Event):
-    '''An `Event()` with waiting times dependent on only time since entry.'''
-
-    def sample_waiting_time_remaining(self, max_samples=10_000):
-        '''Get a sample waiting time minus time since entry
-        given that the event has not yet occurred.'''
-        for _ in range(max_samples):
-            time_remaining = (self.waiting_time.rvs()
-                              - self.waiting_time.time_since_entry.rvs())
-            if time_remaining >= 0:
-                return time_remaining
-        raise ValueError(f'Resampling failed after {max_samples=}!')
-
-    def sample_waiting_time(self, initializing_herd=False):
-        '''Generate a random sample waiting time for the event.'''
-        if initializing_herd:
-            return self.sample_waiting_time_remaining()
-        return self.waiting_time.rvs()
 
 
 class ForAllMixin:

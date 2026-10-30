@@ -3,8 +3,7 @@ import scipy
 from . import event, rv
 
 
-class RV(rv.TimeSinceEntryMixin,
-         rv.ScipyRV):
+class RV(rv.TimeSinceEntryDependentWaitingTimeMixin, rv.ScipyRV):
     '''Waiting time for progression.'''
 
     name = 'progression'
@@ -16,8 +15,7 @@ class RV(rv.TimeSinceEntryMixin,
         return scipy.stats.gamma(shape, scale=scale)
 
 
-class Progression(event.ForImmuneStatusMixin,
-                  event.TimeSinceEntryDependentEvent):
+class Progression(event.ForImmuneStatusMixin, event.Event):
     '''A buffalo becoming infectious.'''
 
     waiting_time = RV.name

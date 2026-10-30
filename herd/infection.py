@@ -1,7 +1,7 @@
 from . import event, rv
 
 
-class RV(rv.RV):
+class RV(rv.MemorylessWaitingTimeMixin, rv.RV):
     '''Time to infection is exponential distributed.'''
 
     name = 'infection'
@@ -23,45 +23,44 @@ class RV(rv.RV):
         return self.rng.exponential(scale)
 
 
-class Infection(event.MemorylessEvent):
+class Infection(event.Event):
     '''Base class for a buffalo becoming infected.'''
 
     waiting_time = RV.name
 
-    def __init__(self, buffalo, susceptibility=1, initializing_herd=False):
+    @property
+    def waiting_time_rvs_args(self):
+        '''Arguments to pass to `.waiting_time.rvs()`.'''
+        return (self.buffalo.herd.number_infectious,
+                self.buffalo.herd.number_carrier,
+                self.susceptibility)
+
+    def __init__(self, buffalo, susceptibility=1, at_equilibrium=False):
         self.susceptibility = susceptibility
-        super().__init__(buffalo, initializing_herd=initializing_herd)
+        super().__init__(buffalo, at_equilibrium=at_equilibrium)
 
     def do(self):
         self.buffalo.change_immune_status_to('exposed')
 
-    def sample_waiting_time(self, initializing_herd=False):
-        '''Generate a random sample waiting time for the event.'''
-        return self.waiting_time.rvs(self.buffalo.herd.number_infectious,
-                                     self.buffalo.herd.number_carrier,
-                                     self.susceptibility)
 
-
-class PrimaryInfection(event.ForImmuneStatusMixin,
-                       Infection):
+class PrimaryInfection(event.ForImmuneStatusMixin, Infection):
     '''A buffalo becoming infected from 'susceptible'.'''
 
     immune_status = 'susceptible'
 
-    def __init__(self, buffalo, initializing_herd=False):
+    def __init__(self, buffalo, at_equilibrium=False):
         super().__init__(buffalo, susceptibility=1,
-                         initializing_herd=initializing_herd)
+                         at_equilibrium=at_equilibrium)
 
 
-class SecondaryInfection(event.ForImmuneStatusesMixin,
-                         Infection):
+class SecondaryInfection(event.ForImmuneStatusesMixin, Infection):
     '''A buffalo becoming infected from 'lost_immunity_true'
     or 'recovered_false'.'''
 
     immune_statuses = frozenset({'lost_immunity_true',
                                  'recovered_false'})
 
-    def __init__(self, buffalo, initializing_herd=False):
+    def __init__(self, buffalo, at_equilibrium=False):
         super().__init__(buffalo,
                          buffalo.herd.parameters.lost_immunity_susceptibility,
-                         initializing_herd=initializing_herd)
+                         at_equilibrium=at_equilibrium)
