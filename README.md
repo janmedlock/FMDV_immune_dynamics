@@ -39,8 +39,8 @@ third-party libraries.  Most notably:
 [matplotlib](https://matplotlib.org/),
 & [Seaborn](https://seaborn.pydata.org/).
 
-[PDM](https://pdm-project.org/) can use the included
-[pyproject.toml](pyproject.toml) and [pdm.lock](pdm.lock) to generate
+[uv](https://docs.astral.sh/uv/) can use the included
+[pyproject.toml](pyproject.toml) and [uv.lock](uv.lock) to generate
 a virtual environment with the Python and library versions that we
 used to write and run the code.
 
@@ -269,7 +269,7 @@ the test scripts to import from [herd](herd).
 * [pyproject.toml](pyproject.toml) describes the project, including
   the versions of libraries used directly.
 
-	* [pdm.lock](pdm.lock) describes the versions of all libraries
+	* [uv.lock](uv.lock) describes the versions of all libraries
       used, including those used indirectly.
 
 * [LICENSE](LICENSE).
