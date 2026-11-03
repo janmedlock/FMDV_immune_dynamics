@@ -1,9 +1,9 @@
 import scipy
 
-from . import rv
+from . import _rv
 
 
-class RV(rv.ScipyRV):
+class RV(_rv.ScipyRV):
     '''Whether gaining apparent antibody leads to having true antibodies.'''
 
     name = 'antibody_gain_to_recovered_true'

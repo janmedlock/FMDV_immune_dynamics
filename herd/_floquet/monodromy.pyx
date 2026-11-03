@@ -25,7 +25,7 @@ cimport numpy
 import numpy
 from scipy import sparse
 
-from .. import birth, mortality, periods, utility
+from .. import _period, _utility, birth, mortality
 
 
 # Functions from BLAS.
@@ -146,11 +146,11 @@ cdef class Solver:
             double t_start, t_end
             object mortality_rv
         self.params = params
-        self.ages = utility.arange(0, age_max, step, endpoint=True)
+        self.ages = _utility.arange(0, age_max, step, endpoint=True)
         # The memoryview will be convenient...
         self._ages = self.ages
-        period = periods.get_period()
-        self._t = utility.arange(0, period, step, endpoint=True)
+        period = _period.get_period()
+        self._t = _utility.arange(0, period, step, endpoint=True)
         mortality_rv = mortality.RV(self.params)
         self._init_crank_nicolson(step, mortality_rv)
         self._init_births(step)

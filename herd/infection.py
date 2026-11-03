@@ -1,7 +1,7 @@
-from . import event, rv
+from . import _event, _rv
 
 
-class RV(rv.MemorylessWaitingTimeMixin, rv.RV):
+class RV(_rv.MemorylessWaitingTimeMixin, _rv.RV):
     '''Time to infection is exponential distributed.'''
 
     name = 'infection'
@@ -19,11 +19,11 @@ class RV(rv.MemorylessWaitingTimeMixin, rv.RV):
         force_of_infection = (susceptibility
                 * (self.transmission_rate * number_infectious
                    + self.carrier_transmission_rate * number_carrier))
-        scale = rv.expon_scale_from_rate(force_of_infection)
+        scale = _rv.expon_scale_from_rate(force_of_infection)
         return self.rng.exponential(scale)
 
 
-class Infection(event.Event):
+class Infection(_event.Event):
     '''Base class for a buffalo becoming infected.'''
 
     waiting_time = RV.name
@@ -43,7 +43,7 @@ class Infection(event.Event):
         self.buffalo.change_immune_status_to('exposed')
 
 
-class PrimaryInfection(event.ForImmuneStatusMixin, Infection):
+class PrimaryInfection(_event.ForImmuneStatusMixin, Infection):
     '''A buffalo becoming infected from 'susceptible'.'''
 
     immune_status = 'susceptible'
@@ -53,7 +53,7 @@ class PrimaryInfection(event.ForImmuneStatusMixin, Infection):
                          at_equilibrium=at_equilibrium)
 
 
-class SecondaryInfection(event.ForImmuneStatusesMixin, Infection):
+class SecondaryInfection(_event.ForImmuneStatusesMixin, Infection):
     '''A buffalo becoming infected from 'lost_immunity_true'
     or 'recovered_false'.'''
 

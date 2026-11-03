@@ -35,7 +35,7 @@ def get_result_and_rng(parameters, run_number=None, tmax=common.TIME_MAX,
 
 
 def get_results_and_rngs(nruns, seed=common.SEED, **kwds):
-    # Build `herd_.RandomVariables()` once to initialize the cache
+    # Build `herd.RandomVariables()` once to initialize the cache
     rng = numpy.random.default_rng(seed)
     parameters = herd.Parameters(seed=rng, **kwds)
     herd.RandomVariables(parameters)

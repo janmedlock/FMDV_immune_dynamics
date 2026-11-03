@@ -11,8 +11,7 @@ import seaborn
 
 import common
 import herd
-import herd.initial_conditions
-import herd.utility
+import herd._initial_conditions
 import plotting
 
 rc = (
@@ -105,7 +104,7 @@ plot_fcns = (
 
 def plot_SAT(axes, SAT, ages):
     parameters = herd.Parameters(SAT=SAT)
-    ICs = herd.initial_conditions.RV(parameters)
+    ICs = herd._initial_conditions.RV(parameters)
     for (ax, plot_fcn) in zip(axes, plot_fcns):
         plot_fcn(ICs, ages, ax)
     for ax in axes:
@@ -136,7 +135,7 @@ def plot_SAT(axes, SAT, ages):
 
 
 def plot_SATs(save=True, show=False):
-    ages = herd.utility.arange(0, 20, 0.025, endpoint=True)
+    ages = common.arange(0, 20, 0.025, endpoint=True)
     with seaborn.axes_style('whitegrid'), matplotlib.rc_context(rc=rc):
         fig = matplotlib.pyplot.figure()
         nrows = len(plot_fcns)

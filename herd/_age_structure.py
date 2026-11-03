@@ -1,15 +1,15 @@
 import numpy
 import scipy
 
-from . import floquet, rv
+from . import _floquet, _rv
 
 
-class RV(rv.RV):
+class RV(_rv.RV):
     name = 'age_structure'
 
     def __init__(self, parameters, seed=None, **kwds):
         super().__init__(parameters, seed=seed)
-        (self._density, self._ages) = floquet.find_stable_age_structure(
+        (self._density, self._ages) = _floquet.find_stable_age_structure(
             parameters, **kwds)
         self._proportion = self._density / self._density.sum()
         self._age_rv = scipy.stats.rv_discrete(

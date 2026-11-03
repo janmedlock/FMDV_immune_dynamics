@@ -1,9 +1,9 @@
 import scipy
 
-from . import event, rv
+from . import _event, _rv
 
 
-class RV(rv.TimeSinceEntryDependentWaitingTimeMixin, rv.ScipyRV):
+class RV(_rv.TimeSinceEntryDependentWaitingTimeMixin, _rv.ScipyRV):
     '''Time to waning of maternal immunity.'''
 
     name = 'maternal_immunity_waning'
@@ -11,11 +11,11 @@ class RV(rv.TimeSinceEntryDependentWaitingTimeMixin, rv.ScipyRV):
     def rv(self, parameters):
         shape = parameters.maternal_immunity_duration_shape
         mean = parameters.maternal_immunity_duration_mean
-        scale = rv.gamma_scale_from_mean(mean, shape)
+        scale = _rv.gamma_scale_from_mean(mean, shape)
         return scipy.stats.gamma(shape, scale=scale)
 
 
-class MaternalImmunityWaning(event.ForImmuneStatusMixin, event.Event):
+class MaternalImmunityWaning(_event.ForImmuneStatusMixin, _event.Event):
     '''A buffalo losing maternal immunity.'''
 
     waiting_time = RV.name

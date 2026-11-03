@@ -6,8 +6,7 @@ import inspect
 import itertools
 import types
 
-from .immune_status import immune_statuses
-from .sex import sexes
+from . import _immune_status, _sex
 
 # Subclasses of `Event()` are added to these sets when those events are
 # defined by `ForAllMixin()`, `ForSexMixin()`,
@@ -15,10 +14,11 @@ from .sex import sexes
 # `Event()`s that can happen to any buffalo.
 _events_for_all = set()
 # `Event()`s that can happen to each sex.
-_events_for_sex = {sex: set() for sex in sexes}
+_events_for_sex = {sex: set() for sex in _sex.sexes}
 # `Event()`s that can happen to each immune status.
-_events_for_immune_status = {immune_status: set()
-                             for immune_status in immune_statuses}
+_events_for_immune_status = {
+    immune_status: set()
+    for immune_status in _immune_status.immune_statuses}
 
 
 def get_events_for(buffalo):
@@ -172,7 +172,7 @@ class ForImmuneStatusesMixin(metaclass=abc.ABCMeta):
     def __init_subclass__(cls, **kwds):
         '''Add non-abstract `cls` to
         `_events_for_immune_status[immune_status]`
-        for `immune_status` in `cls.immune_statuses`.'''
+        for `immune_status` in `.immune_statuses`.'''
         if not inspect.isabstract(cls):
             for immune_status in cls.immune_statuses:
                 _events_for_immune_status[immune_status].add(cls)

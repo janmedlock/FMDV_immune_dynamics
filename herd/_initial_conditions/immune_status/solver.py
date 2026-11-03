@@ -8,16 +8,16 @@ import numpy.lib.recfunctions
 import pandas
 import scipy
 
-from ... import (antibody_gain, antibody_loss, birth, immune_status,
-                 maternal_immunity_waning, mortality, parameters, progression,
-                 recovery, recovery_to_carrier, utility)
+from ... import (_immune_status, _parameters, _utility, antibody_gain,
+                 antibody_loss, birth, maternal_immunity_waning, mortality,
+                 progression, recovery, recovery_to_carrier)
 from . import blocks
 
-_offspring_have_maternal_immunity = [
+_offspring_have_maternal_immunity = tuple(
     mother
-    for (mother, offspring) in immune_status.birth_immune_status.items()
+    for (mother, offspring) in _immune_status.birth_immune_status.items()
     if offspring == 'maternal_immunity'
-]
+)
 
 
 def _rec_fromkwds(**kwds):
@@ -107,8 +107,8 @@ class Solver:
 
     def __init__(self, params, debug=False, _skip_blocks=False):
         self.debug = debug
-        self.ages = utility.arange(0, self.age_max, self.step,
-                                   endpoint=True)
+        self.ages = _utility.arange(0, self.age_max, self.step,
+                                    endpoint=True)
         assert len(self.ages) > 1
         self.ages_mid = (self.ages[:-1] + self.ages[1:]) / 2
         self.length_ode = self.length_pde = len(self.ages)
@@ -273,8 +273,8 @@ def _solve(params, debug):
     return Solver(params, debug=debug).solve()
 
 
-class _CacheParameters(parameters.Parameters):
-    '''Build a `herd.parameters.Parameters()`-like object that
+class _CacheParameters(_parameters.Parameters):
+    '''Build a `herd._parameters.Parameters()`-like object that
     only has the parameters needed by `Solver()`
     so that it can be efficiently cached.'''
 

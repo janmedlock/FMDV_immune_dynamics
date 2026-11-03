@@ -5,8 +5,7 @@ import matplotlib.pyplot
 import numpy
 
 from context import common, herd, plotting
-import herd.initial_conditions
-import herd.utility
+import herd._initial_conditions
 
 
 def plot_probability_constant_birth(ICs, ages, ax):
@@ -52,8 +51,8 @@ def plot_samples(ICs, ages, ax):
 
 def plot_ICs(SAT, seed=1):
     parameters = herd.Parameters(SAT=SAT)
-    ICs = herd.initial_conditions.RV(parameters, seed=seed)
-    ages = herd.utility.arange(0, 20, 0.1, endpoint=True)
+    ICs = herd._initial_conditions.RV(parameters, seed=seed)
+    ages = common.arange(0, 20, 0.1, endpoint=True)
     plot_fcns = (plot_probability_constant_birth,
                  plot_conditional_probability,
                  plot_probability,

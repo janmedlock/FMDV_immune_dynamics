@@ -1,11 +1,10 @@
 import pathlib
 
 import numpy
-from joblib import Memory
-from scipy.integrate import trapezoid
-from scipy.optimize import brentq
+import joblib
+import scipy
 
-from .. import parameters, periods
+from .. import _parameters, _period
 from . import dominant_eigen, monodromy
 
 _step_default = 0.01
@@ -14,7 +13,7 @@ _age_max_default = 35
 
 def _normalize_to_density(v, ages):
     '''Normalize `v` in place so that its integral over ages is 1.'''
-    v /= trapezoid(v, ages)
+    v /= scipy.integrate.trapezoid(v, ages)
 
 
 # Some of the functions below are very slow, so the values are cached
@@ -22,7 +21,7 @@ def _normalize_to_density(v, ages):
 # Set up the cache in a subdirectory of the directory that this source
 # file is in.
 _cache_path = pathlib.Path(__file__).with_name('_cache')
-_cache = Memory(_cache_path, verbose=1)
+_cache = joblib.Memory(_cache_path, verbose=1)
 
 
 # This function is very slow because it calls
@@ -51,7 +50,7 @@ def _find_dominant_eigen(birth_scaling, params,
     # rho0 is the dominant (largest magnitude) Floquet multiplier.
     # mu0 is the dominant (largest real part) Floquet exponent.
     # They are related by rho0 = exp(mu0 * T).
-    mu0 = numpy.log(rho0) / periods.get_period()
+    mu0 = numpy.log(rho0) / _period.get_period()
     # v0 is the eigenvector for both rho0 and mu0.
     _normalize_to_density(v0, solver.ages)
     return (mu0, v0, solver.ages)
@@ -87,15 +86,15 @@ def _find_birth_scaling(params, step, age_max):
     while _find_growth_rate(b, *args) < 0:
         a = b
         b *= 2
-    (birth_scaling, res) = brentq(_find_growth_rate, a, b,
-                                  args=args,
-                                  full_output=True)
+    (birth_scaling, res) = scipy.optimize.brentq(_find_growth_rate, a, b,
+                                                 args=args,
+                                                 full_output=True)
     assert res.converged, res
     return birth_scaling
 
 
-class _CacheParameters(parameters.Parameters):
-    '''Build a `herd.parameters.Parameters()`-like object that
+class _CacheParameters(_parameters.Parameters):
+    '''Build a `herd._parameters.Parameters()`-like object that
     only has the parameters needed by `Solver()`
     so that it can be efficiently cached.'''
     def __init__(self, params):
@@ -108,7 +107,7 @@ class _CacheParameters(parameters.Parameters):
         # Normalize `params.birth_peak_time` by making
         # it modulo `period` so that it is in [0, period).
         self.birth_peak_time = float(params.birth_peak_time
-                                     % periods.get_period())
+                                     % _period.get_period())
         self.female_probability = float(params.female_probability)
 
 

@@ -20,7 +20,7 @@ on characteristics, following the work of Fabio Milner.'''
 import numpy
 from scipy import sparse
 
-from .. import birth, mortality, periods, utility
+from .. import _period, _utility, birth, mortality
 
 
 class _CSR_Matrix(sparse.csr_matrix):
@@ -79,9 +79,9 @@ class Solver:
 
     def __init__(self, params, step, age_max):
         self.params = params
-        self.ages = utility.arange(0, age_max, step, endpoint=True)
-        period = periods.get_period()
-        self._t = utility.arange(0, period, step, endpoint=True)
+        self.ages = _utility.arange(0, age_max, step, endpoint=True)
+        period = _period.get_period()
+        self._t = _utility.arange(0, period, step, endpoint=True)
         mortality_rv = mortality.RV(self.params)
         self._init_crank_nicolson(step, mortality_rv)
         self._init_births(step)

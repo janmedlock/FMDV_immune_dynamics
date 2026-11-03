@@ -1,9 +1,9 @@
 import scipy
 
-from . import rv
+from . import _rv
 
 
-class RV(rv.ScipyRV):
+class RV(_rv.ScipyRV):
     '''Whether losing apparent antibody leads to having true not antibodies.'''
 
     name = 'antibody_loss_to_lost_immunity_true'

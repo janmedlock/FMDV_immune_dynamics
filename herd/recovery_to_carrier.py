@@ -1,9 +1,9 @@
 import scipy
 
-from . import rv
+from . import _rv
 
 
-class RV(rv.ScipyRV):
+class RV(_rv.ScipyRV):
     '''Whether a recovery leads to carrier infection.'''
 
     name = 'recovery_to_carrier'

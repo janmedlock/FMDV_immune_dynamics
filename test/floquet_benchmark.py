@@ -9,38 +9,38 @@ import numpy
 import scipy
 
 # Rebuild the 'monodromy' module, if necessary.
-subprocess.run(['make'], cwd='../herd/floquet', check=True)
+subprocess.run(['make'], cwd='../herd/_floquet', check=True)
 
 from context import common, herd
-import herd.age_structure
-import herd.floquet.floquet
+import herd._age_structure
+import herd._floquet.floquet
 import herd.mortality
 
 
 def find_stable_age_structure(parameters, fast=False):
-    cache_parameters = herd.floquet.floquet._CacheParameters(parameters)
+    cache_parameters = herd._floquet.floquet._CacheParameters(parameters)
     # Temporarily monkeypatch non-caching version of
     # `_find_dominant_eigen` into place to force recomputation.
-    _find_dominant_eigen = herd.floquet.floquet._find_dominant_eigen
-    herd.floquet.floquet._find_dominant_eigen = _find_dominant_eigen.func
+    _find_dominant_eigen = herd._floquet.floquet._find_dominant_eigen
+    herd._floquet.floquet._find_dominant_eigen = _find_dominant_eigen.func
     try:
         t0, p0 = time.perf_counter(), time.process_time()
         if fast:
             birth_scaling = 0.9378975738425385
-            r, v, ages = herd.floquet.floquet._find_dominant_eigen(
+            r, v, ages = herd._floquet.floquet._find_dominant_eigen(
                 birth_scaling, cache_parameters,
-                herd.floquet.floquet._step_default,
-                herd.floquet.floquet._age_max_default)
+                herd._floquet.floquet._step_default,
+                herd._floquet.floquet._age_max_default)
         else:
             # Force a recomputation of the birth scaling.
-            birth_scaling = herd.floquet.floquet._find_birth_scaling.func(
+            birth_scaling = herd._floquet.floquet._find_birth_scaling.func(
                 cache_parameters,
-                herd.floquet.floquet._step_default,
-                herd.floquet.floquet._age_max_default)
+                herd._floquet.floquet._step_default,
+                herd._floquet.floquet._age_max_default)
         t1, p1 = time.perf_counter(), time.process_time()
     finally:
         # Restore caching version of `_find_dominant_eigen`.
-        herd.floquet.floquet._find_dominant_eigen = _find_dominant_eigen
+        herd._floquet.floquet._find_dominant_eigen = _find_dominant_eigen
     print('{} benchmark took {:g} s clock, {:g} s CPU'.format(
         'Fast' if fast else 'Slow', t1 - t0, p1 - p0))
     if fast:
@@ -48,7 +48,7 @@ def find_stable_age_structure(parameters, fast=False):
         if not numpy.isclose(r, 0):
             print(f'r = {r:g}')
     else:
-        v, ages = herd.age_structure.find_stable_age_structure(parameters)
+        v, ages = herd._age_structure.find_stable_age_structure(parameters)
     return (v, ages)
 
 

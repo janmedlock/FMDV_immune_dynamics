@@ -1,11 +1,11 @@
 import numpy
 import scipy
 
-from . import event, floquet, periods, rv
+from . import _event, _floquet, _period, _rv
 
 # The code below is not tested at all for `period != 1`!
 period = 1  # Units: year
-periods.periods.append(period)
+_period.periods.append(period)
 
 
 def fracpart(x, out=None):
@@ -28,7 +28,7 @@ def get_gap_size_from_seasonal_coefficient_of_variation(c_v):
         return 12 * (1 - 4 / 3 / (1 + c_v ** 2))
 
 
-class RV(rv.MemorylessWaitingTimeMixin, rv.RV):
+class RV(_rv.MemorylessWaitingTimeMixin, _rv.RV):
     name = 'birth'
 
     def __init__(self, parameters, seed=None, _scaling=None, **kwds):
@@ -51,7 +51,7 @@ class RV(rv.MemorylessWaitingTimeMixin, rv.RV):
                 3 / 4
                 * (1 + self.birth_seasonal_coefficient_of_variation ** 2))
         if _scaling is None:
-            _scaling = floquet.find_birth_scaling(parameters, **kwds)
+            _scaling = _floquet.find_birth_scaling(parameters, **kwds)
         self._scaling = _scaling
         self.ppf = numpy.vectorize(self._ppf_single, otypes='d')
 
@@ -172,7 +172,7 @@ class RV(rv.MemorylessWaitingTimeMixin, rv.RV):
         return self.ppf(self.rng.random(size=size), time0, age0)
 
 
-class Birth(event.ForSexMixin, event.Event):
+class Birth(_event.ForSexMixin, _event.Event):
     '''A buffalo giving birth.'''
 
     waiting_time = RV.name
@@ -211,4 +211,4 @@ def hazard_no_seasonality(female_probability, age,
     # The value of `time` doesn't matter when the seasonal variation
     # is 0.
     time = 0
-    return rv.hazard(time, age, out=out)
+    return _rv.hazard(time, age, out=out)

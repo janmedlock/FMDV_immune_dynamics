@@ -1,7 +1,7 @@
 import numpy
 import pandas
 
-from . import event, rv
+from . import _event, _rv
 
 # {(a, b): s} is the annual survival for ages [a, b).
 _ANNUAL_SURVIVAL = {
@@ -12,7 +12,7 @@ _ANNUAL_SURVIVAL = {
 }
 
 
-class RV(rv.MemorylessWaitingTimeMixin, rv.RV):
+class RV(_rv.MemorylessWaitingTimeMixin, _rv.RV):
     name = 'mortality'
 
     # Use `pandas.IntervalIndex()` for convenience
@@ -23,7 +23,7 @@ class RV(rv.MemorylessWaitingTimeMixin, rv.RV):
     ))
 
     def hazard(self, age):
-        return -self._log_annual_survival[age].to_numpy()
+        return numpy.asanyarray(-self._log_annual_survival[age])
 
     def logsf(self, age):
         '''Logarithm of the survival function.'''
@@ -74,7 +74,7 @@ class RV(rv.MemorylessWaitingTimeMixin, rv.RV):
         return self.ppf(self.rng.random(size=size))
 
 
-class Mortality(event.ForAllMixin, event.Event):
+class Mortality(_event.ForAllMixin, _event.Event):
     '''A buffalo dying.'''
 
     waiting_time = RV.name

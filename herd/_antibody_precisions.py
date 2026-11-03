@@ -2,8 +2,8 @@
 
 import pandas
 
-from . import confusion
-from .context import data
+from . import _confusion
+from ._context import data
 
 # Map axes values to immune states
 _IMMUNE_STATUS_MAP = {
@@ -36,7 +36,7 @@ _CONFUSION_MATRIX_AXES_NAMES = {
 
 def _validate_confusion_matrix(cnf):
     '''Validate the confusion matrix.'''
-    confusion.validate(cnf)
+    _confusion.validate(cnf)
     assert _axes_names(cnf) == _CONFUSION_MATRIX_AXES_NAMES
 
 
@@ -72,7 +72,7 @@ _PRECISION_INDEX = pandas.Index(
 
 def _validate_precision(prc):
     '''Validate the precision.'''
-    # `confusion.precision()` calls `confusion._validate_score()`,
+    # `_confusion.precision()` calls `_confusion._validate_score()`,
     # which ensures the values are in the unit interval.
     pandas.testing.assert_index_equal(prc.index, _PRECISION_INDEX,
                                       check_order=False)
@@ -80,7 +80,7 @@ def _validate_precision(prc):
 
 def _precision(cnf):
     '''Get the precisions.'''
-    prc = confusion.precision(cnf)
+    prc = _confusion.precision(cnf)
     _validate_precision(prc)
     return prc
 
@@ -95,8 +95,8 @@ def estimate(SAT):
 def _resample_cases(SAT, seed=None, **kwds):
     '''Resample cases in the confusion matrix, keeping observation
     counts constant.'''
-    sample = confusion.resample_cases(_confusion_matrix(SAT),
-                                      seed=seed, **kwds)
+    sample = _confusion.resample_cases(_confusion_matrix(SAT),
+                                       seed=seed, **kwds)
     _validate_confusion_matrix(sample)
     return sample
 

@@ -1,20 +1,20 @@
 import scipy
 
-from . import antibody_gain_to_recovered_true, event, rv
+from . import _event, _rv, antibody_gain_to_recovered_true
 
 
-class RV(rv.MemorylessWaitingTimeMixin, rv.ScipyRV):
+class RV(_rv.MemorylessWaitingTimeMixin, _rv.ScipyRV):
     '''Waiting time to gain of antibodies.'''
 
     name = 'antibody_gain'
 
     def rv(self, parameters):
         rate = parameters.antibody_gain_hazard
-        scale = rv.expon_scale_from_rate(rate)
+        scale = _rv.expon_scale_from_rate(rate)
         return scipy.stats.expon(scale=scale)
 
 
-class AntibodyGain(event.ForImmuneStatusesMixin, event.Event):
+class AntibodyGain(_event.ForImmuneStatusesMixin, _event.Event):
     '''A buffalo gaining apparent antibodies.'''
 
     waiting_time = RV.name

@@ -3,11 +3,11 @@
 import numpy
 import pandas
 
-from .. import age_structure, rv
+from .. import _age_structure, _rv
 from . import immune_status
 
 
-class RV(rv.RV):
+class RV(_rv.RV):
     '''This assumes that the hazard of infection is constant in time,
     not periodic as it is with a periodic birth pulse.'''
 
@@ -23,12 +23,12 @@ class RV(rv.RV):
 
             import pandas
 
-            from ..immune_status import immune_statuses
+            from .. import _immune_status
 
             def immune_status_conditional_pdf(ages):
                 pdf = pandas.DataFrame(0.,
                                        index=ages,
-                                       columns=immune_statuses)
+                                       columns=_immune_status.immune_statuses)
                 pdf['infectious'] = 0.05
                 pdf['susceptible'] = 1. - pdf.sum(axis='columns')
                 return pdf
@@ -39,7 +39,7 @@ class RV(rv.RV):
             self.immune_status_pdf = (
                 immune_status.probability.Interpolant(parameters,
                                                       debug=debug))
-        self.ages = age_structure.RV(parameters, seed=self.rng)
+        self.ages = _age_structure.RV(parameters, seed=self.rng)
 
     def immune_status_conditional_pdf(self, ages):
         '''The probability of being in each immune state vs. `ages`,

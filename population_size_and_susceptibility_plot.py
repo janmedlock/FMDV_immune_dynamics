@@ -9,7 +9,6 @@ import matplotlib.ticker
 import seaborn
 
 import common
-import herd.utility
 import plotting
 import population_size
 import population_size_and_susceptibility
@@ -32,7 +31,7 @@ rc = (
 
 
 def _fill_missing_persistence(extinction_time):
-    assert herd.utility.is_increasing(extinction_time.columns, strict=True)
+    assert common.is_increasing(extinction_time.columns, strict=True)
     # Starting from the left, where there is a missing value, if the
     # value in the previous column is 1, set the current value to 1.
     # Skip the first column since it has no previous column.

@@ -9,8 +9,8 @@ import matplotlib.pyplot
 import numpy
 
 from context import common, herd
-import herd.initial_conditions.immune_status.blocks
-import herd.initial_conditions.immune_status.solver
+import herd._initial_conditions.immune_status.blocks
+import herd._initial_conditions.immune_status.solver
 
 
 def check_parameters(slvr):
@@ -53,8 +53,8 @@ def plot_blocks(slvr):
     norm = matplotlib.colors.Normalize(-1, 1)
     axes.matshow(blcks, cmap=cmap, norm=norm)
     vars_ = (
-        herd.initial_conditions.immune_status.blocks.vars_ode
-        + herd.initial_conditions.immune_status.blocks.vars_pde
+        herd._initial_conditions.immune_status.blocks.vars_ode
+        + herd._initial_conditions.immune_status.blocks.vars_pde
     )
     axes.set_xticks(range(len(vars_)))
     axes.set_yticks(range(len(vars_)))
@@ -90,7 +90,7 @@ def plot_solution(prob):
 
 if __name__ == '__main__':
     parameters = herd.Parameters(SAT=1)
-    slvr = herd.initial_conditions.immune_status.solver.Solver(parameters)
+    slvr = herd._initial_conditions.immune_status.solver.Solver(parameters)
     HAZARD_INFECTION = 2
     NEWBORN_PROPORTION_IMMUNE = 0.6
     prob = slvr.solve_step(slvr.transform((HAZARD_INFECTION,

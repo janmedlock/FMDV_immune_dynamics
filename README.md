@@ -105,12 +105,12 @@ plotting.
 
 The Python module [herd](herd) simulates the FMDV model.
 
-The submodule [herd.floquet](herd/floquet) contains the solver to find
+The submodule [herd._floquet](herd/_floquet) contains the solver to find
 the population stable age distribution with birth seasonality. In the
-folder [herd/floquet](herd/floquet) is an optional faster
+folder [herd/_floquet](herd/_floquet) is an optional faster
 implementation in [Cython](https://cython.org/) of
-`herd.floquet.monodromy` that can be built using the included
-[Makefile](herd/floquet/Makefile).
+`herd._floquet.monodromy` that can be built using the included
+[Makefile](herd/_floquet/Makefile).
 
 #### Simulation scripts
 
@@ -239,7 +239,7 @@ the test scripts to import from [herd](herd).
   structure of the model buffalo population.
 
 * [floquet_benchmark.py](test/floquet_benchmark.py) times the Floquet
-  solver in [herd.floquet](herd/floquet) for finding the stable age
+  solver in [herd._floquet](herd/_floquet) for finding the stable age
   structure.
 
 * [initial_conditions.py](test/initial_conditions.py) plots the model

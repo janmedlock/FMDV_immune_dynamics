@@ -4,9 +4,8 @@ import pathlib
 
 import numpy
 
+import common
 import herd
-import herd.utility
-
 
 var = 'population_size'
 
@@ -15,8 +14,8 @@ label = 'Population size'
 log = True
 
 values = numpy.hstack((
-    herd.utility.arange(100, 900, 100, endpoint=True),
-    herd.utility.arange(1000, 5000, 1000, endpoint=True),
+    common.arange(100, 900, 100, endpoint=True),
+    common.arange(1000, 5000, 1000, endpoint=True),
 ))
 
 default = getattr(herd.Parameters(), var)
