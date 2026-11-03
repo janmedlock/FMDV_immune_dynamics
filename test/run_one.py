@@ -4,8 +4,9 @@
 import time
 
 import matplotlib.pyplot
+import numpy
 
-from context import baseline, herd
+from context import baseline, common, herd
 
 
 def make_plot(data):
@@ -22,12 +23,12 @@ def make_plot(data):
 
 if __name__ == '__main__':
     SAT = 1
-    SEED = 1
     DEBUG = False
 
-    p = herd.Parameters(SAT=SAT)
+    rng = numpy.random.default_rng(common.SEED)
+    p = herd.Parameters(SAT=SAT, seed=rng)
     t0 = time.time()
-    data = baseline.run_one(p, seed=SEED, debug=DEBUG)
+    data = baseline.run_one(p, seed=rng, debug=DEBUG)
     t = time.time() - t0
     print(f'Run time: {t} seconds.')
 

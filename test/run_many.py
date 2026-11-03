@@ -10,8 +10,7 @@ import matplotlib.pyplot
 import pandas
 import seaborn
 
-from context import baseline
-from context import herd
+from context import baseline, herd
 
 
 def run_many(parameters, nruns):

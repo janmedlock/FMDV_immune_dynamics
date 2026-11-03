@@ -12,7 +12,6 @@ import common
 import herd
 import logging_
 
-
 store_path = pathlib.Path(__file__).with_suffix('.h5')
 
 
@@ -27,12 +26,10 @@ def fill_cache(parameters):
     herd.RandomVariables(parameters)
 
 
-def run_one(parameters, *args, tmax=None,
+def run_one(parameters, *args, tmax=common.TIME_MAX,
             print_duration=False, logging_prefix=None,
             run_number=None, **kwargs):
     '''Run one simulation.'''
-    if tmax is None:
-        tmax = common.TIME_MAX
     if run_number is not None:
         logging_prefix = logging_.append_to_prefix(logging_prefix,
                                                    run_number=run_number)
@@ -51,8 +48,8 @@ def run_many_chunked(parameters, nruns, *args,
         chunksize = nruns
     if print_duration is None:
         print_duration = not debug
-    rngs = numpy.random.default_rng(seed).spawn(nruns)
     fill_cache(parameters)
+    rngs = numpy.random.default_rng(seed).spawn(nruns)
     with joblib.Parallel(n_jobs=n_jobs,
                          return_as='generator') as parallel:
         results = parallel(

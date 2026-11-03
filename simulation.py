@@ -2,11 +2,11 @@
 
 import pathlib
 
+import numpy
+
 import baseline
 import common
 import herd
-
-SEED = 0xa70a_8239
 
 store_path = pathlib.Path(__file__).with_suffix('.h5')
 
@@ -17,11 +17,10 @@ def _save_result(store, result):
                        simulation=True)
 
 
-def run(SAT, store, seed=None):
+def run(SAT, store, seed=common.SEED):
     '''Run one simulation.'''
-    if seed is None:
-        seed = SEED
-    p = herd.Parameters(SAT=SAT)
-    result = baseline.run_one(p, seed)
+    rng = numpy.random.default_rng(seed)
+    p = herd.Parameters(SAT=SAT, seed=rng)
+    result = baseline.run_one(p, seed=rng)
     common.prepend_index_levels(result, SAT=SAT)
     _save_result(store, result)

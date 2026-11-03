@@ -6,16 +6,17 @@ import numpy
 import pandas
 import psutil
 
+import herd.immune_status
 import herd.utility
 
-SATs = (1, 2, 3)
+SEED = 0x2dfe_b254_9048_29b5_9bf1_6308_2091_4a17
 
-NRUNS = 1000
+SATs = (1, 2, 3)
 
 TIME_UNIT = 'year'
 TIME_MAX = 10
 
-cols_infected = ['exposed', 'infectious', 'carrier']
+NRUNS = 1000
 
 
 def nice_self():
@@ -48,7 +49,7 @@ def get_infected(obj):
     # over index for a `pandas.Series()`.
     axis = obj.ndim - 1
     infected = (
-        obj[cols_infected]
+        obj[herd.immune_status.infected]
         .sum(axis=axis)
     )
     try:
