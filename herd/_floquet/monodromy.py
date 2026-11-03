@@ -20,7 +20,8 @@ on characteristics, following the work of Fabio Milner.'''
 import numpy
 from scipy import sparse
 
-from .. import _period, _utility, birth, mortality
+from .. import _period, _utility
+from ..events import birth, mortality
 
 
 class _CSR_Matrix(sparse.csr_matrix):

@@ -1,6 +1,7 @@
 import scipy
 
-from . import _event, _rv, antibody_gain_to_recovered_true
+from .. import _event, _rv
+from . import antibody_gain_to_recovered_true
 
 
 class RV(_rv.MemorylessWaitingTimeMixin, _rv.ScipyRV):

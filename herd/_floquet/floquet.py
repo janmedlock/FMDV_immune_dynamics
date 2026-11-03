@@ -1,7 +1,7 @@
 import pathlib
 
-import numpy
 import joblib
+import numpy
 import scipy
 
 from .. import _parameters, _period

@@ -6,7 +6,7 @@ import operator
 import numpy
 import sortedcontainers
 
-from . import infection
+from .events import infection
 
 
 class BuffaloEvents(set):

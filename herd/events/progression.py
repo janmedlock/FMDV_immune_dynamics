@@ -1,6 +1,6 @@
 import scipy
 
-from . import _event, _rv
+from .. import _event, _rv
 
 
 class RV(_rv.TimeSinceEntryDependentWaitingTimeMixin, _rv.ScipyRV):

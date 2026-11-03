@@ -5,7 +5,7 @@ import re
 
 import numpy
 import numpy.lib.recfunctions
-from scipy import sparse
+import scipy
 
 # The short & long names of the variables.
 # The order of the output is determined by the order of these, too.
@@ -38,8 +38,8 @@ class _Block(metaclass=abc.ABCMeta):
         '''Make a sparse n × 1 matrix of the right-hand sides.'''
         # The initial value is in the 0th entry,
         # then zeros everywhere else.
-        self.b_X = sparse.csr_matrix(([initial_value], ([0], [0])),
-                                     shape=(len(self), 1))
+        self.b_X = scipy.sparse.csr_matrix(([initial_value], ([0], [0])),
+                                           shape=(len(self), 1))
 
     @abc.abstractmethod
     def set_b_X(self):
@@ -82,8 +82,8 @@ class _BlockODE(_Block, metaclass=abc.ABCMeta):
         # for (v, k) in diags:
         #     if k != 0:
         #         assert (v <= 0).all(), type(self)
-        return sparse.diags(*zip(*diags),
-                            shape=(len(self), len(self)))
+        return scipy.sparse.diags(*zip(*diags),
+                                  shape=(len(self), len(self)))
 
     def _get_A_XY_ODE(self, hazard_in):
         '''Get the off-diagonal block `A_XY` that maps state Y to X,
@@ -92,13 +92,13 @@ class _BlockODE(_Block, metaclass=abc.ABCMeta):
         f_XY = - hazard_in * self.params.step / 2
         diags = ((numpy.hstack([0, f_XY]), 0),  # The diagonal
                  (f_XY, -1))  # The subdiagonal
-        return sparse.diags(*zip(*diags),
-                            shape=(len(self), self.params.length_ode))
+        return scipy.sparse.diags(*zip(*diags),
+                                  shape=(len(self), self.params.length_ode))
 
     def _get_A_XY_PDE(self, pdf_in):
         '''Get the off-diagonal block `A_XY` that maps state Y to X,
         where Y is a variable governed by a PDE.'''
-        A_XY = sparse.lil_matrix((len(self), self.params.length_pde))
+        A_XY = scipy.sparse.lil_matrix((len(self), self.params.length_pde))
         for i in range(1, len(self)):
             j = numpy.arange(i + 1)
             A_XY[i, j] = - (pdf_in[i - j]
@@ -115,7 +115,7 @@ class _BlockPDE(_Block, metaclass=abc.ABCMeta):
 
     def _get_A_XX(self):
         '''Get the diagonal block `A_XX` that maps state X to itself.'''
-        return sparse.eye(len(self))
+        return scipy.sparse.eye(len(self))
 
     def _get_A_XY_ODE(self, hazard_in):
         '''Get the off-diagonal block `A_XY` that maps state Y to X,
@@ -124,13 +124,13 @@ class _BlockPDE(_Block, metaclass=abc.ABCMeta):
         f_XY = - hazard_in / 2
         diags = ((numpy.hstack([0, f_XY]), 0),  # The diagonal
                  (f_XY, -1))  # The subdiagonal
-        return sparse.diags(*zip(*diags),
-                            shape=(len(self), self.params.length_ode))
+        return scipy.sparse.diags(*zip(*diags),
+                                  shape=(len(self), self.params.length_ode))
 
     def _get_A_XY_PDE(self, pdf_in):
         '''Get the off-diagonal block `A_XY` that maps state Y to X,
         where Y is a variable governed by a PDE.'''
-        A_XY = sparse.lil_matrix((len(self), self.params.length_pde))
+        A_XY = scipy.sparse.lil_matrix((len(self), self.params.length_pde))
         for i in range(1, len(self)):
             j = numpy.arange(i + 1)
             A_XY[i, j] = - (pdf_in[i - j]

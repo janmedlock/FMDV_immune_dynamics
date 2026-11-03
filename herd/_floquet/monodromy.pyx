@@ -25,7 +25,8 @@ cimport numpy
 import numpy
 from scipy import sparse
 
-from .. import _period, _utility, birth, mortality
+from .. import _period, _utility
+from ..events import birth, mortality
 
 
 # Functions from BLAS.

@@ -2,10 +2,10 @@ __all__ = (
     'Herd',
     'Parameters',
     'RandomVariables',
-    '_events',
+    'events',
 )
 
-from . import _events
+from . import events
 from ._herd import Herd
 from ._parameters import Parameters
 from ._rv import RandomVariables

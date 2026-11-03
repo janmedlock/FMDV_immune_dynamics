@@ -1,4 +1,4 @@
-from . import _event, _rv
+from .. import _event, _rv
 
 
 class RV(_rv.MemorylessWaitingTimeMixin, _rv.RV):

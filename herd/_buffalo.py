@@ -1,4 +1,5 @@
-from . import _containers, _event, _immune_status, female
+from . import _containers, _event, _immune_status
+from .events import female
 
 
 class Buffalo:

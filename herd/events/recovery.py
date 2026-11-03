@@ -1,6 +1,7 @@
 import scipy
 
-from . import _event, _rv, recovery_to_carrier
+from .. import _event, _rv
+from . import recovery_to_carrier
 
 
 class RV(_rv.TimeSinceEntryDependentWaitingTimeMixin, _rv.ScipyRV):

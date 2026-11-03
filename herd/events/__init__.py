@@ -1,4 +1,4 @@
-'''Generate all the `.event.Event()` subclasses.'''
+'''Import all of the `.._event.Event()` subclasses.'''
 
 __all__ = (
     'antibody_gain', 'antibody_loss', 'birth', 'carrier_recovery',
@@ -7,5 +7,5 @@ __all__ = (
 )
 
 from . import (antibody_gain, antibody_loss, birth, carrier_recovery,
-               infection, maternal_immunity_waning, mortality,
-               progression, recovery)
+               infection, maternal_immunity_waning, mortality, progression,
+               recovery)

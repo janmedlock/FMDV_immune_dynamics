@@ -1,6 +1,6 @@
 import scipy
 
-from . import _rv
+from .. import _rv
 
 
 class RV(_rv.ScipyRV):

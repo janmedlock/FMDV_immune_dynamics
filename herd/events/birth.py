@@ -1,7 +1,7 @@
 import numpy
 import scipy
 
-from . import _event, _floquet, _period, _rv
+from .. import _event, _floquet, _period, _rv
 
 # The code below is not tested at all for `period != 1`!
 period = 1  # Units: year

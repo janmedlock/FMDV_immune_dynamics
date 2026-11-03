@@ -1,6 +1,7 @@
 import scipy
 
-from . import _event, _rv, antibody_loss_to_lost_immunity_true
+from .. import _event, _rv
+from . import antibody_loss_to_lost_immunity_true
 
 
 class RV(_rv.MemorylessWaitingTimeMixin, _rv.ScipyRV):

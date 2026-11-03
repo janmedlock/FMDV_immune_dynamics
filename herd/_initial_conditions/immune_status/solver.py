@@ -8,9 +8,7 @@ import numpy.lib.recfunctions
 import pandas
 import scipy
 
-from ... import (_immune_status, _parameters, _utility, antibody_gain,
-                 antibody_loss, birth, maternal_immunity_waning, mortality,
-                 progression, recovery, recovery_to_carrier)
+from ... import _immune_status, _parameters, _utility, events
 from . import blocks
 
 _offspring_have_maternal_immunity = tuple(
@@ -36,9 +34,9 @@ class _Params:
         self.length_pde = length_pde
         # Get the pdf for these random variables.
         rndvrs_pdf = {
-            'progression': progression.RV(params),
-            'recovery': recovery.RV(params),
-            'recovery_to_carrier': recovery_to_carrier.RV(params),
+            'progression': events.progression.RV(params),
+            'recovery': events.recovery.RV(params),
+            'recovery_to_carrier': events.recovery_to_carrier.RV(params),
         }
         pdf = {k: self._get_pdf(RV, ages)
                for (k, RV) in rndvrs_pdf.items()}
@@ -46,7 +44,7 @@ class _Params:
         # Get the survival for these random variables.
         rndvrs_survival = {
             **rndvrs_pdf,  # The entries in `rndvrs_pdf`.
-            'mortality': mortality.RV(params),
+            'mortality': events.mortality.RV(params),
         }
         survival = {k: RV.sf(ages)
                     for (k, RV) in rndvrs_survival.items()}
@@ -54,9 +52,10 @@ class _Params:
         # Get the hazard for these RVs.
         rndvrs_hazard = {
             'mortality': rndvrs_survival['mortality'],
-            'maternal_immunity_waning': maternal_immunity_waning.RV(params),
-            'antibody_gain': antibody_gain.RV(params),
-            'antibody_loss': antibody_loss.RV(params),
+            'maternal_immunity_waning': events.maternal_immunity_waning.RV(
+                params),
+            'antibody_gain': events.antibody_gain.RV(params),
+            'antibody_loss': events.antibody_loss.RV(params),
         }
         hazard = {k: rndvr.hazard(ages_mid)
                   for (k, rndvr) in rndvrs_hazard.items()}
@@ -87,7 +86,8 @@ class _Params:
         return pdf
 
     def _hazard_birth(self, ages):
-        hazard = birth.hazard_no_seasonality(self.female_probability, ages)
+        hazard = events.birth.hazard_no_seasonality(self.female_probability,
+                                                    ages)
         # Scale so that the population growth rate is 0.
         hazard /= scipy.integrate.trapezoid(
             hazard * self.survival.mortality, ages

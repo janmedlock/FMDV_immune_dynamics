@@ -1,7 +1,7 @@
 import numpy
 import pandas
 
-from . import _event, _rv
+from .. import _event, _rv
 
 # {(a, b): s} is the annual survival for ages [a, b).
 _ANNUAL_SURVIVAL = {
