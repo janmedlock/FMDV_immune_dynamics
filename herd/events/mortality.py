@@ -3,8 +3,9 @@ import pandas
 
 from .. import _event, _rv
 
-# {(a, b): s} is the annual survival for ages [a, b).
+
 _ANNUAL_SURVIVAL = {
+    # `(a, b): s` is the annual survival for ages [a, b)
     (0, 1): 0.66,
     (1, 3): 0.79,
     (3, 12): 0.88,
@@ -12,20 +13,30 @@ _ANNUAL_SURVIVAL = {
 }
 
 
+def _annual_survival_to_series(annual_survival):
+    '''Convert to a `pandas.Series()` with `pandas.IntervalIndex()`
+    for convenience.'''
+    return pandas.Series(
+        annual_survival.values(),
+        index=pandas.IntervalIndex.from_tuples(annual_survival.keys(),
+                                               closed='left')
+    )
+
+
 class WaitingTime(_rv.MemorylessWaitingTimeMixin, _rv.RV):
     name = 'mortality'
 
-    # Use `pandas.IntervalIndex()` for convenience
-    _log_annual_survival = numpy.log(pandas.Series(
-        _ANNUAL_SURVIVAL.values(),
-        index=pandas.IntervalIndex.from_tuples(_ANNUAL_SURVIVAL.keys(),
-                                               closed='left')
-    ))
+    _log_annual_survival = numpy.log(
+        _annual_survival_to_series(_ANNUAL_SURVIVAL))
+
+    def __init__(self, parameters, seed=None):
+        super().__init__(parameters, seed=seed)
+        self.logsf = numpy.vectorize(self._logsf_single, otypes='d')
 
     def hazard(self, age):
         return numpy.asanyarray(-self._log_annual_survival[age])
 
-    def logsf(self, age):
+    def _logsf_single(self, age):
         '''Logarithm of the survival function.'''
         intervals = self._log_annual_survival.index
         # `t` is the amount time lived in each age interval

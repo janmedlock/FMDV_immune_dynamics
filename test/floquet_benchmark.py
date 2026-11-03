@@ -13,7 +13,7 @@ subprocess.run(['make'], cwd='../herd/_floquet', check=True)
 
 from _context import common, herd
 import herd._floquet.floquet
-import herd.mortality
+import herd.events.mortality
 
 
 def find_stable_age_structure(parameters, fast=False):
@@ -58,9 +58,10 @@ def plot(ages, stable_age_structure):
     ax.plot(ages[which], stable_age_structure[which],
             label='stable age structure')
     mortality_sf_scale, _ = scipy.integrate.quad(
-        herd.mortality.sf, ages[0], ages[-1]
+        herd.events.mortality.sf, ages[0], ages[-1]
     )
-    ax.plot(ages[which], herd.mortality.sf(ages[which]) / mortality_sf_scale,
+    ax.plot(ages[which],
+            herd.events.mortality.sf(ages[which]) / mortality_sf_scale,
             label='scaled mortality survival',
             color='black', linestyle='dotted')
     ax.set_xlabel(f'age ({common.TIME_UNIT})')
@@ -70,8 +71,9 @@ def plot(ages, stable_age_structure):
 
 
 if __name__ == '__main__':
+    FAST = True
     parameters = herd.Parameters()
     stable_age_structure, ages = find_stable_age_structure(parameters,
-                                                           fast=True)
+                                                           fast=FAST)
     plot(ages, stable_age_structure)
     matplotlib.pyplot.show()
