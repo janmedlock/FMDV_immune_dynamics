@@ -3,7 +3,7 @@ import itertools
 import numpy
 import pandas
 
-from . import buffalo, containers, immune_status, initial_conditions, rv
+from . import _containers, buffalo, immune_status, initial_conditions, rv
 from .parameters import Parameters
 
 
@@ -18,7 +18,7 @@ class Herd(set):
         self.debug = debug
         self.rvs = rv.RandomVariables(self.parameters, seed=rng)
         self.time = 0
-        self.events = containers.HerdEvents(seed=rng)
+        self.events = _containers.HerdEvents(seed=rng)
         self.by_immune_status = {s: set()
                                  for s in immune_status.immune_statuses}
         self.identifiers = itertools.count(0)

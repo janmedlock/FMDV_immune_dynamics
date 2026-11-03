@@ -35,9 +35,10 @@ def get_result_and_rng(parameters, run_number=None, tmax=common.TIME_MAX,
 
 
 def get_results_and_rngs(nruns, seed=common.SEED, **kwds):
-    # Build `parameters` once to seed cache
+    # Build `herd_.RandomVariables()` once to initialize the cache
     rng = numpy.random.default_rng(seed)
     parameters = herd.Parameters(seed=rng, **kwds)
+    herd.RandomVariables(parameters)
     get_result_and_rng_ = functools.partial(get_result_and_rng,
                                             parameters, seed=rng)
     with concurrent.futures.ProcessPoolExecutor() as pool:

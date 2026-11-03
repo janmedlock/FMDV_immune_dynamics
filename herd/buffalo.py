@@ -1,4 +1,4 @@
-from . import containers, event, female, immune_status
+from . import _containers, event, female, immune_status
 
 
 class Buffalo:
@@ -11,7 +11,7 @@ class Buffalo:
         female_ = getattr(self.herd.rvs, female.RV.name)
         self.sex = 'female' if female_.rvs() else 'male'
         self.identifier = next(self.herd.identifiers)
-        self.events = containers.BuffaloEvents(self)
+        self.events = _containers.BuffaloEvents(self)
         # Add an event of each type that can happen to this buffalo
         for event_ in event.get_events_for(self):
             self.events.add(event_(self, at_equilibrium=at_equilibrium))

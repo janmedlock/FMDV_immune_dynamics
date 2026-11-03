@@ -52,8 +52,7 @@ class Base(metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def plot_rate(cls, axes, x): pass
 
-    parameters = herd.Parameters()
-    rvs = herd.RandomVariables(parameters)
+    rvs = herd.RandomVariables(herd.Parameters())
     n_points = 1001
     y_minor_ndivs = 2
 
