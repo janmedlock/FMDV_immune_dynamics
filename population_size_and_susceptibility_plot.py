@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/env python
 '''Analyze and plot the results of varying both the population size
 and the susceptibility of the lost-immunity state. This requires the
 file `population_size_and_susceptibility.h5`, which is built by
@@ -15,7 +15,6 @@ import population_size
 import population_size_and_susceptibility
 import sensitivity
 import susceptibility
-
 
 rc = (
     plotting.rc

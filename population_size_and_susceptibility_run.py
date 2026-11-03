@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/env python
 '''Run simulations with varying population size and
 susceptibility. This produces a file called
 `population_size_and_susceptibility.h5`.'''

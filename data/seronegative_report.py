@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/env python
 '''Report the proportion seronegative by SAT.'''
 
 import data_

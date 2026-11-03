@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/env python
 '''Plot the model initial condititions.'''
 
 import matplotlib.pyplot

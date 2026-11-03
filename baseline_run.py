@@ -1,11 +1,10 @@
-#!/usr/bin/python3
+#!/usr/bin/env python
 '''Run simulations with the baseline parameter values. This produces a
 file called `baseline.h5`.'''
 
 import baseline
 import common
 import h5
-
 
 if __name__ == '__main__':
     common.nice_self()

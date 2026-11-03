@@ -1,11 +1,10 @@
-#!/usr/bin/python3
+#!/usr/bin/env python
 '''Run simulations with varying susceptibility. This produces a file
 called `susceptibility.h5`.'''
 
 import common
 import sensitivity
 import susceptibility
-
 
 if __name__ == '__main__':
     common.nice_self()

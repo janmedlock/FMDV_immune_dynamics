@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/env python
 '''Plot examples of categories of titer dynamics.'''
 
 import pathlib
@@ -12,7 +12,6 @@ import pandas
 from context import plotting
 import data_
 from titers_plot import load
-
 
 _TICK_LABELSIZE = 5
 rc = (

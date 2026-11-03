@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/env python
 '''Compare seropositive titers by SAT.'''
 
 import scipy
@@ -6,7 +6,6 @@ import statsmodels.api
 import statsmodels.stats.multitest
 
 import data_
-
 
 MW_ALTERNATIVE = {
     (1, 2): 'greater',

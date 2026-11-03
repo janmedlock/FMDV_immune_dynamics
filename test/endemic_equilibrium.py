@@ -1,9 +1,8 @@
-#!/usr/bin/python3
+#!/usr/bin/env python
 '''Show the hazard of infection and the proportion of newborns immune
 at the endemic equilibrium.'''
 
-from context import common
-from context import herd
+from context import common, herd
 import herd.initial_conditions.immune_status.solver
 
 

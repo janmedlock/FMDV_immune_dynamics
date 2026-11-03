@@ -1,11 +1,10 @@
-#!/usr/bin/python3
+#!/usr/bin/env python
 '''Analyze and plot the results of the simulations with varying
 susceptibility of the lost-immunity class. This requires the file
 `susceptibility.h5`, which is built by `susceptibility_run.py`.'''
 
 import sensitivity
 import susceptibility
-
 
 if __name__ == '__main__':
     extinction_time = sensitivity.load(susceptibility)

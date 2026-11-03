@@ -1,10 +1,9 @@
-#!/usr/bin/python3
+#!/usr/bin/env python
 '''Run one simulation for each SAT.'''
 
 import common
 import h5
 import simulation
-
 
 if __name__ == '__main__':
     common.nice_self()

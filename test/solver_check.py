@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/env python
 '''Check the consistency of the solver for the initial conditions,
 plots block structure of the solver matrix, and plots a solution.'''
 
@@ -8,8 +8,7 @@ import matplotlib.patches
 import matplotlib.pyplot
 import numpy
 
-from context import common
-from context import herd
+from context import common, herd
 import herd.initial_conditions.immune_status.blocks
 import herd.initial_conditions.immune_status.solver
 

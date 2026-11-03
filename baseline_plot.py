@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/env python
 '''Build a figure comparing the runs of the SATs. This requires the
 file `baseline.h5`, which is built by `baseline_run.py`.'''
 
@@ -10,7 +10,6 @@ import seaborn
 import baseline
 import h5
 import plotting
-
 
 rc = plotting.rc | plotting.rc_text_small | {
     'figure.figsize': (plotting.WIDTH_MAXIMUM['double_column'], 3),

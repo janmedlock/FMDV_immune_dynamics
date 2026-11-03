@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/env python
 '''Time the Floquet solver.'''
 
 import subprocess
@@ -11,11 +11,10 @@ import scipy
 # Rebuild the 'monodromy' module, if necessary.
 subprocess.run(['make'], cwd='../herd/floquet', check=True)
 
-from context import common
-from context import herd
+from context import common, herd
 import herd.age_structure
-import herd.mortality
 import herd.floquet.floquet
+import herd.mortality
 
 
 def find_stable_age_structure(parameters, fast=False):

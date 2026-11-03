@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/env python
 '''Estimate the model parameters by SAT.'''
 
 import functools
@@ -10,7 +10,6 @@ from context import data as data_
 import model
 import plotting_
 import _multiprocessing_
-
 
 _POSITIVE_TO_STATE = (
     pandas.Series(

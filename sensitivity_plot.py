@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/env python
 '''Analyze and plot the results of the simulations with varying
 population size and susceptibility.  This requires the files
 `population_size.h5` and `susceptibility.h5`.'''
@@ -14,7 +14,6 @@ import plotting
 import population_size
 import sensitivity
 import susceptibility
-
 
 rc = plotting.rc | plotting.rc_text_small | {
     'figure.figsize': (plotting.WIDTH_MAXIMUM['double_column'], 4),

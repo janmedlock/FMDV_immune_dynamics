@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/env python
 '''Plot one simulation for each SAT.'''
 
 import math
@@ -10,7 +10,6 @@ import seaborn
 import h5
 import plotting
 import simulation
-
 
 rc = (
     plotting.rc

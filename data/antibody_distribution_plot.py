@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/env python
 '''Plot the distribution of antibodies.'''
 
 import pathlib
@@ -8,7 +8,6 @@ import seaborn
 
 from context import plotting
 import data_
-
 
 rc = (
     plotting.rc

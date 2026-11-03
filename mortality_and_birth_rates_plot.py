@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/env python
 '''Plot the mortality and birth rates.'''
 
 import abc
@@ -11,7 +11,6 @@ import seaborn
 
 import herd
 import plotting
-
 
 rc = (
     plotting.rc

@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/env python
 '''Plot titer time-series by SAT and animal.'''
 
 import functools
@@ -12,7 +12,6 @@ import seaborn
 
 from context import plotting
 import data_
-
 
 _CONSEC_OBS_MIN = 6
 

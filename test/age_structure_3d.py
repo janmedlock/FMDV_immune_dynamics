@@ -1,10 +1,10 @@
-#!/usr/bin/python3
+#!/usr/bin/env python
 '''Plot the stable age distribution.'''
 
 import matplotlib.pyplot
 import numpy
 
-from context import common, herd
+from context import common
 
 import age_structure
 

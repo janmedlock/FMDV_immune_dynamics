@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/env python
 '''Plot variation between SATs.'''
 
 import pathlib
@@ -13,7 +13,6 @@ from context import data as data_
 from context import plotting
 import estimate
 import plotting_
-
 
 rc = plotting.rc | plotting.rc_text_small | {
     'figure.figsize': (plotting.WIDTH_MAXIMUM['double_column'], 4.5),
