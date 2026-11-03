@@ -1,6 +1,6 @@
 /README.html
-/.pdm-python
 /todo.org
+/.venv
 *.h5
 *.pdf
 *.png
