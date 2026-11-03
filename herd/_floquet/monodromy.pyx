@@ -6,7 +6,7 @@ for the density u(t, a) of buffalo of age a at time t is
 u(t, 0) = \int_0^{inf} b(t, a) u(t, a) da
 u(0, a) = u_0(a).
 The birth rate `b(t, a)`, which is the product of
-`female_probability` and `birth.RV.hazard(t, a)` in our model,
+`female_probability` and `birth.WaitingTime().hazard(t, a)` in our model,
 is periodic in `t` with period T = 1 year.
 
 After discretizing in age, the monodromy matrix Phi(T) is the
@@ -25,7 +25,7 @@ cimport numpy
 import numpy
 from scipy import sparse
 
-from .. import _period, _utility
+from .. import _period, utility
 from ..events import birth, mortality
 
 
@@ -145,15 +145,15 @@ cdef class Solver:
                   const double age_max):
         cdef:
             double t_start, t_end
-            object mortality_rv
+            object mortality_waiting_time
         self.params = params
-        self.ages = _utility.arange(0, age_max, step, endpoint=True)
+        self.ages = utility.arange(0, age_max, step, endpoint=True)
         # The memoryview will be convenient...
         self._ages = self.ages
         period = _period.get_period()
-        self._t = _utility.arange(0, period, step, endpoint=True)
-        mortality_rv = mortality.RV(self.params)
-        self._init_crank_nicolson(step, mortality_rv)
+        self._t = utility.arange(0, period, step, endpoint=True)
+        mortality_waiting_time = mortality.WaitingTime(self.params)
+        self._init_crank_nicolson(step, mortality_waiting_time)
         self._init_births(step)
 
     cdef inline bint _set_initial_condition(Solver self,
@@ -231,7 +231,8 @@ cdef class Solver:
     @cython.wraparound(True)
     cdef inline bint _init_crank_nicolson(Solver self,
                                           const double step,
-                                          object mortality_rv) except False:
+                                          object mortality_waiting_time) \
+                                         except False:
         '''The Crank–Nicolson method is
         (u_i^n - u_{i - 1}^{n - 1}) / dt
         = - d_{i - 1 / 2} * (u_i^n + u_{i - 1}^{n - 1}) / 2,
@@ -252,11 +253,11 @@ cdef class Solver:
         M = sparse.lil_matrix((self._ages.shape[0], self._ages.shape[0]))
         # Midpoints between adjacent ages.
         ages_mid = (self.ages[1:] + self.ages[:-1]) / 2
-        k = mortality_rv.hazard(ages_mid) * step / 2
+        k = mortality_waiting_time.hazard(ages_mid) * step / 2
         # Set the first subdiagonal.
         M.setdiag((1 - k) / (1 + k), -1)
         # Keep the last age group from ageing out.
-        k_last = mortality_rv.hazard(self.ages[-1]) * step / 2
+        k_last = mortality_waiting_time.hazard(self.ages[-1]) * step / 2
         M[-1, -1] = (1 - k_last) / (1 + k_last)
         self._M_crank_nicolson = _CSR_Matrix(M)
         return True
@@ -308,7 +309,7 @@ cdef class Solver:
         '''Find the monodromy matrix Phi(T), where T is the period.'''
         cdef:
             _Solution solution
-            object birth_rv
+            object birth_waiting_time
             numpy.ndarray temp
         # The fundamental solution is an `n_ages` x `n_ages` matrix.
         # One matrix for the current time step, plus one for each
@@ -316,6 +317,8 @@ cdef class Solver:
         solution = _Solution(self._order,
                              (self._ages.shape[0], self._ages.shape[0]))
         # Set up birth rate.
-        birth_rv = birth.RV(self.params, _scaling=birth_scaling)
+        birth_waiting_time = birth.WaitingTime(self.params,
+                                               _scaling=birth_scaling)
         temp = numpy.empty(self._ages.shape[0])
-        return numpy.asarray(self._iterate(solution, birth_rv.hazard, temp))
+        return numpy.asarray(self._iterate(solution,
+                                           birth_waiting_time.hazard, temp))

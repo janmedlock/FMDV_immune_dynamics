@@ -11,8 +11,7 @@ import scipy
 # Rebuild the 'monodromy' module, if necessary.
 subprocess.run(['make'], cwd='../herd/_floquet', check=True)
 
-from context import common, herd
-import herd._age_structure
+from _context import common, herd
 import herd._floquet.floquet
 import herd.mortality
 
@@ -48,7 +47,7 @@ def find_stable_age_structure(parameters, fast=False):
         if not numpy.isclose(r, 0):
             print(f'r = {r:g}')
     else:
-        v, ages = herd._age_structure.find_stable_age_structure(parameters)
+        v, ages = herd._floquet.find_stable_age_structure(parameters)
     return (v, ages)
 
 

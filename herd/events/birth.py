@@ -1,7 +1,7 @@
 import numpy
 import scipy
 
-from .. import _event, _floquet, _period, _rv
+from .. import _event, _floquet, _period, _rv, immune_status
 
 # The code below is not tested at all for `period != 1`!
 period = 1  # Units: year
@@ -28,7 +28,7 @@ def get_gap_size_from_seasonal_coefficient_of_variation(c_v):
         return 12 * (1 - 4 / 3 / (1 + c_v ** 2))
 
 
-class RV(_rv.MemorylessWaitingTimeMixin, _rv.RV):
+class WaitingTime(_rv.MemorylessWaitingTimeMixin, _rv.RV):
     name = 'birth'
 
     def __init__(self, parameters, seed=None, _scaling=None, **kwds):
@@ -172,10 +172,38 @@ class RV(_rv.MemorylessWaitingTimeMixin, _rv.RV):
         return self.ppf(self.rng.random(size=size), time0, age0)
 
 
+class Female(_rv.ScipyRV):
+    '''Whether an offspring is female.'''
+
+    name = 'female'
+
+    def rv(self, parameters):
+        p = parameters.female_probability
+        return scipy.stats.bernoulli(p)
+
+
+class BuffaloMixin:
+    '''Mixin for `..buffalo.Buffalo()`.'''
+
+    female = Female.name
+
+    def give_birth(self):
+        '''Give birth to a new offspring.'''
+        assert self.sex == 'female'
+        birth_immune_status = (
+            immune_status.birth_immune_status[self.immune_status])
+        self.herd.add(type(self)(self.herd, birth_immune_status))
+
+    def get_sex(self):
+        '''Determine the sex of a new buffalo.'''
+        female = getattr(self.herd.rvs, self.female)
+        return 'female' if female.rvs() else 'male'
+
+
 class Birth(_event.ForSexMixin, _event.Event):
     '''A buffalo giving birth.'''
 
-    waiting_time = RV.name
+    waiting_time = WaitingTime.name
 
     sex = 'female'
 
@@ -207,8 +235,8 @@ def hazard_no_seasonality(female_probability, age,
                           *args, out=None, **kwargs):
     '''The hazard without seasonal variation.'''
     params = _ParametersNoSeasonality(female_probability)
-    rv = RV(params, *args, **kwargs)
+    waiting_time = WaitingTime(params, *args, **kwargs)
     # The value of `time` doesn't matter when the seasonal variation
     # is 0.
     time = 0
-    return _rv.hazard(time, age, out=out)
+    return waiting_time.hazard(time, age, out=out)

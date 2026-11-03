@@ -1,7 +1,7 @@
 from .. import _event, _rv
 
 
-class RV(_rv.MemorylessWaitingTimeMixin, _rv.RV):
+class WaitingTime(_rv.MemorylessWaitingTimeMixin, _rv.RV):
     '''Time to infection is exponential distributed.'''
 
     name = 'infection'
@@ -26,7 +26,7 @@ class RV(_rv.MemorylessWaitingTimeMixin, _rv.RV):
 class Infection(_event.Event):
     '''Base class for a buffalo becoming infected.'''
 
-    waiting_time = RV.name
+    waiting_time = WaitingTime.name
 
     @property
     def waiting_time_rvs_args(self):
@@ -64,3 +64,28 @@ class SecondaryInfection(_event.ForImmuneStatusesMixin, Infection):
         super().__init__(buffalo,
                          buffalo.herd.parameters.lost_immunity_susceptibility,
                          at_equilibrium=at_equilibrium)
+
+
+class HerdMixin:
+    '''Mixin for '..herd_.Herd()`.'''
+
+    def update_infection_times(self):
+        '''Calculate the number of infectious and carrier buffalo,
+        then, if these are different than previous, update
+        the infection times for susceptible buffalo.'''
+        needs_update = False
+        number_infectious_new = len(self.by_immune_status['infectious'])
+        if number_infectious_new != self.number_infectious:
+            self.number_infectious = number_infectious_new
+            needs_update = True
+        number_carrier_new = len(self.by_immune_status['carrier'])
+        if number_carrier_new != self.number_carrier:
+            self.number_carrier = number_carrier_new
+            needs_update = True
+        if needs_update:
+            # There's a descriptor on `self.events.infections`
+            # that handles getting and setting
+            infections = self.events.infections
+            for infection in infections:
+                infection.time = infection.sample_time()
+            self.events.infections = infections

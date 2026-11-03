@@ -6,7 +6,7 @@ import pathlib
 import matplotlib.pyplot
 import seaborn
 
-from context import plotting
+from _context import plotting
 import data_
 
 rc = (

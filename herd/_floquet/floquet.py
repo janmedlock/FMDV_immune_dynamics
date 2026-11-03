@@ -4,7 +4,7 @@ import joblib
 import numpy
 import scipy
 
-from .. import _parameters, _period
+from .. import _period, parameters
 from . import dominant_eigen, monodromy
 
 _step_default = 0.01
@@ -93,8 +93,8 @@ def _find_birth_scaling(params, step, age_max):
     return birth_scaling
 
 
-class _CacheParameters(_parameters.Parameters):
-    '''Build a `herd._parameters.Parameters()`-like object that
+class _CacheParameters(parameters.Parameters):
+    '''Build a `herd.parameters.Parameters()`-like object that
     only has the parameters needed by `Solver()`
     so that it can be efficiently cached.'''
     def __init__(self, params):

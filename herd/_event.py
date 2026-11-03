@@ -6,7 +6,7 @@ import inspect
 import itertools
 import types
 
-from . import _immune_status, _sex
+from . import immune_status, sex
 
 # Subclasses of `Event()` are added to these sets when those events are
 # defined by `ForAllMixin()`, `ForSexMixin()`,
@@ -14,11 +14,9 @@ from . import _immune_status, _sex
 # `Event()`s that can happen to any buffalo.
 _events_for_all = set()
 # `Event()`s that can happen to each sex.
-_events_for_sex = {sex: set() for sex in _sex.sexes}
+_events_for_sex = {s: set() for s in sex.sexes}
 # `Event()`s that can happen to each immune status.
-_events_for_immune_status = {
-    immune_status: set()
-    for immune_status in _immune_status.immune_statuses}
+_events_for_immune_status = {s: set() for s in immune_status.immune_statuses}
 
 
 def get_events_for(buffalo):
@@ -28,9 +26,9 @@ def get_events_for(buffalo):
         _events_for_immune_status[buffalo.immune_status])
 
 
-def get_events_for_immune_status(immune_status):
-    '''Get the types of events that can happen to `immune_status`.'''
-    return _events_for_immune_status[immune_status]
+def get_events_for_immune_status(immune_status_):
+    '''Get the types of events that can happen to `immune_status_`.'''
+    return _events_for_immune_status[immune_status_]
 
 
 def _union_of_events_for():
@@ -49,8 +47,8 @@ class Event(metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def waiting_time(self):
         '''The name of the waiting time in
-        `.rv.RandomVariables()`. Subclasses must define this
-        attribute.'''
+        `.random_variables.RandomVariables()`. Subclasses must define
+        this attribute.'''
 
     @abc.abstractmethod
     def do(self):
@@ -174,8 +172,8 @@ class ForImmuneStatusesMixin(metaclass=abc.ABCMeta):
         `_events_for_immune_status[immune_status]`
         for `immune_status` in `.immune_statuses`.'''
         if not inspect.isabstract(cls):
-            for immune_status in cls.immune_statuses:
-                _events_for_immune_status[immune_status].add(cls)
+            for immune_status_ in cls.immune_statuses:
+                _events_for_immune_status[immune_status_].add(cls)
         super().__init_subclass__(**kwds)
 
     def is_valid(self):

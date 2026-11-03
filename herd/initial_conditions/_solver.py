@@ -8,12 +8,12 @@ import numpy.lib.recfunctions
 import pandas
 import scipy
 
-from ... import _immune_status, _parameters, _utility, events
-from . import blocks
+from .. import events, immune_status, parameters, utility
+from . import _blocks
 
 _offspring_have_maternal_immunity = tuple(
     mother
-    for (mother, offspring) in _immune_status.birth_immune_status.items()
+    for (mother, offspring) in immune_status.birth_immune_status.items()
     if offspring == 'maternal_immunity'
 )
 
@@ -27,38 +27,39 @@ def _rec_fromkwds(**kwds):
 
 class _Params:
     '''Dummy object to pass parameters from `Solver()` to
-    `blocks._Block()`s.'''
+    `._blocks._Block()`s.'''
     def __init__(self, params, ages, ages_mid, step, length_ode, length_pde):
         self.step = step
         self.length_ode = length_ode
         self.length_pde = length_pde
-        # Get the pdf for these random variables.
-        rndvrs_pdf = {
-            'progression': events.progression.RV(params),
-            'recovery': events.recovery.RV(params),
-            'recovery_to_carrier': events.recovery_to_carrier.RV(params),
+        # Get the pdf for these waiting times.
+        waiting_times_pdf = {
+            'progression': events.progression.WaitingTime(params),
+            'recovery': events.recovery.WaitingTime(params),
+            'recovery_to_carrier': events.recovery_to_carrier.WaitingTime(
+                params),
         }
         pdf = {k: self._get_pdf(RV, ages)
-               for (k, RV) in rndvrs_pdf.items()}
+               for (k, RV) in waiting_times_pdf.items()}
         self.pdf = _rec_fromkwds(**pdf)
-        # Get the survival for these random variables.
-        rndvrs_survival = {
-            **rndvrs_pdf,  # The entries in `rndvrs_pdf`.
-            'mortality': events.mortality.RV(params),
+        # Get the survival for these waiting times.
+        waiting_times_survival = {
+            **waiting_times_pdf,  # The entries in `waiting_times_pdf`.
+            'mortality': events.mortality.WaitingTime(params),
         }
         survival = {k: RV.sf(ages)
-                    for (k, RV) in rndvrs_survival.items()}
+                    for (k, RV) in waiting_times_survival.items()}
         self.survival = _rec_fromkwds(**survival)
-        # Get the hazard for these RVs.
-        rndvrs_hazard = {
-            'mortality': rndvrs_survival['mortality'],
-            'maternal_immunity_waning': events.maternal_immunity_waning.RV(
-                params),
-            'antibody_gain': events.antibody_gain.RV(params),
-            'antibody_loss': events.antibody_loss.RV(params),
+        # Get the hazard for these waiting times.
+        waiting_times_hazard = {
+            'mortality': waiting_times_survival['mortality'],
+            'maternal_immunity_waning':
+            events.maternal_immunity_waning.WaitingTime(params),
+            'antibody_gain': events.antibody_gain.WaitingTime(params),
+            'antibody_loss': events.antibody_loss.WaitingTime(params),
         }
         hazard = {k: rndvr.hazard(ages_mid)
-                  for (k, rndvr) in rndvrs_hazard.items()}
+                  for (k, rndvr) in waiting_times_hazard.items()}
         hazard['infection'] = 1  # Dummy value. Set on calls to `solve_step()`.
         # Other parameters.
         self.hazard = _rec_fromkwds(**hazard)
@@ -107,8 +108,8 @@ class Solver:
 
     def __init__(self, params, debug=False, _skip_blocks=False):
         self.debug = debug
-        self.ages = _utility.arange(0, self.age_max, self.step,
-                                    endpoint=True)
+        self.ages = utility.arange(0, self.age_max, self.step,
+                                   endpoint=True)
         assert len(self.ages) > 1
         self.ages_mid = (self.ages[:-1] + self.ages[1:]) / 2
         self.length_ode = self.length_pde = len(self.ages)
@@ -117,7 +118,7 @@ class Solver:
         if not _skip_blocks:
             self.blocks = {
                 Block.X: Block(self.params)
-                for Block in blocks.Blocks
+                for Block in _blocks.Blocks
             }
 
     def update_blocks(self):
@@ -132,7 +133,7 @@ class Solver:
             return rows
         else:
             # `vars_ode` first, then `vars_pde`.
-            vars_ = blocks.vars_ode + blocks.vars_pde
+            vars_ = _blocks.vars_ode + _blocks.vars_pde
             return [cls.stack(rows.get(k))
                     for k in vars_]
 
@@ -146,9 +147,9 @@ class Solver:
     def unstack(self, Pp):
         '''Unstack the P_X and p_X vectors.'''
         # `vars_ode` are first, then `vars_pde`.
-        split = len(blocks.vars_ode) * self.length_ode
-        P = self._unstack_and_label(Pp[:split], blocks.vars_ode)
-        p = self._unstack_and_label(Pp[split:], blocks.vars_pde)
+        split = len(_blocks.vars_ode) * self.length_ode
+        P = self._unstack_and_label(Pp[:split], _blocks.vars_ode)
+        p = self._unstack_and_label(Pp[split:], _blocks.vars_pde)
         return (P, p)
 
     def stack_sparse(self, rows, format='csr'):
@@ -199,10 +200,10 @@ class Solver:
             (P, p_integrated),
             asrecarray=True, flatten=True)
         P = pandas.DataFrame(P, index=pandas.Index(self.ages, name='age'))
-        P.rename(columns=blocks.NAMES, inplace=True)
+        P.rename(columns=_blocks.NAMES, inplace=True)
         # Order columns.
         cols = pandas.CategoricalIndex(P.columns,
-                                       blocks.NAMES.values(),
+                                       _blocks.NAMES.values(),
                                        ordered=True)
         P = (P.set_axis(cols, axis='columns')
              .sort_index(axis='columns'))
@@ -273,8 +274,8 @@ def _solve(params, debug):
     return Solver(params, debug=debug).solve()
 
 
-class _CacheParameters(_parameters.Parameters):
-    '''Build a `herd._parameters.Parameters()`-like object that
+class _CacheParameters(parameters.Parameters):
+    '''Build a `herd.parameters.Parameters()`-like object that
     only has the parameters needed by `Solver()`
     so that it can be efficiently cached.'''
 

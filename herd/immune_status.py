@@ -1,3 +1,5 @@
+import pandas
+
 immune_statuses = (
     'maternal_immunity', 'susceptible', 'exposed', 'infectious', 'carrier',
     'recovered_true',       # Apparent     antibodies and true     antibodies
@@ -5,6 +7,8 @@ immune_statuses = (
     'lost_immunity_true',   # Apparent not antibodies and true     antibodies
     'lost_immunity_false',  # Apparent not antibodies and true not antibodies
 )
+
+dtype = pandas.CategoricalDtype(immune_statuses, ordered=True)
 
 # The immune statuses that are infected, i.e. have pathogen
 infected = frozenset({'exposed', 'infectious', 'carrier'})

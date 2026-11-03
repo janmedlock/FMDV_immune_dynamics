@@ -7,8 +7,9 @@ import numpy
 import scipy.stats.sampling
 
 # Non-abstract subclasses of `RV()` are added to this list when they
-# are defined
-_rvs = []
+# are defined and then automatically attached to
+# `random_variables.RandomVariables()`
+rvs = []
 
 
 def expon_scale_from_rate(rate):
@@ -22,24 +23,24 @@ def gamma_scale_from_mean(mean, shape):
     return mean / shape
 
 
-def sample_until(rvs, target, *args, max_samples=10_000, **kwds):
+def sample_until(rvs_, target, *args, max_samples=10_000, **kwds):
     '''Sample until `target()` is `True`.'''
     for _ in range(max_samples):
-        val = rvs(*args, **kwds)
+        val = rvs_(*args, **kwds)
         if target(val):
             return val
     raise ValueError(f'Sampling failed after {max_samples=}!')
 
 
-def _sample_nonnegative(rvs):
+def _sample_nonnegative(rvs_):
     '''Decorator to sample until nonnegative.'''
 
     def is_nonnegative(val):
         return val >= 0
 
-    @functools.wraps(rvs)
+    @functools.wraps(rvs_)
     def sample_nonnegative(*args, **kwds):
-        return sample_until(rvs, is_nonnegative, *args, **kwds)
+        return sample_until(rvs_, is_nonnegative, *args, **kwds)
 
     return sample_nonnegative
 
@@ -49,14 +50,15 @@ class RV(metaclass=abc.ABCMeta):
     @property
     @abc.abstractmethod
     def name(self):
-        '''Name of the random variable for `.RandomVariables()`'''
+        '''Name of the random variable for
+        `.random_variables.RandomVariables()`'''
 
     @classmethod
     def __init_subclass__(cls, **kwds):
-        '''Add non-abstract `cls` to `_rvs`.'''
+        '''Add non-abstract `cls` to `rvs`.'''
         super().__init_subclass__(**kwds)
         if not inspect.isabstract(cls):
-            _rvs.append(cls)
+            rvs.append(cls)
 
     def __init__(self, parameters, seed=None):
         self.rng = numpy.random.default_rng(seed)
@@ -158,13 +160,3 @@ class TimeSinceEntryDependentWaitingTimeMixin(WaitingTimeMixin):
         # resamples to get a nonnegative result
         return (self.rvs(*args, **kwds)
                 - self.time_since_entry.rvs(*args, **kwds))
-
-
-class RandomVariables:
-    '''The random variables for the simulation.'''
-
-    def __init__(self, parameters, seed=None):
-        rng = numpy.random.default_rng(seed)
-        for rv in _rvs:
-            assert not hasattr(self, rv.name)
-            setattr(self, rv.name, rv(parameters, seed=rng))

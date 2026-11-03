@@ -4,7 +4,7 @@
 import matplotlib.pyplot
 import numpy
 
-from context import common
+from _context import common
 
 import age_structure
 

@@ -75,6 +75,7 @@ class _Infections:
 
 class HerdEvents(_SortedEventList):
     '''Container to hold all events that can happen in the herd.'''
+
     # The `Event()`s are stored sorted by their time so that the one
     # with minimum time can be found efficiently.
     # `infection.Event()`s are stored separately in

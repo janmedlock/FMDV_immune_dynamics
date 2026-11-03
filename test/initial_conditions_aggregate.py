@@ -7,9 +7,10 @@ import numpy
 import pandas
 import scipy
 
-from context import common, herd, plotting
-import herd._initial_conditions
+from _context import common, herd, plotting
+import herd.initial_conditions
 import herd.mortality
+import herd.utility
 
 
 def get_params():
@@ -20,11 +21,11 @@ def get_params():
 
 
 def get_solutions(params):
-    ages = common.arange(0, 20, 0.005, endpoint=True)
+    ages = herd.utility.arange(0, 20, 0.005, endpoint=True)
     p = {}
     for (SAT, params_SAT) in params.items():
-        ICs = herd._initial_conditions.RV(params_SAT)
-        p[SAT] = ICs.immune_status_pdf(ages)
+        ics = herd.initial_conditions.InitialConditions(params_SAT)
+        p[SAT] = ics.immune_status_pdf(ages)
     return pandas.concat(p, axis='columns')
 
 

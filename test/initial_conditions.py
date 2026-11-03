@@ -4,39 +4,40 @@
 import matplotlib.pyplot
 import numpy
 
-from context import common, herd, plotting
-import herd._initial_conditions
+from _context import common, herd, plotting
+import herd.initial_conditions
+import herd.utility
 
 
-def plot_probability_constant_birth(ICs, ages, ax):
+def plot_probability_constant_birth(ics, ages, ax):
     '''With the assumption of constant-time birth hazard,
     plot probability of being in each class vs. age,
     *not* conditioned on being alive.'''
-    p = ICs.immune_status_pdf(ages)
+    p = ics.immune_status_pdf(ages)
     ax.stackplot(ages, p.T, labels=p.columns)
     ax.set_ylabel('constant-birth\ndensity')
 
 
-def plot_conditional_probability(ICs, ages, ax):
+def plot_conditional_probability(ics, ages, ax):
     '''Plot probability of being in each class vs. age,
     conditioned on being alive.'''
-    p = ICs.immune_status_conditional_pdf(ages)
+    p = ics.immune_status_conditional_pdf(ages)
     ax.stackplot(ages, p.T)
     ax.set_ylabel('probability\ngiven alive')
 
 
-def plot_probability(ICs, ages, ax):
+def plot_probability(ics, ages, ax):
     '''Plot probability of being in each class vs. age,
     *not* conditioned on being alive.'''
-    p = ICs.pdf(ages)
+    p = ics.pdf(ages)
     ax.stackplot(ages, p.T)
     ax.set_ylabel('density')
 
 
-def plot_samples(ICs, ages, ax):
+def plot_samples(ics, ages, ax):
     '''For a sample initial condition,
     plot the number in each class vs. age.'''
-    samples = ICs.rvs()
+    samples = ics.rvs()
     bins = ages
     left = bins[:-1]
     width = ages[1] - ages[0]
@@ -49,10 +50,10 @@ def plot_samples(ICs, ages, ax):
     ax.set_ylabel('count in\nsample')
 
 
-def plot_ICs(SAT, seed=1):
+def plot_ics(SAT, seed=1):
     parameters = herd.Parameters(SAT=SAT)
-    ICs = herd._initial_conditions.RV(parameters, seed=seed)
-    ages = common.arange(0, 20, 0.1, endpoint=True)
+    ics = herd.initial_conditions.InitialConditions(parameters, seed=seed)
+    ages = herd.utility.arange(0, 20, 0.1, endpoint=True)
     plot_fcns = (plot_probability_constant_birth,
                  plot_conditional_probability,
                  plot_probability,
@@ -60,7 +61,7 @@ def plot_ICs(SAT, seed=1):
     (fig, axes) = matplotlib.pyplot.subplots(len(plot_fcns), 1,
                                              sharex=True)
     for (ax, plot_fcn) in zip(axes, plot_fcns):
-        plot_fcn(ICs, ages, ax)
+        plot_fcn(ics, ages, ax)
     axes[-1].set_xlabel(f'age ({common.TIME_UNIT})')
     for ax in axes:
         ax.margins(0)
@@ -75,5 +76,5 @@ def plot_ICs(SAT, seed=1):
 
 if __name__ == '__main__':
     for SAT in common.SATs:
-        plot_ICs(SAT)
+        plot_ics(SAT)
     matplotlib.pyplot.show()

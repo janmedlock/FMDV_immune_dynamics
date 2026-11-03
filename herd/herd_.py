@@ -3,44 +3,33 @@ import itertools
 import numpy
 import pandas
 
-from . import (_buffalo, _containers, _immune_status, _initial_conditions,
-               _parameters, _rv)
+from . import (_events_containers, buffalo, events, immune_status,
+               initial_conditions, random_variables)
+from .parameters import Parameters
 
 
-class Herd(set):
+class Herd(events.infection.HerdMixin, initial_conditions.HerdMixin, set):
     '''A herd of buffaloes, the things that can happen to them, and code to
     simulate.'''
     def __init__(self, parameters=None, debug=False, seed=None):
         rng = numpy.random.default_rng(seed)
         if parameters is None:
-            parameters = _parameters.Parameters(seed=rng)
+            parameters = Parameters(seed=rng)
         self.parameters = parameters
         self.debug = debug
-        self.rvs = _rv.RandomVariables(self.parameters, seed=rng)
+        self.rvs = random_variables.RandomVariables(self.parameters, seed=rng)
         self.time = 0
-        self.events = _containers.HerdEvents(seed=rng)
+        self.events = _events_containers.HerdEvents(seed=rng)
         self.by_immune_status = {s: set()
-                                 for s in _immune_status.immune_statuses}
+                                 for s in immune_status.immune_statuses}
         self.identifiers = itertools.count(0)
         # These need to be defined before initializing
-        # susceptible `_buffalo.Buffalo()`.
+        # susceptible `buffalo.Buffalo()`.
         self.number_infectious = self.number_carrier = 0
-        age_immune_status = self._sample_initial_conditions()
-        for (age, immune_status_) in age_immune_status.items():
-            self.add(_buffalo.Buffalo(self, immune_status_, age,
-                                      at_equilibrium=True))
-
-    def _sample_initial_conditions(self, max_samples=100):
-        '''Get a sample initial condition with some infected hosts.'''
-        initial_conditions = getattr(self.rvs,
-                                     _initial_conditions.RV.name)
-
-        def has_infected(ser):
-            return ser.isin(_immune_status.infected).any()
-
-        return _rv.sample_until(initial_conditions.rvs,
-                                has_infected,
-                                max_samples=max_samples)
+        age_and_immune_status = self.sample_initial_conditions()
+        for (age, immune_status_) in age_and_immune_status.items():
+            self.add(buffalo.Buffalo(self, immune_status_, age,
+                                     at_equilibrium=True))
 
     def immune_status_add(self, b):
         self.by_immune_status[b.immune_status].add(b)
@@ -56,34 +45,15 @@ class Herd(set):
         self.immune_status_remove(b)
         super().remove(b)
 
-    def update_infection_times(self):
-        '''Calculate the number of infectious and carrier buffalo,
-        then, if these are different than previous, update
-        the infection times for susceptible buffalo.'''
-        needs_update = False
-        number_infectious_new = len(self.by_immune_status['infectious'])
-        if number_infectious_new != self.number_infectious:
-            self.number_infectious = number_infectious_new
-            needs_update = True
-        number_carrier_new = len(self.by_immune_status['carrier'])
-        if number_carrier_new != self.number_carrier:
-            self.number_carrier = number_carrier_new
-            needs_update = True
-        if needs_update:
-            infections = self.events.infections
-            for infection in infections:
-                infection.time = infection.sample_time()
-            self.events.infections = infections
-
     def get_stats(self):
         stats = [len(self.by_immune_status[s])
-                 for s in _immune_status.immune_statuses]
+                 for s in immune_status.immune_statuses]
         return (self.time, stats)
 
     @property
     def number_infected(self):
         return sum(len(self.by_immune_status[s])
-                   for s in _immune_status.infected)
+                   for s in immune_status.infected)
 
     def stop(self):
         return (self.number_infected == 0)
@@ -119,7 +89,7 @@ class Herd(set):
             return result
         result = pandas.DataFrame.from_dict(
             dict(result), orient='index',
-            columns=_immune_status.immune_statuses)
+            columns=immune_status.immune_statuses)
         result.index.name = 'time'
         result.columns.name = 'status'
         return result

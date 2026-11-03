@@ -4,20 +4,23 @@ import scipy
 from . import _floquet, _rv
 
 
-class RV(_rv.RV):
-    name = 'age_structure'
+class Age(_rv.RV):
+    '''Age random variable, with distribution from the age structure
+    of the stable attractor.'''
+
+    name = 'age'
 
     def __init__(self, parameters, seed=None, **kwds):
         super().__init__(parameters, seed=seed)
         (self._density, self._ages) = _floquet.find_stable_age_structure(
             parameters, **kwds)
         self._proportion = self._density / self._density.sum()
-        self._age_rv = scipy.stats.rv_discrete(
+        self._rv = scipy.stats.rv_discrete(
             values=(self._ages, self._proportion),
             seed=self.rng)
 
     def rvs(self, size=None):
-        return self._age_rv.rvs(size=size)
+        return self._rv.rvs(size=size)
 
     def pdf(self, x):
         return numpy.interp(x, self._ages, self._density, left=0, right=0)

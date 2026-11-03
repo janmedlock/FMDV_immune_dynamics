@@ -6,19 +6,20 @@ import matplotlib.pyplot
 import numpy
 import scipy
 
-from context import common, herd
-import herd._age_structure
+from _context import common, herd
+import herd.age
 import herd.mortality
+import herd.utility
 
 birth_peak_times = numpy.linspace(0, 1, 4, endpoint=False)
-ages = common.arange(0, 25, 0.01, endpoint=True)
+ages = herd.utility.arange(0, 25, 0.01, endpoint=True)
 N_JOBS = 1  # This seems to be faster sequentially.
 
 
 def get_age_structure(ages, birth_peak_time):
     parameters = herd.Parameters()
     parameters.birth_peak_time = birth_peak_time
-    return herd._age_structure.RV(parameters).pdf(ages)
+    return herd.age.Age(parameters).pdf(ages)
 
 
 def get_age_structures(ages, birth_peak_times):

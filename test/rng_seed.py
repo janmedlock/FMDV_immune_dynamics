@@ -8,7 +8,7 @@ import os
 
 import numpy
 
-from context import common, herd
+from _context import common, herd
 
 
 def get_rng(herd_):

@@ -7,6 +7,7 @@ import numpy
 
 import common
 import h5
+import herd.utility
 import population_size as population_size_
 import population_size_and_susceptibility
 import susceptibility
@@ -68,7 +69,7 @@ def run(nruns, *args, **kwds):
     '''Run the simulations for the sensitivity analysis.'''
     # The logic in the inner loop `_run_over_population_sizes()`
     # requires that the population sizes be strictly increasing.
-    assert common.is_increasing(population_size_.values, strict=True)
+    assert herd.utility.is_increasing(population_size_.values, strict=True)
     with h5.HDFStore(population_size_and_susceptibility.store_path) as store:
         for SAT in common.SATs:
             for suscept in susceptibility.values:

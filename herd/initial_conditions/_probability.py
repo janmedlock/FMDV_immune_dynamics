@@ -2,7 +2,7 @@
 
 import numpy
 
-from . import solver
+from . import _solver
 
 
 class Interpolant:
@@ -10,7 +10,7 @@ class Interpolant:
     different ages as needed.'''
 
     def __init__(self, params, debug=False):
-        self._probability = solver.solve(params, debug=debug)
+        self._probability = _solver.solve(params, debug=debug)
 
     def __call__(self, age):
         # Interpolate `self._probability` to `age`.

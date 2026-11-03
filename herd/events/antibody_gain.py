@@ -1,10 +1,9 @@
 import scipy
 
 from .. import _event, _rv
-from . import antibody_gain_to_recovered_true
 
 
-class RV(_rv.MemorylessWaitingTimeMixin, _rv.ScipyRV):
+class WaitingTime(_rv.MemorylessWaitingTimeMixin, _rv.ScipyRV):
     '''Waiting time to gain of antibodies.'''
 
     name = 'antibody_gain'
@@ -15,22 +14,32 @@ class RV(_rv.MemorylessWaitingTimeMixin, _rv.ScipyRV):
         return scipy.stats.expon(scale=scale)
 
 
+class ToRecoveredTrue(_rv.ScipyRV):
+    '''Whether gaining apparent antibody leads to having true antibodies.'''
+
+    name = 'antibody_gain_to_recovered_true'
+
+    def rv(self, parameters):
+        p = parameters.antibody_gain_to_recovered_true_probability
+        return scipy.stats.bernoulli(p)
+
+
 class AntibodyGain(_event.ForImmuneStatusesMixin, _event.Event):
     '''A buffalo gaining apparent antibodies.'''
 
-    waiting_time = RV.name
+    waiting_time = WaitingTime.name
+
+    to_recovered_true = ToRecoveredTrue.name
 
     immune_statuses = frozenset({'lost_immunity_true',
                                  'lost_immunity_false'})
 
     def __init__(self, buffalo, at_equilibrium=False):
-        self.antibody_gain_to_recovered_true = getattr(
-            buffalo.herd.rvs,
-            antibody_gain_to_recovered_true.RV.name)
+        self.to_recovered_true = getattr(buffalo.herd.rvs,
+                                         self.to_recovered_true)
         super().__init__(buffalo, at_equilibrium=at_equilibrium)
 
     def do(self):
-        if self.antibody_gain_to_recovered_true.rvs():
-            self.buffalo.change_immune_status_to('recovered_true')
-        else:
-            self.buffalo.change_immune_status_to('recovered_false')
+        destination = ('recovered_true' if self.to_recovered_true.rvs()
+                       else 'recovered_false')
+        self.buffalo.change_immune_status_to(destination)

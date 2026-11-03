@@ -1,18 +1,20 @@
-from . import _containers, _event, _immune_status
-from .events import female
+from . import _event, _events_containers, immune_status, sex
+from .events import birth, mortality
 
 
-class Buffalo:
+class Buffalo(birth.BuffaloMixin, mortality.BuffaloMixin):
     '''A single buffalo and the events that can occur to it.'''
 
-    def __init__(self, herd, immune_status, age=0, at_equilibrium=False):
+    def __init__(self, herd, immune_status_, age=0, at_equilibrium=False):
         self.herd = herd
-        self.immune_status = immune_status
+        self.immune_status = immune_status_
+        assert self.immune_status in immune_status.immune_statuses
+        assert age >= 0
         self.birth_date = self.herd.time - age
-        female_ = getattr(self.herd.rvs, female.RV.name)
-        self.sex = 'female' if female_.rvs() else 'male'
+        self.sex = self.get_sex()
+        assert self.sex in sex.sexes
         self.identifier = next(self.herd.identifiers)
-        self.events = _containers.BuffaloEvents(self)
+        self.events = _events_containers.BuffaloEvents(self)
         # Add an event of each type that can happen to this buffalo
         for event in _event.get_events_for(self):
             self.events.add(event(self, at_equilibrium=at_equilibrium))
@@ -21,21 +23,11 @@ class Buffalo:
                   + ('birth' if age == 0 else 'arrival')
                   + f' of #{self.identifier}'
                   + (f' at {age=:g}' if age > 0 else '')
-                  + f' with immune_status={immune_status}')
+                  + f' with immune_status={immune_status_}')
 
     @property
     def age(self):
         return (self.herd.time - self.birth_date)
-
-    def die(self):
-        self.herd.remove(self)
-        self.events.clear()
-
-    def give_birth(self):
-        assert self.sex == 'female'
-        birth_immune_status = (
-            _immune_status.birth_immune_status[self.immune_status])
-        self.herd.add(Buffalo(self.herd, birth_immune_status))
 
     def _remove_events_on_immune_status_change(self, event_types_old,
                                                event_types_new):

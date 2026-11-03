@@ -6,9 +6,8 @@ import functools
 import numpy
 import pandas
 
-from context import data as data_
+from _context import data
 import model
-import plotting_
 import _multiprocessing_
 
 _POSITIVE_TO_STATE = (
@@ -27,10 +26,10 @@ _POSITIVE_TO_STATE = (
 def load_data():
     '''Load the `data` and rearrange it to the form used by `Model`.'''
 
-    def get_state(data):
+    def get_state(data_):
         '''Build 'state' column.'''
         return (
-            data.loc[:, 'positive']
+            data_.loc[:, 'positive']
             .map(_POSITIVE_TO_STATE)
             .rename(_POSITIVE_TO_STATE.name)
         )
@@ -56,12 +55,12 @@ def load_data():
             .iloc[1:]
         )
 
-    data = data_.load()
+    data_ = data.load()
     grouper = (
-        data.set_index('capture')
+        data_.set_index('capture')
         .groupby(['SAT', 'ID'], observed=False)
     )
-    date_start = data.date.min()
+    date_start = data_.date.min()
     return grouper.apply(convert_group, date_start,
                          include_groups=False)
 
@@ -105,4 +104,4 @@ def to_parameters(log_rate_):
 if __name__ == '__main__':
     log_rate = estimate_by_sat(global_=False)
     print(to_parameters(log_rate))
-    # plotting_.rates_by_sat(log_rate, show=True)
+    # _plotting.rates_by_sat(log_rate, show=True)

@@ -1,11 +1,6 @@
-__all__ = (
-    'Herd',
-    'Parameters',
-    'RandomVariables',
-    'events',
-)
+__all__ = ('Herd', 'Parameters', 'RandomVariables', 'events',)
 
 from . import events
-from ._herd import Herd
-from ._parameters import Parameters
-from ._rv import RandomVariables
+from .herd_ import Herd
+from .parameters import Parameters
+from .random_variables import RandomVariables

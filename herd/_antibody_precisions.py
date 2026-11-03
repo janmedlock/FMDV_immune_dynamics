@@ -2,8 +2,7 @@
 
 import pandas
 
-from . import _confusion
-from ._context import data
+from . import _confusion, data
 
 # Map axes values to immune states
 _IMMUNE_STATUS_MAP = {

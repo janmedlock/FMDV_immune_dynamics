@@ -3,7 +3,7 @@ import scipy
 from .. import _event, _rv
 
 
-class RV(_rv.TimeSinceEntryDependentWaitingTimeMixin, _rv.ScipyRV):
+class WaitingTime(_rv.TimeSinceEntryDependentWaitingTimeMixin, _rv.ScipyRV):
     '''Waiting time for progression.'''
 
     name = 'progression'
@@ -18,7 +18,7 @@ class RV(_rv.TimeSinceEntryDependentWaitingTimeMixin, _rv.ScipyRV):
 class Progression(_event.ForImmuneStatusMixin, _event.Event):
     '''A buffalo becoming infectious.'''
 
-    waiting_time = RV.name
+    waiting_time = WaitingTime.name
 
     immune_status = 'exposed'
 

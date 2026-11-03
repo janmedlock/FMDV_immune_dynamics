@@ -5,9 +5,9 @@ import matplotlib.ticker
 import numpy
 import seaborn
 
-from context import plotting
-import estimate
+from _context import plotting
 import _ci
+import estimate
 
 
 RATE_LABEL = 'rate (y$^{-1}$)'

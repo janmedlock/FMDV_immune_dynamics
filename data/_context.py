@@ -5,5 +5,6 @@ import sys
 
 _path = pathlib.Path(__file__).parents[1]
 sys.path.append(str(_path))
-import data
+import herd
+import plotting
 sys.path.pop()

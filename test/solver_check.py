@@ -8,9 +8,9 @@ import matplotlib.patches
 import matplotlib.pyplot
 import numpy
 
-from context import common, herd
-import herd._initial_conditions.immune_status.blocks
-import herd._initial_conditions.immune_status.solver
+from _context import common, herd
+import herd.initial_conditions._blocks
+import herd.initial_conditions._solver
 
 
 def check_parameters(slvr):
@@ -48,13 +48,13 @@ def plot_blocks(slvr):
                 blcks[j, k] = 1
             else:
                 blcks[j, k] = -1
-    (fig, axes) = matplotlib.pyplot.subplots(constrained_layout=True)
+    (_, axes) = matplotlib.pyplot.subplots(constrained_layout=True)
     cmap = matplotlib.colormaps['PiYG']
     norm = matplotlib.colors.Normalize(-1, 1)
     axes.matshow(blcks, cmap=cmap, norm=norm)
     vars_ = (
-        herd._initial_conditions.immune_status.blocks.vars_ode
-        + herd._initial_conditions.immune_status.blocks.vars_pde
+        herd.initial_conditions._blocks.vars_ode
+        + herd.initial_conditions._blocks.vars_pde
     )
     axes.set_xticks(range(len(vars_)))
     axes.set_yticks(range(len(vars_)))
@@ -80,7 +80,7 @@ def plot_blocks(slvr):
 
 
 def plot_solution(prob):
-    (fig, axes) = matplotlib.pyplot.subplots(constrained_layout=True)
+    (_, axes) = matplotlib.pyplot.subplots(constrained_layout=True)
     axes.stackplot(prob.index, prob.T, labels=prob.columns)
     axes.set_xlabel(f'age ({common.TIME_UNIT})')
     axes.set_ylabel('constant-birth\ndensity')
@@ -90,7 +90,7 @@ def plot_solution(prob):
 
 if __name__ == '__main__':
     parameters = herd.Parameters(SAT=1)
-    slvr = herd._initial_conditions.immune_status.solver.Solver(parameters)
+    slvr = herd.initial_conditions._solver.Solver(parameters)
     HAZARD_INFECTION = 2
     NEWBORN_PROPORTION_IMMUNE = 0.6
     prob = slvr.solve_step(slvr.transform((HAZARD_INFECTION,

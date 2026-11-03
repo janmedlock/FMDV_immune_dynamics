@@ -1,17 +1,13 @@
 '''Common code.'''
 
-__all__ = (
-    'is_increasing',
-)
-
 import os
 
 import numpy
 import pandas
 import psutil
 
-import herd._immune_status
-from herd._utility import arange, is_increasing
+import herd.immune_status
+import herd.utility
 
 SEED = 0x2dfe_b254_9048_29b5_9bf1_6308_2091_4a17
 
@@ -53,7 +49,7 @@ def get_infected(obj):
     # over index for a `pandas.Series()`.
     axis = obj.ndim - 1
     infected = (
-        obj[herd._immune_status.infected]
+        obj[herd.immune_status.infected]
         .sum(axis=axis)
     )
     try:
@@ -81,7 +77,7 @@ def get_daily(dfr):
 
     assert TIME_UNIT == 'year'
     t_step = 1 / 365
-    t_daily = arange(0, TIME_MAX, t_step, endpoint=True)
+    t_daily = herd.utility.arange(0, TIME_MAX, t_step, endpoint=True)
     # `by` is all of the index levels except 'time'.
     by = dfr.index.names.difference({'time'})
     if len(by) == 0:

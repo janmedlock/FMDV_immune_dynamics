@@ -93,11 +93,11 @@ class Parameters:
         return _antibody_precisions.estimate(self.SAT)
 
     def _set_antibody_precisions(self, seed):
-        antibody_precision = self._get_antibody_precisions(seed)
+        antibody_precisions = self._get_antibody_precisions(seed)
         self.antibody_gain_to_recovered_true_probability = float(
-            antibody_precision['recovered'])
+            antibody_precisions['recovered'])
         self.antibody_loss_to_lost_immunity_true_probability = float(
-            antibody_precision['lost_immunity'])
+            antibody_precisions['lost_immunity'])
 
     def set(self, **kwds):
         for (key, val) in kwds.items():

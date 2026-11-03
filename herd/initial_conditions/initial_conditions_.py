@@ -1,13 +1,12 @@
 '''Initial conditions.'''
 
 import numpy
-import pandas
 
-from .. import _age_structure, _rv
-from . import immune_status
+from .. import _rv, age, immune_status
+from . import _probability
 
 
-class RV(_rv.RV):
+class InitialConditions(_rv.RV):
     '''This assumes that the hazard of infection is constant in time,
     not periodic as it is with a periodic birth pulse.'''
 
@@ -23,12 +22,10 @@ class RV(_rv.RV):
 
             import pandas
 
-            from .. import _immune_status
-
             def immune_status_conditional_pdf(ages):
                 pdf = pandas.DataFrame(0.,
                                        index=ages,
-                                       columns=_immune_status.immune_statuses)
+                                       columns=immune_status.immune_statuses)
                 pdf['infectious'] = 0.05
                 pdf['susceptible'] = 1. - pdf.sum(axis='columns')
                 return pdf
@@ -36,10 +33,9 @@ class RV(_rv.RV):
             warnings.warn('Fake `initial_conditions`!')
             self.immune_status_pdf = immune_status_conditional_pdf
         else:
-            self.immune_status_pdf = (
-                immune_status.probability.Interpolant(parameters,
-                                                      debug=debug))
-        self.ages = _age_structure.RV(parameters, seed=self.rng)
+            self.immune_status_pdf = _probability.Interpolant(parameters,
+                                                              debug=debug)
+        self.age = age.Age(parameters, seed=self.rng)
 
     def immune_status_conditional_pdf(self, ages):
         '''The probability of being in each immune state vs. `ages`,
@@ -47,15 +43,15 @@ class RV(_rv.RV):
         p = self.immune_status_pdf(ages)
         return p.divide(p.sum(axis='columns'), axis='index')
 
-    def pdf(self, age):
-        return self.immune_status_conditional_pdf(age).multiply(
-            self.ages.pdf(age), axis='index')
+    def pdf(self, age_):
+        return self.immune_status_conditional_pdf(age_).multiply(
+            self.age.pdf(age_), axis='index')
 
     def rvs(self, size=None):
         if size is None:
             size = self.population_size
         # Pick `size` random ages.
-        ages = self.ages.rvs(size=size)
+        ages = self.age.rvs(size=size)
         # Determine the immune status for each age.
         immune_status_probability = self.immune_status_conditional_pdf(ages)
         # `immune_status_probability.sum(axis='columns')`
@@ -71,9 +67,24 @@ class RV(_rv.RV):
                                                        axis='index')
             )
         # Randomly pick an immune status for each row.
-        immune_status_ = immune_status_probability.columns
-        dtype = pandas.CategoricalDtype(immune_status_, ordered=True)
+        immune_statuses = immune_status_probability.columns
         return immune_status_probability.agg(
-            lambda p: self.rng.choice(immune_status_, p=p),
+            lambda p: self.rng.choice(immune_statuses, p=p),
             axis='columns'
-        ).astype(dtype)
+        ).astype(immune_status.dtype)
+
+
+class HerdMixin:
+    '''Mixin for '..herd_.Herd()`.'''
+
+    def sample_initial_conditions(self, max_samples=100):
+        '''Get a sample initial condition with some infected hosts.'''
+        initial_conditions = getattr(self.rvs, InitialConditions.name)
+
+        def has_infected(ser):
+            return ser.isin(immune_status.infected).any()
+
+        return _rv.sample_until(initial_conditions.rvs,
+                                has_infected,
+                                max_samples=max_samples)
+

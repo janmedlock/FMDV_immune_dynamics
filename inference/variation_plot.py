@@ -9,10 +9,9 @@ import numpy
 import pandas
 import seaborn
 
-from context import data as data_
-from context import plotting
+from _context import data, plotting
+import _plotting
 import estimate
-import plotting_
 
 rc = plotting.rc | plotting.rc_text_small | {
     'figure.figsize': (plotting.WIDTH_MAXIMUM['double_column'], 4.5),
@@ -28,12 +27,12 @@ rc = plotting.rc | plotting.rc_text_small | {
 def plot_rates(axs):
     '''Plot the rates.'''
     log_rate = estimate.estimate_by_sat()
-    plotting_.rates_by_sat_on(log_rate, axs, alpha=plotting.ALPHA)
+    _plotting.rates_by_sat_on(log_rate, axs, alpha=plotting.ALPHA)
 
 
 def plot_seropositives(ax):
     '''Plot the antibody titers by SAT for seropositives.'''
-    seropositives = data_.load_seropositives()
+    seropositives = data.load_seropositives()
     sats = seropositives.SAT.unique()
     xticklabels = [f'SAT{sat}' for sat in sats]
     seaborn.violinplot(
@@ -57,7 +56,7 @@ AGE_BREAKS = [0, 1, 2, 3, 6, 11, numpy.inf]
 
 def plot_seronegative_by_age(axs):
     '''Plot the proportion seronegative by age.'''
-    data_with_age = data_.load_with_age()
+    data_with_age = data.load_with_age()
     age_bins = pandas.IntervalIndex.from_breaks(
         AGE_BREAKS, closed='left', name='age (y)'
     )

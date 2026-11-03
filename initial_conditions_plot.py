@@ -11,7 +11,8 @@ import seaborn
 
 import common
 import herd
-import herd._initial_conditions
+import herd.initial_conditions
+import herd.utility
 import plotting
 
 rc = (
@@ -25,9 +26,9 @@ rc = (
 )
 
 
-def plot_age_density(ICs, ages, ax):
+def plot_age_density(ics, ages, ax):
     '''Plot the density of the stable age distribution.'''
-    p = ICs.ages.pdf(ages)
+    p = ics.ages.pdf(ages)
     ax.plot(ages, p,
             color='black', linewidth=1, zorder=3)
     if ax.get_subplotspec().is_first_col():
@@ -41,9 +42,9 @@ def plot_age_density(ICs, ages, ax):
         )
 
 
-def plot_status_probability(ICs, ages, ax):
+def plot_status_probability(ics, ages, ax):
     '''Plot probability of being in each status vs. age.'''
-    p = ICs.immune_status_pdf(ages)
+    p = ics.immune_status_pdf(ages)
     ax.stackplot(ages, p.T,
                  labels=p.columns,
                  zorder=3)
@@ -58,10 +59,10 @@ def plot_status_probability(ICs, ages, ax):
         )
 
 
-def plot_status_probability_given_alive(ICs, ages, ax):
+def plot_status_probability_given_alive(ics, ages, ax):
     '''Plot the probability of being in each status conditioned on
     being alive vs. age.'''
-    p = ICs.immune_status_conditional_pdf(ages)
+    p = ics.immune_status_conditional_pdf(ages)
     ax.stackplot(ages, p.T,
                  labels=p.columns,
                  alpha=0.8, zorder=3)
@@ -77,9 +78,9 @@ def plot_status_probability_given_alive(ICs, ages, ax):
         )
 
 
-def plot_joint_density(ICs, ages, ax):
+def plot_joint_density(ics, ages, ax):
     '''Plot the joint density.'''
-    p = ICs.pdf(ages)
+    p = ics.pdf(ages)
     ax.stackplot(ages, p.T,
                  labels=p.columns,
                  zorder=3)
@@ -104,9 +105,9 @@ plot_fcns = (
 
 def plot_SAT(axes, SAT, ages):
     parameters = herd.Parameters(SAT=SAT)
-    ICs = herd._initial_conditions.RV(parameters)
+    ics = herd.initial_conditions.InitialConditions(parameters)
     for (ax, plot_fcn) in zip(axes, plot_fcns):
-        plot_fcn(ICs, ages, ax)
+        plot_fcn(ics, ages, ax)
     for ax in axes:
         ax.margins(x=0)
         ax.grid(which='minor', visible=True)
@@ -135,7 +136,7 @@ def plot_SAT(axes, SAT, ages):
 
 
 def plot_SATs(save=True, show=False):
-    ages = common.arange(0, 20, 0.025, endpoint=True)
+    ages = herd.utility.arange(0, 20, 0.025, endpoint=True)
     with seaborn.axes_style('whitegrid'), matplotlib.rc_context(rc=rc):
         fig = matplotlib.pyplot.figure()
         nrows = len(plot_fcns)

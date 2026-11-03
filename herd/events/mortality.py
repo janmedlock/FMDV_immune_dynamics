@@ -12,7 +12,7 @@ _ANNUAL_SURVIVAL = {
 }
 
 
-class RV(_rv.MemorylessWaitingTimeMixin, _rv.RV):
+class WaitingTime(_rv.MemorylessWaitingTimeMixin, _rv.RV):
     name = 'mortality'
 
     # Use `pandas.IntervalIndex()` for convenience
@@ -74,10 +74,18 @@ class RV(_rv.MemorylessWaitingTimeMixin, _rv.RV):
         return self.ppf(self.rng.random(size=size))
 
 
+class BuffaloMixin:
+    '''Mixin for `..buffalo.Buffalo()`.'''
+
+    def die(self):
+        self.herd.remove(self)
+        self.events.clear()
+
+
 class Mortality(_event.ForAllMixin, _event.Event):
     '''A buffalo dying.'''
 
-    waiting_time = RV.name
+    waiting_time = WaitingTime.name
 
     def do(self):
         self.buffalo.die()
@@ -91,4 +99,4 @@ class _Parameters:
 
 def sf(age):
     '''The survival function.'''
-    return RV(_Parameters()).sf(age)
+    return WaitingTime(_Parameters()).sf(age)
