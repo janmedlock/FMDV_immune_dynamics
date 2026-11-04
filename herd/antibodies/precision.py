@@ -54,7 +54,7 @@ def _confusion_matrix(SAT):
         return cnf.rename_axis(**axes_true_observed(cnf))
 
     cnf = (
-        data.load_antibodies_lpbe_vnt()
+        data.load()
         .loc[SAT]
         .pipe(rename_immune_status)
         .pipe(rename_axes_true_observed)

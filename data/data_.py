@@ -6,10 +6,11 @@ import pathlib
 import numpy
 import pandas
 
-from _context.herd.data import load_antibodies_lpbe_vnt
+from _context import herd
+import herd.antibodies.data
 
 # The data files are in the same directory as this source file.
-_DATA_PATH = pathlib.Path(__file__).parent
+_PATH = pathlib.Path(__file__).parent
 
 # log10 FMDV antibody body titer of at least this value is 'positive',
 # below is 'negative'.
@@ -19,7 +20,7 @@ ANTIBODY_TITER_CUTOFF = 1.7
 @functools.lru_cache(maxsize=1)
 def load_animals():
     '''Load the animal metadata.'''
-    return pandas.read_csv(_DATA_PATH / 'animals.csv')
+    return pandas.read_csv(_PATH / 'animals.csv')
 
 
 @functools.lru_cache(maxsize=1)
@@ -82,7 +83,7 @@ def load_captures():
         captures.drop(columns=cols_ymd, inplace=True)
 
     captures = (
-        pandas.read_csv(_DATA_PATH / 'captures.csv')
+        pandas.read_csv(_PATH / 'captures.csv')
         .astype({col: 'Int64' for col in ('year', 'month', 'day')})
     )
     build_date(captures)
@@ -104,7 +105,7 @@ def load_antibodies():
         antibodies['positive'] = antibodies['titer'] >= ANTIBODY_TITER_CUTOFF
         antibodies['negative'] = ~antibodies['positive']
 
-    antibodies = pandas.read_csv(_DATA_PATH / 'antibodies.csv')
+    antibodies = pandas.read_csv(_PATH / 'antibodies.csv')
     fix_titer(antibodies)
     add_positive_negative(antibodies)
     return antibodies
@@ -232,3 +233,6 @@ def load_with_age():
     age = get_age(animals, captures)
     data = load()
     return age.merge(data)
+
+
+load_antibodies_lpbe_vnt = herd.antibodies.data.load

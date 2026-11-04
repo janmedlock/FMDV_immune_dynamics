@@ -3,7 +3,7 @@ import warnings
 
 import pandas
 
-from . import _antibody_precisions
+from . import antibodies
 
 START_DATE = pandas.Timestamp('2014-03-05')
 
@@ -89,8 +89,8 @@ class Parameters:
 
     def _get_antibody_precisions(self, seed):
         if self.sample_antibody_precisions:
-            return _antibody_precisions.sample(self.SAT, seed)
-        return _antibody_precisions.estimate(self.SAT)
+            return antibodies.precision.sample(self.SAT, seed)
+        return antibodies.precision.estimate(self.SAT)
 
     def _set_antibody_precisions(self, seed):
         antibody_precisions = self._get_antibody_precisions(seed)
