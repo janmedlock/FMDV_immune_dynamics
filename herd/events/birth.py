@@ -30,8 +30,7 @@ def get_gap_size_from_seasonal_coefficient_of_variation(c_v):
 
 class WaitingTime(_rv.MemorylessWaitingTimeMixin,
                   _rv.RV):
-    name = 'birth'
-
+    '''Waiting time to the next birth.'''
     def __init__(self, parameters, seed=None, _scaling=None, **kwds):
         super().__init__(parameters, seed=seed)
         self.birth_peak_time = parameters.birth_peak_time
@@ -173,41 +172,35 @@ class WaitingTime(_rv.MemorylessWaitingTimeMixin,
         return self.ppf(self.rng.random(size=size), time0, age0)
 
 
-class Female(_rv.ScipyRV):
-    '''Whether an offspring is female.'''
-
-    name = 'female'
-
-    def rv(self, parameters):
-        p = parameters.female_probability
-        return scipy.stats.bernoulli(p)
+class Sex(_rv.ChoicesRV):
+    '''Random variable for sex of an offspring.'''
+    def choices(self, parameters):
+        p_female = parameters.female_probability
+        return {'female': p_female,
+                'male': 1 - p_female}
 
 
 class BuffaloMixin:
     '''Mixin for `..buffalo.Buffalo()`.'''
-
-    female = Female.name
-
     def give_birth(self):
         '''Give birth to a new offspring.'''
         assert self.sex == 'female'
-        birth_immune_status = (
-            immune_status.birth_immune_status[self.immune_status])
-        self.herd.add(type(self)(self.herd, birth_immune_status))
+        offspring_immune_status = immune_status.birth_immune_status[
+            self.immune_status]
+        offspring = type(self)(self.herd, offspring_immune_status)
+        self.herd.add(offspring)
 
-    def get_sex(self):
-        '''Determine the sex of a new buffalo.'''
-        female = getattr(self.herd.rvs, self.female)
-        return 'female' if female.rvs() else 'male'
+    def sex_rvs(self, *args, **kwds):
+        '''Random sample sex for a new buffalo.'''
+        sex_rv = self.herd.rvs[Sex]
+        return sex_rv.rvs(*args, **kwds)
 
 
 class Birth(_event.ForSexMixin,
             _event.Event):
     '''A buffalo giving birth.'''
-
     for_sex = 'female'
-
-    waiting_time = WaitingTime.name
+    waiting_time = WaitingTime
 
     @property
     def waiting_time_rvs_args(self):

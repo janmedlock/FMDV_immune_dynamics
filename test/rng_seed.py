@@ -16,7 +16,7 @@ def get_rng(herd_):
     # check that they are all the same object,
     # and return that object
     rvs = herd_.rvs
-    rngs_rvs = (getattr(rvs, rv).rng for rv in vars(rvs))
+    rngs_rvs = (rv.rng for rv in rvs.values())
     rng_events = herd_.events.rng
     rngs = itertools.chain(rngs_rvs, (rng_events,))
     rng = next(rngs)

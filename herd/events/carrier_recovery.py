@@ -7,9 +7,6 @@ from . import antibody_gain
 class WaitingTime(_rv.TimeSinceEntryDependentWaitingTimeMixin,
                   _rv.ScipyRV):
     '''The waiting time to recovery from carrier.'''
-
-    name = 'carrier_recovery'
-
     def rv(self, parameters):
         shape = parameters.carrier_recovery_shape
         mean = parameters.carrier_recovery_mean
@@ -20,7 +17,5 @@ class WaitingTime(_rv.TimeSinceEntryDependentWaitingTimeMixin,
 class CarrierRecovery(_event.ForImmuneStatusMixin,
                       antibody_gain.ToRecoveredEvent):
     '''A buffalo recovering from carrier infected.'''
-
     for_immune_status = 'carrier'
-
-    waiting_time = WaitingTime.name
+    waiting_time = WaitingTime

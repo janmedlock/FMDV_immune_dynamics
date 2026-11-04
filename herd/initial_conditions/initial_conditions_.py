@@ -9,9 +9,6 @@ from . import _probability
 class InitialConditions(_rv.RV):
     '''This assumes that the hazard of infection is constant in time,
     not periodic as it is with a periodic birth pulse.'''
-
-    name = 'initial_conditions'
-
     def __init__(self, parameters, seed=None, debug=False):
         super().__init__(parameters, seed=seed)
         self.population_size = parameters.population_size
@@ -76,14 +73,13 @@ class InitialConditions(_rv.RV):
 
 class HerdMixin:
     '''Mixin for '..herd_.Herd()`.'''
-
     def sample_initial_conditions(self, max_samples=100):
         '''Get a sample initial condition with some infected hosts.'''
-        initial_conditions = getattr(self.rvs, InitialConditions.name)
 
         def has_infected(ser):
             return ser.isin(immune_status.infected).any()
 
+        initial_conditions = self.rvs[InitialConditions]
         return _rv.sample_until(initial_conditions.rvs,
                                 has_infected,
                                 max_samples=max_samples)

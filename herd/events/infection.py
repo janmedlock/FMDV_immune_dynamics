@@ -4,9 +4,6 @@ from .. import _event, _rv
 class WaitingTime(_rv.MemorylessWaitingTimeMixin,
                   _rv.RV):
     '''Time to infection is exponential distributed.'''
-
-    name = 'infection'
-
     def __init__(self, parameters, seed=None):
         super().__init__(parameters, seed=seed)
         # The transmission rates are scaled so that R_0 is constant as
@@ -24,12 +21,11 @@ class WaitingTime(_rv.MemorylessWaitingTimeMixin,
         return self.rng.exponential(scale)
 
 
-class Infection(_event.ToImmuneStatusEvent):
+class Infection(_event.ToImmuneStatusEvent,
+                abstract=True):
     '''Base class for a buffalo becoming infected.'''
-
     to_immune_status = 'exposed'
-
-    waiting_time = WaitingTime.name
+    waiting_time = WaitingTime
 
     @property
     def waiting_time_rvs_args(self):
@@ -46,7 +42,6 @@ class Infection(_event.ToImmuneStatusEvent):
 class PrimaryInfection(_event.ForImmuneStatusMixin,
                        Infection):
     '''A buffalo becoming infected from 'susceptible'.'''
-
     for_immune_status = 'susceptible'
 
     def __init__(self, buffalo, at_equilibrium=False):
@@ -58,9 +53,8 @@ class SecondaryInfection(_event.ForImmuneStatusesMixin,
                          Infection):
     '''A buffalo becoming infected from 'lost_immunity_true'
     or 'recovered_false'.'''
-
-    forimmune_statuses = frozenset({'lost_immunity_true',
-                                    'recovered_false'})
+    for_immune_statuses = frozenset({'lost_immunity_true',
+                                     'recovered_false'})
 
     def __init__(self, buffalo, at_equilibrium=False):
         super().__init__(buffalo,
@@ -70,7 +64,6 @@ class SecondaryInfection(_event.ForImmuneStatusesMixin,
 
 class HerdMixin:
     '''Mixin for '..herd_.Herd()`.'''
-
     def update_infection_times(self):
         '''Calculate the number of infectious and carrier buffalo,
         then, if these are different than previous, update

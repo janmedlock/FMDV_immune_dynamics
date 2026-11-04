@@ -3,7 +3,6 @@ import pandas
 
 from .. import _event, _rv
 
-
 _ANNUAL_SURVIVAL = {
     # `(a, b): s` is the annual survival for ages [a, b)
     (0, 1): 0.66,
@@ -25,8 +24,6 @@ def _annual_survival_to_series(annual_survival):
 
 class WaitingTime(_rv.MemorylessWaitingTimeMixin,
                   _rv.RV):
-    name = 'mortality'
-
     _hazard = -numpy.log(_annual_survival_to_series(_ANNUAL_SURVIVAL))
 
     def __init__(self, parameters, seed=None):
@@ -86,7 +83,6 @@ class WaitingTime(_rv.MemorylessWaitingTimeMixin,
 
 class BuffaloMixin:
     '''Mixin for `..buffalo.Buffalo()`.'''
-
     def die(self):
         self.herd.remove(self)
         self.events.clear()
@@ -95,8 +91,7 @@ class BuffaloMixin:
 class Mortality(_event.ForAllMixin,
                 _event.Event):
     '''A buffalo dying.'''
-
-    waiting_time = WaitingTime.name
+    waiting_time = WaitingTime
 
     def do(self):
         self.buffalo.die()

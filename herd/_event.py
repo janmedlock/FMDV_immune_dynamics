@@ -31,7 +31,7 @@ def get_events_for_immune_status(immune_status_):
     return _events_for_immune_status[immune_status_]
 
 
-def _union_of_events_for():
+def union_of_events_for():
     '''Get the union of all the events in `_events_for_*`.'''
     return functools.reduce(set.union,
                             itertools.chain.from_iterable(
@@ -46,7 +46,7 @@ class Event(metaclass=abc.ABCMeta):
     @property
     @abc.abstractmethod
     def waiting_time(self):
-        '''The name of the waiting time in
+        '''The type of the waiting time in
         `.random_variables.RandomVariables()`. Subclasses must define
         this attribute.'''
 
@@ -66,21 +66,22 @@ class Event(metaclass=abc.ABCMeta):
     waiting_time_rvs_kwds = types.MappingProxyType({})
 
     @classmethod
-    def __init_subclass__(cls, **kwds):
+    def __init_subclass__(cls, abstract=False, **kwds):
         '''Verify that non-abstract `cls` was added to one of the
-        `_events_for_*`.'''
+        `_events_for_*` and that abstract `cls` passed `abstract=True`.'''
         super().__init_subclass__(**kwds)
-        if not inspect.isabstract(cls):
-            assert cls in _union_of_events_for(), \
+        if inspect.isabstract(cls):
+            assert abstract
+        else:
+            assert cls in union_of_events_for(), \
                 f'`{cls}` not in any `_events_for_*`'
 
     def __init__(self, buffalo, at_equilibrium=False):
         self.buffalo = buffalo
         # Set the instance attribute `.waiting_time` to the
         # waiting-time random variable from the class attribute
-        # `.waiting_time` holding the name of that random variable
-        self.waiting_time = getattr(self.buffalo.herd.rvs,
-                                    self.waiting_time)
+        # `.waiting_time` holding the type of that random variable
+        self.waiting_time = self.buffalo.herd.rvs[self.waiting_time]
         assert self.is_valid()
         self.time = self.sample_time(use_time_remaining=at_equilibrium)
 
@@ -94,14 +95,14 @@ class Event(metaclass=abc.ABCMeta):
         args = self.waiting_time_rvs_args
         kwds = self.waiting_time_rvs_kwds
         if use_time_remaining:
-            return self.waiting_time.time_remaining.rvs(*args, **kwds)
+            return self.waiting_time.time_remaining_rvs(*args, **kwds)
         return self.waiting_time.rvs(*args, **kwds)
 
     def sample_time(self, use_time_remaining=False):
         '''Generate a random sample time for the event.'''
-        return (self.buffalo.herd.time
-                + self.sample_waiting_time(
-                    use_time_remaining=use_time_remaining))
+        return (
+            self.buffalo.herd.time
+            + self.sample_waiting_time(use_time_remaining=use_time_remaining))
 
     def __repr__(self):
         return (f't={self.time:g}: '
@@ -109,7 +110,8 @@ class Event(metaclass=abc.ABCMeta):
 
 
 
-class ToImmuneStatusEvent(Event):
+class ToImmuneStatusEvent(Event,
+                          abstract=True):
     '''Base for an `Event()` to transition to an immune status.'''
     @property
     @abc.abstractmethod
@@ -121,36 +123,27 @@ class ToImmuneStatusEvent(Event):
         self.buffalo.change_immune_status_to(self.to_immune_status)
 
 
-class ToImmuneStatusesEvent(Event):
+class ToImmuneStatusesEvent(Event,
+                            abstract=True):
     '''Base for an `Event()` to transitions to one of multiple immune
     statuses.'''
     @property
     @abc.abstractmethod
     def to_immune_status(self):
-        '''The name of the random variable that determines the
+        '''The type of the random variable that determines the
         destination immune status in
         `.random_variables.RandomVariables()`. Subclasses must define
         this attribute.'''
 
-    @property
-    @abc.abstractmethod
-    def to_immune_statuses(self):
-        '''The possible destinations, in order to be indexed by
-        `.destination.rvs()`. Subclasses must define this attribute.'''
-
     def __init__(self, buffalo, at_equilibrium=False):
         # Set the instance attribute `.to_immune_status` to the random
         # variable from the class attribute `.to_immune_status`
-        # holding the name of that random variable
-        self.to_immune_status = getattr(buffalo.herd.rvs,
-                                        self.to_immune_status)
+        # holding the type of that random variable
+        self.to_immune_status = buffalo.herd.rvs[self.to_immune_status]
         super().__init__(buffalo, at_equilibrium=at_equilibrium)
 
-    def get_to_immune_status(self):
-        return self.to_immune_statuses[self.to_immune_status.rvs()]
-
     def do(self):
-        self.buffalo.change_immune_status_to(self.get_to_immune_status())
+        self.buffalo.change_immune_status_to(self.to_immune_status.rvs())
 
 
 class ForAllMixin:

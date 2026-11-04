@@ -11,7 +11,7 @@ class Buffalo(birth.BuffaloMixin, mortality.BuffaloMixin):
         assert self.immune_status in immune_status.immune_statuses
         assert age >= 0
         self.birth_date = self.herd.time - age
-        self.sex = self.get_sex()
+        self.sex = self.sex_rvs()
         assert self.sex in sex.sexes
         self.identifier = next(self.herd.identifiers)
         self.events = _events_containers.BuffaloEvents(self)
