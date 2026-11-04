@@ -26,22 +26,20 @@ def _annual_survival_to_series(annual_survival):
 class WaitingTime(_rv.MemorylessWaitingTimeMixin, _rv.RV):
     name = 'mortality'
 
-    _log_annual_survival = numpy.log(
-        _annual_survival_to_series(_ANNUAL_SURVIVAL))
+    _hazard = -numpy.log(_annual_survival_to_series(_ANNUAL_SURVIVAL))
 
     def __init__(self, parameters, seed=None):
         super().__init__(parameters, seed=seed)
         self.logsf = numpy.vectorize(self._logsf_single, otypes='d')
 
     def hazard(self, age):
-        return numpy.asanyarray(-self._log_annual_survival[age])
+        return numpy.asanyarray(self._hazard[age])
 
     def _logsf_single(self, age):
         '''Logarithm of the survival function.'''
-        intervals = self._log_annual_survival.index
-        # `t` is the amount time lived in each age interval
-        t = numpy.clip(age - intervals.left, 0, intervals.length)
-        return (t * self._log_annual_survival).sum()
+        intervals = self._hazard.index
+        exposure = numpy.clip(age - intervals.left, 0, intervals.length)
+        return (-self._hazard * exposure).sum()
 
     def sf(self, age):
         '''Survival function.'''
@@ -68,12 +66,12 @@ class WaitingTime(_rv.MemorylessWaitingTimeMixin, _rv.RV):
         logq = numpy.asarray(numpy.log(q))
         isf = numpy.zeros(numpy.shape(q))
         logq_max = logq_min = 0
-        for (interval, value) in self._log_annual_survival.items():
-            logq_min += (interval.right - interval.left) * value
+        for (interval, haz) in self._hazard.items():
+            logq_min += -(interval.right - interval.left) * haz
             # This piece of logsf is the line segment from
             # (interval.left, logq_max) to (interval.right, logq_min).
             mask = (logq_min < logq) & (logq <= logq_max)
-            isf[mask] = interval.left + (logq[mask] - logq_max) / value
+            isf[mask] = interval.left + (logq_max - logq[mask]) / haz
             logq_max = logq_min
         return isf
 
