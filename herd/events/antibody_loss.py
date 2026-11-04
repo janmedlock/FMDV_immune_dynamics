@@ -24,22 +24,17 @@ class ToLostImmunityTrue(_rv.ScipyRV):
         return scipy.stats.bernoulli(p)
 
 
-class AntibodyLoss(_event.ForImmuneStatusesMixin, _event.Event):
+class AntibodyLoss(_event.ForImmuneStatusesMixin,
+                   _event.ToImmuneStatusesEvent):
     '''A buffalo losing apparent antibodies.'''
 
+    for_immune_statuses = frozenset({'recovered_true',
+                                     'recovered_false'})
+
+    to_immune_statuses = (
+        'lost_immunity_false',  # .to_immune_status.rvs() == 0
+        'lost_immunity_true')   # .to_immune_status.rvs() == 1
+
+    to_immune_status = ToLostImmunityTrue.name
+
     waiting_time = WaitingTime.name
-
-    to_lost_immunity_true = ToLostImmunityTrue.name
-
-    immune_statuses = frozenset({'recovered_true',
-                                 'recovered_false'})
-
-    def __init__(self, buffalo, at_equilibrium=False):
-        self.to_lost_immunity_true = getattr(buffalo.herd.rvs,
-                                             self.to_lost_immunity_true)
-        super().__init__(buffalo, at_equilibrium=at_equilibrium)
-
-    def do(self):
-        destination = ('lost_immunity_true' if self.to_lost_immunity_true.rvs()
-                       else 'lost_immunity_false')
-        self.buffalo.change_immune_status_to(destination)

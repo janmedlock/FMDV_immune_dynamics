@@ -1,9 +1,11 @@
 import scipy
 
 from .. import _event, _rv
+from . import antibody_gain
 
 
-class WaitingTime(_rv.TimeSinceEntryDependentWaitingTimeMixin, _rv.ScipyRV):
+class WaitingTime(_rv.TimeSinceEntryDependentWaitingTimeMixin,
+                  _rv.ScipyRV):
     '''The waiting time to recovery.'''
 
     name = 'recovery'
@@ -25,19 +27,25 @@ class ToCarrier(_rv.ScipyRV):
         return scipy.stats.bernoulli(p)
 
 
-class Recovery(_event.ForImmuneStatusMixin, _event.Event):
+class Recovery(_event.ForImmuneStatusMixin,
+               antibody_gain.ToRecoveredEvent):
     '''A buffalo recovering from acute infection.'''
 
-    waiting_time = WaitingTime.name
+    for_immune_status = 'infectious'
 
     to_carrier = ToCarrier.name
 
-    immune_status = 'infectious'
+    waiting_time = WaitingTime.name
 
     def __init__(self, buffalo, at_equilibrium=False):
+        # Set the instance attribute `.to_carrier` to the random
+        # variable from the class attribute `.to_carrier` holding the
+        # name of that random variable
         self.to_carrier = getattr(buffalo.herd.rvs, self.to_carrier)
         super().__init__(buffalo, at_equilibrium=at_equilibrium)
 
     def do(self):
-        destination = 'carrier' if self.to_carrier.rvs() else 'recovered_true'
-        self.buffalo.change_immune_status_to(destination)
+        if self.to_carrier.rvs():
+            self.buffalo.change_immune_status_to('carrier')
+        else:
+            super().do()  # To 'recovered_true' or 'recovered_false'

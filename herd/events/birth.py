@@ -28,7 +28,8 @@ def get_gap_size_from_seasonal_coefficient_of_variation(c_v):
         return 12 * (1 - 4 / 3 / (1 + c_v ** 2))
 
 
-class WaitingTime(_rv.MemorylessWaitingTimeMixin, _rv.RV):
+class WaitingTime(_rv.MemorylessWaitingTimeMixin,
+                  _rv.RV):
     name = 'birth'
 
     def __init__(self, parameters, seed=None, _scaling=None, **kwds):
@@ -200,12 +201,13 @@ class BuffaloMixin:
         return 'female' if female.rvs() else 'male'
 
 
-class Birth(_event.ForSexMixin, _event.Event):
+class Birth(_event.ForSexMixin,
+            _event.Event):
     '''A buffalo giving birth.'''
 
-    waiting_time = WaitingTime.name
+    for_sex = 'female'
 
-    sex = 'female'
+    waiting_time = WaitingTime.name
 
     @property
     def waiting_time_rvs_args(self):

@@ -23,7 +23,8 @@ def _annual_survival_to_series(annual_survival):
     )
 
 
-class WaitingTime(_rv.MemorylessWaitingTimeMixin, _rv.RV):
+class WaitingTime(_rv.MemorylessWaitingTimeMixin,
+                  _rv.RV):
     name = 'mortality'
 
     _hazard = -numpy.log(_annual_survival_to_series(_ANNUAL_SURVIVAL))
@@ -91,7 +92,8 @@ class BuffaloMixin:
         self.events.clear()
 
 
-class Mortality(_event.ForAllMixin, _event.Event):
+class Mortality(_event.ForAllMixin,
+                _event.Event):
     '''A buffalo dying.'''
 
     waiting_time = WaitingTime.name

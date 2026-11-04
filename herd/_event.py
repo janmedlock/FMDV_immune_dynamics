@@ -76,10 +76,9 @@ class Event(metaclass=abc.ABCMeta):
 
     def __init__(self, buffalo, at_equilibrium=False):
         self.buffalo = buffalo
-        # Set the instance attribute `.waiting_time`
-        # to the waiting-time random variable
-        # from the class attribute `.waiting_time`
-        # holding the name of that random variable
+        # Set the instance attribute `.waiting_time` to the
+        # waiting-time random variable from the class attribute
+        # `.waiting_time` holding the name of that random variable
         self.waiting_time = getattr(self.buffalo.herd.rvs,
                                     self.waiting_time)
         assert self.is_valid()
@@ -109,6 +108,51 @@ class Event(metaclass=abc.ABCMeta):
                 + f'{type(self).__name__} of #{self.buffalo.identifier}')
 
 
+
+class ToImmuneStatusEvent(Event):
+    '''Base for an `Event()` to transition to an immune status.'''
+    @property
+    @abc.abstractmethod
+    def to_immune_status(self):
+        '''The destination immune status. Subclasses must define this
+        attribute.'''
+
+    def do(self):
+        self.buffalo.change_immune_status_to(self.to_immune_status)
+
+
+class ToImmuneStatusesEvent(Event):
+    '''Base for an `Event()` to transitions to one of multiple immune
+    statuses.'''
+    @property
+    @abc.abstractmethod
+    def to_immune_status(self):
+        '''The name of the random variable that determines the
+        destination immune status in
+        `.random_variables.RandomVariables()`. Subclasses must define
+        this attribute.'''
+
+    @property
+    @abc.abstractmethod
+    def to_immune_statuses(self):
+        '''The possible destinations, in order to be indexed by
+        `.destination.rvs()`. Subclasses must define this attribute.'''
+
+    def __init__(self, buffalo, at_equilibrium=False):
+        # Set the instance attribute `.to_immune_status` to the random
+        # variable from the class attribute `.to_immune_status`
+        # holding the name of that random variable
+        self.to_immune_status = getattr(buffalo.herd.rvs,
+                                        self.to_immune_status)
+        super().__init__(buffalo, at_equilibrium=at_equilibrium)
+
+    def get_to_immune_status(self):
+        return self.to_immune_statuses[self.to_immune_status.rvs()]
+
+    def do(self):
+        self.buffalo.change_immune_status_to(self.get_to_immune_status())
+
+
 class ForAllMixin:
     '''Mixin for an event that is valid for all buffalo.'''
     @classmethod
@@ -126,25 +170,25 @@ class ForSexMixin(metaclass=abc.ABCMeta):
     '''Mixin for an event that is valid for one sex.'''
     @property
     @abc.abstractmethod
-    def sex(self):
+    def for_sex(self):
         '''Sex for which this event is valid.'''
 
     @classmethod
     def __init_subclass__(cls, **kwds):
         '''Add non-abstract `cls` to `_events_for_sex[cls.sex]`.'''
         if not inspect.isabstract(cls):
-            _events_for_sex[cls.sex].add(cls)
+            _events_for_sex[cls.for_sex].add(cls)
         super().__init_subclass__(**kwds)
 
     def is_valid(self):
-        return self.buffalo.sex == self.sex
+        return self.buffalo.sex == self.for_sex
 
 
 class ForImmuneStatusMixin(metaclass=abc.ABCMeta):
     '''Mixin for an event that is valid for one immune status.'''
     @property
     @abc.abstractmethod
-    def immune_status(self):
+    def for_immune_status(self):
         '''Immune status for which this event is valid.'''
 
     @classmethod
@@ -152,18 +196,18 @@ class ForImmuneStatusMixin(metaclass=abc.ABCMeta):
         '''Add non-abstract `cls` to
         `_events_for_immune_status[cls.immune_status]`.'''
         if not inspect.isabstract(cls):
-            _events_for_immune_status[cls.immune_status].add(cls)
+            _events_for_immune_status[cls.for_immune_status].add(cls)
         super().__init_subclass__(**kwds)
 
     def is_valid(self):
-        return self.buffalo.immune_status == self.immune_status
+        return self.buffalo.immune_status == self.for_immune_status
 
 
 class ForImmuneStatusesMixin(metaclass=abc.ABCMeta):
     '''Mixin for an event that is valid for some immune statuses.'''
     @property
     @abc.abstractmethod
-    def immune_statuses(self):
+    def for_immune_statuses(self):
         '''Immune statuses for which this event is valid.'''
 
     @classmethod
@@ -172,9 +216,9 @@ class ForImmuneStatusesMixin(metaclass=abc.ABCMeta):
         `_events_for_immune_status[immune_status]`
         for `immune_status` in `.immune_statuses`.'''
         if not inspect.isabstract(cls):
-            for immune_status_ in cls.immune_statuses:
+            for immune_status_ in cls.for_immune_statuses:
                 _events_for_immune_status[immune_status_].add(cls)
         super().__init_subclass__(**kwds)
 
     def is_valid(self):
-        return self.buffalo.immune_status in self.immune_statuses
+        return self.buffalo.immune_status in self.for_immune_statuses

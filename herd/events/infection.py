@@ -1,7 +1,8 @@
 from .. import _event, _rv
 
 
-class WaitingTime(_rv.MemorylessWaitingTimeMixin, _rv.RV):
+class WaitingTime(_rv.MemorylessWaitingTimeMixin,
+                  _rv.RV):
     '''Time to infection is exponential distributed.'''
 
     name = 'infection'
@@ -23,8 +24,10 @@ class WaitingTime(_rv.MemorylessWaitingTimeMixin, _rv.RV):
         return self.rng.exponential(scale)
 
 
-class Infection(_event.Event):
+class Infection(_event.ToImmuneStatusEvent):
     '''Base class for a buffalo becoming infected.'''
+
+    to_immune_status = 'exposed'
 
     waiting_time = WaitingTime.name
 
@@ -39,26 +42,25 @@ class Infection(_event.Event):
         self.susceptibility = susceptibility
         super().__init__(buffalo, at_equilibrium=at_equilibrium)
 
-    def do(self):
-        self.buffalo.change_immune_status_to('exposed')
 
-
-class PrimaryInfection(_event.ForImmuneStatusMixin, Infection):
+class PrimaryInfection(_event.ForImmuneStatusMixin,
+                       Infection):
     '''A buffalo becoming infected from 'susceptible'.'''
 
-    immune_status = 'susceptible'
+    for_immune_status = 'susceptible'
 
     def __init__(self, buffalo, at_equilibrium=False):
         super().__init__(buffalo, susceptibility=1,
                          at_equilibrium=at_equilibrium)
 
 
-class SecondaryInfection(_event.ForImmuneStatusesMixin, Infection):
+class SecondaryInfection(_event.ForImmuneStatusesMixin,
+                         Infection):
     '''A buffalo becoming infected from 'lost_immunity_true'
     or 'recovered_false'.'''
 
-    immune_statuses = frozenset({'lost_immunity_true',
-                                 'recovered_false'})
+    forimmune_statuses = frozenset({'lost_immunity_true',
+                                    'recovered_false'})
 
     def __init__(self, buffalo, at_equilibrium=False):
         super().__init__(buffalo,

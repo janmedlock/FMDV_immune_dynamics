@@ -1,9 +1,11 @@
 import scipy
 
 from .. import _event, _rv
+from . import antibody_gain
 
 
-class WaitingTime(_rv.TimeSinceEntryDependentWaitingTimeMixin, _rv.ScipyRV):
+class WaitingTime(_rv.TimeSinceEntryDependentWaitingTimeMixin,
+                  _rv.ScipyRV):
     '''The waiting time to recovery from carrier.'''
 
     name = 'carrier_recovery'
@@ -15,12 +17,10 @@ class WaitingTime(_rv.TimeSinceEntryDependentWaitingTimeMixin, _rv.ScipyRV):
         return scipy.stats.gamma(shape, scale=scale)
 
 
-class CarrierRecovery(_event.ForImmuneStatusMixin, _event.Event):
+class CarrierRecovery(_event.ForImmuneStatusMixin,
+                      antibody_gain.ToRecoveredEvent):
     '''A buffalo recovering from carrier infected.'''
 
+    for_immune_status = 'carrier'
+
     waiting_time = WaitingTime.name
-
-    immune_status = 'carrier'
-
-    def do(self):
-        self.buffalo.change_immune_status_to('recovered_true')

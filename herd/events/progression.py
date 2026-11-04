@@ -3,7 +3,8 @@ import scipy
 from .. import _event, _rv
 
 
-class WaitingTime(_rv.TimeSinceEntryDependentWaitingTimeMixin, _rv.ScipyRV):
+class WaitingTime(_rv.TimeSinceEntryDependentWaitingTimeMixin,
+                  _rv.ScipyRV):
     '''Waiting time for progression.'''
 
     name = 'progression'
@@ -15,12 +16,12 @@ class WaitingTime(_rv.TimeSinceEntryDependentWaitingTimeMixin, _rv.ScipyRV):
         return scipy.stats.gamma(shape, scale=scale)
 
 
-class Progression(_event.ForImmuneStatusMixin, _event.Event):
+class Progression(_event.ForImmuneStatusMixin,
+                  _event.ToImmuneStatusEvent):
     '''A buffalo becoming infectious.'''
 
+    for_immune_status = 'exposed'
+
+    to_immune_status = 'infectious'
+
     waiting_time = WaitingTime.name
-
-    immune_status = 'exposed'
-
-    def do(self):
-        self.buffalo.change_immune_status_to('infectious')
