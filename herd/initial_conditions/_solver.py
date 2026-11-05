@@ -8,14 +8,10 @@ import numpy.lib.recfunctions
 import pandas
 import scipy
 
-from .. import events, immune_status, parameters, utility
+from .. import events, utility
+from ..immune_status import have_offspring_to_maternal_immunity
+from ..parameters import Parameters
 from . import _blocks
-
-_offspring_have_maternal_immunity = tuple(
-    mother
-    for (mother, offspring) in immune_status.birth_immune_status.items()
-    if offspring == 'maternal_immunity'
-)
 
 
 def _rec_fromkwds(**kwds):
@@ -25,7 +21,7 @@ def _rec_fromkwds(**kwds):
         dtype=[(k, float) for k in kwds])
 
 
-class _Params:
+class _Parameters:
     '''Dummy object to pass parameters from `Solver()` to
     `._blocks._Block()`s.'''
     def __init__(self, params, ages, ages_mid, step, length_ode, length_pde):
@@ -113,8 +109,8 @@ class Solver:
         assert len(self.ages) > 1
         self.ages_mid = (self.ages[:-1] + self.ages[1:]) / 2
         self.length_ode = self.length_pde = len(self.ages)
-        self.params = _Params(params, self.ages, self.ages_mid, self.step,
-                              self.length_ode, self.length_pde)
+        self.params = _Parameters(params, self.ages, self.ages_mid, self.step,
+                                  self.length_ode, self.length_pde)
         if not _skip_blocks:
             self.blocks = {
                 Block.X: Block(self.params)
@@ -232,8 +228,8 @@ class Solver:
                        axis='index')
         # The birth rate from mothers in each immune status.
         births_total = births.apply(scipy.integrate.trapezoid,
-                                    args=(self.ages, ))
-        imm = (births_total[_offspring_have_maternal_immunity].sum()
+                                    args=(self.ages,))
+        imm = (births_total[list(have_offspring_to_maternal_immunity)].sum()
                / births_total.sum())
         assert (imm >= 0) | numpy.isclose(imm, 0)
         imm = numpy.clip(imm, 0, None)
@@ -274,7 +270,7 @@ def _solve(params, debug):
     return Solver(params, debug=debug).solve()
 
 
-class _CacheParameters(parameters.Parameters):
+class _CacheParameters(Parameters):
     '''Build a `herd.parameters.Parameters()`-like object that
     only has the parameters needed by `Solver()`
     so that it can be efficiently cached.'''

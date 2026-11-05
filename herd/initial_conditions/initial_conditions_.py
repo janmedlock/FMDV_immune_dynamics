@@ -1,38 +1,41 @@
 '''Initial conditions.'''
 
+import warnings
+
 import numpy
+import pandas
 
 from .. import _rv, age, immune_status
-from . import _probability
+from . import _interpolate, _solver
 
 
 class InitialConditions(_rv.RV):
     '''This assumes that the hazard of infection is constant in time,
     not periodic as it is with a periodic birth pulse.'''
-    def __init__(self, parameters, seed=None, debug=False):
+    # TODO: Remove `fake`
+    def __init__(self, parameters, seed=None, fake=True, debug=False):
         super().__init__(parameters, seed=seed)
         self.population_size = parameters.population_size
-        # Reuse these in case we call pdf() or rvs() repeatedly.
-        # TODO: Fix
-        if True:
-            import warnings
-
-            import pandas
-
-            def immune_status_conditional_pdf(ages):
-                pdf = pandas.DataFrame(0.,
-                                       index=ages,
-                                       columns=immune_status.immune_statuses)
-                pdf['infectious'] = 0.05
-                pdf['susceptible'] = 1. - pdf.sum(axis='columns')
-                return pdf
-
-            warnings.warn('Fake `initial_conditions`!')
-            self.immune_status_pdf = immune_status_conditional_pdf
+        # Reuse `.immune_status_pdf` and `.age`, in case `.pdf()`
+        # or `.rvs()` is called repeatedly
+        if fake:
+            self.immune_status_conditional_pdf = (
+                self._immune_status_conditional_pdf_fake)
         else:
-            self.immune_status_pdf = _probability.Interpolant(parameters,
-                                                              debug=debug)
+            # Interpolate in `age`
+            self.immune_status_pdf = _interpolate.Interpolant(
+                _solver.solve(parameters, debug=debug))
         self.age = age.Age(parameters, seed=self.rng)
+
+    # TODO: Remove
+    @staticmethod
+    def _immune_status_conditional_pdf_fake(ages):
+        warnings.warn('Fake `initial_conditions`!')
+        pdf = pandas.DataFrame(0., index=ages,
+                               columns=immune_status.immune_statuses)
+        pdf['infectious'] = 0.05
+        pdf['susceptible'] = 1. - pdf.sum(axis='columns')
+        return pdf
 
     def immune_status_conditional_pdf(self, ages):
         '''The probability of being in each immune state vs. `ages`,
@@ -40,9 +43,10 @@ class InitialConditions(_rv.RV):
         p = self.immune_status_pdf(ages)
         return p.divide(p.sum(axis='columns'), axis='index')
 
-    def pdf(self, age_):
-        return self.immune_status_conditional_pdf(age_).multiply(
-            self.age.pdf(age_), axis='index')
+    def pdf(self, ages):
+        return (
+            self.immune_status_conditional_pdf(ages)
+            .multiply(self.age.pdf(ages), axis='index'))
 
     def rvs(self, size=None):
         if size is None:
@@ -61,8 +65,7 @@ class InitialConditions(_rv.RV):
                 break
             immune_status_probability[mask] = (
                 immune_status_probability[mask].divide(totals[mask],
-                                                       axis='index')
-            )
+                                                       axis='index'))
         # Randomly pick an immune status for each row.
         immune_statuses = immune_status_probability.columns
         return immune_status_probability.agg(
