@@ -9,7 +9,7 @@ import scipy.stats.sampling
 # Non-abstract subclasses of `RV()` are added to this set when they
 # are defined and then automatically attached to
 # `random_variables.RandomVariables()`
-rv_types = set()
+rvs = set()
 
 
 def expon_scale_from_rate(rate):
@@ -23,24 +23,24 @@ def gamma_scale_from_mean(mean, shape):
     return mean / shape
 
 
-def sample_until(rvs, target, *args, max_samples=10_000, **kwds):
+def sample_until(rvs_, target, *args, max_samples=10_000, **kwds):
     '''Sample until `target()` is `True`.'''
     for _ in range(max_samples):
-        val = rvs(*args, **kwds)
+        val = rvs_(*args, **kwds)
         if target(val):
             return val
     raise ValueError(f'Sampling failed after {max_samples=}!')
 
 
-def _sample_nonnegative(rvs):
+def _sample_nonnegative(rvs_):
     '''Decorator to sample until nonnegative.'''
 
     def is_nonnegative(val):
         return val >= 0
 
-    @functools.wraps(rvs)
+    @functools.wraps(rvs_)
     def sample_nonnegative(*args, **kwds):
-        return sample_until(rvs, is_nonnegative, *args, **kwds)
+        return sample_until(rvs_, is_nonnegative, *args, **kwds)
 
     return sample_nonnegative
 
@@ -54,8 +54,8 @@ class RV(metaclass=abc.ABCMeta):
         if inspect.isabstract(cls):
             assert abstract
         else:
-            assert cls not in rv_types
-            rv_types.add(cls)
+            assert cls not in rvs
+            rvs.add(cls)
 
     def __init__(self, parameters, seed=None):
         self.rng = numpy.random.default_rng(seed)

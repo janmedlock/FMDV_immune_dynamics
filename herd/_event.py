@@ -8,8 +8,8 @@ import types
 
 from . import immune_status, sex
 
-# Subclasses of `Event()` are added to these sets when those events are
-# defined by `ForAllMixin()`, `ForSexMixin()`,
+# Non-abstract subclasses of `Event()` are added to these sets when
+# those events are defined by `ForAllMixin()`, `ForSexMixin()`,
 # `ForImmuneStatusMixin()`, and `ForImmuneStatusesMixin()`.
 # `Event()`s that can happen to any buffalo.
 _events_for_all = set()

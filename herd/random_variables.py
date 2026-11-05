@@ -10,10 +10,8 @@ class RandomVariables(collections.abc.Mapping):
 
     def __init__(self, parameters, seed=None):
         rng = numpy.random.default_rng(seed)
-        self._d = {
-            rv_type: rv_type(parameters, seed=rng)
-            for rv_type in _rv.rv_types
-        }
+        self._d = {rv: rv(parameters, seed=rng)
+                   for rv in _rv.rvs}
 
     def __getitem__(self, key):
         return self._d[key]

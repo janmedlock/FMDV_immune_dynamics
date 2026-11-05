@@ -5,10 +5,10 @@ import numpy.lib.recfunctions
 import pandas
 import scipy
 
-from .. import _memory, events, utility
+from .. import _memory, _rv, events, utility
 from ..immune_status import have_offspring_to_maternal_immunity
 from ..parameters import Parameters
-from . import _blocks, _random_variables
+from . import _blocks, _waiting_time
 
 
 def _rec_fromkwds(**kwds):
@@ -24,38 +24,6 @@ class _Parameters:
         self.step = step
         self.length_ode = length_ode
         self.length_pde = length_pde
-        # Helper to get parameterized waiting times
-        waiting_times = _random_variables.WaitingTimes(params)
-        # Get the pdf for these waiting times.
-        # TODO: These are subclasses of
-        # 'TimeSinceEntryDependentWaitingTimesMixin'.
-        waiting_times_pdf = ('progression', 'recovery', 'carrier_recovery')
-        self.pdf = _rec_fromkwds(**{
-            wt: self.get_pdf(waiting_times[wt], ages)
-            for wt in waiting_times_pdf
-        })
-        # Get the survival for these waiting times.
-        waiting_times_survival = ('mortality',) + waiting_times_pdf
-        self.survival = _rec_fromkwds(**{
-            wt: waiting_times[wt].sf(ages)
-            for wt in waiting_times_survival
-        })
-        # Get the hazard for these waiting times.
-        # TODO: These are subclasses of
-        # 'MemorylessWaitingTimesMixin' and
-        # 'AgeDependentWaitingTimesMixin',
-        # except not 'birth' and 'infection'
-        waiting_times_hazard = ('mortality',  'maternal_immunity_waning',
-                                'antibody_gain', 'antibody_loss')
-        self.hazard = _rec_fromkwds(**{
-            wt: waiting_times[wt].hazard(ages_mid)
-            for wt in waiting_times_hazard
-        } | {
-            # Dummy value. Set on calls to `Solver.solve_step()`.
-            'infection': 1,
-        })
-        # The birth hazard is needed at `ages`, not `ages_mid`
-        self.hazard_birth = self.get_hazard_birth(ages)
         # Other parameters.
         self.carrier_transmission_rate = params.carrier_transmission_rate
         self.female_probability = params.female_probability
@@ -66,6 +34,37 @@ class _Parameters:
         self.recovery_to_carrier_probability = (
             params.recovery_to_carrier_probability)
         self.transmission_rate = params.transmission_rate
+        # Helper to get parameterized waiting times
+        waiting_times = _waiting_time.WaitingTimes(params)
+        # Get the pdf at `ages` of the time-since-entry-dependent
+        # waiting times
+        wts_pdf = _rv.TimeSinceEntryDependentWaitingTimeMixin.__subclasses__()
+        self.pdf = _rec_fromkwds(**{
+            _waiting_time.name(wt): self.get_pdf(waiting_times[wt], ages)
+            for wt in wts_pdf
+        })
+        # Get the survival at `ages` of the time-since-entry-dependent
+        # waiting times and the mortality waiting time
+        wts_survival = wts_pdf + [events.mortality.WaitingTime]
+        self.survival = _rec_fromkwds(**{
+            _waiting_time.name(wt): waiting_times[wt].sf(ages)
+            for wt in wts_survival
+        })
+        # Get the hazard at `ages_mid` for the memoryless and
+        # age-dependent waiting times except for birth and infection
+        wts_hazard = (set(_rv.MemorylessWaitingTimeMixin.__subclasses__())
+                      .union(_rv.AgeDependentWaitingTimeMixin.__subclasses__())
+                      .difference({events.birth.WaitingTime,
+                                   events.infection.WaitingTime}))
+        self.hazard = _rec_fromkwds(**{
+            _waiting_time.name(wt): waiting_times[wt].hazard(ages_mid)
+            for wt in wts_hazard
+        } | {
+            # Dummy value. Set on calls to `Solver.solve_step()`.
+            'infection': 1,
+        })
+        # Get the birth hazard at `ages`, not `ages_mid`
+        self.hazard_birth = self.get_hazard_birth(ages)
         # Dummy value. Set on calls to `Solver.solve_step()`.
         self.birth_maternal_immunity_proportion = 1
 
@@ -80,13 +79,16 @@ class _Parameters:
         return pdf
 
     def get_hazard_birth(self, ages):
+        # Avoid the slow `..floquet.find_birth_scaling()`
         hazard = events.birth.hazard_no_seasonality(self.female_probability,
-                                                    ages)
-        # Scale so that the population growth rate is 0.
-        scale = scipy.integrate.trapezoid(
+                                                    ages, _scaling=1)
+        # Scale to get 0 population growth rate using the `ages`
+        # from `Solver()`, rather than the ages used by
+        # `..floquet.find_birth_scaling()`
+        scaling = scipy.integrate.trapezoid(
             self.female_probability * hazard * self.survival.mortality,
             ages)
-        hazard /= scale
+        hazard /= scaling
         return hazard
 
 
