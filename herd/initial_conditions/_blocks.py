@@ -1,21 +1,36 @@
 '''Blocks used by solver.Solver().'''
 
 import abc
+import itertools
 import re
 
 import numpy
 import numpy.lib.recfunctions
+import pandas
 import scipy
 
-# The short & long names of the variables.
+from .. import immune_status
+
+# The short names of the variables.
 # The order of the output is determined by the order of these, too.
-NAMES = {'M': 'maternal_immunity',
-         'S': 'susceptible',
-         'E': 'exposed',
-         'I': 'infectious',
-         'C': 'carrier',
-         'R': 'recovered',
-         'L': 'lost_immunity'}
+SHORT_NAMES = {
+    'maternal_immunity'  : 'M',
+    'susceptible'        : 'S',
+    'exposed'            : 'E',
+    'infectious'         : 'I',
+    'carrier'            : 'C',
+    'recovered_true'     : 'R',
+    'recovered_false'    : 'Q',
+    'lost_immunity_true' : 'L',
+    'lost_immunity_false': 'K',
+}
+assert set(SHORT_NAMES) == set(immune_status.immune_statuses)
+assert len(set(SHORT_NAMES.values())) == len(SHORT_NAMES), 'Duplicated values'
+
+SHORT_NAMES_TO_LONG_NAMES = {s: l for (l, s) in SHORT_NAMES.items()}
+
+LONG_NAMES_DTYPE = pandas.CategoricalDtype(SHORT_NAMES, # `.keys()`
+                                           ordered=True)
 
 
 class _Block(metaclass=abc.ABCMeta):
@@ -160,7 +175,7 @@ class BlockM(_BlockODE):
             self.params.hazard.maternal_immunity_waning)
 
     def set_b_X(self):
-        self._set_b_X(self.params.newborn_proportion_immune)
+        self._set_b_X(self.params.birth_maternal_immunity_proportion)
 
     def update(self):
         self.set_b_X()
@@ -175,7 +190,7 @@ class BlockS(_BlockODE):
         self.A_X['S'] = self._get_A_XX(self.params.hazard.infection)
 
     def set_b_X(self):
-        self._set_b_X(1 - self.params.newborn_proportion_immune)
+        self._set_b_X(1 - self.params.birth_maternal_immunity_proportion)
 
     def update(self):
         self.set_A_SS()
@@ -245,6 +260,10 @@ class BlockR(_BlockODE):
         self._set_b_X(0)
 
 
+class BlockQ(_BlockODE):
+    pass
+
+
 class BlockL(_BlockODE):
     def set_A_LR(self):
         self.A_X['R'] = self._get_A_XY_ODE(self.params.hazard.antibody_loss)
@@ -262,33 +281,45 @@ class BlockL(_BlockODE):
         self.set_A_LL()
 
 
-def _set_X(Block):
-    '''Set the variable name from the last letter of the class name.'''
-    assert len(Block.__name__) == (5 + 1)
-    assert Block.__name__[:5] == 'Block'
-    Block.X = Block.__name__[-1]
-    abc.update_abstractmethods(Block)
+class BlockK(_BlockODE):
+    pass
 
 
-# Set the names BlockX.X
-for _BlockXDE in _Block.__subclasses__():
-    for _Block_ in _BlockXDE.__subclasses__():
-        _set_X(_Block_)
+def _set_block_names():
+    '''Set the names BlockX.X'''
+
+    def set_X(Block):
+        '''Set the variable name from the last letter of the class name.'''
+        assert Block.__name__.startswith('Block')
+        Block.X = Block.__name__.removeprefix('Block')
+        abc.update_abstractmethods(Block)
+
+    for _BlockXDE in _Block.__subclasses__():
+        for _Block_ in _BlockXDE.__subclasses__():
+            set_X(_Block_)
 
 
-# Get the variables governed by ODEs
-vars_ode = [_Block_.X
-            for _Block_ in _BlockODE.__subclasses__()]
-
-# Get the variables governed by PDEs
-vars_pde = [_Block_.X
-            for _Block_ in _BlockPDE.__subclasses__()]
-
-# Make sure `NAMES` agrees with `vars_ode` and `vars_pde`
-assert set(vars_ode + vars_pde) == NAMES.keys()
+_set_block_names()
 
 
-# Get all `_Block()`s.
-Blocks = []
-for _BlockXDE in _Block.__subclasses__():
-    Blocks.extend(_BlockXDE.__subclasses__())
+def _get_vars_ode_and_vars_pde():
+    '''Get the variables governed by ODEs and by PDEs.'''
+    vars_ode = tuple(_Block_.X
+                     for _Block_ in _BlockODE.__subclasses__())
+    vars_pde = tuple(_Block_.X
+                     for _Block_ in _BlockPDE.__subclasses__())
+    assert set(vars_ode + vars_pde) == set(SHORT_NAMES.values())
+    return (vars_ode, vars_pde)
+
+
+(vars_ode, vars_pde) = _get_vars_ode_and_vars_pde()
+
+
+def _get_blocks():
+    '''Get all `_Block()`s.'''
+    return tuple(itertools.chain.from_iterable(
+        _BlockXDE.__subclasses__()
+        for _BlockXDE in _Block.__subclasses__()))
+
+
+Blocks = _get_blocks()

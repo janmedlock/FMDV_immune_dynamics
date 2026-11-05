@@ -1,17 +1,14 @@
 '''Solver for the probability of being in each immune state.'''
 
-import pathlib
-
-import joblib
 import numpy
 import numpy.lib.recfunctions
 import pandas
 import scipy
 
-from .. import events, utility
+from .. import _memory, events, utility
 from ..immune_status import have_offspring_to_maternal_immunity
 from ..parameters import Parameters
-from . import _blocks
+from . import _blocks, _random_variables
 
 
 def _rec_fromkwds(**kwds):
@@ -22,74 +19,74 @@ def _rec_fromkwds(**kwds):
 
 
 class _Parameters:
-    '''Dummy object to pass parameters from `Solver()` to
-    `._blocks._Block()`s.'''
+    '''Object to pass parameters from `Solver()` to `._blocks._Block()`s.'''
     def __init__(self, params, ages, ages_mid, step, length_ode, length_pde):
         self.step = step
         self.length_ode = length_ode
         self.length_pde = length_pde
+        # Helper to get parameterized waiting times
+        waiting_times = _random_variables.WaitingTimes(params)
         # Get the pdf for these waiting times.
-        waiting_times_pdf = {
-            'progression': events.progression.WaitingTime(params),
-            'recovery': events.recovery.WaitingTime(params),
-            'recovery_to_carrier': events.recovery_to_carrier.WaitingTime(
-                params),
-        }
-        pdf = {k: self._get_pdf(RV, ages)
-               for (k, RV) in waiting_times_pdf.items()}
-        self.pdf = _rec_fromkwds(**pdf)
+        # TODO: These are subclasses of
+        # 'TimeSinceEntryDependentWaitingTimesMixin'.
+        waiting_times_pdf = ('progression', 'recovery', 'carrier_recovery')
+        self.pdf = _rec_fromkwds(**{
+            wt: self.get_pdf(waiting_times[wt], ages)
+            for wt in waiting_times_pdf
+        })
         # Get the survival for these waiting times.
-        waiting_times_survival = {
-            **waiting_times_pdf,  # The entries in `waiting_times_pdf`.
-            'mortality': events.mortality.WaitingTime(params),
-        }
-        survival = {k: RV.sf(ages)
-                    for (k, RV) in waiting_times_survival.items()}
-        self.survival = _rec_fromkwds(**survival)
+        waiting_times_survival = ('mortality',) + waiting_times_pdf
+        self.survival = _rec_fromkwds(**{
+            wt: waiting_times[wt].sf(ages)
+            for wt in waiting_times_survival
+        })
         # Get the hazard for these waiting times.
-        waiting_times_hazard = {
-            'mortality': waiting_times_survival['mortality'],
-            'maternal_immunity_waning':
-            events.maternal_immunity_waning.WaitingTime(params),
-            'antibody_gain': events.antibody_gain.WaitingTime(params),
-            'antibody_loss': events.antibody_loss.WaitingTime(params),
-        }
-        hazard = {k: rndvr.hazard(ages_mid)
-                  for (k, rndvr) in waiting_times_hazard.items()}
-        hazard['infection'] = 1  # Dummy value. Set on calls to `solve_step()`.
+        # TODO: These are subclasses of
+        # 'MemorylessWaitingTimesMixin' and
+        # 'AgeDependentWaitingTimesMixin',
+        # except not 'birth' and 'infection'
+        waiting_times_hazard = ('mortality',  'maternal_immunity_waning',
+                                'antibody_gain', 'antibody_loss')
+        self.hazard = _rec_fromkwds(**{
+            wt: waiting_times[wt].hazard(ages_mid)
+            for wt in waiting_times_hazard
+        } | {
+            # Dummy value. Set on calls to `Solver.solve_step()`.
+            'infection': 1,
+        })
+        # The birth hazard is needed at `ages`, not `ages_mid`
+        self.hazard_birth = self.get_hazard_birth(ages)
         # Other parameters.
-        self.hazard = _rec_fromkwds(**hazard)
+        self.carrier_transmission_rate = params.carrier_transmission_rate
         self.female_probability = params.female_probability
+        self.lost_immunity_susceptibility = params.lost_immunity_susceptibility
+        self.lost_immunity_true_probability = (
+            params.lost_immunity_true_probability)
+        self.recovered_true_probability = params.recovered_true_probability
         self.recovery_to_carrier_probability = (
             params.recovery_to_carrier_probability)
         self.transmission_rate = params.transmission_rate
-        self.carrier_transmission_rate = params.carrier_transmission_rate
-        self.lost_immunity_susceptibility = params.lost_immunity_susceptibility
-        # The birth hazard is needed at `ages`, not `ages_mid`.
-        self.hazard_birth = self._hazard_birth(ages)
         # Dummy value. Set on calls to `Solver.solve_step()`.
-        self.newborn_proportion_immune = 1
+        self.birth_maternal_immunity_proportion = 1
 
     @staticmethod
-    def _get_pdf(rndvr, ages):
-        '''Use the survival function `rndvr.sf()` to get the PDF over each
-        interval in `ages`. The PDF `rndvr.pdf()` at each age might
+    def get_pdf(rv, ages):
+        '''Use the survival function `rv.sf()` to get the PDF over
+        each interval in `ages`. The PDF `rv.pdf()` at each age might
         change too quickly to capture the difference over the age
         interval.'''
         # Use 0 at the first age.
-        pdf = numpy.hstack(
-            [0, - numpy.diff(rndvr.sf(ages)) / numpy.diff(ages)]
-        )
+        pdf = numpy.hstack([0, -numpy.diff(rv.sf(ages)) / numpy.diff(ages)])
         return pdf
 
-    def _hazard_birth(self, ages):
+    def get_hazard_birth(self, ages):
         hazard = events.birth.hazard_no_seasonality(self.female_probability,
                                                     ages)
         # Scale so that the population growth rate is 0.
-        hazard /= scipy.integrate.trapezoid(
-            hazard * self.survival.mortality, ages
-        )
-        hazard *= self.female_probability
+        scale = scipy.integrate.trapezoid(
+            self.female_probability * hazard * self.survival.mortality,
+            ages)
+        hazard /= scale
         return hazard
 
 
@@ -111,6 +108,7 @@ class Solver:
         self.length_ode = self.length_pde = len(self.ages)
         self.params = _Parameters(params, self.ages, self.ages_mid, self.step,
                                   self.length_ode, self.length_pde)
+        self.index = pandas.Index(self.ages, name='age')
         if not _skip_blocks:
             self.blocks = {
                 Block.X: Block(self.params)
@@ -179,13 +177,20 @@ class Solver:
         '''Untransform the solver variables.'''
         return numpy.array((numpy.exp(y[0]), scipy.special.expit(y[1])))
 
+    @staticmethod
+    def _columns_as_long_name_dtype(dfr):
+        return dfr.set_axis(dfr.columns.astype(_blocks.LONG_NAMES_DTYPE),
+                            axis='columns')
+
     def solve_step(self, y_curr):
         x_curr = self.transform_inverse(y_curr)
+        (hazard_infection, birth_maternal_immunity_proportion) = x_curr
         if self.debug:
-            msg = 'hazard_infection={:g}, newborn_proportion_immune={:g}'
-            print(msg.format(*x_curr))
-        (self.params.hazard.infection,
-         self.params.newborn_proportion_immune) = x_curr
+            print(f'{hazard_infection=:g}, '
+                  + f'{birth_maternal_immunity_proportion=:g}')
+        self.params.hazard.infection = hazard_infection
+        self.params.birth_maternal_immunity_proportion = (
+            birth_maternal_immunity_proportion)
         self.update_blocks()
         A = self.get_A()
         b = self.get_b()
@@ -195,15 +200,10 @@ class Solver:
         P = numpy.lib.recfunctions.merge_arrays(
             (P, p_integrated),
             asrecarray=True, flatten=True)
-        P = pandas.DataFrame(P, index=pandas.Index(self.ages, name='age'))
-        P.rename(columns=_blocks.NAMES, inplace=True)
-        # Order columns.
-        cols = pandas.CategoricalIndex(P.columns,
-                                       _blocks.NAMES.values(),
-                                       ordered=True)
-        P = (P.set_axis(cols, axis='columns')
-             .sort_index(axis='columns'))
-        return P
+        return (pandas.DataFrame(P, index=self.index)
+                .rename(columns=_blocks.SHORT_NAMES_TO_LONG_NAMES)
+                .pipe(self._columns_as_long_name_dtype)
+                .sort_index(axis='columns'))
 
     def get_hazard_infection(self, P):
         '''Compute the hazard of infection from the solution `P`.'''
@@ -220,9 +220,9 @@ class Solver:
         haz = numpy.clip(haz, 0, None)
         return haz
 
-    def get_newborn_proportion_immune(self, P):
-        '''Compute the proportions of newborns who have maternal immunity from
-        the solution `P`.'''
+    def get_birth_maternal_immunity_proportion(self, P):
+        '''Compute the proportions of newborns who have maternal
+        immunity from the solution `P`.'''
         # The birth rate from moms in each immune status and age.
         births = P.mul(self.params.hazard_birth,
                        axis='index')
@@ -238,11 +238,11 @@ class Solver:
     def solve_objective(self, y_curr):
         '''This is called by `scipy.optimize.fixed_point()` to find
         the equilibrium `hazard_infection` and
-        `newborn_proportion_immune`.'''
+        `birth_maternal_immunity_proportion`.'''
         P = self.solve_step(y_curr)
-        P.clip(lower=0, inplace=True)
+        P.clip(lower=0, inplace=True)  # TODO: Examine
         x_next = (self.get_hazard_infection(P),
-                  self.get_newborn_proportion_immune(P))
+                  self.get_birth_maternal_immunity_proportion(P))
         y_next = self.transform(x_next)
         return y_next
 
@@ -252,20 +252,14 @@ class Solver:
         y_sol = scipy.optimize.fixed_point(self.solve_objective,
                                            self.transform(x_guess))
         P = self.solve_step(y_sol)
-        # assert ((P >= 0) | numpy.isclose(P, 0)).all(axis=None)
-        P.clip(lower=0, inplace=True)
+        # assert ((P >= 0) | numpy.isclose(P, 0)).all(axis=None)  # TODO
+        P.clip(lower=0, inplace=True)  # TODO
         return P
 
 
 # `Solver.solve()` is very slow, so the values are cached to disk with
-# `joblib.Memory()` so that they are only computed once. Set up the
-# cache in a subdirectory of the directory that this source file is
-# in.
-_cache_path = pathlib.Path(__file__).with_name('_cache')
-_cache = joblib.Memory(_cache_path, verbose=1)
-
-
-@_cache.cache(ignore=['debug'])
+# `joblib.Memory()` so that they are only computed once
+@_memory.memory.cache(ignore=['debug'])
 def _solve(params, debug):
     return Solver(params, debug=debug).solve()
 
@@ -289,10 +283,12 @@ class _CacheParameters(Parameters):
                  'carrier_transmission_rate',
                  'female_probability',
                  'lost_immunity_susceptibility',
+                 'lost_immunity_true_probability',
                  'maternal_immunity_duration_mean',
                  'maternal_immunity_duration_shape',
                  'progression_mean',
                  'progression_shape',
+                 'recovered_true_probability',
                  'recovery_mean',
                  'recovery_shape',
                  'recovery_to_carrier_probability',
@@ -318,12 +314,14 @@ def get_equilibrium(params, cached_only=False, debug=False):
     if cached_only and not in_cache(params):
         return {
             'hazard_infection': None,
-            'newborn_proportion_immune': None,
+            'birth_maternal_immunity_proportion': None,
         }
     # Get the solution from the cached solver.
     P = solve(params, debug=debug)
     solver = Solver(params, debug=debug, _skip_blocks=True)
     return {
-        'hazard_infection': solver.get_hazard_infection(P),
-        'newborn_proportion_immune': solver.get_newborn_proportion_immune(P),
+        'hazard_infection':
+        solver.get_hazard_infection(P),
+        'birth_maternal_immunity_proportion':
+        solver.get_birth_maternal_immunity_proportion(P),
     }
