@@ -78,7 +78,7 @@ class WaitingTime(_rv.AgeDependentWaitingTimeMixin,
         return self.isf(1 - q)
 
     def rvs(self, size=None):
-        return self.ppf(self.rng.random(size=size))
+        return self.isf(self.rng.random(size=size))
 
 
 class BuffaloMixin:

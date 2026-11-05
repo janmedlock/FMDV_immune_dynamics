@@ -1,5 +1,8 @@
+import functools
+
 import numpy
 import scipy
+import scipy.optimize.elementwise
 
 from .. import _memory, _period, parameters
 from . import dominant_eigen, monodromy
@@ -46,40 +49,39 @@ def _find_dominant_eigen(birth_scaling, params,
 
 
 # This function is not cached because it just calls
-# `_find_dominant_eigen()`, which is.
-def _find_growth_rate(birth_scaling, params,
-                      step, age_max, solver):
+# `_find_dominant_eigen()`, which is cached.
+def _find_growth_rate(solver, params, step, age_max, birth_scaling):
     '''Find the population growth rate.'''
-    mu0, _, _ = _find_dominant_eigen(birth_scaling, params,
+    (mu0, *_) = _find_dominant_eigen(birth_scaling, params,
                                      step, age_max, solver)
     return mu0
 
 
 # This function is extremely slow because, through
-# `_find_growth_rate()` and `scipy.optimize.brentq()`, it repeatedly
-# calls `_find_dominant_eigen()`, which is very slow, so it is cached.
-# Even though `_find_dominant_eigen()` is cached, caching this function
-# avoids re-running the optimization step.
+# `_find_growth_rate()` and `scipy.optimize.elementwise.find_root()`,
+# it repeatedly calls `_find_dominant_eigen()`, which is very slow, so
+# it is cached.  Even though `_find_dominant_eigen()` is cached,
+# caching this function avoids re-running the optimization step.
 @_memory.memory.cache
 def _find_birth_scaling(params, step, age_max):
     '''Find the birth scaling that gives population growth rate r = 0.'''
-    # Reuse the solver to avoid multiple setup/teardown.
+    BRACKET_GUESS = (0.5, 1.5)  # I expect the scaling is about 1
+    # Reuse the solver to avoid multiple setup and teardown.
     solver = monodromy.Solver(params, step, age_max)
-    args = (params, step, age_max, solver)
-    a = 0
-    # We know that at the lower limit a = 0,
-    # `_find_growth_rate(0, ...) < 0`,
-    # so we need to find an upper limit `b`
-    # with `_find_growth_rate(b, ...) >= 0`.
-    b = 1
-    while _find_growth_rate(b, *args) < 0:
-        a = b
-        b *= 2
-    (birth_scaling, res) = scipy.optimize.brentq(_find_growth_rate, a, b,
-                                                 args=args,
-                                                 full_output=True)
-    assert res.converged, res
-    return birth_scaling
+    # `scipy.optimize.elementwise.find_root()` requires the function
+    # accept an array
+    find_growth_rate = numpy.vectorize(
+        functools.partial(_find_growth_rate,
+                          solver, params, step, age_max),
+        otypes='d')
+    br_result = scipy.optimize.elementwise.bracket_root(find_growth_rate,
+                                                        *BRACKET_GUESS,
+                                                        xmin=0)
+    assert br_result.success, br_result
+    rt_result = scipy.optimize.elementwise.find_root(find_growth_rate,
+                                                     br_result.bracket)
+    assert rt_result.success, rt_result
+    return rt_result.x
 
 
 class _CacheParameters(parameters.Parameters):

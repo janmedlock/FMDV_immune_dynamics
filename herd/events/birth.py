@@ -53,7 +53,7 @@ class WaitingTime(_rv.MemorylessWaitingTimeMixin,
         if _scaling is None:
             _scaling = _floquet.find_birth_scaling(parameters, **kwds)
         self._scaling = _scaling
-        self.ppf = numpy.vectorize(self._ppf_single, otypes='d')
+        self.isf = numpy.vectorize(self._isf_single, otypes='d')
 
     def hazard(self, time, age, out=None):
         # age is the age at t = time.
@@ -132,44 +132,58 @@ class WaitingTime(_rv.MemorylessWaitingTimeMixin,
         return -(self._scaling * H)
 
     def sf(self, time, time0, age0):
+        '''Survival function.'''
         return numpy.exp(self.logsf(time, time0, age0))
 
     def cdf(self, time, time0, age0):
-        return 1 - self.sf(time, time0, age0)
+        '''Cumulative distribution function.'''
+        return -numpy.expm1(self.logsf(time, time0, age0))
 
-    def pdf(self, time, time0, age0):
-        return (self.hazard(time0 + time, age0 + time)
-                * self.sf(time, time0, age0))
+    def logcdf(self, age):
+        '''The logarithm of the cumulative distribution function.'''
+        return numpy.log1p(-self.sf(age))
 
     def logpdf(self, time, time0, age0):
+        '''Logarithm of the probability density function.'''
         return (numpy.log(self.hazard(time0 + time, age0 + time))
                 + self.logsf(time, time0, age0))
 
-    def _ppf_to_solve(self, time, time0, age0, q):
-        return self.cdf(time, time0, age0) - q
+    def pdf(self, time, time0, age0):
+        '''The probability density function.'''
+        return numpy.exp(self.logpdf(time, time0, age0))
 
-    def _ppf_single(self, q, time0, age0):
+    def _isf_to_solve(self, time, time0, age0, logq):
+        return self.logsf(time, time0, age0) - logq
+
+    def _isf_single(self, q, time0, age0):
+        '''Inverse survival function.'''
         assert 0 <= q <= 1
-        if q == 0:
+        if q == 1:
             return 0
-        elif q == 1:
+        if q == 0:
             return numpy.inf
-        else:
-            left = 0
-            # ppf(left) < q.
-            right = factor = 10
-            while self._ppf_to_solve(right, time0, age0, q) < 0:
-                left = right
-                right *= factor
-            # ppf(right) > q.
-            return scipy.optimize.brentq(self._ppf_to_solve,
-                                         left, right, args=(time0, age0, q))
+        # `scipy.optimize.elementwise.find_root()` is much slower here
+        args = (time0, age0, numpy.log(q))
+        FACTOR = 10
+        left = 0
+        # sf(left) > q
+        right = FACTOR
+        while self._isf_to_solve(right, *args) > 0:
+            left = right
+            right *= FACTOR
+        # sf(right) < q
+        (time, result) = scipy.optimize.brentq(self._isf_to_solve,
+                                               left, right, args=args,
+                                               full_output=True)
+        assert result.converged, result
+        return time
 
-    def isf(self, q, time0, age0):
-        return self.ppf(1 - q, time0, age0)
+    def ppf(self, q, time0, age0):
+        '''Percent point function, the inverse of the CDF.'''
+        return self.isf(1 - q, time0, age0)
 
     def rvs(self, time0, age0, size=None):
-        return self.ppf(self.rng.random(size=size), time0, age0)
+        return self.isf(self.rng.random(size=size), time0, age0)
 
 
 class BuffaloMixin:
