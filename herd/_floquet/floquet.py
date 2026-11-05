@@ -1,10 +1,7 @@
-import pathlib
-
-import joblib
 import numpy
 import scipy
 
-from .. import _period, parameters
+from .. import _memory, _period, parameters
 from . import dominant_eigen, monodromy
 
 _step_default = 0.01
@@ -14,14 +11,6 @@ _age_max_default = 35
 def _normalize_to_density(v, ages):
     '''Normalize `v` in place so that its integral over ages is 1.'''
     v /= scipy.integrate.trapezoid(v, ages)
-
-
-# Some of the functions below are very slow, so the values are cached
-# to disk with `joblib.Memory()` so that they are only computed once.
-# Set up the cache in a subdirectory of the directory that this source
-# file is in.
-_cache_path = pathlib.Path(__file__).with_name('_cache')
-_cache = joblib.Memory(_cache_path, verbose=1)
 
 
 # This function is very slow because it calls
@@ -35,7 +24,7 @@ _cache = joblib.Memory(_cache_path, verbose=1)
 # `verbose>0`.  `_find_birth_scaling()` is cached and currently the
 # default for the cache has `verbose>0`, so timing info etc is shown
 # there.
-@_cache.cache(ignore=['solver'], verbose=0)
+@_memory.memory.cache(ignore=['solver'], verbose=0)
 def _find_dominant_eigen(birth_scaling, params,
                          step, age_max, solver=None):
     '''Find the dominant Floquet exponent (the one with the largest real part)
@@ -71,7 +60,7 @@ def _find_growth_rate(birth_scaling, params,
 # calls `_find_dominant_eigen()`, which is very slow, so it is cached.
 # Even though `_find_dominant_eigen()` is cached, caching this function
 # avoids re-running the optimization step.
-@_cache.cache
+@_memory.memory.cache
 def _find_birth_scaling(params, step, age_max):
     '''Find the birth scaling that gives population growth rate r = 0.'''
     # Reuse the solver to avoid multiple setup/teardown.

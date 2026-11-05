@@ -3,7 +3,9 @@ import scipy
 from .. import _event, _rv
 
 
-class WaitingTime(_rv.TimeSinceEntryDependentWaitingTimeMixin,
+# Because buffalo are born into 'maternal_immunity', age is time since
+# entry
+class WaitingTime(_rv.AgeDependentWaitingTimeMixin,
                   _rv.ScipyRV):
     '''Time to waning of maternal immunity.'''
     def rv(self, parameters):

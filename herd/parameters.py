@@ -84,20 +84,17 @@ class Parameters:
                 self.antibody_gain_hazard = 0.004176835549525 * 365
             else:
                 raise ValueError(f'Unknown {SAT=}!')
-            self._set_antibody_precisions(seed)
+            antibody_precisions = self._get_antibody_precisions(seed)
+            self.recovered_true_probability = float(
+                antibody_precisions['recovered'])
+            self.lost_immunity_true_probability = float(
+                antibody_precisions['lost_immunity'])
         self.set(**kwds)
 
     def _get_antibody_precisions(self, seed):
         if self.sample_antibody_precisions:
             return antibodies.precision.sample(self.SAT, seed)
         return antibodies.precision.estimate(self.SAT)
-
-    def _set_antibody_precisions(self, seed):
-        antibody_precisions = self._get_antibody_precisions(seed)
-        self.antibody_gain_to_recovered_true_probability = float(
-            antibody_precisions['recovered'])
-        self.antibody_loss_to_lost_immunity_true_probability = float(
-            antibody_precisions['lost_immunity'])
 
     def set(self, **kwds):
         for (key, val) in kwds.items():

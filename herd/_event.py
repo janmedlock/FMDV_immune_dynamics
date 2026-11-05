@@ -95,7 +95,8 @@ class Event(metaclass=abc.ABCMeta):
         args = self.waiting_time_rvs_args
         kwds = self.waiting_time_rvs_kwds
         if use_time_remaining:
-            return self.waiting_time.time_remaining_rvs(*args, **kwds)
+            return self.waiting_time.time_remaining_rvs(self.buffalo.age,
+                                                        *args, **kwds)
         return self.waiting_time.rvs(*args, **kwds)
 
     def sample_time(self, use_time_remaining=False):

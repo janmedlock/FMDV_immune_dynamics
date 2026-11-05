@@ -22,7 +22,7 @@ def _annual_survival_to_series(annual_survival):
     )
 
 
-class WaitingTime(_rv.MemorylessWaitingTimeMixin,
+class WaitingTime(_rv.AgeDependentWaitingTimeMixin,
                   _rv.RV):
     _hazard = -numpy.log(_annual_survival_to_series(_ANNUAL_SURVIVAL))
 

@@ -113,7 +113,7 @@ class WaitingTimeMixin(metaclass=abc.ABCMeta):
     '''A mixin for a waiting-time `RV()` with the
     `time_remaining_rvs()` sampler.'''
     @abc.abstractmethod
-    def time_remaining_rvs(self, *args, **kwds):
+    def time_remaining_rvs(self, age, *args, **kwds):
         '''Get a sample time remaining. Subclasses must define this
         method.'''
 
@@ -121,7 +121,7 @@ class WaitingTimeMixin(metaclass=abc.ABCMeta):
 class MemorylessWaitingTimeMixin(WaitingTimeMixin):
     '''A mixin for memoryless waiting times with the
     `.time_remaining_rvs()` sampler.'''
-    def time_remaining_rvs(self, *args, **kwds):
+    def time_remaining_rvs(self, age, *args, **kwds):
         '''A memoryless random variable is its own time-remaining
         random variable.'''
         return self.rvs(*args, **kwds)
@@ -131,12 +131,12 @@ class AgeDependentWaitingTimeMixin(WaitingTimeMixin):
     '''A mixin for age-dependent waiting times with the
     `.time_remaining_rvs()` sampler.'''
     @_sample_nonnegative
-    def time_remaining_rvs(self, *args, **kwds):
+    def time_remaining_rvs(self, age, *args, **kwds):
         '''Get a sample time remaining.'''
         # The result might here be negative,
-        # but the `sample_nonnegative()` decorator
+        # but the `_sample_nonnegative()` decorator
         # resamples to get a nonnegative result
-        return self.rvs(*args, **kwds) - self.buffalo.age
+        return self.rvs(*args, **kwds) - age
 
 
 class TimeSinceEntryDependentWaitingTimeMixin(WaitingTimeMixin):
@@ -163,10 +163,10 @@ class TimeSinceEntryDependentWaitingTimeMixin(WaitingTimeMixin):
         return time_since_entry.rvs
 
     @_sample_nonnegative
-    def time_remaining_rvs(self, *args, **kwds):
+    def time_remaining_rvs(self, age, *args, **kwds):
         '''Get a sample time remaining.'''
         # The result might here be negative,
-        # but the `sample_nonnegative()` decorator
+        # but the `_sample_nonnegative()` decorator
         # resamples to get a nonnegative result
         return (self.rvs(*args, **kwds)
                 - self.time_since_entry_rvs(*args, **kwds))
