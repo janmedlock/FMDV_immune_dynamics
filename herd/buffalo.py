@@ -2,16 +2,17 @@ from . import _event, _events_containers, immune_status, sex
 from .events import birth, mortality
 
 
-class Buffalo(birth.BuffaloMixin, mortality.BuffaloMixin):
+class Buffalo(birth.BuffaloMixin,
+              mortality.BuffaloMixin,
+              sex.BuffaloMixin):
     '''A single buffalo and the events that can occur to it.'''
-
     def __init__(self, herd, immune_status_, age=0, at_equilibrium=False):
         self.herd = herd
         self.immune_status = immune_status_
         assert self.immune_status in immune_status.immune_statuses
         assert age >= 0
         self.birth_date = self.herd.time - age
-        self.sex = self.sex_rvs()
+        self.sex = self.to_sex.rvs()
         assert self.sex in sex.sexes
         self.identifier = next(self.herd.identifiers)
         self.events = _events_containers.BuffaloEvents(self)

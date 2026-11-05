@@ -172,16 +172,9 @@ class WaitingTime(_rv.MemorylessWaitingTimeMixin,
         return self.ppf(self.rng.random(size=size), time0, age0)
 
 
-class Sex(_rv.ChoicesRV):
-    '''Random variable for sex of an offspring.'''
-    def choices(self, parameters):
-        p_female = parameters.female_probability
-        return {'female': p_female,
-                'male': 1 - p_female}
-
-
 class BuffaloMixin:
-    '''Mixin for `..buffalo.Buffalo()`.'''
+    '''Mixin for `..buffalo.Buffalo()` to add the method needed by
+    `Birth()`.'''
     def give_birth(self):
         '''Give birth to a new offspring.'''
         assert self.sex == 'female'
@@ -189,11 +182,6 @@ class BuffaloMixin:
             self.immune_status]
         offspring = type(self)(self.herd, offspring_immune_status)
         self.herd.add(offspring)
-
-    def sex_rvs(self, *args, **kwds):
-        '''Random sample sex for a new buffalo.'''
-        sex_rv = self.herd.rvs[Sex]
-        return sex_rv.rvs(*args, **kwds)
 
 
 class Birth(_event.ForSexMixin,

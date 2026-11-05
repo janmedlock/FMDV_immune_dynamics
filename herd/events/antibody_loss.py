@@ -15,7 +15,7 @@ class AntibodyLossTo(_rv.ChoicesRV):
     '''Whether losing apparent antibody leads to having true not antibodies.'''
     def choices(self, parameters):
         p_true = parameters.antibody_loss_to_lost_immunity_true_probability
-        return {'lost_immunity_true': p_true,
+        return {'lost_immunity_true' : p_true,
                 'lost_immunity_false': 1 - p_true}
 
 

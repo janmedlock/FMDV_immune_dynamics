@@ -82,7 +82,8 @@ class WaitingTime(_rv.MemorylessWaitingTimeMixin,
 
 
 class BuffaloMixin:
-    '''Mixin for `..buffalo.Buffalo()`.'''
+    '''Mixin for `..buffalo.Buffalo()` to add the method needed by
+    `Mortality()`.'''
     def die(self):
         self.herd.remove(self)
         self.events.clear()

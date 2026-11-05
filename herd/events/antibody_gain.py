@@ -16,7 +16,7 @@ class AntibodyGainTo(_rv.ChoicesRV):
     '''Whether gaining apparent antibody leads to having true antibodies.'''
     def choices(self, parameters):
         p_true = parameters.antibody_gain_to_recovered_true_probability
-        return {'recovered_true': p_true,
+        return {'recovered_true' : p_true,
                 'recovered_false': 1 - p_true}
 
 
