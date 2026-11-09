@@ -1,7 +1,7 @@
 /README.html
 /todo.org
-/MISCELLANY
-/.venv
+/MISCELLANY/
+/.venv/
 *.h5
 *.pdf
 *.png
