@@ -51,17 +51,21 @@ def find_stable_age_structure(parameters, fast=False):
     return (v, ages)
 
 
-def plot(ages, stable_age_structure):
+def plot(parameters, ages, stable_age_structure):
+
+    def mortality_sf(age):
+        return herd.events.mortality.sf(parameters.mortality_age_dependent,
+                                        age)
+
     fig, ax = matplotlib.pyplot.subplots()
     age_max = 25
     which = (ages <= age_max)
     ax.plot(ages[which], stable_age_structure[which],
             label='stable age structure')
-    mortality_sf_scale, _ = scipy.integrate.quad(
-        herd.events.mortality.sf, ages[0], ages[-1]
-    )
+    mortality_sf_scale, _ = scipy.integrate.quad(mortality_sf,
+                                                 ages[0], ages[-1])
     ax.plot(ages[which],
-            herd.events.mortality.sf(ages[which]) / mortality_sf_scale,
+            mortality_sf(ages[which]) / mortality_sf_scale,
             label='scaled mortality survival',
             color='black', linestyle='dotted')
     ax.set_xlabel(f'age ({common.TIME_UNIT})')
@@ -75,5 +79,5 @@ if __name__ == '__main__':
     parameters = herd.Parameters()
     stable_age_structure, ages = find_stable_age_structure(parameters,
                                                            fast=FAST)
-    plot(ages, stable_age_structure)
+    plot(parameters, ages, stable_age_structure)
     matplotlib.pyplot.show()

@@ -36,6 +36,7 @@ class WaitingTime(_rv.MemorylessWaitingTimeMixin,
         self.birth_peak_time = parameters.birth_peak_time
         self.birth_seasonal_coefficient_of_variation = (
             parameters.birth_seasonal_coefficient_of_variation)
+        self.menarche = parameters.birth_menarche
         if self.birth_seasonal_coefficient_of_variation < 1 / numpy.sqrt(3):
             self._alpha = (1 + numpy.sqrt(3)
                            * self.birth_seasonal_coefficient_of_variation)
@@ -83,15 +84,17 @@ class WaitingTime(_rv.MemorylessWaitingTimeMixin,
         # Now out = alpha * (1 - beta * (1 - abs(2 * tau - 1)))
         # In one step:
         # * If the hazard is negative, set it to 0.
-        # * If age < 4, set the hazard to 0.
-        out[(out < 0) | (age < 4)] = 0
+        # * If age < self.menarche, set the hazard to 0.
+        out[(out < 0) | (age < self.menarche)] = 0
         # Scale the hazard.
         out *= self._scaling
         return out
 
     def logsf(self, time, time0, age0):
         # age0 is the age at time = 0, i.e. t = time0.
-        c = time0 + numpy.clip(4 - age0, 0, numpy.inf) - self.birth_peak_time
+        c = (time0
+             + numpy.clip(self.menarche - age0, 0, numpy.inf)
+             - self.birth_peak_time)
         d = time0 + time - self.birth_peak_time
         H0 = numpy.floor(d) - numpy.floor(c) - 1
         if self._beta < 1:
@@ -220,18 +223,18 @@ class Birth(_event.ForSexMixin,
 class _ParametersNoSeasonality:
     '''Dummy parameters for the birth random variable without seasonal
     variation.'''
-    def __init__(self, female_probability):
-        self.female_probability = female_probability
+    def __init__(self, birth_menarche, female_probability):
+        self.birth_menarche = birth_menarche
         self.birth_seasonal_coefficient_of_variation = 0
         # The value of `.birth_peak_time` doesn't matter when the
         # seasonal variation is 0, but it must be set.
         self.birth_peak_time = 0
 
 
-def hazard_no_seasonality(female_probability, age,
+def hazard_no_seasonality(birth_menarche, female_probability, age,
                           *args, out=None, **kwargs):
     '''The hazard without seasonal variation.'''
-    params = _ParametersNoSeasonality(female_probability)
+    params = _ParametersNoSeasonality(birth_menarche, female_probability)
     waiting_time = WaitingTime(params, *args, **kwargs)
     # The value of `time` doesn't matter when the seasonal variation
     # is 0.

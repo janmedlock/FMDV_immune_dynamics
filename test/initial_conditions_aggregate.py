@@ -58,13 +58,13 @@ def plot_integral_over_age(p):
     ax.legend(handles[::-1], labels[::-1])
 
 
-def plot_sum_over_immune_state(p):
+def plot_sum_over_immune_state(params, p):
     ages = p.index
     P = sum_over_immune_state(p.T).T
     ax = P.plot(alpha=0.6)
     ax.set_xlabel(f'age ({common.TIME_UNIT})')
     ax.set_ylabel('survival')
-    survival = herd.mortality.sf(ages)
+    survival = herd.mortality.sf(params.mortality_age_dependent, ages)
     ax.plot(ages, survival, color='black', linestyle='dashed', alpha=0.6)
     return ax
 
@@ -139,7 +139,7 @@ if __name__ == '__main__':
     params = get_params()
     p = get_solutions(params)
     # plot_integral_over_age(p)
-    # plot_sum_over_immune_state(p)
+    # plot_sum_over_immune_state(params, p)
     plot_probability_constant_birth(p)
     plot_conditional_probability(p)
     matplotlib.pyplot.show()

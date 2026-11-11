@@ -99,7 +99,9 @@ class _CacheParameters(parameters.Parameters):
         # it modulo `period` so that it is in [0, period).
         self.birth_peak_time = float(params.birth_peak_time
                                      % _period.get_period())
+        self.birth_menarche = float(params.birth_menarche)
         self.female_probability = float(params.female_probability)
+        self.mortality_age_dependent = bool(params.mortality_age_dependent)
 
 
 # Wrapper to call cached version, `_find_birth_scaling()`.

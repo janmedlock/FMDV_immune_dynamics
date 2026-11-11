@@ -30,6 +30,8 @@ class Parameters:
             # self.birth_seasonal_coefficient_of_variation = 0.505  # 1st year.
             # self.birth_seasonal_coefficient_of_variation = 0.984  # 2nd year.
             self.birth_seasonal_coefficient_of_variation = 0.613  # Both years.
+            self.birth_menarche = 4  # years
+            self.mortality_age_dependent = True
             # Duration in M before moving to S.
             self.maternal_immunity_duration_mean = 0.37
             self.maternal_immunity_duration_shape = 1.19

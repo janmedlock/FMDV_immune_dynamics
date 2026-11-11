@@ -80,7 +80,8 @@ class _Parameters:
 
     def get_hazard_birth(self, ages):
         # Avoid the slow `..floquet.find_birth_scaling()`
-        hazard = events.birth.hazard_no_seasonality(self.female_probability,
+        hazard = events.birth.hazard_no_seasonality(self.birth_menarche,
+                                                    self.female_probability,
                                                     ages, _scaling=1)
         # Scale to get 0 population growth rate using the `ages`
         # from `Solver()`, rather than the ages used by
@@ -272,31 +273,36 @@ class _CacheParameters(Parameters):
     so that it can be efficiently cached.'''
 
     def __init__(self, params):
-        # Generally, the values of these parameters should be
-        # floats, so explicitly convert them so the cache doesn't
-        # get duplicated keys for the float and int representation
-        # of the same number, e.g. `float(0)` and `int(0)`.
-        attrs = ('antibody_gain_hazard',
-                 'antibody_loss_hazard',
-                 'birth_peak_time',
-                 'birth_seasonal_coefficient_of_variation',
-                 'carrier_recovery_mean',
-                 'carrier_recovery_shape',
-                 'carrier_transmission_rate',
-                 'female_probability',
-                 'lost_immunity_susceptibility',
-                 'lost_immunity_true_probability',
-                 'maternal_immunity_duration_mean',
-                 'maternal_immunity_duration_shape',
-                 'progression_mean',
-                 'progression_shape',
-                 'recovered_true_probability',
-                 'recovery_mean',
-                 'recovery_shape',
-                 'recovery_to_carrier_probability',
-                 'transmission_rate')
-        for attr in attrs:
-            setattr(self, attr, float(getattr(params, attr)))
+        attrs = {
+            # The values of these parameters should be floats, so
+            # explicitly convert them so the cache doesn't get
+            # duplicated keys for the float and int representation of
+            # the same number, e.g. `float(0)` and `int(0)`.
+            float: ('antibody_gain_hazard',
+                    'antibody_loss_hazard',
+                    'birth_menarche',
+                    'birth_peak_time',
+                    'birth_seasonal_coefficient_of_variation',
+                    'carrier_recovery_mean',
+                    'carrier_recovery_shape',
+                    'carrier_transmission_rate',
+                    'female_probability',
+                    'lost_immunity_susceptibility',
+                    'lost_immunity_true_probability',
+                    'maternal_immunity_duration_mean',
+                    'maternal_immunity_duration_shape',
+                    'progression_mean',
+                    'progression_shape',
+                    'recovered_true_probability',
+                    'recovery_mean',
+                    'recovery_shape',
+                    'recovery_to_carrier_probability',
+                    'transmission_rate'),
+            bool: ('mortality_age_dependent',),
+        }
+        for (type_, attrs_type) in attrs.items():
+            for attr in attrs_type:
+                setattr(self, attr, type_(getattr(params, attr)))
 
 
 def solve(params, debug=False):
