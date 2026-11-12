@@ -10,7 +10,7 @@ def build_table(observations, save=True):
     '''Build the table of observations.'''
     cols_rename = {
         'sex': 'Sex',
-        'age_at_first_capture_y': 'Age at first capture (y)',
+        'age_at_first_capture_y': 'Age at first capture (year)',
         'observations': 'Antibody observations',
         'consecutive_observations': 'Consecutive antibody observations',
     }

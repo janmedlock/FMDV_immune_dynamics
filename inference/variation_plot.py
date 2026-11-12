@@ -58,9 +58,9 @@ def plot_seronegative_by_age(axs):
     '''Plot the proportion seronegative by age.'''
     data_with_age = data.load_with_age()
     age_bins = pandas.IntervalIndex.from_breaks(
-        AGE_BREAKS, closed='left', name='age (y)'
+        AGE_BREAKS, closed='left', name='age (year)'
     )
-    ages = pandas.cut(data_with_age['age (y)'], bins=age_bins)
+    ages = pandas.cut(data_with_age['age (year)'], bins=age_bins)
 
     def get_interval_label(interval):
         right = interval.right - 1
@@ -74,7 +74,7 @@ def plot_seronegative_by_age(axs):
     grouper = (
         pandas.concat([data_with_age[['SAT', 'negative']], ages],
                       axis='columns')
-        .groupby(['SAT', 'age (y)'],
+        .groupby(['SAT', 'age (year)'],
                  observed=True)
     )
     seronegative = (
@@ -88,7 +88,7 @@ def plot_seronegative_by_age(axs):
         (_, y_margin) = ax.margins()
         ax.set_ylim(0, (1 + y_margin) * y_max)
         ax.xaxis.set_tick_params(rotation=90)
-        ax.set_xlabel(ages.name)
+        ax.set_xlabel(ages.name.capitalize())
         ax.set_ylabel(f'SAT{sat} seronegative')
         ax.yaxis.set_major_formatter(
             matplotlib.ticker.PercentFormatter(xmax=1)

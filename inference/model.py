@@ -64,10 +64,11 @@ class Model:
         # lambda_sum > 0.
         assert not _utility.exp_is_zero(log_lambda_sum)
         # mu = numpy.exp(lambda_sum * (self.data.t  - self.data.t_0))
-        log_mu = numpy.exp(
-            log_lambda_sum
-            + _utility.log_no_0_warning(self.data.t - self.data.t_0)
-        )
+        with numpy.errstate(divide='ignore'):
+            log_mu = numpy.exp(
+                log_lambda_sum
+                + numpy.log(self.data.t - self.data.t_0)
+            )
         # phi = lambda_loss / (lambda_gain + lambda_loss)
         log_phi = log_lambda_loss - log_lambda_sum
         # p_negative_positive = phi - phi / mu

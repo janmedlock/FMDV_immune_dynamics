@@ -6,9 +6,6 @@ import pathlib
 import numpy
 import pandas
 
-from _context import herd
-import herd.antibodies.data
-
 # The data files are in the same directory as this source file.
 _PATH = pathlib.Path(__file__).parent
 
@@ -199,7 +196,7 @@ def load_with_age():
         return (
             (first['age_at_first'] + group['date'] - first['date'])
             / pandas.offsets.Day() / 365
-        ).rename('age (y)')
+        ).rename('age (year)')
 
     def get_age(animals, captures):
         age_at_first = pandas.concat(
@@ -233,6 +230,3 @@ def load_with_age():
     age = get_age(animals, captures)
     data = load()
     return age.merge(data)
-
-
-load_antibodies_lpbe_vnt = herd.antibodies.data.load

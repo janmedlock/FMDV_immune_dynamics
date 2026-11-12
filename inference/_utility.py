@@ -19,19 +19,6 @@ def join(theta_i, theta_not_i, i):
     return numpy.hstack([theta_not_i[:i], theta_i, theta_not_i[i:]])
 
 
-def log_no_0_warning(x):
-    '''Get the logarithm of `x`
-    with no warning for `x` == 0,
-    but raise an error if `x` < 0.'''
-    x = numpy.asarray(x)
-    x_pos = (x > 0)
-    log_x = numpy.select(*zip((x_pos, numpy.log(x, where=x_pos)),
-                              (x == 0, - numpy.inf),
-                              (x < 0, numpy.nan)))
-    assert not numpy.isnan(log_x).any()
-    return log_x
-
-
 def log_sum_exp(a, b=None, axis=-1):
     '''log(sum(b * exp(a), axis=axis)) with careful broadcasting of a.'''
     a = numpy.stack(numpy.broadcast_arrays(*a),

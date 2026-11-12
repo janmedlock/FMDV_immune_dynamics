@@ -6,7 +6,7 @@ import data_
 
 def report_seronegative(data_with_age):
     '''Report the proportion seronegative among those aged ≥ 2 years.'''
-    keep = data_with_age['age (y)'] >= 2
+    keep = data_with_age['age (year)'] >= 2
     negative = (
         data_with_age.loc[keep]
         .groupby('SAT')
