@@ -86,17 +86,16 @@ class _BlockODE(_Block, metaclass=abc.ABCMeta):
         '''Get the diagonal block `A_XX` that maps state X to itself.'''
         d_X = ((hazard_out + self.params.hazard.mortality)
                * self.params.step / 2)
-        diags = ((numpy.hstack([1, 1 + d_X]), 0),  # The diagonal
-                 (- 1 + d_X, -1))  # The subdiagonal
-        # A is an M matrix if the diagonal entries are positive (which
-        # they must be by the above) and the off-diagonal entries are
-        # non-negative, which must be checked. Suppressing this check
-        # seems to work OK since there's a check in
-        # .solver.Solver.solve() that the solution `P` is
-        # non-negative, which is the ultimate requirement.
-        # for (v, k) in diags:
-        #     if k != 0:
-        #         assert (v <= 0).all(), type(self)
+        diags = (
+            # The diagonal
+            (numpy.hstack([1, 1 + d_X[:-1], 2 * d_X[-1]]), 0),
+            # The subdiagonal
+            (- 1 + d_X, -1))
+        # A must be an M-matrix, which checking requires eigenvalues,
+        # so just check that its a Z-matrix.
+        for (v, k) in diags:
+            if k != 0:
+                assert (v <= 0).all(), type(self)
         return scipy.sparse.diags(*zip(*diags),
                                   shape=(len(self), len(self)))
 
@@ -105,8 +104,11 @@ class _BlockODE(_Block, metaclass=abc.ABCMeta):
         where Y is a variable governed by an ODE.'''
         # The values on the diagonal and subdiagonal.
         f_XY = - hazard_in * self.params.step / 2
-        diags = ((numpy.hstack([0, f_XY]), 0),  # The diagonal
-                 (f_XY, -1))  # The subdiagonal
+        diags = (
+            # The diagonal
+            (numpy.hstack([0, f_XY[:-1], 2 * f_XY[-1]]), 0),
+            # The subdiagonal
+            (f_XY, -1))
         return scipy.sparse.diags(*zip(*diags),
                                   shape=(len(self), self.params.length_ode))
 
@@ -137,8 +139,11 @@ class _BlockPDE(_Block, metaclass=abc.ABCMeta):
         where Y is a variable governed by an ODE.'''
         # The values on the diagonal and subdiagonal.
         f_XY = - hazard_in / 2
-        diags = ((numpy.hstack([0, f_XY]), 0),  # The diagonal
-                 (f_XY, -1))  # The subdiagonal
+        diags = (
+            # The diagonal
+            (numpy.hstack([0, f_XY[:-1], 2 * f_XY[-1]]), 0),
+            # The subdiagonal
+            (f_XY, -1))
         return scipy.sparse.diags(*zip(*diags),
                                   shape=(len(self), self.params.length_ode))
 
@@ -190,7 +195,9 @@ class BlockS(_BlockODE):
         self.A_X['S'] = self._get_A_XX(self.params.hazard.infection)
 
     def set_b_X(self):
-        self._set_b_X(1 - self.params.birth_maternal_immunity_proportion)
+        birth_susceptible_proportion = (
+            1 - self.params.birth_maternal_immunity_proportion)
+        self._set_b_X(birth_susceptible_proportion)
 
     def update(self):
         self.set_A_SS()
