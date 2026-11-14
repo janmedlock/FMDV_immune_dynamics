@@ -40,8 +40,8 @@ cdef extern from '<cblas.h>':
                           const int y_stride) nogil
 
 
-cdef class _CSR_Matrix:
-    '''`scipy.sparse.csr_matrix()` but with attributes
+cdef class _CSRArray:
+    '''`scipy.sparse.csr_array()` but with attributes
     in C for speed.'''
     cdef:
         ssize_t[2] shape
@@ -49,19 +49,19 @@ cdef class _CSR_Matrix:
         int[:] indices
         double[:] data
 
-    def __cinit__(_CSR_Matrix self,
+    def __cinit__(_CSRArray self,
                   object A):
-        A = scipy.sparse.csr_matrix(A)
+        A = scipy.sparse.csr_array(A)
         self.shape = A.shape
         self.indptr = A.indptr
         self.indices = A.indices
         self.data = A.data
 
-    cdef inline bint matvecs(_CSR_Matrix self,
+    cdef inline bint matvecs(_CSRArray self,
                              const double[:, ::1] B,
                              double[:, ::1] C) except False nogil:
         '''Compute the matrix multiplication `C += A @ B`, where
-        `A` is a `_CSR_Matrix()`, and
+        `A` is a `_CSRArray()`, and
         `B` & `C` are `numpy.ndarray()`s.'''
         cdef:
             ssize_t n_vecs, i, jj
@@ -138,7 +138,7 @@ cdef class Solver:
         object params
         double step
         double[:] _ages, _t, _v_trapezoid
-        _CSR_Matrix _M_crank_nicolson
+        _CSRArray _M_crank_nicolson
 
     def __cinit__(Solver self,
                   object params,
@@ -248,13 +248,13 @@ cdef class Solver:
             object M
             numpy.ndarray k
         # Everything needs the GIL.
-        M = scipy.sparse.lil_matrix((self._ages.shape[0],) * 2)
+        M = scipy.sparse.coo_array((self._ages.shape[0],) * 2)
         k = mortality_waiting_time.hazard(self.ages) * self.step / 2
         # Set the first subdiagonal.
         M.setdiag((1 - k[:-1]) / (1 + k[1:]), -1)
         # Keep the last age group from ageing out.
         M[-1, -1] = (1 - k[-1]) / (1 + k[-1])
-        self._M_crank_nicolson = _CSR_Matrix(M)
+        self._M_crank_nicolson = _CSRArray(M)
         return True
 
     cdef inline bint _step_crank_nicolson(Solver self,

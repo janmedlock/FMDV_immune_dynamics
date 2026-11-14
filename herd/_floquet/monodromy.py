@@ -24,10 +24,10 @@ from .. import _period, events, utility
 from . import default
 
 
-class _CSR_Matrix(scipy.sparse.csr_matrix):
+class _CSRArray(scipy.sparse.csr_array):
     def matvecs(self, B, C):
         '''Compute the matrix multiplication `C += A @ B`, where
-        `A` is a `scipy.sparse.csr_matrix()`, and
+        `A` is a `scipy.sparse.csr_array()`, and
         `B` & `C` are `numpy.ndarray()`s.'''
         # Use the private function
         # `scipy.sparse._sparsetools.csr_matvecs()` so we can specify
@@ -133,13 +133,13 @@ class Solver:
         k_i = d_{i - 1 / 2} * dt / 2,
         and, to prevent the last age group from aging out of the population,
         M[-1, -1] = (1 - k_{-1}) / (1 + k_{-1}).'''
-        M = scipy.sparse.lil_matrix((self.ages.shape[0], self.ages.shape[0]))
+        M = scipy.sparse.coo_array((self.ages.shape[0], self.ages.shape[0]))
         k = mortality_waiting_time.hazard(self.ages) * self.step / 2
         # Set the first subdiagonal.
         M.setdiag((1 - k[:-1]) / (1 + k[1:]), -1)
         # Keep the last age group from ageing out.
         M[-1, -1] = (1 - k[-1]) / (1 + k[-1])
-        self._M_crank_nicolson = _CSR_Matrix(M)
+        self._M_crank_nicolson = _CSRArray(M)
 
     def _step_crank_nicolson(self, t_n, solution, birth_rate, temp):
         '''Do a Crank–Nicolson step.'''

@@ -53,8 +53,8 @@ class _Block(metaclass=abc.ABCMeta):
         '''Make a sparse n × 1 matrix of the right-hand sides.'''
         # The initial value is in the 0th entry,
         # then zeros everywhere else.
-        self.b_X = scipy.sparse.csr_matrix(([initial_value], ([0], [0])),
-                                           shape=(len(self), 1))
+        self.b_X = scipy.sparse.csr_array(([initial_value], ([0], [0])),
+                                          shape=(len(self), 1))
 
     @abc.abstractmethod
     def set_b_X(self):
@@ -115,7 +115,7 @@ class _BlockODE(_Block, metaclass=abc.ABCMeta):
     def _get_A_XY_PDE(self, pdf_in):
         '''Get the off-diagonal block `A_XY` that maps state Y to X,
         where Y is a variable governed by a PDE.'''
-        A_XY = scipy.sparse.lil_matrix((len(self), self.params.length_pde))
+        A_XY = scipy.sparse.coo_array((len(self), self.params.length_pde))
         for i in range(1, len(self)):
             j = numpy.arange(i + 1)
             A_XY[i, j] = - (pdf_in[i - j]
@@ -150,7 +150,7 @@ class _BlockPDE(_Block, metaclass=abc.ABCMeta):
     def _get_A_XY_PDE(self, pdf_in):
         '''Get the off-diagonal block `A_XY` that maps state Y to X,
         where Y is a variable governed by a PDE.'''
-        A_XY = scipy.sparse.lil_matrix((len(self), self.params.length_pde))
+        A_XY = scipy.sparse.coo_array((len(self), self.params.length_pde))
         for i in range(1, len(self)):
             j = numpy.arange(i + 1)
             A_XY[i, j] = - (pdf_in[i - j]
