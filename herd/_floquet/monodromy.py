@@ -18,13 +18,13 @@ Here, the matrix-valued PDE is solved using the Crank–Nicolson method
 on characteristics, following the work of Fabio Milner.'''
 
 import numpy
-from scipy import sparse
+import scipy
 
 from .. import _period, utility
 from ..events import birth, mortality
 
 
-class _CSR_Matrix(sparse.csr_matrix):
+class _CSR_Matrix(scipy.sparse.csr_matrix):
     def matvecs(self, B, C):
         '''Compute the matrix multiplication `C += A @ B`, where
         `A` is a `scipy.sparse.csr_matrix()`, and
@@ -35,9 +35,10 @@ class _CSR_Matrix(sparse.csr_matrix):
         # for the output.
         n_row, n_col = self.shape
         n_vecs = B.shape[1]
-        sparse._sparsetools.csr_matvecs(n_row, n_col, n_vecs,
-                                        self.indptr, self.indices, self.data,
-                                        B.ravel(), C.ravel())
+        scipy.sparse._sparsetools.csr_matvecs(
+            n_row, n_col, n_vecs,
+            self.indptr, self.indices, self.data,
+            B.ravel(), C.ravel())
 
 
 class _Solution:
@@ -80,12 +81,13 @@ class Solver:
 
     def __init__(self, params, step, age_max):
         self.params = params
+        self.step = step
         self.ages = utility.arange(0, age_max, step, endpoint=True)
         period = _period.get_period()
         self._t = utility.arange(0, period, step, endpoint=True)
         mortality_waiting_time = mortality.WaitingTime(self.params)
-        self._init_crank_nicolson(step, mortality_waiting_time)
-        self._init_births(step)
+        self._init_crank_nicolson(mortality_waiting_time)
+        self._init_births()
 
     def _set_initial_condition(self, t_n, solution, birth_rate, temp):
         '''The initial condition for the fundamental solution is the
@@ -94,7 +96,7 @@ class Solver:
         solution[0][:] = 0
         numpy.fill_diagonal(solution[0], 1)
 
-    def _init_births(self, step):
+    def _init_births(self):
         r'''The trapezoid rule for the birth integral for i = 0,
         u_0^n = \sum_j (b_j^n u_j^n + b_{j + 1}^n u_{j + 1}^n) * da / 2.
         This can be written as
@@ -104,7 +106,7 @@ class Solver:
         Put `female_probability` in there, too,
         for simplicity & efficiency.'''
         self._v_trapezoid = numpy.empty(self.ages.shape[0])
-        self._v_trapezoid[:] = self.params.female_probability * step
+        self._v_trapezoid[:] = self.params.female_probability * self.step
         self._v_trapezoid[[0, -1]] /= 2
 
     def _step_births(self, t_n, solution, birth_rate, temp):
@@ -119,28 +121,24 @@ class Solver:
         temp *= self._v_trapezoid
         temp.dot(solution[0], out=solution[0][0])
 
-    def _init_crank_nicolson(self, step, mortality_waiting_time):
+    def _init_crank_nicolson(self, mortality_waiting_time):
         '''The Crank–Nicolson method is
         (u_i^n - u_{i - 1}^{n - 1}) / dt
-        = - d_{i - 1 / 2} * (u_i^n + u_{i - 1}^{n - 1}) / 2,
+        = - (d_i * u_i^n + d_{i - 1} * u_{i - 1}^{n - 1}) / 2,
         for i = 1, 2, ....
         This can be written as
         u^n = M @ u^{n - 1},
         with
-        M[i, i - 1] = (1 - k_i) / (1 + k_i),
+        M[i, i - 1] = (1 - k_{i - 1}) / (1 + k_i),
         k_i = d_{i - 1 / 2} * dt / 2,
         and, to prevent the last age group from aging out of the population,
-        M[-1, -1] = (1 - k_{-1}) / (1 + k_{-1}),
-        k_{-1} = d_{-1} * dt / 2.'''
-        M = sparse.lil_matrix((self.ages.shape[0], self.ages.shape[0]))
-        # Midpoints between adjacent ages.
-        ages_mid = (self.ages[1:] + self.ages[:-1]) / 2
-        k = mortality_waiting_time.hazard(ages_mid) * step / 2
+        M[-1, -1] = (1 - k_{-1}) / (1 + k_{-1}).'''
+        M = scipy.sparse.lil_matrix((self.ages.shape[0], self.ages.shape[0]))
+        k = mortality_waiting_time.hazard(self.ages) * self.step / 2
         # Set the first subdiagonal.
-        M.setdiag((1 - k) / (1 + k), -1)
+        M.setdiag((1 - k[:-1]) / (1 + k[1:]), -1)
         # Keep the last age group from ageing out.
-        k_last = mortality_waiting_time.hazard(self.ages[-1]) * step / 2
-        M[-1, -1] = (1 - k_last) / (1 + k_last)
+        M[-1, -1] = (1 - k[-1]) / (1 + k[-1])
         self._M_crank_nicolson = _CSR_Matrix(M)
 
     def _step_crank_nicolson(self, t_n, solution, birth_rate, temp):

@@ -23,7 +23,7 @@ cimport cython
 cimport numpy
 
 import numpy
-from scipy import sparse
+import scipy
 
 from .. import _period, utility
 from ..events import birth, mortality
@@ -51,7 +51,7 @@ cdef class _CSR_Matrix:
 
     def __cinit__(_CSR_Matrix self,
                   object A):
-        A = sparse.csr_matrix(A)
+        A = scipy.sparse.csr_matrix(A)
         self.shape = A.shape
         self.indptr = A.indptr
         self.indices = A.indices
@@ -136,6 +136,7 @@ cdef class Solver:
     cdef:
         public numpy.ndarray ages
         object params
+        double step
         double[:] _ages, _t, _v_trapezoid
         _CSR_Matrix _M_crank_nicolson
 
@@ -147,14 +148,15 @@ cdef class Solver:
             double t_start, t_end
             object mortality_waiting_time
         self.params = params
+        self.step = step
         self.ages = utility.arange(0, age_max, step, endpoint=True)
         # The memoryview will be convenient...
         self._ages = self.ages
         period = _period.get_period()
         self._t = utility.arange(0, period, step, endpoint=True)
         mortality_waiting_time = mortality.WaitingTime(self.params)
-        self._init_crank_nicolson(step, mortality_waiting_time)
-        self._init_births(step)
+        self._init_crank_nicolson(mortality_waiting_time)
+        self._init_births()
 
     cdef inline bint _set_initial_condition(Solver self,
                                             const double t_n,
@@ -175,8 +177,7 @@ cdef class Solver:
         return True
 
     @cython.wraparound(True)
-    cdef inline bint _init_births(Solver self,
-                                  const double step) except False nogil:
+    cdef inline bint _init_births(Solver self) except False nogil:
         r'''The trapezoid rule for the birth integral for i = 0,
         u_0^n = \sum_j (b_j^n u_j^n + b_{j + 1}^n u_{j + 1}^n) * da / 2.
         This can be written as
@@ -190,7 +191,7 @@ cdef class Solver:
             # `self.params.female_probability` from Python to C
             # require the GIL.
             self._v_trapezoid = numpy.empty(self._ages.shape[0])
-            self._v_trapezoid[:] = (self.params.female_probability * step)
+            self._v_trapezoid[:] = self.params.female_probability * self.step
         self._v_trapezoid[0] /= 2
         self._v_trapezoid[-1] /= 2
         return True
@@ -230,35 +231,29 @@ cdef class Solver:
 
     @cython.wraparound(True)
     cdef inline bint _init_crank_nicolson(Solver self,
-                                          const double step,
                                           object mortality_waiting_time) \
                                          except False:
         '''The Crank–Nicolson method is
         (u_i^n - u_{i - 1}^{n - 1}) / dt
-        = - d_{i - 1 / 2} * (u_i^n + u_{i - 1}^{n - 1}) / 2,
+        = - (d_i * u_i^n + d_{i - 1} * u_{i - 1}^{n - 1}) / 2,
         for i = 1, 2, ....
         This can be written as
         u^n = M @ u^{n - 1},
         with
-        M[i, i - 1] = (1 - k_i) / (1 + k_i),
+        M[i, i - 1] = (1 - k_{i - 1}) / (1 + k_i),
         k_i = d_{i - 1 / 2} * dt / 2,
         and, to prevent the last age group from aging out of the population,
-        M[-1, -1] = (1 - k_{-1}) / (1 + k_{-1}),
-        k_{-1} = d_{-1} * dt / 2.'''
+        M[-1, -1] = (1 - k_{-1}) / (1 + k_{-1}).'''
         cdef:
             object M
-            numpy.ndarray ages_mid, k
-            double k_last
+            numpy.ndarray k
         # Everything needs the GIL.
-        M = sparse.lil_matrix((self._ages.shape[0], self._ages.shape[0]))
-        # Midpoints between adjacent ages.
-        ages_mid = (self.ages[1:] + self.ages[:-1]) / 2
-        k = mortality_waiting_time.hazard(ages_mid) * step / 2
+        M = scipy.sparse.lil_matrix((self._ages.shape[0],) * 2)
+        k = mortality_waiting_time.hazard(self.ages) * self.step / 2
         # Set the first subdiagonal.
-        M.setdiag((1 - k) / (1 + k), -1)
+        M.setdiag((1 - k[:-1]) / (1 + k[1:]), -1)
         # Keep the last age group from ageing out.
-        k_last = mortality_waiting_time.hazard(self.ages[-1]) * step / 2
-        M[-1, -1] = (1 - k_last) / (1 + k_last)
+        M[-1, -1] = (1 - k[-1]) / (1 + k[-1])
         self._M_crank_nicolson = _CSR_Matrix(M)
         return True
 
