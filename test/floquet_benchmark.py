@@ -25,17 +25,13 @@ def find_stable_age_structure(parameters, fast=False):
     try:
         t0, p0 = time.perf_counter(), time.process_time()
         if fast:
-            birth_scaling = 0.9378975738425385
+            birth_scaling = 0.9378975738425385  # TODO: Recalculate
             r, v, ages = herd._floquet.floquet._find_dominant_eigen(
-                birth_scaling, cache_parameters,
-                herd._floquet.floquet._step_default,
-                herd._floquet.floquet._age_max_default)
+                birth_scaling, cache_parameters)
         else:
             # Force a recomputation of the birth scaling.
             birth_scaling = herd._floquet.floquet._find_birth_scaling.func(
-                cache_parameters,
-                herd._floquet.floquet._step_default,
-                herd._floquet.floquet._age_max_default)
+                cache_parameters)
         t1, p1 = time.perf_counter(), time.process_time()
     finally:
         # Restore caching version of `_find_dominant_eigen`.

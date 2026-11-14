@@ -1,14 +1,9 @@
-import functools
-
 import numpy
 import scipy
 import scipy.optimize.elementwise
 
 from .. import _memory, _period, parameters
-from . import dominant_eigen, monodromy
-
-_step_default = 0.01
-_age_max_default = 35
+from . import default, dominant_eigen, monodromy
 
 
 def _normalize_to_density(v, ages):
@@ -28,8 +23,8 @@ def _normalize_to_density(v, ages):
 # default for the cache has `verbose>0`, so timing info etc is shown
 # there.
 @_memory.memory.cache(ignore=['solver'], verbose=0)
-def _find_dominant_eigen(birth_scaling, params,
-                         step, age_max, solver=None):
+def _find_dominant_eigen(birth_scaling, params, step=default.STEP,
+                         age_max=default.AGE_MAX, solver=None):
     '''Find the dominant Floquet exponent (the one with the largest real part)
     and its corresponding eigenvector.'''
     if solver is None:
@@ -38,7 +33,7 @@ def _find_dominant_eigen(birth_scaling, params,
     # Finding the matrix B = log(Phi(T)) / T is very expensive,
     # so we'll find the dominant eigenvalue and eigenvector of Phi(T)
     # and convert.
-    rho0, v0 = dominant_eigen.find(PhiT, which='LM')
+    (rho0, v0) = dominant_eigen.find(PhiT, which='LM')
     # rho0 is the dominant (largest magnitude) Floquet multiplier.
     # mu0 is the dominant (largest real part) Floquet exponent.
     # They are related by rho0 = exp(mu0 * T).
@@ -50,36 +45,43 @@ def _find_dominant_eigen(birth_scaling, params,
 
 # This function is not cached because it just calls
 # `_find_dominant_eigen()`, which is cached.
-def _find_growth_rate(solver, params, step, age_max, birth_scaling):
-    '''Find the population growth rate.'''
+def _find_growth_rate(birth_scaling, params, step=default.STEP,
+                      age_max=default.AGE_MAX, solver=None):
+    '''The population growth rate.'''
     (mu0, *_) = _find_dominant_eigen(birth_scaling, params,
                                      step, age_max, solver)
     return mu0
+
+
+# I expect the scaling is about 1
+_FIND_BIRTH_SCALING_BRACKET_GUESS = (0.5, 1.5)
 
 
 # This function is extremely slow because, through
 # `_find_growth_rate()` and `scipy.optimize.elementwise.find_root()`,
 # it repeatedly calls `_find_dominant_eigen()`, which is very slow, so
 # it is cached.  Even though `_find_dominant_eigen()` is cached,
-# caching this function avoids re-running the optimization step.
+# caching this function avoids re-running the optimization.
 @_memory.memory.cache
-def _find_birth_scaling(params, step, age_max):
+def _find_birth_scaling(params, step=default.STEP, age_max=default.AGE_MAX):
     '''Find the birth scaling that gives population growth rate r = 0.'''
-    BRACKET_GUESS = (0.5, 1.5)  # I expect the scaling is about 1
     # Reuse the solver to avoid multiple setup and teardown.
     solver = monodromy.Solver(params, step, age_max)
+
     # `scipy.optimize.elementwise.find_root()` requires the function
-    # accept an array
-    find_growth_rate = numpy.vectorize(
-        functools.partial(_find_growth_rate,
-                          solver, params, step, age_max),
-        otypes='d')
-    br_result = scipy.optimize.elementwise.bracket_root(find_growth_rate,
-                                                        *BRACKET_GUESS,
-                                                        xmin=0)
+    # accept arrays. We also want to limit those to only `birth_scaling`
+    # so we can't use `args` in `scipy.optimize.elementwise.find_root()`
+    # for `params`, `step`, `age_max`, and `solver`.
+    @numpy.vectorize(otypes='d')
+    def find_growth_rate(birth_scaling):
+        return _find_growth_rate(birth_scaling, params,
+                                 step, age_max, solver)
+
+    br_result = scipy.optimize.elementwise.bracket_root(
+        find_growth_rate, *_FIND_BIRTH_SCALING_BRACKET_GUESS, xmin=0)
     assert br_result.success, br_result
-    rt_result = scipy.optimize.elementwise.find_root(find_growth_rate,
-                                                     br_result.bracket)
+    rt_result = scipy.optimize.elementwise.find_root(
+        find_growth_rate, br_result.bracket)
     assert rt_result.success, rt_result
     return rt_result.x
 
@@ -106,8 +108,8 @@ class _CacheParameters(parameters.Parameters):
 
 # Wrapper to call cached version, `_find_birth_scaling()`.
 def find_birth_scaling(params,
-                       step=_step_default,
-                       age_max=_age_max_default):
+                       step=default.STEP,
+                       age_max=default.AGE_MAX):
     '''Find the birth scaling that gives population growth rate r = 0.'''
     return _find_birth_scaling(_CacheParameters(params), step, age_max)
 
@@ -117,15 +119,15 @@ def find_birth_scaling(params,
 # already be in the cache, and thus, there is no need to cache this
 # function.
 def find_stable_age_structure(params,
-                              step=_step_default,
-                              age_max=_age_max_default,
+                              step=default.STEP,
+                              age_max=default.AGE_MAX,
                               _birth_scaling=None):
     '''Find the stable age structure.'''
     cache_params = _CacheParameters(params)
     if _birth_scaling is None:
         _birth_scaling = _find_birth_scaling(cache_params,
                                              step, age_max)
-    r, v, ages = _find_dominant_eigen(_birth_scaling, cache_params,
-                                      step, age_max)
+    (r, v, ages) = _find_dominant_eigen(_birth_scaling, cache_params,
+                                        step, age_max)
     assert numpy.isclose(r, 0), f'Nonzero growth rate r={r:g}.'
     return (v, ages)

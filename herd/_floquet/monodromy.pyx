@@ -25,8 +25,8 @@ cimport numpy
 import numpy
 import scipy
 
-from .. import _period, utility
-from ..events import birth, mortality
+from .. import _period, events, utility
+from . import default
 
 
 # Functions from BLAS.
@@ -142,8 +142,8 @@ cdef class Solver:
 
     def __cinit__(Solver self,
                   object params,
-                  const double step,
-                  const double age_max):
+                  const double step=default.STEP,
+                  const double age_max=default.AGE_MAX):
         cdef:
             double t_start, t_end
             object mortality_waiting_time
@@ -154,7 +154,7 @@ cdef class Solver:
         self._ages = self.ages
         period = _period.get_period()
         self._t = utility.arange(0, period, step, endpoint=True)
-        mortality_waiting_time = mortality.WaitingTime(self.params)
+        mortality_waiting_time = events.mortality.WaitingTime(self.params)
         self._init_crank_nicolson(mortality_waiting_time)
         self._init_births()
 
@@ -312,8 +312,8 @@ cdef class Solver:
         solution = _Solution(self._order,
                              (self._ages.shape[0], self._ages.shape[0]))
         # Set up birth rate.
-        birth_waiting_time = birth.WaitingTime(self.params,
-                                               _scaling=birth_scaling)
+        birth_waiting_time = events.birth.WaitingTime(self.params,
+                                                      _scaling=birth_scaling)
         temp = numpy.empty(self._ages.shape[0])
         return numpy.asarray(self._iterate(solution,
                                            birth_waiting_time.hazard, temp))

@@ -20,8 +20,8 @@ on characteristics, following the work of Fabio Milner.'''
 import numpy
 import scipy
 
-from .. import _period, utility
-from ..events import birth, mortality
+from .. import _period, events, utility
+from . import default
 
 
 class _CSR_Matrix(scipy.sparse.csr_matrix):
@@ -79,13 +79,13 @@ class Solver:
     # depends on the solution at t_{n - 1}.
     _order = 1
 
-    def __init__(self, params, step, age_max):
+    def __init__(self, params, step=default.STEP, age_max=default.AGE_MAX):
         self.params = params
         self.step = step
         self.ages = utility.arange(0, age_max, step, endpoint=True)
         period = _period.get_period()
         self._t = utility.arange(0, period, step, endpoint=True)
-        mortality_waiting_time = mortality.WaitingTime(self.params)
+        mortality_waiting_time = events.mortality.WaitingTime(self.params)
         self._init_crank_nicolson(mortality_waiting_time)
         self._init_births()
 
@@ -175,7 +175,7 @@ class Solver:
         solution = _Solution(self._order,
                              (self.ages.shape[0], self.ages.shape[0]))
         # Set up birth rate.
-        birth_waiting_time = birth.WaitingTime(self.params,
-                                               _scaling=birth_scaling)
+        birth_waiting_time = events.birth.WaitingTime(self.params,
+                                                      _scaling=birth_scaling)
         temp = numpy.empty(self.ages.shape[0])
         return self._iterate(solution, birth_waiting_time.hazard, temp)
