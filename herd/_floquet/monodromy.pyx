@@ -30,14 +30,22 @@ from . import default
 
 
 # Functions from BLAS.
+# `const` might need to be removed for GotoBlas.
 cdef extern from '<cblas.h>':
+    # https://cython.readthedocs.io/en/latest/src/userguide/external_C_code.html
+    # If the header file uses typedef names such as word to refer to
+    # platform-dependent flavours of numeric types, you will need a
+    # corresponding ctypedef statement, but you don’t need to match
+    # the type exactly, just use something of the right general kind
+    # (int, float, etc).
+    ctypedef long blasint
     # y[:] += alpha * x[:] + y[:].
-    cdef void cblas_daxpy(const int n,
+    cdef void cblas_daxpy(const blasint n,
                           const double alpha,
                           const double *x,
-                          const int x_stride,
+                          const blasint x_stride,
                           double *y,
-                          const int y_stride) nogil
+                          const blasint y_stride) nogil
 
 
 cdef class _CSRArray:
@@ -45,8 +53,8 @@ cdef class _CSRArray:
     in C for speed.'''
     cdef:
         ssize_t[2] shape
-        int[:] indptr
-        int[:] indices
+        long[:] indptr
+        long[:] indices
         double[:] data
 
     def __cinit__(_CSRArray self,
