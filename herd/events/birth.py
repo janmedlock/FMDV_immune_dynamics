@@ -175,11 +175,11 @@ class WaitingTime(_rv.MemorylessWaitingTimeMixin,
             left = right
             right *= FACTOR
         # sf(right) < q
-        (time, result) = scipy.optimize.brentq(self._isf_to_solve,
-                                               left, right, args=args,
-                                               full_output=True)
+        result = scipy.optimize.root_scalar(self._isf_to_solve,
+                                            bracket=(left, right),
+                                            args=args)
         assert result.converged, result
-        return time
+        return result.root
 
     def ppf(self, q, time0, age0):
         '''Percent point function, the inverse of the CDF.'''
