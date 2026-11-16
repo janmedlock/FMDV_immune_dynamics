@@ -98,9 +98,9 @@ cdef class _Solution:
     `solution[1]` storing the solution 1 time steps ago,
     ...
     `solution[order]` storing the solution `order` time steps ago.
-    Calling `_Solution.update()` in sync with iterating through
-    rearranges the elements of `solution` so that its elements stay in
-    the above order at the next time step:
+    Calling `_Solution.cycle()` in each time iteration cycles the
+    elements of `solution` so that its elements stay in the above
+    order at the next time step:
     the old `solution[0]` becomes the new `solution[1]`;
     ...
     the old `solution[order - 1]` becomes the new `solution[order]`;
@@ -127,7 +127,7 @@ cdef class _Solution:
         j = (i + self._front) % self._array.shape[0]
         return self._array[j]
 
-    cdef inline bint update(_Solution self) except False nogil:
+    cdef inline bint cycle(_Solution self) except False nogil:
         '''Move the entries forward one position,
         wrapping the last entry to the front.'''
         # Decrement `_front` by 1 and wrap around if it's negative.
@@ -300,7 +300,7 @@ cdef class Solver:
         # n = 1, 2, ... #
         # Looping over `self._t[1:]` requires the GIL.
         for n in range(1, self._t.shape[0]):
-            solution.update()
+            solution.cycle()
             self._step_crank_nicolson(self._t[n], solution, birth_rate, temp)
         # Return the solution at the final time.
         return solution.get(0)

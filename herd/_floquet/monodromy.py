@@ -47,9 +47,9 @@ class _Solution:
     `solution[1]` storing the solution 1 time steps ago,
     ...
     `solution[order]` storing the solution `order` time steps ago.
-    Calling `_Solution.update()` in sync with iterating through
-    rearranges the elements of `solution` so that its elements stay in
-    the above order at the next time step:
+    Calling `_Solution.cycle()` in each time iteration cycles the
+    elements of `solution` so that its elements stay in the above
+    order at the next time step:
     the old `solution[0]` becomes the new `solution[1]`;
     ...
     the old `solution[order - 1]` becomes the new `solution[order]`;
@@ -66,7 +66,7 @@ class _Solution:
         j = (i + self._front) % self._array.shape[0]
         return self._array[j]
 
-    def update(self):
+    def cycle(self):
         '''Move the entries forward one position,
         wrapping the last entry to the front.'''
         # Decrement `_front` by 1 and wrap around if it's negative.
@@ -161,7 +161,7 @@ class Solver:
             return solution[0]
         # n = 1, 2, ... #
         for t_n in self._t[1:]:
-            solution.update()
+            solution.cycle()
             self._step_crank_nicolson(t_n, solution, birth_rate, temp)
         # Return the solution at the final time.
         return solution[0]
