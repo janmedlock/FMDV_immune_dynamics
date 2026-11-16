@@ -20,8 +20,8 @@ on characteristics, following the work of Fabio Milner.'''
 import numpy
 import scipy
 
-from .. import _period, events, utility
-from . import default
+from .. import _period, events, parameters, utility
+from . import _default
 
 
 class _Solution:
@@ -56,13 +56,34 @@ class _Solution:
         self._front = (self._front - 1) % self._array.shape[0]
 
 
+class Parameters(parameters.Parameters):
+    '''Build a `herd.parameters.Parameters()`-like object that
+    only has the parameters needed by `Solver()`
+    so that it can be efficiently cached.'''
+
+    def __init__(self, params):
+        # Generally, the values of these parameters should be
+        # floats, so explicitly convert them so the cache doesn't
+        # get duplicated keys for the float and int representation
+        # of the same number, e.g. `float(0)` and `int(0)`.
+        self.birth_seasonal_coefficient_of_variation = float(
+            params.birth_seasonal_coefficient_of_variation)
+        # Normalize `params.birth_peak_time` by making
+        # it modulo `period` so that it is in [0, period).
+        self.birth_peak_time = float(params.birth_peak_time
+                                     % _period.get_period())
+        self.birth_menarche = float(params.birth_menarche)
+        self.female_probability = float(params.female_probability)
+        self.mortality_age_dependent = bool(params.mortality_age_dependent)
+
+
 class Solver:
     '''Solve the monodromy problem.'''
     # Crank–Nicolson is 1st order because the solution at t_n
     # depends on the solution at t_{n - 1}.
     _order = 1
 
-    def __init__(self, params, step=default.STEP, age_max=default.AGE_MAX):
+    def __init__(self, params, step=_default.STEP, age_max=_default.AGE_MAX):
         self.params = params
         self.step = step
         self.ages = utility.arange(0, age_max, step, endpoint=True)
