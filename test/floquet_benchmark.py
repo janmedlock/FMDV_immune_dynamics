@@ -1,15 +1,11 @@
 #!/usr/bin/env python
 '''Time the Floquet solver.'''
 
-import subprocess
 import time
 
 import matplotlib.pyplot
 import numpy
 import scipy
-
-# Rebuild the 'monodromy' module, if necessary.
-subprocess.run(['make'], cwd='../herd/_floquet', check=True)
 
 from _context import common, herd
 import herd._floquet.floquet
@@ -25,7 +21,7 @@ def find_stable_age_structure(parameters, fast=False):
     try:
         t0, p0 = time.perf_counter(), time.process_time()
         if fast:
-            birth_scaling = 0.9378975738425385  # TODO: Recalculate
+            birth_scaling = 0.9390954290776172
             r, v, ages = herd._floquet.floquet._find_dominant_eigen(
                 birth_scaling, cache_parameters)
         else:

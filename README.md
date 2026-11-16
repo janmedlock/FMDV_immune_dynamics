@@ -106,11 +106,7 @@ plotting.
 The Python module [herd](herd) simulates the FMDV model.
 
 The submodule [herd._floquet](herd/_floquet) contains the solver to find
-the population stable age distribution with birth seasonality. In the
-folder [herd/_floquet](herd/_floquet) is an optional faster
-implementation in [Cython](https://cython.org/) of
-`herd._floquet.monodromy` that can be built using the included
-[Makefile](herd/_floquet/Makefile).
+the population stable age distribution with birth seasonality.
 
 #### Simulation scripts
 

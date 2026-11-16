@@ -392,25 +392,6 @@ wheels = [
 ]
 
 [[package]]
-name = "cython"
-version = "3.1.8"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/b4/a4/ec55945b52d0b888e2a090450a5524001bfa17c8b68348379a154badb850/cython-3.1.8.tar.gz", hash = "sha256:518475fbe633ba30c1577669f417440f41e1a23ad6b6e2dbb20703cd457f04ef", size = 3193040, upload-time = "2026-01-03T18:30:25.181Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/43/dc/79602b93f39f64381a57b9de5ffcdb96317f57420df752be2e2c8c262aa9/cython-3.1.8-cp314-cp314-macosx_10_15_x86_64.whl", hash = "sha256:d249b8ba93cdc0172de325a48f122feec73c03f31d88a738995499a2153f98c4", size = 3043021, upload-time = "2026-01-03T18:32:03.47Z" },
-    { url = "https://files.pythonhosted.org/packages/c6/a0/7781dbd574e001f6ee36539f86335aab1808dab4699fbdd523d15eab76f6/cython-3.1.8-cp314-cp314-macosx_11_0_arm64.whl", hash = "sha256:3d7df7d45733460167d96d9c093fe0abf5d4898aca8f05b7e4cd397e9c8f1d2e", size = 2963479, upload-time = "2026-01-03T18:32:05.155Z" },
-    { url = "https://files.pythonhosted.org/packages/a8/a6/020a35ece4deeee3cc0e7f4c5df3a5cd8cd0720a329b1712ea693acbe528/cython-3.1.8-cp314-cp314-manylinux1_i686.manylinux_2_28_i686.manylinux_2_5_i686.whl", hash = "sha256:58e21933b3b568817a2896767577ff8a31a246f5c6a5589c73469d83f2bcbfd5", size = 3360473, upload-time = "2026-01-03T18:32:06.825Z" },
-    { url = "https://files.pythonhosted.org/packages/3d/78/b83bf3b38251934dec41326ccff74d9e260f8a1d2906197f68f3972f81bc/cython-3.1.8-cp314-cp314-manylinux2014_aarch64.manylinux_2_17_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:53e5bbf18c274d99dec3e75e1ef19c0add393c8fa14e3c5f1f7ed7fb88e9621d", size = 3189340, upload-time = "2026-01-03T18:32:08.489Z" },
-    { url = "https://files.pythonhosted.org/packages/06/db/591da6a36b2a3c4df7719389bcb5216552f7e8890a907aeaa5d3a9b9093e/cython-3.1.8-cp314-cp314-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:0bc71b05497608c1f8dc99340055c0456f712ce8a1cf35391c9134bbd037f7c6", size = 3311381, upload-time = "2026-01-03T18:32:10.201Z" },
-    { url = "https://files.pythonhosted.org/packages/ad/8d/db0c311b2542a1be7b001b537fd70904d6fea86a2ba444c33686bdc622f5/cython-3.1.8-cp314-cp314-musllinux_1_2_aarch64.whl", hash = "sha256:e153a5aa8f96b79f6e4b9a3d221d4f38b0f7f00a1462dec01478ab99075abd4a", size = 3205566, upload-time = "2026-01-03T18:32:12.658Z" },
-    { url = "https://files.pythonhosted.org/packages/55/1b/6d9158b46dd38d461b60256531b5ad1ee88d05addcec9bb69b2d7e22426c/cython-3.1.8-cp314-cp314-musllinux_1_2_i686.whl", hash = "sha256:bc4fdb56b64f035025bf6958cbd22a61fce1668a2b19ec47aa418df5e9b6b61d", size = 3375890, upload-time = "2026-01-03T18:32:14.668Z" },
-    { url = "https://files.pythonhosted.org/packages/72/36/71f163e74a3c88a750e87f12be2f1429312e12ad734a37ac008e98e0387b/cython-3.1.8-cp314-cp314-musllinux_1_2_x86_64.whl", hash = "sha256:92a8df673744117afe2a4cb979887ca9440f9e59cbb2e9d0753db2194e2a5080", size = 3322869, upload-time = "2026-01-03T18:32:17.136Z" },
-    { url = "https://files.pythonhosted.org/packages/f0/01/097425bbaaedb51029a820ad4dda3abedf15ce2cfe47921cbc9d186c0248/cython-3.1.8-cp314-cp314-win32.whl", hash = "sha256:658b8d9f7261a79aa66cf2a5eb0fd7a9b8e196f21671bfc945765a615205d775", size = 2499935, upload-time = "2026-01-03T18:32:18.742Z" },
-    { url = "https://files.pythonhosted.org/packages/9e/47/ed61e43ebc48f58d6cf60cd4923bf4eeb6e6bb793e9f12c9c825bc7c70be/cython-3.1.8-cp314-cp314-win_amd64.whl", hash = "sha256:b008f7802789bafcdd61de66e11697ee6807839154fc1bf72d81705500997551", size = 2729825, upload-time = "2026-01-03T18:32:21.251Z" },
-    { url = "https://files.pythonhosted.org/packages/5b/c7/b81516c9bb5da55d327b3cf2f33f39217719e73b524ab49a4028e18b6a66/cython-3.1.8-py3-none-any.whl", hash = "sha256:f36368c1d7ea4003c52e9e93f3556074a631a6482f8a32e781cb073e211e4df9", size = 1223843, upload-time = "2026-01-03T18:30:22.229Z" },
-]
-
-[[package]]
 name = "debugpy"
 version = "1.8.22"
 source = { registry = "https://pypi.org/simple" }
@@ -469,9 +450,6 @@ dependencies = [
 ]
 
 [package.optional-dependencies]
-cython = [
-    { name = "cython" },
-]
 ipython = [
     { name = "ipython" },
 ]
@@ -483,7 +461,6 @@ jupyter = [
 [package.metadata]
 requires-dist = [
     { name = "astropy", specifier = ">=8.0.2,<8.1" },
-    { name = "cython", marker = "extra == 'cython'", specifier = ">=3.1.6,<3.2" },
     { name = "ipykernel", marker = "extra == 'jupyter'" },
     { name = "ipython", marker = "extra == 'ipython'" },
     { name = "joblib", specifier = ">=1.5.3,<1.6" },
@@ -498,7 +475,7 @@ requires-dist = [
     { name = "statsmodels", specifier = ">=0.15.0,<0.16" },
     { name = "tables", specifier = ">=3.11.1,<3.12" },
 ]
-provides-extras = ["cython", "jupyter", "ipython"]
+provides-extras = ["jupyter", "ipython"]
 
 [[package]]
 name = "fonttools"

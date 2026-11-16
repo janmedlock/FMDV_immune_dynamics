@@ -24,23 +24,6 @@ from .. import _period, events, utility
 from . import default
 
 
-class _CSRArray(scipy.sparse.csr_array):
-    def matvecs(self, B, C):
-        '''Compute the matrix multiplication `C += A @ B`, where
-        `A` is a `scipy.sparse.csr_array()`, and
-        `B` & `C` are `numpy.ndarray()`s.'''
-        # Use the private function
-        # `scipy.sparse._sparsetools.csr_matvecs()` so we can specify
-        # the output array `C` to avoid the building of a new matrix
-        # for the output.
-        n_row, n_col = self.shape
-        n_vecs = B.shape[1]
-        scipy.sparse._sparsetools.csr_matvecs(
-            n_row, n_col, n_vecs,
-            self.indptr, self.indices, self.data,
-            B.ravel(), C.ravel())
-
-
 class _Solution:
     '''A `_Solution()` is a sequence of length `1 + order`, with
     `solution[0]` storing the solution at the current time step,
@@ -86,95 +69,84 @@ class Solver:
         period = _period.get_period()
         self._t = utility.arange(0, period, step, endpoint=True)
         mortality_waiting_time = events.mortality.WaitingTime(self.params)
-        self._init_crank_nicolson(mortality_waiting_time)
-        self._init_births()
+        self._matrices = self._build_matrices(mortality_waiting_time)
 
-    def _set_initial_condition(self, t_n, solution, birth_rate, temp):
-        '''The initial condition for the fundamental solution is the
-        identity matrix.'''
-        # Avoid creating a new matrix, like `numpy.eye()` does.
-        solution[0][:] = 0
-        numpy.fill_diagonal(solution[0], 1)
-
-    def _init_births(self):
-        r'''The cumulative endpoint rule for the birth integral for i = 0,
-        u_0^n = \sum_j b_j^n u_j^n da.
-        This can be written as
-        u_0^n = (v * b^n) @ u^n,
-        with
-        v = da * [1, 1, 1, ..., 1, 1, 1].
-        Put `female_probability` in there, too,
-        for simplicity & efficiency.'''
-        self._v_integral = numpy.empty(self.ages.shape[0])
-        self._v_integral[:] = self.params.female_probability * self.step
-
-    def _step_births(self, t_n, solution, birth_rate, temp):
-        r'''Calculate the birth integral
-        B(t) = \int_0^{inf} b(t, a) U(t, a) da
-        using the composite endpoint rule,
-        where U is `solution[0]`.'''
-        # The simple version is
-        # `U[0] = (v_integral * birth_rate) @ U`
-        # but avoid building new vectors.
-        birth_rate(t_n, self.ages, out=temp)
-        temp *= self._v_integral
-        temp.dot(solution[0], out=solution[0][0])
-
-    def _init_crank_nicolson(self, mortality_waiting_time):
-        '''The Crank–Nicolson method is
+    def _build_matrices(self, mortality_waiting_time):
+        r'''The Crank–Nicolson method is
+        (1 + dt / 2 * d_0) * u_0^n
+        = f \sum_j (b_j^n u_j^n + b_{j + 1}^n u_{j + 1}^n) * dt / 2
+          + f \sum_j (b_j^{n - 1} u_j^{n - 1}
+                      + b_{j + 1}^{n - 1} u_{j + 1}^{n - 1}) * dt / 2
         (u_i^n - u_{i - 1}^{n - 1}) / dt
         = - (d_i * u_i^n + d_{i - 1} * u_{i - 1}^{n - 1}) / 2,
         for i = 1, 2, ....
         This can be written as
-        u^n = M @ u^{n - 1},
+        A_{next} @ u^n = A_{curr} @ u^{n - 1},
         with
-        M[i, i - 1] = (1 - k_{i - 1}) / (1 + k_i),
-        k_i = d_{i - 1 / 2} * dt / 2,
-        and, to prevent the last age group from aging out of the population,
-        M[-1, -1] = (1 - k_{-1}) / (1 + k_{-1}).'''
-        M = scipy.sparse.coo_array((self.ages.shape[0], self.ages.shape[0]))
-        k = mortality_waiting_time.hazard(self.ages) * self.step / 2
-        # Set the first subdiagonal.
-        M.setdiag((1 - k[:-1]) / (1 + k[1:]), -1)
-        # Keep the last age group from ageing out.
-        M[-1, -1] = (1 - k[-1]) / (1 + k[-1])
-        self._M_crank_nicolson = _CSRArray(M)
+        A_{next} = M_{next} - b^n * B,
+        A_{curr} = M_{curr} + b^{n - 1} * B,
+        M_{next} = I - dt / 2 * D,
+        M_{curr} = L @ (I + dt / 2 * D),
+        L[i, i - 1] = L[-1, -1] = 1,
+        D = Diag(-d),
+        B[0] = f * dt * [1, 1, 1, ..., 1, 1, 1].
+        The first row of B implements the composite endpoint rule for
+        the birth integral, along with scaling by
+        `female_probability`.'''
+        I = scipy.sparse.eye_array(len(self.ages))
+        L = scipy.sparse.coo_array((len(self.ages),) * 2)
+        L.setdiag(1, -1)
+        L[-1, -1] = 1
+        d = mortality_waiting_time.hazard(self.ages)
+        D = scipy.sparse.diags_array(-d)
+        B = scipy.sparse.coo_array((len(self.ages),) * 2)
+        B[0, :] = self.params.female_probability * self.step / 2
+        return {
+            'M_next': scipy.sparse.csr_array(I - self.step / 2 * D),
+            'M_curr': scipy.sparse.csr_array(L @ (I + self.step / 2 * D)),
+            'B': scipy.sparse.csr_array(B),
+        }
 
-    def _step_crank_nicolson(self, t_n, solution, birth_rate, temp):
+    def _B_next(self, t_n, state):
+        b_next = state['birth_rate'](t_n, self.ages, out=state['b_next'])
+        return b_next * self._matrices['B']
+
+    def _step(self, t_n, solution, state):
         '''Do a Crank–Nicolson step.'''
-        # The simple version is
-        # `solution[0] = M @ solution[1]`
-        # but avoid building a new matrix.
-        solution[0][:] = 0
-        # solution[0] += M @ solution[1]
-        self._M_crank_nicolson.matvecs(solution[1], solution[0])
-        self._step_births(t_n, solution, birth_rate, temp)
+        B_curr = state['B_next']
+        A_curr = self._matrices['M_curr'] + B_curr
+        B_next = state['B_next'] = self._B_next(t_n, state)
+        A_next = self._matrices['M_next'] - B_next
+        solution[0][:] = scipy.sparse.linalg.spsolve(A_next,
+                                                     A_curr @ solution[1])
 
-    def _iterate(self, solution, birth_rate, temp):
-        '''The core of the solver, iterating over `self._t`.'''
-        if self._t.shape[0] == 0:
-            return None
-        # n = 0 #
-        t_n = self._t[0]
-        self._set_initial_condition(t_n, solution, birth_rate, temp)
-        if self._t.shape[0] == 1:
-            return solution[0]
-        # n = 1, 2, ... #
-        for t_n in self._t[1:]:
-            solution.cycle()
-            self._step_crank_nicolson(t_n, solution, birth_rate, temp)
-        # Return the solution at the final time.
-        return solution[0]
+    def _set_initial_condition(self, solution_0):
+        '''The initial condition for the fundamental solution is the
+        identity matrix.'''
+        # Avoid creating a new matrix, like `numpy.eye()` does.
+        solution_0[:] = 0
+        numpy.fill_diagonal(solution_0, 1)
 
     def solve(self, birth_scaling):
         '''Find the monodromy matrix Phi(T), where T is the period.'''
+        if len(self._t) == 0:
+            return None
         # The fundamental solution is an `n_ages` x `n_ages` matrix.
         # One matrix for the current time step, plus one for each
         # order of the solver.
-        solution = _Solution(self._order,
-                             (self.ages.shape[0], self.ages.shape[0]))
-        # Set up birth rate.
+        solution = _Solution(self._order, (len(self.ages),) * 2)
+        self._set_initial_condition(solution[0])
+        if len(self._t) == 1:
+            return solution[0]
         birth_waiting_time = events.birth.WaitingTime(self.params,
                                                       _scaling=birth_scaling)
-        temp = numpy.empty(self.ages.shape[0])
-        return self._iterate(solution, birth_waiting_time.hazard, temp)
+        state = {
+            'birth_rate': birth_waiting_time.hazard,
+            'b_next': numpy.empty(len(self.ages)),  # Reuse array
+        }
+        # Use as `B_curr` in the next time step
+        state['B_next'] = self._B_next(self._t[0], state)
+        for t_n in self._t[1:]:
+            solution.cycle()
+            self._step(t_n, solution, state)
+        return solution[0]  # The solution at the final time

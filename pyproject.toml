@@ -32,10 +32,6 @@ dependencies = [
 source = "https://github.com/janmedlock/FMDV_immune_dynamics.git"
 
 [project.optional-dependencies]
-# Speed finding initial conditions in 'herd/_floquet/'
-cython = [
-    "cython>=3.1.6,<3.2",
-]
 # Notebook in 'test/'
 jupyter = [
     "ipykernel",
