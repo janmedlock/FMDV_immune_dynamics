@@ -5,9 +5,7 @@ import numpy.lib.recfunctions
 import pandas
 import scipy
 
-from .. import _memory, _rv, events, utility
-from ..immune_status import have_offspring_to_maternal_immunity
-from ..parameters import Parameters
+from .. import _memory, _rv, events, immune_status, parameters, utility
 from . import _blocks, _waiting_time
 
 
@@ -20,7 +18,7 @@ def _rec_fromkwds(**kwds):
 
 class _Parameters:
     '''Object to pass parameters from `Solver()` to `._blocks._Block()`s.'''
-    def __init__(self, params, ages, ages_mid, step, length_ode, length_pde):
+    def __init__(self, params, ages, step, length_ode, length_pde):
         self.step = step
         self.length_ode = length_ode
         self.length_pde = length_pde
@@ -50,21 +48,22 @@ class _Parameters:
             _waiting_time.name(wt): waiting_times[wt].sf(ages)
             for wt in wts_survival
         })
-        # Get the hazard at `ages_mid` for the memoryless and
+        # Get the hazard at `ages` for the memoryless and
         # age-dependent waiting times except for birth and infection
         wts_hazard = (set(_rv.MemorylessWaitingTimeMixin.__subclasses__())
                       .union(_rv.AgeDependentWaitingTimeMixin.__subclasses__())
                       .difference({events.birth.WaitingTime,
                                    events.infection.WaitingTime}))
         self.hazard = _rec_fromkwds(**{
-            _waiting_time.name(wt): waiting_times[wt].hazard(ages_mid)
+            _waiting_time.name(wt): waiting_times[wt].hazard(ages)
             for wt in wts_hazard
         } | {
+            # Avoid the slow `..floquet.find_birth_scaling()` in
+            # `events.birth.WaitingTime()`
+            'birth': self.get_hazard_birth(ages),
             # Dummy value. Set on calls to `Solver.solve_step()`.
             'infection': 1,
         })
-        # Get the birth hazard at `ages`, not `ages_mid`
-        self.hazard_birth = self.get_hazard_birth(ages)
         # Dummy value. Set on calls to `Solver.solve_step()`.
         self.birth_maternal_immunity_proportion = 1
 
@@ -111,14 +110,22 @@ class Solver:
         self.ages = utility.arange(0, self.age_max, self.step,
                                    endpoint=True)
         assert len(self.ages) > 1
-        self.ages_mid = (self.ages[:-1] + self.ages[1:]) / 2
         self.length_ode = self.length_pde = len(self.ages)
-        self.params = _Parameters(params, self.ages, self.ages_mid, self.step,
+        self.params = _Parameters(params, self.ages, self.step,
                                   self.length_ode, self.length_pde)
         self.index = pandas.Index(self.ages, name='age')
+        # `pandas.DataFrame()` requires a `list()` indexer
+        self.have_offspring_to_maternal_immunity = list(
+            immune_status.have_offspring_to_maternal_immunity)
         if not _skip_blocks:
+            n_ages = len(self.ages)
+            I = scipy.sparse.eye_array(n_ages, format='csr')
+            A_coo = scipy.sparse.coo_array((n_ages, n_ages))
+            A_coo.setdiag(1, -1)
+            A_coo[-1, -1] = 1
+            A = A_coo.tocsr()
             self.blocks = {
-                Block.X: Block(self.params)
+                Block.X: Block(self.params, I, A)
                 for Block in _blocks.Blocks
             }
 
@@ -156,11 +163,11 @@ class Solver:
     def stack_sparse(self, rows, format='csr'):
         return scipy.sparse.bmat(self.stack(rows), format=format)
 
-    def get_A(self):
-        A = self.stack_sparse({var: block.A_X
+    def get_M(self):
+        M = self.stack_sparse({var: block.M_X
                                for (var, block) in self.blocks.items()})
-        assert numpy.isfinite(A.data).all()
-        return A
+        assert numpy.isfinite(M.data).all()
+        return M
 
     def get_b(self):
         b = self.stack_sparse({var: [block.b_X]
@@ -199,9 +206,9 @@ class Solver:
         self.params.birth_maternal_immunity_proportion = (
             birth_maternal_immunity_proportion)
         self.update_blocks()
-        A = self.get_A()
+        M = self.get_M()
         b = self.get_b()
-        Pp = scipy.sparse.linalg.spsolve(A, b)
+        Pp = scipy.sparse.linalg.spsolve(M, b)
         (P, p) = self.unstack(Pp)
         p_integrated = self.integrate_pde_vars(p)
         P = numpy.lib.recfunctions.merge_arrays(
@@ -216,8 +223,7 @@ class Solver:
         '''Compute the hazard of infection from the solution `P`.'''
         # The probability of being in each immune status integrated
         # over age.
-        P_total = P.apply(scipy.integrate.trapezoid,
-                          args=(self.ages, ))
+        P_total = P.sum() * self.step
         haz = (
             (self.params.transmission_rate * P_total['infectious']
              + self.params.carrier_transmission_rate * P_total['carrier'])
@@ -231,13 +237,13 @@ class Solver:
         '''Compute the proportions of newborns who have maternal
         immunity from the solution `P`.'''
         # The birth rate from moms in each immune status and age.
-        births = P.mul(self.params.hazard_birth,
-                       axis='index')
+        births = P.mul(self.params.hazard.birth, axis='index')
         # The birth rate from mothers in each immune status.
-        births_total = births.apply(scipy.integrate.trapezoid,
-                                    args=(self.ages,))
-        imm = (births_total[list(have_offspring_to_maternal_immunity)].sum()
-               / births_total.sum())
+        births_total = births.sum() * self.step
+        imm = (
+            births_total[self.have_offspring_to_maternal_immunity].sum()
+            / births_total.sum()
+        )
         assert (imm >= 0) | numpy.isclose(imm, 0)
         imm = numpy.clip(imm, 0, None)
         return imm
@@ -271,7 +277,7 @@ def _solve(params, debug):
     return Solver(params, debug=debug).solve()
 
 
-class _CacheParameters(Parameters):
+class _CacheParameters(parameters.Parameters):
     '''Build a `herd.parameters.Parameters()`-like object that
     only has the parameters needed by `Solver()`
     so that it can be efficiently cached.'''

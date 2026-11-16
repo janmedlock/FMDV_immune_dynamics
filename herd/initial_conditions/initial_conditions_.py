@@ -1,9 +1,6 @@
 '''Initial conditions.'''
 
-import warnings
-
 import numpy
-import pandas
 
 from .. import _rv, age, immune_status
 from . import _interpolate, _solver
@@ -12,30 +9,16 @@ from . import _interpolate, _solver
 class InitialConditions(_rv.RV):
     '''This assumes that the hazard of infection is constant in time,
     not periodic as it is with a periodic birth pulse.'''
-    # TODO: Remove `fake`
-    def __init__(self, parameters, seed=None, fake=True, debug=False):
+
+    def __init__(self, parameters, seed=None, debug=False):
         super().__init__(parameters, seed=seed)
         self.population_size = parameters.population_size
         # Reuse `.immune_status_pdf` and `.age`, in case `.pdf()`
         # or `.rvs()` is called repeatedly
-        if fake:
-            self.immune_status_conditional_pdf = (
-                self._immune_status_conditional_pdf_fake)
-        else:
-            # Interpolate in `age`
-            self.immune_status_pdf = _interpolate.Interpolant(
-                _solver.solve(parameters, debug=debug))
+        # Interpolate in `age`
+        self.immune_status_pdf = _interpolate.Interpolant(
+            _solver.solve(parameters, debug=debug))
         self.age = age.Age(parameters, seed=self.rng)
-
-    # TODO: Remove
-    @staticmethod
-    def _immune_status_conditional_pdf_fake(ages):
-        warnings.warn('Fake `initial_conditions`!')
-        pdf = pandas.DataFrame(0., index=ages,
-                               columns=immune_status.immune_statuses)
-        pdf['infectious'] = 0.05
-        pdf['susceptible'] = 1. - pdf.sum(axis='columns')
-        return pdf
 
     def immune_status_conditional_pdf(self, ages):
         '''The probability of being in each immune state vs. `ages`,

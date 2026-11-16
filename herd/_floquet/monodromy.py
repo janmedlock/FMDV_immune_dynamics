@@ -81,29 +81,30 @@ class Solver:
         = - (d_i * u_i^n + d_{i - 1} * u_{i - 1}^{n - 1}) / 2,
         for i = 1, 2, ....
         This can be written as
-        A_{next} @ u^n = A_{curr} @ u^{n - 1},
+        M_{next} @ u^n = M_{curr} @ u^{n - 1},
         with
-        A_{next} = M_{next} - b^n * B,
-        A_{curr} = M_{curr} + b^{n - 1} * B,
-        M_{next} = I - dt / 2 * D,
-        M_{curr} = L @ (I + dt / 2 * D),
-        L[i, i - 1] = L[-1, -1] = 1,
-        D = Diag(-d),
+        M_{next} = N_{next} - b^n * B,
+        M_{curr} = N_{curr} + b^{n - 1} * B,
+        N_{next} = I - dt / 2 * F,
+        N_{curr} = A @ (I + dt / 2 * F),
+        A[i, i - 1] = A[-1, -1] = 1,
+        F = Diag(-d),
         B[0] = f * dt * [1, 1, 1, ..., 1, 1, 1].
         The first row of B implements the composite endpoint rule for
         the birth integral, along with scaling by
         `female_probability`.'''
-        I = scipy.sparse.eye_array(len(self.ages))
-        L = scipy.sparse.coo_array((len(self.ages),) * 2)
-        L.setdiag(1, -1)
-        L[-1, -1] = 1
+        n_ages = len(self.ages)
+        I = scipy.sparse.eye_array(n_ages)
+        A = scipy.sparse.coo_array((n_ages, n_ages))
+        A.setdiag(1, -1)
+        A[-1, -1] = 1
         d = mortality_waiting_time.hazard(self.ages)
-        D = scipy.sparse.diags_array(-d)
-        B = scipy.sparse.coo_array((len(self.ages),) * 2)
+        F = scipy.sparse.diags_array(-d)
+        B = scipy.sparse.coo_array((n_ages, n_ages))
         B[0, :] = self.params.female_probability * self.step / 2
         return {
-            'M_next': scipy.sparse.csr_array(I - self.step / 2 * D),
-            'M_curr': scipy.sparse.csr_array(L @ (I + self.step / 2 * D)),
+            'N_next': scipy.sparse.csr_array(I - self.step / 2 * F),
+            'N_curr': scipy.sparse.csr_array(A @ (I + self.step / 2 * F)),
             'B': scipy.sparse.csr_array(B),
         }
 
@@ -114,11 +115,11 @@ class Solver:
     def _step(self, t_n, solution, state):
         '''Do a Crank–Nicolson step.'''
         B_curr = state['B_next']
-        A_curr = self._matrices['M_curr'] + B_curr
+        M_curr = self._matrices['N_curr'] + B_curr
         B_next = state['B_next'] = self._B_next(t_n, state)
-        A_next = self._matrices['M_next'] - B_next
-        solution[0][:] = scipy.sparse.linalg.spsolve(A_next,
-                                                     A_curr @ solution[1])
+        M_next = self._matrices['N_next'] - B_next
+        solution[0][:] = scipy.sparse.linalg.spsolve(M_next,
+                                                     M_curr @ solution[1])
 
     def _set_initial_condition(self, solution_0):
         '''The initial condition for the fundamental solution is the
