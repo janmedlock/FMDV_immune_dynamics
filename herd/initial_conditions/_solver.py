@@ -86,9 +86,13 @@ class _Parameters:
         # Scale to get 0 population growth rate using the `ages`
         # from `Solver()`, rather than the ages used by
         # `..floquet.find_birth_scaling()`
-        scaling = scipy.integrate.trapezoid(
-            self.female_probability * hazard * self.survival.mortality,
-            ages)
+        scaling = (
+            (
+                self.female_probability
+                * hazard
+                * self.survival.mortality
+            ).sum() * self.step
+        )
         hazard /= scaling
         return hazard
 

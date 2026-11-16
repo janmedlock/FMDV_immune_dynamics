@@ -5,7 +5,6 @@
 import matplotlib.pyplot
 import numpy
 import pandas
-import scipy
 
 from _context import common, herd, plotting
 import herd.initial_conditions
@@ -31,8 +30,9 @@ def get_solutions(params):
 
 def integrate_over_age(X):
     '''Integrate over age for each SAT & immune status.'''
-    ages = X.index
-    v = X.apply(scipy.integrate.trapezoid, args=(ages, ))
+    (da, *da_rest) = X.index.diff().dropna()
+    assert numpy.allclose(da, da_rest)
+    v = X.sum() * da
     if isinstance(v.index, pandas.MultiIndex):
         v = v.unstack(0)
     return v

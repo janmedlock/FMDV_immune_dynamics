@@ -6,9 +6,9 @@ from .. import _memory, _period, parameters
 from . import default, dominant_eigen, monodromy
 
 
-def _normalize_to_density(v, ages):
+def _normalize_to_density(v, step):
     '''Normalize `v` in place so that its integral over ages is 1.'''
-    v /= scipy.integrate.trapezoid(v, ages)
+    v /= v.sum() * step
 
 
 # This function is very slow because it calls
@@ -29,6 +29,11 @@ def _find_dominant_eigen(birth_scaling, params, step=default.STEP,
     and its corresponding eigenvector.'''
     if solver is None:
         solver = monodromy.Solver(params, step, age_max)
+    else:
+        assert solver.params is params
+        assert numpy.isclose(solver.step, step)
+        assert (numpy.isclose(solver.ages.max(), age_max)
+                or (solver.ages.max() > age_max))
     PhiT = solver.solve(birth_scaling)
     # Finding the matrix B = log(Phi(T)) / T is very expensive,
     # so we'll find the dominant eigenvalue and eigenvector of Phi(T)
@@ -39,7 +44,7 @@ def _find_dominant_eigen(birth_scaling, params, step=default.STEP,
     # They are related by rho0 = exp(mu0 * T).
     mu0 = numpy.log(rho0) / _period.get_period()
     # v0 is the eigenvector for both rho0 and mu0.
-    _normalize_to_density(v0, solver.ages)
+    _normalize_to_density(v0, step)
     return (mu0, v0, solver.ages)
 
 

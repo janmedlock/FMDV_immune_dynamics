@@ -145,7 +145,7 @@ cdef class Solver:
         public numpy.ndarray ages
         object params
         double step
-        double[:] _ages, _t, _v_trapezoid
+        double[:] _ages, _t, _v_integral
         _CSRArray _M_crank_nicolson
 
     def __cinit__(Solver self,
@@ -186,22 +186,20 @@ cdef class Solver:
 
     @cython.wraparound(True)
     cdef inline bint _init_births(Solver self) except False nogil:
-        r'''The trapezoid rule for the birth integral for i = 0,
-        u_0^n = \sum_j (b_j^n u_j^n + b_{j + 1}^n u_{j + 1}^n) * da / 2.
+        r'''The cumulative endpoint rule for the birth integral for i = 0,
+        u_0^n = \sum_j b_j^n u_j^n da.
         This can be written as
         u_0^n = (v * b^n) @ u^n,
         with
-        v = da * [0.5, 1, 1, ..., 1, 1, 0.5].
+        v = da * [1, 1, 1, ..., 1, 1, 1].
         Put `female_probability` in there, too,
         for simplicity & efficiency.'''
         with gil:
             # `numpy.empty()` and converting
             # `self.params.female_probability` from Python to C
             # require the GIL.
-            self._v_trapezoid = numpy.empty(self._ages.shape[0])
-            self._v_trapezoid[:] = self.params.female_probability * self.step
-        self._v_trapezoid[0] /= 2
-        self._v_trapezoid[-1] /= 2
+            self._v_integral = numpy.empty(self._ages.shape[0])
+            self._v_integral[:] = self.params.female_probability * self.step
         return True
 
     cdef inline bint _step_births(Solver self,
@@ -211,7 +209,7 @@ cdef class Solver:
                                   numpy.ndarray temp) except False nogil:
         r'''Calculate the birth integral
         B(t) = \int_0^{inf} b(t, a) U(t, a) da
-        using the composite trapezoid rule,
+        using the composite endpoint rule,
         where U = `solution[0]`.'''
         cdef:
             # The memoryview doesn't need the GIL.
@@ -219,7 +217,7 @@ cdef class Solver:
             _Solution_n solution0
             ssize_t n_ages, n_col, i
         # The simple version is
-        # `U[0] += (v_trapezoid * birth_rate) @ U`
+        # `U[0] += (v_integral * birth_rate) @ U`
         # but avoid building new vectors.
         with gil:
             # `birth_rate()` is a Python function, so it needs the GIL.
@@ -230,9 +228,9 @@ cdef class Solver:
         solution0 = solution.get(0)
         n_ages, n_col = solution0.shape[:2]
         for i in range(n_ages):
-            # U[0] += (v_trapezoid[i] * b[i]) * U[i].
+            # U[0] += (v_integral[i] * b[i]) * U[i].
             cblas_daxpy(n_col,
-                        self._v_trapezoid[i] * temp_view[i],
+                        self._v_integral[i] * temp_view[i],
                         &solution0[i, 0], 1,
                         &solution0[0, 0], 1)
         return True

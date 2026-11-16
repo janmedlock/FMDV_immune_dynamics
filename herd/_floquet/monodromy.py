@@ -97,28 +97,27 @@ class Solver:
         numpy.fill_diagonal(solution[0], 1)
 
     def _init_births(self):
-        r'''The trapezoid rule for the birth integral for i = 0,
-        u_0^n = \sum_j (b_j^n u_j^n + b_{j + 1}^n u_{j + 1}^n) * da / 2.
+        r'''The cumulative endpoint rule for the birth integral for i = 0,
+        u_0^n = \sum_j b_j^n u_j^n da.
         This can be written as
         u_0^n = (v * b^n) @ u^n,
         with
-        v = da * [0.5, 1, 1, ..., 1, 1, 0.5].
+        v = da * [1, 1, 1, ..., 1, 1, 1].
         Put `female_probability` in there, too,
         for simplicity & efficiency.'''
-        self._v_trapezoid = numpy.empty(self.ages.shape[0])
-        self._v_trapezoid[:] = self.params.female_probability * self.step
-        self._v_trapezoid[[0, -1]] /= 2
+        self._v_integral = numpy.empty(self.ages.shape[0])
+        self._v_integral[:] = self.params.female_probability * self.step
 
     def _step_births(self, t_n, solution, birth_rate, temp):
         r'''Calculate the birth integral
         B(t) = \int_0^{inf} b(t, a) U(t, a) da
-        using the composite trapezoid rule,
+        using the composite endpoint rule,
         where U is `solution[0]`.'''
         # The simple version is
-        # `U[0] = (v_trapezoid * birth_rate) @ U`
+        # `U[0] = (v_integral * birth_rate) @ U`
         # but avoid building new vectors.
         birth_rate(t_n, self.ages, out=temp)
-        temp *= self._v_trapezoid
+        temp *= self._v_integral
         temp.dot(solution[0], out=solution[0][0])
 
     def _init_crank_nicolson(self, mortality_waiting_time):
