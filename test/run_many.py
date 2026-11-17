@@ -2,6 +2,7 @@
 '''Run many simulations.'''
 
 import itertools
+import os
 import pathlib
 import sys
 import time
@@ -59,16 +60,17 @@ def make_plots(data):
         ylim = axes_.get_ylim()
         if ylim[0] < 0:
             axes_.set_ylim(ymin=0)
+    fig.align_ylabels()
     return fig
 
 
 if __name__ == '__main__':
     SAT = 1
-    NRUNS = 100
+    nruns = max(os.process_cpu_count(), 2)
 
     parameters = herd.Parameters(SAT=SAT)
     t0 = time.time()
-    data = run_many(parameters, NRUNS)
+    data = run_many(parameters, nruns)
     t = time.time() - t0
     print(f'Run time: {t} seconds.')
 
