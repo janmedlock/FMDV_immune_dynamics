@@ -23,13 +23,17 @@ def gamma_scale_from_mean(mean, shape):
     return mean / shape
 
 
-def sample_until(rvs_, target, *args, max_samples=1_000_000, **kwds):
+class SamplingError(Exception):
+    pass
+
+
+def sample_until(rvs_, target, *args, max_samples=10_000, **kwds):
     '''Sample until `target()` is `True`.'''
     for _ in range(max_samples):
         val = rvs_(*args, **kwds)
         if target(val):
             return val
-    raise ValueError(f'Sampling failed after {max_samples=}!')
+    raise SamplingError(f'Sampling failed after {max_samples=}!')
 
 
 def _sample_nonnegative(rvs_):

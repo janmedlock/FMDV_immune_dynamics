@@ -3,7 +3,7 @@ import itertools
 import numpy
 import pandas
 
-from . import (_events_containers, buffalo, events, immune_status,
+from . import (_events_containers, _rv, buffalo, events, immune_status,
                initial_conditions, random_variables)
 from .parameters import Parameters
 
@@ -11,7 +11,8 @@ from .parameters import Parameters
 class Herd(events.infection.HerdMixin, initial_conditions.HerdMixin, set):
     '''A herd of buffaloes, the things that can happen to them, and code to
     simulate.'''
-    def __init__(self, parameters=None, debug=False, seed=None):
+    def __init__(self, parameters=None, debug=False, seed=None,
+                 max_restarts=1_000):
         rng = numpy.random.default_rng(seed)
         if parameters is None:
             parameters = Parameters(seed=rng)
@@ -24,18 +25,32 @@ class Herd(events.infection.HerdMixin, initial_conditions.HerdMixin, set):
                                  for s in immune_status.immune_statuses}
         self.identifiers = itertools.count(0)
         # These need to be defined before initializing
-        # susceptible `buffalo.Buffalo()`.
+        # susceptible `buffalo.Buffalo()`
         self.number_infectious = self.number_carrier = 0
-        age_and_immune_status = self.sample_initial_conditions()
-        for (age, immune_status_) in age_and_immune_status.items():
-            self.add(buffalo.Buffalo(self, immune_status_, age,
-                                     at_equilibrium=True))
+        # Handle sampling errors by restarting
+        for _ in range(max_restarts):
+            try:
+                age_and_immune_status = self.sample_initial_conditions()
+                for (age, immune_status_) in age_and_immune_status.items():
+                    self.add(buffalo.Buffalo(self, immune_status_, age,
+                                             at_equilibrium=True))
+            except _rv.SamplingError:
+                self.clear()
+            else:
+                break
+            print('restarting')
+        else:
+            raise _rv.SamplingError(f'Sampling failed after {max_restarts=}!')
 
     def immune_status_add(self, b):
         self.by_immune_status[b.immune_status].add(b)
 
     def immune_status_remove(self, b):
         self.by_immune_status[b.immune_status].remove(b)
+
+    def immune_status_clear(self):
+        for s in self.by_immune_status.values():
+            s.clear()
 
     def add(self, b):
         super().add(b)
@@ -44,6 +59,10 @@ class Herd(events.infection.HerdMixin, initial_conditions.HerdMixin, set):
     def remove(self, b):
         self.immune_status_remove(b)
         super().remove(b)
+
+    def clear(self):
+        self.immune_status_clear()
+        super().clear()
 
     def get_stats(self):
         stats = [len(self.by_immune_status[s])
