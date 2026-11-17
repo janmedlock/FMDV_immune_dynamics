@@ -59,7 +59,8 @@ class InitialConditions(_rv.RV):
 
 class HerdMixin:
     '''Mixin for '..herd_.Herd()`.'''
-    def sample_initial_conditions(self, max_samples=100):
+
+    def sample_initial_conditions(self, max_samples=10_000):
         '''Get a sample initial condition with some infected hosts.'''
 
         def has_infected(ser):
