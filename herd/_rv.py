@@ -23,7 +23,7 @@ def gamma_scale_from_mean(mean, shape):
     return mean / shape
 
 
-def sample_until(rvs_, target, *args, max_samples=1_000_000, **kwds):
+def sample_until(rvs_, target, *args, max_samples=10_000, **kwds):
     '''Sample until `target()` is `True`.'''
     for _ in range(max_samples):
         val = rvs_(*args, **kwds)
