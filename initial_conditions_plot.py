@@ -15,6 +15,9 @@ import herd.initial_conditions
 import herd.utility
 import plotting
 
+AGE_MAX = 20
+AGE_STEP = 0.025
+
 rc = (
     plotting.rc
     | plotting.SupplementalMaterials.rc
@@ -136,7 +139,7 @@ def plot_SAT(axes, SAT, ages):
 
 
 def plot_SATs(save=True, show=False):
-    ages = herd.utility.arange(0, 20, 0.025, endpoint=True)
+    ages = herd.utility.arange(0, AGE_MAX, AGE_STEP, endpoint=True)
     with seaborn.axes_style('whitegrid'), matplotlib.rc_context(rc=rc):
         fig = matplotlib.pyplot.figure()
         nrows = len(plot_fcns)

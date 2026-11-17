@@ -12,6 +12,8 @@ import seaborn
 import herd
 import plotting
 
+AGE_MAX = 20
+
 rc = (
     plotting.rc
     | plotting.SupplementalMaterials.rc
@@ -81,14 +83,14 @@ class Base(metaclass=abc.ABCMeta):
 class Mortality(Base):
     x_label = 'Age (year)'
     y_label = r'Mortality rate (year$^{-1}$)'
-    x_lim = (0, 20)
+    x_lim = (0, AGE_MAX)
     x_major_multiple = 4
     x_minor_ndivs = 4
     y_major_multiple = 0.2
 
     @classmethod
     def plot_rate(cls, axes, age, **kwds):
-        rate = cls.rvs.mortality.hazard(age)
+        rate = cls.rvs[herd.events.mortality.WaitingTime].hazard(age)
         axes.step(age, rate, where='post', **kwds)
 
 
@@ -102,7 +104,7 @@ class Birth(Base):
 
     @classmethod
     def plot_rate(cls, axes, time, **kwds):
-        rate = cls.rvs.birth.hazard(time, 4)
+        rate = cls.rvs[herd.events.birth.WaitingTime].hazard(time, 4)
         axes.plot(time, rate, **kwds)
 
 

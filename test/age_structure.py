@@ -10,8 +10,11 @@ from _context import common, herd
 import herd.age
 import herd.utility
 
+AGE_MAX = 25
+AGE_STEP = 0.05
+
 birth_peak_times = numpy.linspace(0, 1, 4, endpoint=False)
-ages = herd.utility.arange(0, 25, 0.01, endpoint=True)
+ages = herd.utility.arange(0, AGE_MAX, AGE_STEP, endpoint=True)
 N_JOBS = 1  # This seems to be faster sequentially.
 
 

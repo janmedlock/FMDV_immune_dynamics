@@ -9,10 +9,9 @@ from _context import common
 import age_structure
 
 birth_peak_times = numpy.linspace(0, 1, 12 + 1, endpoint=True)
-ages = numpy.linspace(0, 20, 301, endpoint=True)
 
 
-def plot_age_structures_3d(birth_peak_times, age_structures):
+def plot_age_structures_3d(birth_peak_times, age_structures, ages):
     (fig, ax) = matplotlib.pyplot.subplots()
     pcm = ax.pcolormesh(ages, birth_peak_times, age_structures,
                         cmap='viridis', shading='gouraud')
@@ -24,6 +23,8 @@ def plot_age_structures_3d(birth_peak_times, age_structures):
 
 
 if __name__ == '__main__':
-    age_structures = age_structure.get_age_structures(ages, birth_peak_times)
-    plot_age_structures_3d(birth_peak_times, age_structures)
+    age_structures = age_structure.get_age_structures(age_structure.ages,
+                                                      birth_peak_times)
+    plot_age_structures_3d(birth_peak_times, age_structures,
+                           age_structure.ages)
     matplotlib.pyplot.show()

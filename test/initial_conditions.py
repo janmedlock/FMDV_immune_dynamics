@@ -8,6 +8,9 @@ from _context import common, herd, plotting
 import herd.initial_conditions
 import herd.utility
 
+AGE_MAX = 20
+AGE_STEP = 0.05
+
 
 def plot_probability_constant_birth(ics, ages, ax):
     '''With the assumption of constant-time birth hazard,
@@ -15,6 +18,7 @@ def plot_probability_constant_birth(ics, ages, ax):
     *not* conditioned on being alive.'''
     p = ics.immune_status_pdf(ages)
     ax.stackplot(ages, p.T, labels=p.columns)
+    ax.set_ylim(0, 1)
     ax.set_ylabel('constant-birth\ndensity')
 
 
@@ -53,7 +57,7 @@ def plot_samples(ics, ages, ax):
 def plot_ics(SAT, seed=1):
     parameters = herd.Parameters(SAT=SAT)
     ics = herd.initial_conditions.InitialConditions(parameters, seed=seed)
-    ages = herd.utility.arange(0, 20, 0.1, endpoint=True)
+    ages = herd.utility.arange(0, AGE_MAX, AGE_STEP, endpoint=True)
     plot_fcns = (plot_probability_constant_birth,
                  plot_conditional_probability,
                  plot_probability,
@@ -68,7 +72,7 @@ def plot_ics(SAT, seed=1):
     fig.align_ylabels()
     fig.tight_layout(rect=(0, 0.1, 1, 1))
     (handles, labels) = axes[0].get_legend_handles_labels()
-    nrow = 2
+    nrow = 3
     ncol = (len(labels) + nrow - 1) // nrow
     plotting.legend_multicolumn(fig, handles, labels, ncol,
                                 loc='lower center')

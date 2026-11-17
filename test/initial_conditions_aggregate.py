@@ -10,6 +10,9 @@ from _context import common, herd, plotting
 import herd.initial_conditions
 import herd.utility
 
+AGE_MAX = 20
+AGE_STEP = 0.05
+
 
 def get_params():
     return {
@@ -19,7 +22,7 @@ def get_params():
 
 
 def get_solutions(params):
-    ages = herd.utility.arange(0, 20, 0.005, endpoint=True)
+    ages = herd.utility.arange(0, AGE_MAX, AGE_STEP, endpoint=True)
     p = {}
     for (SAT, params_SAT) in params.items():
         ics = herd.initial_conditions.InitialConditions(params_SAT)
@@ -85,7 +88,7 @@ def plot_probability_constant_birth(p):
     axes[-1].set_xlabel(f'age ({common.TIME_UNIT})')
     fig.tight_layout(rect=(0, 0.1, 1, 1))
     immune_statuses = p.columns.levels[1]
-    nrow = 2
+    nrow = 3
     ncol = (len(immune_statuses) + nrow - 1) // nrow
     plotting.legend_multicolumn(fig, collection, immune_statuses, ncol,
                                 loc='lower center')
@@ -109,7 +112,7 @@ def plot_conditional_probability(p):
     axes[-1].set_xlabel(f'age ({common.TIME_UNIT})')
     fig.tight_layout(rect=(0, 0.1, 1, 1))
     immune_statuses = p.columns.levels[1]
-    nrow = 2
+    nrow = 3
     ncol = (len(immune_statuses) + nrow - 1) // nrow
     plotting.legend_multicolumn(fig, collection, immune_statuses, ncol,
                                 loc='lower center')

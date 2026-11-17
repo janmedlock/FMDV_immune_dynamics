@@ -9,6 +9,8 @@ import scipy
 from _context import common, herd
 import herd._floquet.test
 
+AGE_MAX = 25
+
 
 def _parse_args():
     parser = argparse.ArgumentParser()
@@ -23,8 +25,7 @@ def plot(parameters, ages, stable_age_structure):
             parameters.mortality_age_dependent, age)
 
     (fig, ax) = matplotlib.pyplot.subplots()
-    age_max = 25
-    which = (ages <= age_max)
+    which = (ages <= AGE_MAX)
     ax.plot(ages[which], stable_age_structure[which],
             label='stable age structure')
     (mortality_sf_scale, _) = scipy.integrate.quad(mortality_sf,
