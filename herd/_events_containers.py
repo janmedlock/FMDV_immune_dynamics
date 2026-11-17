@@ -116,6 +116,10 @@ class HerdEvents(_SortedEventList):
                 else:
                     super().update(group)
 
+    def clear(self):
+        super().clear()
+        self.infections.clear()
+
     def next(self):
         '''Return the next event.'''
         # From the first items in each non-empty list, find the one

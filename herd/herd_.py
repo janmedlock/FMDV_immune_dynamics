@@ -11,8 +11,7 @@ from .parameters import Parameters
 class Herd(events.infection.HerdMixin, initial_conditions.HerdMixin, set):
     '''A herd of buffaloes, the things that can happen to them, and code to
     simulate.'''
-    def __init__(self, parameters=None, debug=False, seed=None,
-                 max_restarts=1_000):
+    def __init__(self, parameters=None, debug=False, seed=None):
         rng = numpy.random.default_rng(seed)
         if parameters is None:
             parameters = Parameters(seed=rng)
@@ -27,6 +26,9 @@ class Herd(events.infection.HerdMixin, initial_conditions.HerdMixin, set):
         # These need to be defined before initializing
         # susceptible `buffalo.Buffalo()`
         self.number_infectious = self.number_carrier = 0
+        self._build_herd()
+
+    def _build_herd(self, max_restarts=1_000):
         # Handle sampling errors by restarting
         for _ in range(max_restarts):
             try:
@@ -35,11 +37,11 @@ class Herd(events.infection.HerdMixin, initial_conditions.HerdMixin, set):
                     self.add(buffalo.Buffalo(self, immune_status_, age,
                                              at_equilibrium=True))
             except _rv.SamplingError:
-                self.clear()
+                pass
             else:
-                break
-        else:
-            raise _rv.SamplingError(f'Sampling failed after {max_restarts=}!')
+                return
+            self.clear()
+        raise _rv.SamplingError(f'Sampling failed after {max_restarts=}!')
 
     def immune_status_add(self, b):
         self.by_immune_status[b.immune_status].add(b)
@@ -62,6 +64,7 @@ class Herd(events.infection.HerdMixin, initial_conditions.HerdMixin, set):
     def clear(self):
         self.immune_status_clear()
         super().clear()
+        self.events.clear()
 
     def get_stats(self):
         stats = [len(self.by_immune_status[s])
