@@ -1,7 +1,7 @@
-__all__ = ('Solver', 'vars_ode', 'vars_pde')
+__all__ = ('SHORT_NAMES', 'Solver', 'vars_ode', 'vars_pde')
 
 from . import _solver
-from ._blocks import vars_ode, vars_pde
+from ._blocks import SHORT_NAMES, vars_ode, vars_pde
 from ._solver import Solver
 
 

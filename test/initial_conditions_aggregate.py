@@ -24,7 +24,7 @@ def get_solutions(params):
     for (SAT, params_SAT) in params.items():
         ics = herd.initial_conditions.InitialConditions(params_SAT)
         p[SAT] = ics.immune_status_pdf(ages)
-    return pandas.concat(p, axis='columns')
+    return pandas.concat(p, names=['SAT'], axis='columns')
 
 
 def integrate_over_age(X):
@@ -38,7 +38,7 @@ def integrate_over_age(X):
 
 
 def sum_over_immune_state(X):
-    return X.groupby(level=0).sum()
+    return X.groupby('SAT').sum()
 
 
 def plot_integral_over_age(p):
@@ -74,13 +74,14 @@ def plot_probability_constant_birth(p):
     *not* conditioned on being alive.'''
     ages = p.index
     # Group by SAT
-    grouper = p.T.groupby(level=0)
+    grouper = p.T.groupby('SAT')
     (fig, axes) = matplotlib.pyplot.subplots(len(grouper),
                                              sharex=True)
     for (ax, (SAT, group)) in zip(axes, grouper):
         collection = ax.stackplot(ages, group, labels=p.columns)
         ax.set_ylabel(f'SAT{SAT}\nconstant-birth\ndensity')
         ax.margins(0)
+        ax.set_ylim(0, 1)
     axes[-1].set_xlabel(f'age ({common.TIME_UNIT})')
     fig.tight_layout(rect=(0, 0.1, 1, 1))
     immune_statuses = p.columns.levels[1]
@@ -96,7 +97,7 @@ def plot_conditional_probability(p):
     conditioned on being alive.'''
     ages = p.index
     # Group by SAT
-    grouper = p.T.groupby(level=0)
+    grouper = p.T.groupby('SAT')
     (fig, axes) = matplotlib.pyplot.subplots(len(grouper),
                                              sharex=True)
     for (ax, (SAT, group)) in zip(axes, grouper):
