@@ -9,7 +9,8 @@ import numpy.lib.recfunctions
 import pandas
 import scipy
 
-from .. import immune_status
+from .. import _rv, events, immune_status
+from . import _utility, _waiting_time
 
 # The short names of the variables.
 # The order of the output is determined by the order of these, too.
@@ -31,6 +32,79 @@ SHORT_NAMES_TO_LONG_NAMES = {s: l for (l, s) in SHORT_NAMES.items()}
 
 LONG_NAMES_DTYPE = pandas.CategoricalDtype(SHORT_NAMES, # `.keys()`
                                            ordered=True)
+
+
+class Parameters:
+    '''Object to pass parameters from `_solver.Solver()` to `_Block()`s.'''
+
+    def __init__(self, params, ages, step, length_ode, length_pde):
+        self.step = step
+        self.length_ode = length_ode
+        self.length_pde = length_pde
+        # Other parameters.
+        self.birth_menarche = params.birth_menarche
+        self.carrier_transmission_rate = params.carrier_transmission_rate
+        self.female_probability = params.female_probability
+        self.lost_immunity_susceptibility = params.lost_immunity_susceptibility
+        self.lost_immunity_true_probability = (
+            params.lost_immunity_true_probability)
+        self.mortality_age_dependent = params.mortality_age_dependent
+        self.recovered_true_probability = params.recovered_true_probability
+        self.recovery_to_carrier_probability = (
+            params.recovery_to_carrier_probability)
+        self.transmission_rate = params.transmission_rate
+        # Helper to get parameterized waiting times
+        waiting_times = _waiting_time.WaitingTimes(params)
+        # Get the pdf of the time-since-entry-dependent waiting times
+        self.pdf = self.get_pdfs(
+            _rv.TimeSinceEntryDependentWaitingTimeMixin.__subclasses__(),
+            waiting_times, ages
+        )
+        # Get the survival of the time-since-entry-dependent waiting times
+        # and the mortality waiting time
+        self.survival = self.get_survivals(
+            (set(_rv.TimeSinceEntryDependentWaitingTimeMixin.__subclasses__())
+             .union({events.mortality.WaitingTime})),
+            waiting_times, ages
+        )
+        # Get the hazard for the memoryless and age-dependent waiting times
+        self.hazard = self.get_hazards(
+            (set(_rv.MemorylessWaitingTimeMixin.__subclasses__())
+             .union(_rv.AgeDependentWaitingTimeMixin.__subclasses__())),
+            waiting_times, ages
+        )
+        # Dummy value. Set on calls to `Solver.solve_step()`.
+        self.birth_maternal_immunity_proportion = 1.
+
+
+    def get_pdfs(self, wts, waiting_times, ages):
+
+        def get_pdf(wt, ages):
+            '''Use the survival function `wt.sf()` to get the PDF over
+            each interval in `ages`. The PDF `wt.pdf()` at each age might
+            change too quickly to capture the difference over the age
+            interval.'''
+            # Use 0 at the first age.
+            return numpy.hstack(
+                [0, -numpy.diff(wt.sf(ages)) / numpy.diff(ages)]
+            )
+
+        return _utility.recarray_fromkwds(**{
+            _waiting_time.name(wt): get_pdf(waiting_times[wt], ages)
+            for wt in wts
+        })
+
+    def get_survivals(self, wts, waiting_times, ages):
+        return _utility.recarray_fromkwds(**{
+            _waiting_time.name(wt): waiting_times[wt].sf(ages)
+            for wt in wts
+        })
+
+    def get_hazards(self, wts, waiting_times, ages):
+        return _utility.recarray_fromkwds(**{
+            _waiting_time.name(wt): waiting_times[wt].hazard(ages)
+            for wt in wts
+        })
 
 
 class _Block(metaclass=abc.ABCMeta):

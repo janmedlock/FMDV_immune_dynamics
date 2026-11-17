@@ -5,95 +5,8 @@ import numpy.lib.recfunctions
 import pandas
 import scipy
 
-from .. import _memory, _rv, events, immune_status, parameters, utility
-from . import _blocks, _waiting_time
-
-
-def _rec_fromkwds(**kwds):
-    '''Build a `numpy.recarray()` from `kwds`.'''
-    return numpy.rec.fromarrays(
-        numpy.broadcast_arrays(*kwds.values()),
-        dtype=[(k, float) for k in kwds])
-
-
-class _Parameters:
-    '''Object to pass parameters from `Solver()` to `._blocks._Block()`s.'''
-    def __init__(self, params, ages, step, length_ode, length_pde):
-        self.step = step
-        self.length_ode = length_ode
-        self.length_pde = length_pde
-        # Other parameters.
-        self.carrier_transmission_rate = params.carrier_transmission_rate
-        self.female_probability = params.female_probability
-        self.lost_immunity_susceptibility = params.lost_immunity_susceptibility
-        self.lost_immunity_true_probability = (
-            params.lost_immunity_true_probability)
-        self.recovered_true_probability = params.recovered_true_probability
-        self.recovery_to_carrier_probability = (
-            params.recovery_to_carrier_probability)
-        self.transmission_rate = params.transmission_rate
-        # Helper to get parameterized waiting times
-        waiting_times = _waiting_time.WaitingTimes(params)
-        # Get the pdf at `ages` of the time-since-entry-dependent
-        # waiting times
-        wts_pdf = _rv.TimeSinceEntryDependentWaitingTimeMixin.__subclasses__()
-        self.pdf = _rec_fromkwds(**{
-            _waiting_time.name(wt): self.get_pdf(waiting_times[wt], ages)
-            for wt in wts_pdf
-        })
-        # Get the survival at `ages` of the time-since-entry-dependent
-        # waiting times and the mortality waiting time
-        wts_survival = wts_pdf + [events.mortality.WaitingTime]
-        self.survival = _rec_fromkwds(**{
-            _waiting_time.name(wt): waiting_times[wt].sf(ages)
-            for wt in wts_survival
-        })
-        # Get the hazard at `ages` for the memoryless and
-        # age-dependent waiting times except for birth and infection
-        wts_hazard = (set(_rv.MemorylessWaitingTimeMixin.__subclasses__())
-                      .union(_rv.AgeDependentWaitingTimeMixin.__subclasses__())
-                      .difference({events.birth.WaitingTime,
-                                   events.infection.WaitingTime}))
-        self.hazard = _rec_fromkwds(**{
-            _waiting_time.name(wt): waiting_times[wt].hazard(ages)
-            for wt in wts_hazard
-        } | {
-            # Avoid the slow `..floquet.find_birth_scaling()` in
-            # `events.birth.WaitingTime()`
-            'birth': self.get_hazard_birth(ages),
-            # Dummy value. Set on calls to `Solver.solve_step()`.
-            'infection': 1,
-        })
-        # Dummy value. Set on calls to `Solver.solve_step()`.
-        self.birth_maternal_immunity_proportion = 1
-
-    @staticmethod
-    def get_pdf(rv, ages):
-        '''Use the survival function `rv.sf()` to get the PDF over
-        each interval in `ages`. The PDF `rv.pdf()` at each age might
-        change too quickly to capture the difference over the age
-        interval.'''
-        # Use 0 at the first age.
-        pdf = numpy.hstack([0, -numpy.diff(rv.sf(ages)) / numpy.diff(ages)])
-        return pdf
-
-    def get_hazard_birth(self, ages):
-        # Avoid the slow `..floquet.find_birth_scaling()`
-        hazard = events.birth.hazard_no_seasonality(self.birth_menarche,
-                                                    self.female_probability,
-                                                    ages, _scaling=1)
-        # Scale to get 0 population growth rate using the `ages`
-        # from `Solver()`, rather than the ages used by
-        # `..floquet.find_birth_scaling()`
-        scaling = (
-            (
-                self.female_probability
-                * hazard
-                * self.survival.mortality
-            ).sum() * self.step
-        )
-        hazard /= scaling
-        return hazard
+from .. import _memory, immune_status, parameters, utility
+from . import _blocks, _utility
 
 
 class Solver:
@@ -111,8 +24,9 @@ class Solver:
                                    endpoint=True)
         assert len(self.ages) > 1
         self.length_ode = self.length_pde = len(self.ages)
-        self.params = _Parameters(params, self.ages, self.step,
-                                  self.length_ode, self.length_pde)
+        self.block_params = _blocks.Parameters(params, self.ages, self.step,
+                                               self.length_ode,
+                                               self.length_pde)
         self.index = pandas.Index(self.ages, name='age')
         # `pandas.DataFrame()` requires a `list()` indexer
         self.have_offspring_to_maternal_immunity = list(
@@ -125,7 +39,7 @@ class Solver:
             A_coo[-1, -1] = 1
             A = A_coo.tocsr()
             self.blocks = {
-                Block.X: Block(self.params, I, A)
+                Block.X: Block(self.block_params, I, A)
                 for Block in _blocks.Blocks
             }
 
@@ -150,7 +64,7 @@ class Solver:
         # Split into columns.
         X = numpy.hsplit(x, len(x_vars))
         # Add labels.
-        return _rec_fromkwds(**dict(zip(x_vars, X)))
+        return _utility.recarray_fromkwds(**dict(zip(x_vars, X)))
 
     def unstack(self, Pp):
         '''Unstack the P_X and p_X vectors.'''
@@ -178,7 +92,7 @@ class Solver:
         # Integrate the p_X variables over r.
         p_integrated = {n: self.blocks[n].integrate(p[n])
                         for n in p.dtype.names}
-        return _rec_fromkwds(**p_integrated)
+        return _utility.recarray_fromkwds(**p_integrated)
 
     @staticmethod
     def transform(x):
@@ -202,8 +116,8 @@ class Solver:
         if self.debug:
             print(f'{hazard_infection=:g}, '
                   + f'{birth_maternal_immunity_proportion=:g}')
-        self.params.hazard.infection = hazard_infection
-        self.params.birth_maternal_immunity_proportion = (
+        self.block_params.hazard.infection = hazard_infection
+        self.block_params.birth_maternal_immunity_proportion = (
             birth_maternal_immunity_proportion)
         self.update_blocks()
         M = self.get_M()
@@ -225,8 +139,10 @@ class Solver:
         # over age.
         P_total = P.sum() * self.step
         haz = (
-            (self.params.transmission_rate * P_total['infectious']
-             + self.params.carrier_transmission_rate * P_total['carrier'])
+            ((self.block_params.transmission_rate
+              * P_total['infectious'])
+             + (self.block_params.carrier_transmission_rate
+                * P_total['carrier']))
             / P_total.sum()
         )
         assert (haz >= 0) | numpy.isclose(haz, 0)
@@ -237,7 +153,7 @@ class Solver:
         '''Compute the proportions of newborns who have maternal
         immunity from the solution `P`.'''
         # The birth rate from moms in each immune status and age.
-        births = P.mul(self.params.hazard.birth, axis='index')
+        births = P.mul(self.block_params.hazard.birth, axis='index')
         # The birth rate from mothers in each immune status.
         births_total = births.sum() * self.step
         imm = (
@@ -277,7 +193,7 @@ def _solve(params, debug):
     return Solver(params, debug=debug).solve()
 
 
-class _CacheParameters(parameters.Parameters):
+class _Parameters(parameters.Parameters):
     '''Build a `herd.parameters.Parameters()`-like object that
     only has the parameters needed by `Solver()`
     so that it can be efficiently cached.'''
@@ -308,6 +224,7 @@ class _CacheParameters(parameters.Parameters):
                     'recovery_shape',
                     'recovery_to_carrier_probability',
                     'transmission_rate'),
+            # This one should be a boolean.
             bool: ('mortality_age_dependent',),
         }
         for (type_, attrs_type) in attrs.items():
@@ -317,14 +234,13 @@ class _CacheParameters(parameters.Parameters):
 
 def solve(params, debug=False):
     '''Find the solution.'''
-    return _solve(_CacheParameters(params), debug)
+    return _solve(_Parameters(params), debug)
 
 
 def in_cache(params):
     '''Check if the solution for `params` is in the cache.'''
     # The value of `debug` is ignored by the cache.
-    return _solve.check_call_in_cache(_CacheParameters(params),
-                                      debug=False)
+    return _solve.check_call_in_cache(_Parameters(params), debug=False)
 
 
 def get_equilibrium(params, cached_only=False, debug=False):
