@@ -8,7 +8,6 @@ import scipy
 
 from _context import common, herd
 import herd.age
-import herd.events.mortality
 import herd.utility
 
 birth_peak_times = numpy.linspace(0, 1, 4, endpoint=False)

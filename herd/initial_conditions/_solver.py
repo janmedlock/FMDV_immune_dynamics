@@ -189,11 +189,11 @@ class Solver:
 # `Solver.solve()` is very slow, so the values are cached to disk with
 # `joblib.Memory()` so that they are only computed once
 @_memory.memory.cache(ignore=['debug'])
-def _solve(params, debug):
+def solve_cached(params, debug):
     return Solver(params, debug=debug).solve()
 
 
-class _Parameters(parameters.Parameters):
+class Parameters(parameters.Parameters):
     '''Build a `herd.parameters.Parameters()`-like object that
     only has the parameters needed by `Solver()`
     so that it can be efficiently cached.'''
@@ -234,28 +234,4 @@ class _Parameters(parameters.Parameters):
 
 def solve(params, debug=False):
     '''Find the solution.'''
-    return _solve(_Parameters(params), debug)
-
-
-def in_cache(params):
-    '''Check if the solution for `params` is in the cache.'''
-    # The value of `debug` is ignored by the cache.
-    return _solve.check_call_in_cache(_Parameters(params), debug=False)
-
-
-def get_equilibrium(params, cached_only=False, debug=False):
-    '''Get the equilibrium values of the variables used in Solver().'''
-    if cached_only and not in_cache(params):
-        return {
-            'hazard_infection': None,
-            'birth_maternal_immunity_proportion': None,
-        }
-    # Get the solution from the cached solver.
-    P = solve(params, debug=debug)
-    solver = Solver(params, debug=debug, _skip_blocks=True)
-    return {
-        'hazard_infection':
-        solver.get_hazard_infection(P),
-        'birth_maternal_immunity_proportion':
-        solver.get_birth_maternal_immunity_proportion(P),
-    }
+    return solve_cached(Parameters(params), debug)

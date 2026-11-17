@@ -9,8 +9,7 @@ import matplotlib.pyplot
 import numpy
 
 from _context import common, herd
-import herd.initial_conditions._blocks
-import herd.initial_conditions._solver
+import herd.initial_conditions.test
 
 
 def check_parameters(slvr):
@@ -53,8 +52,8 @@ def plot_blocks(slvr):
     norm = matplotlib.colors.Normalize(-1, 1)
     axes.matshow(blcks, cmap=cmap, norm=norm)
     vars_ = (
-        herd.initial_conditions._blocks.vars_ode
-        + herd.initial_conditions._blocks.vars_pde
+        herd.initial_conditions.test.vars_ode
+        + herd.initial_conditions.test.vars_pde
     )
     axes.set_xticks(range(len(vars_)))
     axes.set_yticks(range(len(vars_)))
@@ -90,7 +89,7 @@ def plot_solution(prob):
 
 if __name__ == '__main__':
     parameters = herd.Parameters(SAT=1)
-    slvr = herd.initial_conditions._solver.Solver(parameters)
+    slvr = herd.initial_conditions.test.Solver(parameters)
     HAZARD_INFECTION = 2
     NEWBORN_PROPORTION_IMMUNE = 0.6
     prob = slvr.solve_step(slvr.transform((HAZARD_INFECTION,

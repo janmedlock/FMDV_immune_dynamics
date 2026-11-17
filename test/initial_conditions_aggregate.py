@@ -8,7 +8,6 @@ import pandas
 
 from _context import common, herd, plotting
 import herd.initial_conditions
-import herd.mortality
 import herd.utility
 
 
@@ -64,7 +63,7 @@ def plot_sum_over_immune_state(params, p):
     ax = P.plot(alpha=0.6)
     ax.set_xlabel(f'age ({common.TIME_UNIT})')
     ax.set_ylabel('survival')
-    survival = herd.mortality.sf(params.mortality_age_dependent, ages)
+    survival = herd.events.mortality.sf(params.mortality_age_dependent, ages)
     ax.plot(ages, survival, color='black', linestyle='dashed', alpha=0.6)
     return ax
 
