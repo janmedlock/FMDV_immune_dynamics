@@ -5,7 +5,7 @@ import numpy.lib.recfunctions
 import pandas
 import scipy
 
-from .. import _memory, immune_status, parameters, utility
+from .. import _memory, defaults, immune_status, parameters, utility
 from . import _blocks, _utility
 
 
@@ -13,12 +13,10 @@ class Solver:
     '''Crank–Nicolson solver to find the probability of being in each
     compartment as a function of age.'''
 
-    # Step size in both age (a) and residence time (r).
-    step = 0.005
-
-    age_max = 20
-
-    def __init__(self, params, debug=False, _skip_blocks=False):
+    def __init__(self, params, step=defaults.STEP, age_max=defaults.AGE_MAX,
+                 debug=False, _skip_blocks=False):
+        self.step = step
+        self.age_max = age_max
         self.debug = debug
         self.ages = utility.arange(0, self.age_max, self.step,
                                    endpoint=True)
@@ -189,8 +187,9 @@ class Solver:
 # `Solver.solve()` is very slow, so the values are cached to disk with
 # `joblib.Memory()` so that they are only computed once
 @_memory.memory.cache(ignore=['debug'])
-def solve_cached(params, debug):
-    return Solver(params, debug=debug).solve()
+def solve_cached(params, step=defaults.STEP, age_max=defaults.AGE_MAX,
+                 debug=False):
+    return Solver(params, step, age_max, debug).solve()
 
 
 class Parameters(parameters.Parameters):
@@ -232,6 +231,6 @@ class Parameters(parameters.Parameters):
                 setattr(self, attr, type_(getattr(params, attr)))
 
 
-def solve(params, debug=False):
+def solve(params, step=defaults.STEP, age_max=defaults.AGE_MAX, debug=False):
     '''Find the solution.'''
-    return solve_cached(Parameters(params), debug)
+    return solve_cached(Parameters(params), step, age_max, debug)

@@ -20,8 +20,7 @@ on characteristics, following the work of Fabio Milner.'''
 import numpy
 import scipy
 
-from .. import _period, events, parameters, utility
-from . import _default
+from .. import _period, defaults, events, parameters, utility
 
 
 class _Solution:
@@ -83,7 +82,7 @@ class Solver:
     # depends on the solution at t_{n - 1}.
     _order = 1
 
-    def __init__(self, params, step=_default.STEP, age_max=_default.AGE_MAX):
+    def __init__(self, params, step=defaults.STEP, age_max=defaults.AGE_MAX):
         self.params = params
         self.step = step
         self.ages = utility.arange(0, age_max, step, endpoint=True)

@@ -4,12 +4,12 @@ import numpy
 import scipy
 import scipy.optimize.elementwise
 
-from .. import _memory, _period
-from . import _default, _dominant_eigen, _monodromy
+from .. import _memory, _period, defaults
+from . import _dominant_eigen, _monodromy
 
 
 def _check_solver(solver, monodromy_params,
-                  step=_default.STEP, age_max=_default.AGE_MAX):
+                  step=defaults.STEP, age_max=defaults.AGE_MAX):
     assert solver.params is monodromy_params
     assert numpy.isclose(solver.step, step)
     assert numpy.isclose(solver.ages.max(),
@@ -33,8 +33,8 @@ def _normalize_to_density(v, step):
 # default for the cache has `verbose>0`, so timing info etc is shown
 # there.
 @_memory.memory.cache(ignore=['solver'], verbose=0)
-def _find_dominant_eigen(birth_scaling, monodromy_params, step=_default.STEP,
-                         age_max=_default.AGE_MAX, solver=None):
+def _find_dominant_eigen(birth_scaling, monodromy_params, step=defaults.STEP,
+                         age_max=defaults.AGE_MAX, solver=None):
     '''Find the dominant Floquet exponent (the one with the largest real part)
     and its corresponding eigenvector.'''
     if solver is None:
@@ -55,8 +55,8 @@ def _find_dominant_eigen(birth_scaling, monodromy_params, step=_default.STEP,
     return (mu_0, v_0, solver.ages)
 
 
-def _find_growth_rate(monodromy_params, step=_default.STEP,
-                      age_max=_default.AGE_MAX, solver=None):
+def _find_growth_rate(monodromy_params, step=defaults.STEP,
+                      age_max=defaults.AGE_MAX, solver=None):
     '''Helper for `_find_birth_scaling()`.'''
 
     # This function is not cached because it just calls
@@ -87,8 +87,8 @@ _BIRTH_SCALING_BRACKET_GUESS = (0.5, 1.5)
 # it is cached.  Even though `_find_dominant_eigen()` is cached,
 # caching this function avoids re-running the optimization.
 @_memory.memory.cache(ignore=['solver', 'bracket_guess'])
-def _find_birth_scaling(monodromy_params, step=_default.STEP,
-                        age_max=_default.AGE_MAX, solver=None,
+def _find_birth_scaling(monodromy_params, step=defaults.STEP,
+                        age_max=defaults.AGE_MAX, solver=None,
                         bracket_guess=_BIRTH_SCALING_BRACKET_GUESS):
     '''Find the birth scaling that gives population growth rate r = 0.'''
     # Reuse the solver to avoid multiple setup and teardown.
@@ -109,7 +109,7 @@ def _find_birth_scaling(monodromy_params, step=_default.STEP,
 
 
 # Wrapper to call cached version, `_find_birth_scaling()`.
-def find_birth_scaling(params, step=_default.STEP, age_max=_default.AGE_MAX,
+def find_birth_scaling(params, step=defaults.STEP, age_max=defaults.AGE_MAX,
                        **kwds):
     '''Find the birth scaling that gives population growth rate r = 0.'''
     return _find_birth_scaling(_monodromy.Parameters(params), step, age_max,
@@ -120,8 +120,8 @@ def find_birth_scaling(params, step=_default.STEP, age_max=_default.AGE_MAX,
 # `_find_dominant_eigen()`, the eigenvector needed, `v`, should
 # already be in the cache, and thus, there is no need to cache this
 # function.
-def find_stable_age_structure(params, step=_default.STEP,
-                              age_max=_default.AGE_MAX, _birth_scaling=None):
+def find_stable_age_structure(params, step=defaults.STEP,
+                              age_max=defaults.AGE_MAX, _birth_scaling=None):
     '''Find the stable age structure.'''
     monodromy_params = _monodromy.Parameters(params)
     if _birth_scaling is None:

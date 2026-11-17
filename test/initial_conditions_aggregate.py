@@ -7,11 +7,11 @@ import numpy
 import pandas
 
 from _context import common, herd, plotting
+import herd.defaults
 import herd.initial_conditions
 import herd.utility
 
-AGE_MAX = 20
-AGE_STEP = 0.05
+STEP = 0.1
 
 
 def get_params():
@@ -22,7 +22,7 @@ def get_params():
 
 
 def get_solutions(params):
-    ages = herd.utility.arange(0, AGE_MAX, AGE_STEP, endpoint=True)
+    ages = herd.utility.arange(0, herd.defaults.AGE_MAX, STEP, endpoint=True)
     p = {}
     for (SAT, params_SAT) in params.items():
         ics = herd.initial_conditions.InitialConditions(params_SAT)

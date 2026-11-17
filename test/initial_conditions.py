@@ -5,11 +5,11 @@ import matplotlib.pyplot
 import numpy
 
 from _context import common, herd, plotting
+import herd.defaults
 import herd.initial_conditions
 import herd.utility
 
-AGE_MAX = 20
-AGE_STEP = 0.05
+STEP = 0.1
 
 
 def plot_probability_constant_birth(ics, ages, ax):
@@ -57,7 +57,7 @@ def plot_samples(ics, ages, ax):
 def plot_ics(SAT, seed=1):
     parameters = herd.Parameters(SAT=SAT)
     ics = herd.initial_conditions.InitialConditions(parameters, seed=seed)
-    ages = herd.utility.arange(0, AGE_MAX, AGE_STEP, endpoint=True)
+    ages = herd.utility.arange(0, herd.defaults.AGE_MAX, STEP, endpoint=True)
     plot_fcns = (plot_probability_constant_birth,
                  plot_conditional_probability,
                  plot_probability,
