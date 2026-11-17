@@ -8,18 +8,19 @@ import sys
 import time
 
 import matplotlib.pyplot
+import numpy
 import pandas
 import seaborn
 
-from _context import baseline, herd
+from _context import baseline, common, herd
 
 
-def run_many(parameters, nruns):
+def run_many(parameters, nruns, seed=None):
     # Add the parent directory to `sys.path` so that the
     # `joblib.Parallel()` workers can find the `herd` module.
     path = pathlib.Path(__file__).parents[1]
     sys.path.append(str(path))
-    data = baseline.run_many(parameters, nruns)
+    data = baseline.run_many(parameters, nruns, seed=rng)
     sys.path.pop()
     return data
 
@@ -68,9 +69,10 @@ if __name__ == '__main__':
     SAT = 1
     nruns = max(os.process_cpu_count(), 2)
 
-    parameters = herd.Parameters(SAT=SAT)
+    rng = numpy.random.default_rng(common.SEED)
+    parameters = herd.Parameters(SAT=SAT, seed=rng)
     t0 = time.time()
-    data = run_many(parameters, nruns)
+    data = run_many(parameters, nruns, seed=rng)
     t = time.time() - t0
     print(f'Run time: {t} seconds.')
 

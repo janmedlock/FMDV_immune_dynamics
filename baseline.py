@@ -41,7 +41,7 @@ def run_one(parameters, *args, tmax=common.TIME_MAX,
 
 def run_many_chunked(parameters, nruns, *args,
                      chunksize=100, n_jobs=-1,
-                     debug=False, print_duration=None, seed=None,
+                     debug=False, print_duration=None, seed=common.SEED,
                      **kwargs):
     '''Generator to return chunks of many simulation results.'''
     if chunksize < 1:
