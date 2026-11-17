@@ -38,7 +38,6 @@ class Herd(events.infection.HerdMixin, initial_conditions.HerdMixin, set):
                 self.clear()
             else:
                 break
-            print('restarting')
         else:
             raise _rv.SamplingError(f'Sampling failed after {max_restarts=}!')
 
