@@ -28,7 +28,7 @@ rc = (
 
 def plot_age_density(ics, ages, ax):
     '''Plot the density of the stable age distribution.'''
-    p = ics.ages.pdf(ages)
+    p = ics.age.pdf(ages)
     ax.plot(ages, p,
             color='black', linewidth=1, zorder=3)
     if ax.get_subplotspec().is_first_col():
@@ -144,7 +144,7 @@ def plot_SATs(save=True, show=False):
         # Add an extra row for the legend.
         gs = fig.add_gridspec(
             nrows + 1, ncols,
-            height_ratios=((1,) * nrows + (0.35,)),
+            height_ratios=((1,) * nrows + (0.4,)),
         )
         axes = numpy.empty((nrows, ncols), dtype=object)
         axes[0, 0] = None  # `sharex` & `sharey` for `axes[0, 0]`.
@@ -160,7 +160,7 @@ def plot_SATs(save=True, show=False):
         fig.align_ylabels()
         (handles, labels) = axes[1, 0].get_legend_handles_labels()
         labels = list(map(plotting.get_state_label, labels))
-        nrow = 2
+        nrow = 3
         ncol = math.ceil(len(handles) / nrow)
         plotting.legend_multicolumn(fig, handles, labels, ncol,
                                     loc='lower right',

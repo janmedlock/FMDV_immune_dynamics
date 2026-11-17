@@ -50,7 +50,7 @@ def plot_one(ax, SAT, group):
             matplotlib.ticker.MultipleLocator(100)
         )
         (handles, labels) = ax.get_legend_handles_labels()
-        nrow = 2
+        nrow = 3
         ncol = math.ceil(len(handles) / nrow)
         plotting.legend_multicolumn(ax, handles, labels, ncol,
                                     loc='upper center',
