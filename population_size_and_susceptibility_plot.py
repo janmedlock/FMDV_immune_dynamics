@@ -6,6 +6,7 @@ file `population_size_and_susceptibility.h5`, which is built by
 
 import matplotlib.pyplot
 import matplotlib.ticker
+import pandas
 import seaborn
 
 import common
@@ -31,16 +32,33 @@ rc = (
 )
 
 
-def _fill_missing_persistence(extinction_time):
-    assert herd.utility.is_increasing(extinction_time.columns, strict=True)
+def _fill_missing_persistence(persistence):
+    assert herd.utility.is_increasing(persistence.columns, strict=True)
     # Starting from the left, where there is a missing value, if the
     # value in the previous column is 1, set the current value to 1.
-    # Skip the first column since it has no previous column.
-    for (col_prev, col_curr) in zip(extinction_time.columns[:-1],
-                                    extinction_time.columns[1:]):
-        to_update = (extinction_time[col_curr].isnull()
-                     & (extinction_time[col_prev] == 1))
-        extinction_time.loc[to_update, col_curr] = 1
+    # Check back 2 columns if the previous one was the default. Skip
+    # the first column since it has no previous column.
+    for (i, row) in enumerate(persistence.index):
+        for (j, col) in enumerate(persistence.columns[1:], 1):
+            if (
+                    pandas.isna(persistence.loc[row, col])
+                    & (
+                        (
+                            persistence.iloc[i, j-1] == 1
+                        ) | (
+                            (
+                                j > 1
+                            )
+                            & (
+                                persistence.columns[j-1]
+                                == population_size.default
+                            ) & (
+                                persistence.iloc[i, j-2] == 1
+                            )
+                        )
+                    )
+            ):
+                persistence.loc[row, col] = 1
 
 
 def _prepend_to_text(s, text):
