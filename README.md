@@ -126,19 +126,19 @@ The scripts ending in `_run.py` run the model simulations.
   using the baseline values for the other parameters. It produces a
   file called `population_size.h5`.
 
-* [susceptibility_run.py](susceptibility_run.py), for each of the 3
-  SATs and for 11 different values for susceptibility of the
-  lost-immunity state, runs 1,000 simulations using the baseline
-  values for the other parameters. It produces a file called
-  `susceptibility.h5`.
+* [lost_immunity_susceptibility_run.py](lost_immunity_susceptibility_run.py),
+  for each of the 3 SATs and for 11 different values for
+  susceptibility of lost-immunity true and recovered false, runs 1,000
+  simulations using the baseline values for the other parameters. It
+  produces a file called `lost_immunity_susceptibility.h5`.
 
-* [population_size_and_susceptibility_run.py](population_size_and_susceptibility_run.py),
+* [population_size_and_lost_immunity_susceptibility_run.py](population_size_and_lost_immunity_susceptibility_run.py),
  for each of the 3 SATs, for 14 different population sizes, and for 11
- different values for susceptibility of the lost-immunity state, runs
- 1,000 simulations using the baseline values for the other
- parameters. It produces a file called
- `population_size_and_susceptibility.h5`. **This takes a very long
- time to run.**
+ different values for susceptibility of lost-immunity true and
+ recovered false, runs 1,000 simulations using the baseline values for
+ the other parameters. It produces a file called
+ `population_size_and_lost_immunity_susceptibility.h5`. **This takes a
+ very long time to run.**
 
 #### Analysis and plotting scripts
 
@@ -163,19 +163,20 @@ require having run the simulation scripts above.
   plots the results of varying the population size. This requires the
   file `population_size.h5`.
 
-* [susceptibility_plot.py](susceptibility_plot.py) analyzes and
-  plots the results of varying the susceptibility of the lost-immunity
-  state. This requires the file `susceptibility.h5`.
+* [lost_immunity_susceptibility_plot.py](lost_immunity_susceptibility_plot.py)
+  analyzes and plots the results of varying the susceptibility of
+  lost-immunity true and recovered false. This requires the file
+  `lost_immunity_susceptibility.h5`.
 
 * [sensitivity_plot.py](sensitivity_plot.py) plots a summary of the
-  persistence for varying either population size or susceptibility of
-  the lost-immunity state. This requires the files
-  `population_size.h5` and `susceptibility.h5`.
+  persistence for varying some parameters. This requires the files
+  `population_size.h5` and `lost_immunity_susceptibility.h5`.
 
-* [population_size_and_susceptibility_plot.py](population_size_and_susceptibility_plot.py)
+* [population_size_and_lost_immunity_susceptibility_plot.py](population_size_and_lost_immunity_susceptibility_plot.py)
   analyzes and plots the results of varying both the population size
-  and the susceptibility of the lost-immunity state. This requires the
-  file `population_size_and_susceptibility.h5`.
+  and the susceptibility of lost-immunity true and recovered
+  false. This requires the file
+  `population_size_and_lost_immunity_susceptibility.h5`.
 
 #### Other Python files in the base directory
 
@@ -193,8 +194,8 @@ and plotting, there are helper Python modules for those scripts.
 
 * [sensitivity.py](sensitivity.py) has common plotting code used by
   [population_size_plot.py](population_size_plot.py),
-  [susceptibility_plot.py](susceptibility_plot.py), and
-  [sensitivity_plot.py](sensitivity_plot.py).
+  [lost_immunity_susceptibility_plot.py](lost_immunity_susceptibility_plot.py),
+  and [sensitivity_plot.py](sensitivity_plot.py).
 
 * [simulation.py](simulation.py) has common code used by
   [simulation_run.py](simulation_run.py) and
@@ -208,15 +209,17 @@ and plotting, there are helper Python modules for those scripts.
   [population_size_run.py](population_size_run.py) and
   [population_size_plot.py](population_size_plot.py).
 
-* [susceptibility.py](susceptibility.py) has common code used by
-  [susceptibility_run.py](susceptibility_run.py) and
-  [susceptibility_plot.py](susceptibility_plot.py).
-
-* [population_size_and_susceptibility.py](population_size_and_susceptibility.py)
+* [lost_immunity_susceptibility.py](lost_immunity_susceptibility.py)
   has common code used by
-  [population_size_and_susceptibility_run.py](population_size_and_susceptibility_run.py)
+  [lost_immunity_susceptibility_run.py](lost_immunity_susceptibility_run.py)
   and
-  [population_size_and_susceptibility_plot.py](population_size_and_susceptibility_plot.py).
+  [lost_immunity_susceptibility_plot.py](lost_immunity_susceptibility_plot.py).
+
+* [population_size_and_lost_immunity_susceptibility.py](population_size_and_lost_immunity_susceptibility.py)
+  has common code used by
+  [population_size_and_lost_immunity_susceptibility_run.py](population_size_and_lost_immunity_susceptibility_run.py)
+  and
+  [population_size_and_lost_immunity_susceptibility_plot.py](population_size_and_lost_immunity_susceptibility_plot.py).
 
 #### Test scripts
 

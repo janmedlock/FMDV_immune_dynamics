@@ -1,5 +1,5 @@
 '''Common code for running and plotting with varying both population
-size and susceptibility of the lost-immunity class.'''
+size and susceptibility of lost-immunity true and recovered false.'''
 
 import pathlib
 
@@ -8,8 +8,8 @@ import common
 import h5
 import herd
 import logging_
+import lost_immunity_susceptibility as lost_immunity_susceptibility_
 import population_size as population_size_
-import susceptibility
 
 store_path = pathlib.Path(__file__).with_suffix('.h5')
 
@@ -17,7 +17,7 @@ store_path = pathlib.Path(__file__).with_suffix('.h5')
 def _save_result(store, result):
     '''Save extinction time.'''
     # If you change this, you must change `_copy_population_size()`
-    # and `_copy_susceptibility()` to save matching output.
+    # and `_copy_lost_immunity_susceptibility()` to save matching output.
     common.save_result(store, result,
                        extinction_time=True)
 
@@ -37,10 +37,11 @@ def _copy_population_size(store, nruns, SAT,
     store.put('extinction_time', extinction_time_masked)
 
 
-def _copy_susceptibility(store, nruns, SAT,
-                         lost_immunity_susceptibility, **kwds):
+def _copy_lost_immunity_susceptibility(store, nruns, SAT,
+                                       lost_immunity_susceptibility, **kwds):
     '''Copy the data from 'susceptibility.h5'.'''
-    extinction_time = h5.load(susceptibility.store_path, 'extinction_time')
+    extinction_time = h5.load(lost_immunity_susceptibility_.store_path,
+                              'extinction_time')
     index = extinction_time.index.to_frame()
     mask = (
         (index['SAT'] == SAT)
@@ -64,11 +65,12 @@ def run(SAT, lost_immunity_susceptibility, population_size, nruns, store,
         'lost_immunity_susceptibility': lost_immunity_susceptibility,
         'population_size': population_size,
     }
-    if _is_default(susceptibility, lost_immunity_susceptibility):
+    if _is_default(lost_immunity_susceptibility_,
+                   lost_immunity_susceptibility):
         _copy_population_size(store, nruns, **parameters_kwds)
         stored = True
     elif _is_default(population_size_, population_size):
-        _copy_susceptibility(store, nruns, **parameters_kwds)
+        _copy_lost_immunity_susceptibility(store, nruns, **parameters_kwds)
         stored = True
     elif not copy_only:
         parameters = herd.Parameters(**parameters_kwds)

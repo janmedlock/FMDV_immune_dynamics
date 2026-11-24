@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 '''Analyze and plot the results of varying both the population size
 and the susceptibility of the lost-immunity state. This requires the
-file `population_size_and_susceptibility.h5`, which is built by
-`population_size_and_susceptibility_run.py`.'''
+file `population_size_and_lost_immunity_susceptibility.h5`, which is
+built by `population_size_and_lost_immunity_susceptibility_run.py`.'''
 
 import matplotlib.pyplot
 import matplotlib.ticker
@@ -11,11 +11,11 @@ import seaborn
 
 import common
 import herd.utility
+import lost_immunity_susceptibility
 import plotting
 import population_size
-import population_size_and_susceptibility
+import population_size_and_lost_immunity_susceptibility
 import sensitivity
-import susceptibility
 
 rc = (
     plotting.rc
@@ -102,7 +102,7 @@ def plot_persistence(extinction_time, save=True, show=False):
             ax.axvline(population_size.default,
                        color='black', linestyle='dotted', alpha=0.7,
                        clip_on=False)
-            ax.axhline(susceptibility.default,
+            ax.axhline(lost_immunity_susceptibility.default,
                        color='black', linestyle='dotted', alpha=0.7,
                        clip_on=False)
             ax.annotate(f'SAT{SAT}',
@@ -122,7 +122,7 @@ def plot_persistence(extinction_time, save=True, show=False):
                 )
             if ax.get_subplotspec().is_first_col():
                 ax.set_ylabel(
-                    susceptibility.label
+                    lost_immunity_susceptibility.label
                     .replace('of ', 'of\n')
                 )
                 ax.yaxis.set_major_locator(
@@ -151,7 +151,7 @@ def plot_persistence(extinction_time, save=True, show=False):
         fig.align_ylabels()
         if save:
             output_path = (
-                population_size_and_susceptibility.store_path
+                population_size_and_lost_immunity_susceptibility.store_path
                 .with_suffix('.pdf')
             )
             plotting.savefig(fig, output_path)
@@ -161,5 +161,6 @@ def plot_persistence(extinction_time, save=True, show=False):
 
 
 if __name__ == '__main__':
-    extinction_time = sensitivity.load(population_size_and_susceptibility)
+    extinction_time = sensitivity.load(
+        population_size_and_lost_immunity_susceptibility)
     plot_persistence(extinction_time)

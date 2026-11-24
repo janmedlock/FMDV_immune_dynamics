@@ -1,16 +1,16 @@
 #!/usr/bin/env python
 '''Run simulations with varying population size and
-susceptibility. This produces a file called
-`population_size_and_susceptibility.h5`.'''
+lost-immunity susceptibility. This produces a file called
+`population_size_and_lost_immunity_susceptibility.h5`.'''
 
 import numpy
 
 import common
 import h5
 import herd.utility
+import lost_immunity_susceptibility as lost_immunity_susceptibility_
 import population_size as population_size_
-import population_size_and_susceptibility
-import susceptibility
+import population_size_and_lost_immunity_susceptibility
 
 
 def _get_persistence(store, **parameters):
@@ -45,7 +45,7 @@ def _run_over_population_sizes(SAT, lost_immunity_susceptibility, nruns,
     # but the 1-parameter sensitivity runs are still copied.
     copy_only = False
     for population_size in population_size_.values:
-        stored = population_size_and_susceptibility.run(
+        stored = population_size_and_lost_immunity_susceptibility.run(
             SAT, lost_immunity_susceptibility, population_size,
             nruns, store, copy_only, *args, **kwds
         )
@@ -70,9 +70,11 @@ def run(nruns, *args, **kwds):
     # The logic in the inner loop `_run_over_population_sizes()`
     # requires that the population sizes be strictly increasing.
     assert herd.utility.is_increasing(population_size_.values, strict=True)
-    with h5.HDFStore(population_size_and_susceptibility.store_path) as store:
+    with h5.HDFStore(
+            population_size_and_lost_immunity_susceptibility.store_path) \
+            as store:
         for SAT in common.SATs:
-            for suscept in susceptibility.values:
+            for suscept in lost_immunity_susceptibility_.values:
                 _run_over_population_sizes(SAT, suscept, nruns, store,
                                            *args, **kwds)
         store.repack()

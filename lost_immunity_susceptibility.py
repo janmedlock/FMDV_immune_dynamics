@@ -1,5 +1,5 @@
 '''Common code for running and plotting with varying susceptibility of
-the lost-immunity class.'''
+lost-immunity true and recovered false.'''
 
 import pathlib
 
@@ -7,10 +7,9 @@ import numpy
 
 import herd
 
-
 var = 'lost_immunity_susceptibility'
 
-label = 'Susceptibility of lost-immunity state'
+label = 'Susceptibility of lost-immunity true and recovered false'
 
 log = False
 

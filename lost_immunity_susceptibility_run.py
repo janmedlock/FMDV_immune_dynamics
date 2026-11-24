@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 '''Run simulations with varying susceptibility. This produces a file
-called `susceptibility.h5`.'''
+called `lost_immunity_susceptibility.h5`.'''
 
 import common
+import lost_immunity_susceptibility
 import sensitivity
-import susceptibility
 
 if __name__ == '__main__':
     common.nice_self()
-    sensitivity.run(susceptibility, common.NRUNS)
+    sensitivity.run(lost_immunity_susceptibility, common.NRUNS)
