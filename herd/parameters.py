@@ -13,6 +13,8 @@ class Parameters:
                  _set_defaults=True, **kwds):
         'Initialize with default values.'
         self.SAT = SAT
+        # Whether to set `.lost_immunity_true_probability` and
+        # `.recovered_true_probability` using bootstrap sampling
         self.sample_antibody_precisions = sample_antibody_precisions
         if _set_defaults:
             self.population_size = 1000
