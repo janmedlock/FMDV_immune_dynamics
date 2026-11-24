@@ -11,8 +11,10 @@ import seaborn
 
 import common
 import lost_immunity_susceptibility
+import lost_immunity_true_probability
 import plotting
 import population_size
+import recovered_true_probability
 import sensitivity
 
 rc = plotting.rc | plotting.rc_text_small | {
@@ -26,7 +28,12 @@ PERSISTENCE_LABEL = (
 )
 
 
-MODULES = (population_size, lost_immunity_susceptibility)
+MODULES = (
+    population_size,
+    lost_immunity_true_probability,
+    recovered_true_probability,
+    lost_immunity_susceptibility,
+)
 
 
 def load():
