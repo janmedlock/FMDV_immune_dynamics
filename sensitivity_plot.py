@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 '''Analyze and plot the results of the simulations with varying
-population size and susceptibility.  This requires the files
-`population_size.h5` and `susceptibility.h5`.'''
+population size and lost-immunity susceptibility.  This requires the
+files `population_size.h5` and `lost_immunity_susceptibility.h5`.'''
 
 import pathlib
 
@@ -10,10 +10,10 @@ import numpy
 import seaborn
 
 import common
+import lost_immunity_susceptibility
 import plotting
 import population_size
 import sensitivity
-import susceptibility
 
 rc = plotting.rc | plotting.rc_text_small | {
     'figure.figsize': (plotting.WIDTH_MAXIMUM['double_column'], 4),
@@ -26,7 +26,7 @@ PERSISTENCE_LABEL = (
 )
 
 
-MODULES = (population_size, susceptibility)
+MODULES = (population_size, lost_immunity_susceptibility)
 
 
 def load():
@@ -114,7 +114,7 @@ def plot_persistence(extinction_times, save=True, show=False):
                     ax.xaxis.set_minor_locator(
                         matplotlib.ticker.AutoMinorLocator(2)
                     )
-                ax.axvline(module.default,
+                ax.axvline(module.default(SAT),
                            color='black', linestyle='dotted', alpha=0.7,
                            clip_on=False)
                 for sp in ('top', 'right'):

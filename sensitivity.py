@@ -58,7 +58,7 @@ def _run(module, SAT, val, nruns, store, *args, **kwargs):
         'SAT': SAT,
         module.var: val,
     }
-    if val == module.default:
+    if val == module.default(SAT):
         _copy_baseline(store, nruns, **parameters_kwds)
     else:
         parameters = herd.Parameters(**parameters_kwds)
@@ -162,9 +162,9 @@ def plot_kde_2d(module, extinction_time, save=True, show=False):
                 ax_po.set_ylim(0, 1)
                 ax_po.yaxis.set_major_formatter(
                     matplotlib.ticker.PercentFormatter(xmax=1))
-        for ax in fig.axes:
-            ax.axvline(module.default,
-                       color='black', linestyle='dotted', alpha=0.7)
+            for ax_ in (ax, ax_po):
+                ax_.axvline(module.default(SAT),
+                            color='black', linestyle='dotted', alpha=0.7)
         fig.align_xlabels(axes[-1, :])
         fig.align_ylabels(axes[:, 0])
         if save:

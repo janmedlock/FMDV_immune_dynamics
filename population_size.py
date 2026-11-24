@@ -18,6 +18,8 @@ values = numpy.hstack((
     herd.utility.arange(1000, 5000, 1000, endpoint=True),
 ))
 
-default = getattr(herd.Parameters(), var)
-
 store_path = pathlib.Path(__file__).with_suffix('.h5')
+
+
+def default(SAT):
+    return getattr(herd.Parameters(SAT=SAT), var)

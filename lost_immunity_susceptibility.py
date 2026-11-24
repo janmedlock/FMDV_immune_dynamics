@@ -15,6 +15,8 @@ log = False
 
 values = numpy.linspace(0, 1, 11)
 
-default = getattr(herd.Parameters(), var)
-
 store_path = pathlib.Path(__file__).with_suffix('.h5')
+
+
+def default(SAT):
+    return getattr(herd.Parameters(SAT=SAT), var)

@@ -32,7 +32,7 @@ rc = (
 )
 
 
-def _fill_missing_persistence(persistence):
+def _fill_missing_persistence(persistence, SAT):
     assert herd.utility.is_increasing(persistence.columns, strict=True)
     # Starting from the left, where there is a missing value, if the
     # value in the previous column is 1, set the current value to 1.
@@ -51,7 +51,7 @@ def _fill_missing_persistence(persistence):
                             )
                             & (
                                 persistence.columns[j-1]
-                                == population_size.default
+                                == population_size.default(SAT)
                             ) & (
                                 persistence.iloc[i, j-2] == 1
                             )
@@ -82,7 +82,7 @@ def plot_persistence(extinction_time, save=True, show=False):
                 .apply(common.get_persistence)
                 .unstack()
             )
-            _fill_missing_persistence(persistence)
+            _fill_missing_persistence(persistence, SAT)
             cmap = plotting.get_cmap_SAT(SAT)
             epsilon = 0.01
             vmin = 0 + epsilon
@@ -99,10 +99,10 @@ def plot_persistence(extinction_time, save=True, show=False):
                                   colors='black')
             contours.clabel(inline=True,
                             fmt=lambda x: f'{100*x:g}%')
-            ax.axvline(population_size.default,
+            ax.axvline(population_size.default(SAT),
                        color='black', linestyle='dotted', alpha=0.7,
                        clip_on=False)
-            ax.axhline(lost_immunity_susceptibility.default,
+            ax.axhline(lost_immunity_susceptibility.default(SAT),
                        color='black', linestyle='dotted', alpha=0.7,
                        clip_on=False)
             ax.annotate(f'SAT{SAT}',

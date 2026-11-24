@@ -54,8 +54,8 @@ def _copy_lost_immunity_susceptibility(store, nruns, SAT,
     store.put('extinction_time', extinction_time_masked)
 
 
-def _is_default(module, val):
-    return (module.default == val)
+def _is_default(module, SAT, val):
+    return (module.default(SAT) == val)
 
 
 def run(SAT, lost_immunity_susceptibility, population_size, nruns, store,
@@ -65,11 +65,11 @@ def run(SAT, lost_immunity_susceptibility, population_size, nruns, store,
         'lost_immunity_susceptibility': lost_immunity_susceptibility,
         'population_size': population_size,
     }
-    if _is_default(lost_immunity_susceptibility_,
+    if _is_default(lost_immunity_susceptibility_, SAT,
                    lost_immunity_susceptibility):
         _copy_population_size(store, nruns, **parameters_kwds)
         stored = True
-    elif _is_default(population_size_, population_size):
+    elif _is_default(population_size_, SAT, population_size):
         _copy_lost_immunity_susceptibility(store, nruns, **parameters_kwds)
         stored = True
     elif not copy_only:
