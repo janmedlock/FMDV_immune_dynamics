@@ -88,5 +88,9 @@ def run(nruns, *args, **kwargs):
 
 
 if __name__ == '__main__':
+    # Running these requires solving for many initial conditions,
+    # which is memory limited on my machines
+    N_JOBS = min(22, joblib.cpu_count())
+    CHUNKSIZE = 1  # Save at each completed run
     common.nice_self()
-    run(common.NRUNS)
+    run(common.NRUNS, n_jobs=N_JOBS, chunksize=CHUNKSIZE)
