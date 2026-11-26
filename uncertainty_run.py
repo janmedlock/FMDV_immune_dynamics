@@ -85,11 +85,14 @@ def run(nruns, *args, **kwargs):
         chunks = run_many_chunked(nruns, *args, **kwargs)
         for chunk in chunks:
             _save_result(store, chunk)
+        store.repack()
+        store.set_read_only()
 
 
 if __name__ == '__main__':
     # Running these requires solving for many initial conditions,
-    # which is memory limited on my machines
+    # which is limited by the amount of memory, rather than CPUs, on
+    # my machines. It uses about 0.5 GB per process.
     N_JOBS = min(22, joblib.cpu_count())
     CHUNKSIZE = 1  # Save at each completed run
     common.nice_self()
