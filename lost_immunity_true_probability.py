@@ -9,7 +9,7 @@ import herd
 
 var = 'lost_immunity_true_probability'
 
-label = 'Probability of entering lost-immunity true'
+label = 'Probability of lost-immunity true'
 
 log = False
 

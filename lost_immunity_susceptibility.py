@@ -9,7 +9,7 @@ import herd
 
 var = 'lost_immunity_susceptibility'
 
-label = 'Susceptibility of lost-immunity true and recovered false'
+label = 'Susceptibility of lost immunity'
 
 log = False
 

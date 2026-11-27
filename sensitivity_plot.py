@@ -30,11 +30,17 @@ PERSISTENCE_LABEL = (
 
 MODULES = (
     population_size,
+    lost_immunity_susceptibility,
     lost_immunity_true_probability,
     recovered_true_probability,
-    lost_immunity_susceptibility,
 )
 
+
+LABEL_REPLACEMENTS = {
+    'Susceptibility of lost immunity': 'Susceptibility of\nlost immunity',
+    'Probability of lost-immunity true': 'Probability of\nlost-immunity true',
+    'Probability of recovered true': 'Probability of\nrecovered true',
+}
 
 def load():
     return [
@@ -71,10 +77,12 @@ def plot_persistence(extinction_times, save=True, show=False):
                 subplotspec = ax.get_subplotspec()
                 if subplotspec.is_last_row():
                     ax.set_xlim(min(vals), max(vals))
-                    ax.set_xlabel(module.label)
+                    ax.set_xlabel(
+                        LABEL_REPLACEMENTS.get(module.label, module.label)
+                    )
                 if subplotspec.is_first_col():
                     ax.annotate(f'SAT{SAT}',
-                                (-0.32, 0.5), xycoords='axes fraction',
+                                (-0.7, 0.5), xycoords='axes fraction',
                                 fontsize=rc['axes.titlesize'],
                                 rotation='vertical',
                                 verticalalignment='center')

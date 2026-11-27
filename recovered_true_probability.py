@@ -9,7 +9,7 @@ import herd
 
 var = 'recovered_true_probability'
 
-label = 'Probability of entering recovered true'
+label = 'Probability of recovered true'
 
 log = False
 
